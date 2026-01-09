@@ -1,0 +1,13 @@
+C:\Monogame Project\howl\bin\Debug\net9.0\howl.deps.json
+C:\Monogame Project\howl\bin\Debug\net9.0\howl.dll
+C:\Monogame Project\howl\bin\Debug\net9.0\howl.pdb
+C:\Monogame Project\howl\obj\Debug\net9.0\howl.csproj.AssemblyReference.cache
+C:\Monogame Project\howl\obj\Debug\net9.0\howl.GeneratedMSBuildEditorConfig.editorconfig
+C:\Monogame Project\howl\obj\Debug\net9.0\howl.AssemblyInfoInputs.cache
+C:\Monogame Project\howl\obj\Debug\net9.0\howl.AssemblyInfo.cs
+C:\Monogame Project\howl\obj\Debug\net9.0\howl.csproj.CoreCompileInputs.cache
+C:\Monogame Project\howl\obj\Debug\net9.0\howl.dll
+C:\Monogame Project\howl\obj\Debug\net9.0\refint\howl.dll
+C:\Monogame Project\howl\obj\Debug\net9.0\howl.pdb
+C:\Monogame Project\howl\obj\Debug\net9.0\ref\howl.dll
+C:\Monogame Project\howl\obj\Debug\net9.0\howl.sourcelink.json
