@@ -5,7 +5,7 @@ using Howl.Generic;
 using Microsoft.VisualBasic;
 using Xunit;
 
-namespace ECS;
+namespace Howl.Test.ECS;
 
 public class ECSTest
 {

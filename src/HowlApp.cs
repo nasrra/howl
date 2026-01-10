@@ -1,51 +1,52 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Diagnostics;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-namespace howl;
+namespace Howl;
 
 public class HowlApp : Game
 {
-    private GraphicsDeviceManager _graphics;
-    private SpriteBatch _spriteBatch;
+    public static HowlApp Instance {get; private set;}
+
+    public static new GraphicsDevice GraphicsDevice {get; private set;}
+
+    public static GraphicsDeviceManager GraphicsDeviceManager {get; private set;}
+    
+    public static SpriteBatch SpriteBatch {get; private set;}
 
     public HowlApp()
     {
-        _graphics = new GraphicsDeviceManager(this);
-        // Content.RootDirectory = "Content";
+        GraphicsDeviceManager = new GraphicsDeviceManager(this);
         IsMouseVisible = true;
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Debug.WriteLine("");   
+        }
     }
 
     protected override void Initialize()
     {
-        // TODO: Add your initialization logic here
-
         base.Initialize();
+        GraphicsDevice = base.GraphicsDevice;
     }
 
     protected override void LoadContent()
     {
-        _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-        // TODO: use this.Content to load your game content here
+        SpriteBatch = new SpriteBatch(GraphicsDevice);
     }
 
     protected override void Update(GameTime gameTime)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-            Exit();
-
-        // TODO: Add your update logic here
-
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(Color.CornflowerBlue);
-
-        // TODO: Add your drawing code here
-
         base.Draw(gameTime);
     }
 }

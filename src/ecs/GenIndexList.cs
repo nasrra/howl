@@ -44,6 +44,14 @@ public class GenIndexList<T>
         return true;
     }
 
+    /// <summary>
+    /// Allocates a dense entry data and associates it with a sparse entry.
+    /// </summary>
+    /// <param name="index">The GenIndex associated with the sparse entry; used to retrieve the dense data.</param>
+    /// <param name="value">The data to assign to the dense entry.</param>
+    /// <param name="result">A detailed result of what heppend dureing the allocation.</param>
+    /// <returns>true, if the allocation was successful; otherwise false.</returns>
+
     public bool Allocate(in GenIndex index, T value, out GenIndexResult result)
     {
         if(sparse.Count <= index.index)
@@ -65,7 +73,7 @@ public class GenIndexList<T>
             if(sparseEntry.generation != index.generation)
             {
                 result = GenIndexResult.StaleAllocationFound;
-                return true;
+                return false;
             }
 
             // allocate a new dense entry.
@@ -89,8 +97,9 @@ public class GenIndexList<T>
     /// <summary>
     /// Deallocates an dense entry that is associated with sparse entry, setting the sparse entry to none. 
     /// </summary>
-    /// <param name=""></param>
-    /// <returns></returns>
+    /// <param name="index">The GenIndex associated with the sparse entry; used to retrieve the dense data.</param>
+    /// <param name="result">A detailed result of what heppend dureing the allocation.</param>
+    /// <returns>true, if the allocation was successful; otherwise false.</returns>
 
     public bool Deallocate(in GenIndex index, out GenIndexResult result)
     {
@@ -114,7 +123,7 @@ public class GenIndexList<T>
         if(sparseEntryToRemove.generation != index.generation)
         {
             result = GenIndexResult.StaleAllocationFound;
-            return true;
+            return false;
         }
 
         // get the entry that will be swapped with the data that is to be removed.
