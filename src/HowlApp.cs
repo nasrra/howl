@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Howl.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -13,40 +14,63 @@ public class HowlApp : Game
 
     public static GraphicsDeviceManager GraphicsDeviceManager {get; private set;}
     
-    public static SpriteBatch SpriteBatch {get; private set;}
+    public static Renderer Renderer {get; private set;}
 
     public HowlApp()
     {
-        GraphicsDeviceManager = new GraphicsDeviceManager(this);
-        IsMouseVisible = true;
         if (Instance == null)
         {
             Instance = this;
         }
         else
         {
-            Debug.WriteLine("");   
+            Debug.WriteLine("[Error]: there can only be one Howl App Instance.");   
         }
+        GraphicsDeviceManager = new GraphicsDeviceManager(this);
+        IsMouseVisible = true;
     }
 
     protected override void Initialize()
     {
-        base.Initialize();
         GraphicsDevice = base.GraphicsDevice;
+        GraphicsDeviceManager.PreferredBackBufferWidth = 1280;
+        GraphicsDeviceManager.PreferredBackBufferHeight = 720;
+        GraphicsDeviceManager.ApplyChanges();
+        Renderer = new(1, 1920, 1080);
+        base.Initialize();
     }
 
-    protected override void LoadContent()
+    protected sealed override void Update(GameTime gameTime)
     {
-        SpriteBatch = new SpriteBatch(GraphicsDevice);
-    }
-
-    protected override void Update(GameTime gameTime)
-    {
+        float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        Update(deltaTime);
         base.Update(gameTime);
     }
 
-    protected override void Draw(GameTime gameTime)
+    
+    protected sealed override void Draw(GameTime gameTime)
     {
+        float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        Renderer.BeginDraw();
+        Draw(deltaTime);
+        Renderer.EndDraw();
+        // this submits to the gpu.
+        // and should stay at the bottom.
+
         base.Draw(gameTime);
+    }
+
+    protected virtual void Draw(float deltaTime)
+    {
+    }
+    
+    protected virtual void Update(float deltaTime)
+    {
+    }
+
+
+    protected virtual void InitialiseShaders()
+    {
     }
 }
