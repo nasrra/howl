@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Howl.Graphics;
+using Howl.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -15,6 +16,8 @@ public class HowlApp : Game
     public static GraphicsDeviceManager GraphicsDeviceManager {get; private set;}
     
     public static Renderer Renderer {get; private set;}
+
+    public static InputManager InputManager {get; private set;}
 
     public HowlApp()
     {
@@ -37,12 +40,14 @@ public class HowlApp : Game
         GraphicsDeviceManager.PreferredBackBufferHeight = 720;
         GraphicsDeviceManager.ApplyChanges();
         Renderer = new(1, 1920, 1080);
+        InputManager = new();
         base.Initialize();
     }
 
     protected sealed override void Update(GameTime gameTime)
     {
         float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        InputManager.Update(deltaTime);
         Update(deltaTime);
         base.Update(gameTime);
     }

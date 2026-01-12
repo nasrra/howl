@@ -29,7 +29,7 @@ public class Renderer
     
     public void SetRenderTargetWidth(int value)
     {      
-        int width = Math.Clamp(value, 1, int.MaxValue);  
+        int width = System.Math.Clamp(value, 1, int.MaxValue);  
         if(width == value)
         {            
             if(RenderTarget != null)
@@ -57,7 +57,7 @@ public class Renderer
 
     public void SetRenderTargetHeight(int value)
     {
-        int height = Math.Clamp(value, 1, int.MaxValue);
+        int height = System.Math.Clamp(value, 1, int.MaxValue);
         if(height == value)
         {
             if(RenderTarget != null)
