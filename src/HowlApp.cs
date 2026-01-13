@@ -2,8 +2,9 @@
 using System.Diagnostics;
 using Howl.Graphics;
 using Howl.Input;
-using Howl.MonoGame;
-using Howl.MonoGame.Graphics;
+using Howl.Vendors.MonoGame;
+using Howl.Vendors.MonoGame.Graphics;
+using Howl.Vendors.MonoGame.Input;
 
 namespace Howl;
 
@@ -19,7 +20,7 @@ public abstract class HowlApp : IDisposable
     /// <summary>
     /// Gets the InputManager used by this HowlApp.
     /// </summary>
-    public InputManager InputManager {get; private set;}
+    public IInputManager InputManager {get; private set;}
 
     private MonoGameApp monoGameApp;
     private HowlAppBackend backend;
@@ -125,7 +126,7 @@ public abstract class HowlApp : IDisposable
     private void InitialiseMonoGameBackend()
     {
         monoGameApp = new(new(this));
-        InputManager = new();
+        InputManager = new MonoGameInputManager();
         Renderer = new MonoGameRenderer(new(monoGameApp));
     }
 

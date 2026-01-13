@@ -5,7 +5,7 @@
     <version>1.0.0</version>
     <authors>Howl</authors>
     <description>Package Description</description>
-    <repository type="git" commit="e0379fa4a664ad394eb46a1e5b0276521d428a81" />
+    <repository type="git" commit="17a4a339f1ab4674e5916c3ae0862d9144d8e338" />
     <dependencies>
       <group targetFramework="net9.0">
         <dependency id="MonoGame.Framework.DesktopGL" version="3.8.4.1" exclude="Build,Analyzers" />
