@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj": {}
+    "C:\\Monogame Project\\howl\\test\\howl.test.csproj": {}
   },
   "projects": {
     "C:\\Monogame Project\\howl\\src\\howl.csproj": {
@@ -70,12 +70,12 @@
         }
       }
     },
-    "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj": {
+    "C:\\Monogame Project\\howl\\test\\howl.test.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj",
-        "projectName": "Howl.Test",
-        "projectPath": "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj",
+        "projectUniqueName": "C:\\Monogame Project\\howl\\test\\howl.test.csproj",
+        "projectName": "howl.test",
+        "projectPath": "C:\\Monogame Project\\howl\\test\\howl.test.csproj",
         "packagesPath": "C:\\Users\\naser\\.nuget\\packages\\",
         "outputPath": "C:\\Monogame Project\\howl\\test\\obj\\",
         "projectStyle": "PackageReference",

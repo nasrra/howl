@@ -2,11 +2,35 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+
+    <!-- Automatically create a NuGet packagge on build -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    
+    <!-- Include the compiled DLL in the NuGet package. -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
   </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*">
-      <PrivateAssets>All</PrivateAssets>
+      <!-- This dependenccy is only for Howl itself, not the end-user -->
+      <!-- <PrivateAssets>All</PrivateAssets> -->
     </PackageReference>
   </ItemGroup>
+
+
+  <!-- Include native runtime assets -->
+  <!-- 
+    Note:
+    - Include all files in the 'ruintimes' folder and subfolders
+    - Pack them into the NuGetPackage
+    - The folder 'runtimes/<rid>/native' is special in NuGet as .NET
+      automatically copies native DLLs for the correct platform.
+   -->
+  <ItemGroup>
+    <None Include="runtimes\**\*.*"
+    Pack="true"
+    PackagePath="runtimes\"
+    />
+  </ItemGroup>
+
 </Project>

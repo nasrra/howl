@@ -278,9 +278,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Monogame Project\\howl\\src\\howl.csproj",
-      "projectName": "howl",
-      "projectPath": "C:\\Monogame Project\\howl\\src\\howl.csproj",
+      "projectUniqueName": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
+      "projectName": "Howl",
+      "projectPath": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
       "packagesPath": "C:\\Users\\naser\\.nuget\\packages\\",
       "outputPath": "C:\\Monogame Project\\howl\\src\\obj\\",
       "projectStyle": "PackageReference",
@@ -316,7 +316,6 @@
         "targetAlias": "net9.0",
         "dependencies": {
           "MonoGame.Framework.DesktopGL": {
-            "suppressParent": "All",
             "target": "Package",
             "version": "[3.8.*, )"
           }
