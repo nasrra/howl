@@ -23,9 +23,9 @@ public class ECSTest
     {
         allocator = new();
         components = new();
-        index0 = allocator.Allocate(out _);
-        index1 = allocator.Allocate(out _);
-        index2 = allocator.Allocate(out _);
+        allocator.Allocate(out index0);
+        allocator.Allocate(out index1);
+        allocator.Allocate(out index2);
     }
 
     [Fact]
@@ -53,8 +53,8 @@ public class ECSTest
     public void TestComponentAllocate()
     {
         components.ResizeSparseEntries(allocator.GetEntriesCount());
-        components.Allocate(index0, new Component(), out _);
-        components.Allocate(index1, new Component(), out _);
+        components.Allocate(index0, new Component());
+        components.Allocate(index1, new Component());
 
         Assert.Equal(2,components.Dense.Count);
 
@@ -75,11 +75,11 @@ public class ECSTest
     public void TestComponentGetRef()
     {
         components.ResizeSparseEntries(allocator.GetEntriesCount());
-        components.Allocate(index0, new Component(), out _);
-        components.Allocate(index1, new Component(), out _);
-        Ref<Component> c0 = components.GetRef(index0, out _);
-        Ref<Component> c1 = components.GetRef(index1, out _);        
-        Ref<Component> c2 = components.GetRef(index2, out _);
+        components.Allocate(index0, new Component());
+        components.Allocate(index1, new Component());
+        Ref<Component> c0 = components.GetDenseRef(index0, out _);
+        Ref<Component> c1 = components.GetDenseRef(index1, out _);        
+        Ref<Component> c2 = components.GetDenseRef(index2, out _);
 
         Assert.True(c0.Valid); 
         Assert.True(c1.Valid); 
@@ -93,16 +93,16 @@ public class ECSTest
         const int c1Value = 12;
 
         components.ResizeSparseEntries(allocator.GetEntriesCount());
-        components.Allocate(index0, new Component(), out _);
-        components.Allocate(index1, new Component(), out _);
+        components.Allocate(index0, new Component());
+        components.Allocate(index1, new Component());
         
-        Ref<Component> c0A = components.GetRef(index0, out _);
+        Ref<Component> c0A = components.GetDenseRef(index0, out _);
         Assert.True(c0A.Valid);
         c0A.Value.x = c0Value;
         c0A.Value.y = c0Value;
         c0A.Value.z = c0Value;
 
-        Ref<Component> c1A = components.GetRef(index1, out _);
+        Ref<Component> c1A = components.GetDenseRef(index1, out _);
         Assert.True(c1A.Valid);
         c1A.Value.x = c1Value;
         c1A.Value.y = c1Value;
@@ -110,12 +110,12 @@ public class ECSTest
 
         // ensure that the values are properly set within the list.
 
-        Ref<Component> c0B = components.GetRef(index0, out _);
+        Ref<Component> c0B = components.GetDenseRef(index0, out _);
         Assert.Equal(c0Value, c0B.Value.x);
         Assert.Equal(c0Value, c0B.Value.y);
         Assert.Equal(c0Value, c0B.Value.z);
 
-        Ref<Component> c1B = components.GetRef(index1, out _);
+        Ref<Component> c1B = components.GetDenseRef(index1, out _);
         Assert.Equal(c1Value, c1B.Value.x);
         Assert.Equal(c1Value, c1B.Value.y);
         Assert.Equal(c1Value, c1B.Value.z);
@@ -128,18 +128,18 @@ public class ECSTest
         const int c1Value = 12;
 
         components.ResizeSparseEntries(allocator.GetEntriesCount());
-        components.Allocate(index0, new Component(), out _);
-        components.Allocate(index1, new Component(), out _);
+        components.Allocate(index0, new Component());
+        components.Allocate(index1, new Component());
 
         // allocate component data to the gen index's.
 
-        Ref<Component> c0A = components.GetRef(index0, out _);
+        Ref<Component> c0A = components.GetDenseRef(index0, out _);
         Assert.True(c0A.Valid);
         c0A.Value.x = c0Value;
         c0A.Value.y = c0Value;
         c0A.Value.z = c0Value;
 
-        Ref<Component> c1A = components.GetRef(index1, out _);
+        Ref<Component> c1A = components.GetDenseRef(index1, out _);
         Assert.True(c1A.Valid);
         c1A.Value.x = c1Value;
         c1A.Value.y = c1Value;
@@ -147,10 +147,10 @@ public class ECSTest
 
         // Deallocate the first gen index's dense data.
 
-        components.Deallocate(index0, out GenIndexResult successResult);
+        GenIndexResult successResult = components.Deallocate(index0);
         Assert.Equal(GenIndexResult.Success, successResult);
 
-        components.Deallocate(index0, out GenIndexResult errorResult);
+        GenIndexResult errorResult = components.Deallocate(index0);
         Assert.Equal(GenIndexResult.DenseNotAllocated, errorResult);
 
 
@@ -167,7 +167,7 @@ public class ECSTest
 
         // ensure that the values have not changed.
 
-        Ref<Component> c1B = components.GetRef(index1, out _);
+        Ref<Component> c1B = components.GetDenseRef(index1, out _);
         Assert.Equal(c1Value, c1B.Value.x);
         Assert.Equal(c1Value, c1B.Value.y);
         Assert.Equal(c1Value, c1B.Value.z);

@@ -1,11 +1,11 @@
 using System;
 using Howl.Input;
 
-namespace Howl.Monogame.Input;
+namespace Howl.MonoGame.Input;
 
 public class KeysTranslator
 {
-    public static Microsoft.Xna.Framework.Input.Keys ToMonogameKeys(Key key)
+    public static Microsoft.Xna.Framework.Input.Keys ToMonoGameKeys(Key key)
     {
         return key switch
         {

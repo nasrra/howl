@@ -9,6 +9,7 @@ namespace Howl.ECS;
 
 public class GenIndexList<T>
 {
+
     List<SparseEntry> sparse;
     public IReadOnlyList<SparseEntry> Sparse => sparse;
     
@@ -52,12 +53,11 @@ public class GenIndexList<T>
     /// <param name="result">A detailed result of what heppend dureing the allocation.</param>
     /// <returns>true, if the allocation was successful; otherwise false.</returns>
 
-    public bool Allocate(in GenIndex index, T value, out GenIndexResult result)
+    public GenIndexResult Allocate(in GenIndex index, T value)
     {
         if(sparse.Count <= index.index)
         {
-            result = GenIndexResult.InvalidGenIndex;
-            return false;
+            return GenIndexResult.InvalidGenIndex;
         }
         else{
             Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
@@ -66,14 +66,12 @@ public class GenIndexList<T>
 
             if (sparseEntry.LinkedToADenseEntry() == true)
             {
-                result = GenIndexResult.DoubleAllocationAttempted;
-                return false;
+                return GenIndexResult.DoubleAllocationAttempted;
             }
 
             if(sparseEntry.generation != index.generation)
             {
-                result = GenIndexResult.StaleAllocationFound;
-                return false;
+                return GenIndexResult.StaleAllocationFound;
             }
 
             // allocate a new dense entry.
@@ -89,8 +87,7 @@ public class GenIndexList<T>
             denseEntry.value = value;
             denseEntry.sparseIndex = index.index;
             
-            result = GenIndexResult.Success;
-            return true;
+            return GenIndexResult.Success;
         }
     }
 
@@ -101,14 +98,12 @@ public class GenIndexList<T>
     /// <param name="result">A detailed result of what heppend dureing the allocation.</param>
     /// <returns>true, if the allocation was successful; otherwise false.</returns>
 
-    public bool Deallocate(in GenIndex index, out GenIndexResult result)
+    public GenIndexResult Deallocate(in GenIndex index)
     {
-        result = GenIndexResult.Success;
         
         if(sparse.Count <= index.index)
         {
-            result = GenIndexResult.InvalidGenIndex;
-            return false;
+            return GenIndexResult.InvalidGenIndex;
         }
 
         Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
@@ -116,14 +111,12 @@ public class GenIndexList<T>
 
         if (sparseEntryToRemove.LinkedToADenseEntry() == false)
         {
-            result = GenIndexResult.DenseNotAllocated;
-            return false;
+            return GenIndexResult.DenseNotAllocated;
         }
 
         if(sparseEntryToRemove.generation != index.generation)
         {
-            result = GenIndexResult.StaleAllocationFound;
-            return false;
+            return GenIndexResult.StaleAllocationFound;
         }
 
         // get the entry that will be swapped with the data that is to be removed.
@@ -146,7 +139,7 @@ public class GenIndexList<T>
 
         sparseEntryToRemove.ClearDenseIndex();
         
-        return true;
+        return GenIndexResult.Success;
     }
 
     /// <summary>
@@ -156,13 +149,13 @@ public class GenIndexList<T>
     /// </summary>
     /// <returns>A ref handle that can be valid or invalid if data was found to be associated with the GenIndex.</returns>
 
-    public Ref<T> GetRef(in GenIndex index, out GenIndexResult result)
+    public GenIndexResult GetDenseRef(ref GenIndex index, out Ref<T> reference)
     {
+        reference = default;
 
         if(sparse.Count <= index.index)
         {
-            result = GenIndexResult.InvalidGenIndex;
-            return default;
+            return GenIndexResult.InvalidGenIndex;
         }
 
         Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
@@ -170,21 +163,55 @@ public class GenIndexList<T>
 
         if(index.generation != sparseEntry.generation)
         {
-            result = GenIndexResult.StaleAllocationFound;
-            return default;
+            return GenIndexResult.StaleAllocationFound;
         }
 
         if(sparseEntry.LinkedToADenseEntry() == false)
         {
-            result = GenIndexResult.DenseNotAllocated;
-            return default;
+            return GenIndexResult.DenseNotAllocated;
         }
 
         Span<DenseEntry<T>> denseSpan = CollectionsMarshal.AsSpan(dense);
         ref DenseEntry<T> denseEntry = ref denseSpan[sparseEntry.DenseIndex];
 
-        result = GenIndexResult.Success;
-        return new Ref<T>(ref denseSpan[sparseEntry.DenseIndex].value, true);
+        reference = new(ref denseSpan[sparseEntry.DenseIndex].value, true);
+        return GenIndexResult.Success;
+    }
+
+    /// <summary>
+    /// Returns a reference to stored data associated with a GenIndex.
+    /// Note: When deallocating and allocating data from this structure, this ref is then invalidated.
+    /// Do not store the ref data, make sure to use immeditely or before modifiying the allocations list.
+    /// </summary>
+    /// <returns>A ref handle that can be valid or invalid if data was found to be associated with the GenIndex.</returns>
+
+    public GenIndexResult GetDenseReadonlyRef(ref GenIndex index, out ReadonlyRef<T> readonlyReference)
+    {
+        readonlyReference = default;
+
+        if(sparse.Count <= index.index)
+        {
+            return GenIndexResult.InvalidGenIndex;
+        }
+
+        Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
+        ref SparseEntry sparseEntry = ref sparseSpan[index.index];
+
+        if(index.generation != sparseEntry.generation)
+        {
+            return GenIndexResult.StaleAllocationFound;
+        }
+
+        if(sparseEntry.LinkedToADenseEntry() == false)
+        {
+            return GenIndexResult.DenseNotAllocated;
+        }
+
+        Span<DenseEntry<T>> denseSpan = CollectionsMarshal.AsSpan(dense);
+        ref DenseEntry<T> denseEntry = ref denseSpan[sparseEntry.DenseIndex];
+
+        readonlyReference = new(ref denseSpan[sparseEntry.DenseIndex].value, true);
+        return GenIndexResult.Success;
     }
 
     /// <summary>
@@ -194,12 +221,13 @@ public class GenIndexList<T>
     /// </summary>
     /// <returns>A ref handle that can be valid or invalid if data was found to be associated with the GenIndex.</returns>
 
-    public ReadonlyRef<SparseEntry> GetSparseRef(in GenIndex genIndex, out GenIndexResult result)
+    public GenIndexResult GetSparseRef(in GenIndex genIndex, out ReadonlyRef<SparseEntry> readonlyReference)
     {
+        readonlyReference = default;
+        
         if(sparse.Count < genIndex.index)
         {
-            result = GenIndexResult.InvalidGenIndex;
-            return default;
+            return GenIndexResult.InvalidGenIndex;
         }
 
         Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
@@ -207,12 +235,11 @@ public class GenIndexList<T>
 
         if(sparseEntry.generation != genIndex.generation)
         {
-            result = GenIndexResult.StaleAllocationFound;
-            return default;
+            return GenIndexResult.StaleAllocationFound;
         }
 
-        result = GenIndexResult.Success;
-        return new(ref sparseEntry, true);
+        readonlyReference = new(ref sparseEntry, true);
+        return GenIndexResult.Success;
     }
 
     public void PrintAll()

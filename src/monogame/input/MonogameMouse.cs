@@ -3,9 +3,9 @@ using Howl.Input;
 using Microsoft.Xna.Framework.Input;
 using System;
 
-namespace Howl.Monogame.Input;
+namespace Howl.MonoGame.Input;
 
-public class MonogameMouse : IMouse
+public class MonoGameMouse : IMouse
 {
     
     /// <summary>
@@ -21,7 +21,7 @@ public class MonogameMouse : IMouse
     /// <summary>
     /// Creates a new Monogame Mouse instance.
     /// </summary>
-    public MonogameMouse()
+    public MonoGameMouse()
     {
         currentState = Mouse.GetState();
         previousState = new MouseState();

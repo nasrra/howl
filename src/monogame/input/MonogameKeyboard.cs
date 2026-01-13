@@ -1,8 +1,8 @@
 using Howl.Input;
 
-namespace Howl.Monogame.Input;
+namespace Howl.MonoGame.Input;
 
-public class MonogameKeyboard : IKeyboard
+public class MonoGameKeyboard : IKeyboard
 {
 
     /// <summary>
@@ -19,7 +19,7 @@ public class MonogameKeyboard : IKeyboard
     /// <summary>
     /// Creates a new Keyboard Info instance.
     /// </summary>
-    public MonogameKeyboard()
+    public MonoGameKeyboard()
     {
         currentState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
         previousState = currentState;
@@ -34,22 +34,22 @@ public class MonogameKeyboard : IKeyboard
 
     public bool IsKeyDown(Key key)
     {
-        return currentState.IsKeyDown(KeysTranslator.ToMonogameKeys(key));
+        return currentState.IsKeyDown(KeysTranslator.ToMonoGameKeys(key));
     }
 
     public bool IsKeyUp(Key key)
     {
-        return previousState.IsKeyUp(KeysTranslator.ToMonogameKeys(key));
+        return previousState.IsKeyUp(KeysTranslator.ToMonoGameKeys(key));
     }
 
     public bool IsKeyJustPressed(Key key)
     {
-        return previousState.IsKeyUp(KeysTranslator.ToMonogameKeys(key)) && currentState.IsKeyDown(KeysTranslator.ToMonogameKeys(key));
+        return previousState.IsKeyUp(KeysTranslator.ToMonoGameKeys(key)) && currentState.IsKeyDown(KeysTranslator.ToMonoGameKeys(key));
     }
 
     public bool IsKeyJustReleased(Key key)
     {
-        return previousState.IsKeyDown(KeysTranslator.ToMonogameKeys(key)) && currentState.IsKeyUp(KeysTranslator.ToMonogameKeys(key));
+        return previousState.IsKeyDown(KeysTranslator.ToMonoGameKeys(key)) && currentState.IsKeyUp(KeysTranslator.ToMonoGameKeys(key));
     }
 
 }

@@ -2,7 +2,7 @@ using System;
 using Howl.Input;
 using Microsoft.Xna.Framework;
 
-namespace Howl.Monogame.Input;
+namespace Howl.MonoGame.Input;
 
 public class PlayerIndexTranslator
 {

@@ -13,6 +13,6 @@ public struct GenIndex
 
     public override string ToString()
     {
-        return $"[GenIndex]:\nindex: {index}\ngeneration: {generation}";
+        return $"[GenIndex]: index: {index} generation: {generation}";
     }
 }

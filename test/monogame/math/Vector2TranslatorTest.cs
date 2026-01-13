@@ -1,8 +1,8 @@
-using Howl.Monogame.Math;
+using Howl.MonoGame.Math;
 
 using Xunit;
 
-namespace Howl.Test.Monogame.Math;
+namespace Howl.Test.MonoGame.Math;
 
 public class Vector2TranslatorTest{
     

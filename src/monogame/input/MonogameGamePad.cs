@@ -1,11 +1,11 @@
 using Howl.Input;
 using Howl.Math;
-using Howl.Monogame.Math;
+using Howl.MonoGame.Math;
 using Microsoft.Xna.Framework.Input;
 
-namespace Howl.Monogame.Input;
+namespace Howl.MonoGame.Input;
 
-public class MonogameGamePad : IGamePad
+public class MonoGameGamePad : IGamePad
 {
     private GamePadId gamePadId;
     public GamePadId GamepadId => gamePadId;
@@ -24,7 +24,7 @@ public class MonogameGamePad : IGamePad
 
     public float TriggerRight => currentState.Triggers.Right;
 
-    public MonogameGamePad(GamePadId gamePadId)
+    public MonoGameGamePad(GamePadId gamePadId)
     {
         this.gamePadId = gamePadId;
         currentState = GamePad.GetState(PlayerIndexTranslator.GetMonogamePlayerIndex(gamePadId));
@@ -33,24 +33,24 @@ public class MonogameGamePad : IGamePad
 
     public bool IsButtonDown(GamePadButton gamePadButton)
     {
-        return currentState.IsButtonDown(ButtonsTranslator.ToMonogameButtons(gamePadButton));
+        return currentState.IsButtonDown(ButtonsTranslator.ToMonoGameButtons(gamePadButton));
     }
 
     public bool IsButtonJustPressed(GamePadButton gamePadButton)
     {
-        Buttons button = ButtonsTranslator.ToMonogameButtons(gamePadButton);
+        Buttons button = ButtonsTranslator.ToMonoGameButtons(gamePadButton);
         return currentState.IsButtonDown(button) && previousState.IsButtonUp(button);
     }
 
     public bool IsButtonJustReleased(GamePadButton gamePadButton)
     {
-        Buttons button = ButtonsTranslator.ToMonogameButtons(gamePadButton);
+        Buttons button = ButtonsTranslator.ToMonoGameButtons(gamePadButton);
         return currentState.IsButtonUp(button) && previousState.IsButtonDown(button);
     }
 
     public bool IsButtonUp(GamePadButton gamePadButton)
     {
-        return currentState.IsButtonUp(ButtonsTranslator.ToMonogameButtons(gamePadButton));        
+        return currentState.IsButtonUp(ButtonsTranslator.ToMonoGameButtons(gamePadButton));        
     }
 
     public void SetVibration(float strength)

@@ -25,4 +25,11 @@
     <ProjectReference Include="../src/howl.csproj"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="assets\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+
 </Project>

@@ -19,24 +19,39 @@ public class GenIndexAllocator
     }
 
     /// <summary>
-    /// Allocates or reuses a free entry within this allocator.
+    /// Allocates a new entry or reuses a previously freed one.
     /// </summary>
-    /// <returns>A GenIndex to the entry.</returns>
+    /// <param name="genIndex">
+    /// The generation index associated with the allocated entry.
+    /// </param>
+    /// <returns>
+    /// <list type="bullet">
+    ///   <item>
+    ///     <description>
+    ///       <see cref="AllocatorResult.AllocatedNewGenIndex"/> — a new entry was created.
+    ///     </description>
+    ///   </item>
+    ///   <item>
+    ///     <description>
+    ///       <see cref="AllocatorResult.ReusedGenIndex"/> — a free entry was reused.
+    ///     </description>
+    ///   </item>
+    /// </list>
+    /// </returns>
 
-    public GenIndex Allocate(out AllocatorResult result)
+    public AllocatorResult Allocate(out GenIndex genIndex)
     {
         if(free.Count <= 0)
         {
-            result = AllocatorResult.New;
             
             int generation = 0;
             bool isActive = true;
             entries.Add(new(generation, isActive));
-            return new(entries.Count-1, 0); 
+            genIndex = new(entries.Count-1, 0); 
+            return AllocatorResult.AllocatedNewGenIndex;
         }
         else
         {
-            result = AllocatorResult.Reuse;
         
             // get the last entry that was freed and remove it.
 
@@ -51,7 +66,8 @@ public class GenIndexAllocator
             reuseEntry.generation += 1;
             reuseEntry.isActive = true;
 
-            return new(freeEntryIndex, reuseEntry.generation);
+            genIndex = new(freeEntryIndex, reuseEntry.generation);
+            return AllocatorResult.ReusedGenIndex;
         }
     }
 
@@ -59,9 +75,21 @@ public class GenIndexAllocator
     /// Marks a GenIndex as free, setting it as inactive in the entries list.
     /// </summary>
     /// <param name="genIndex">The generational index to deallocate.</param>
-    /// <returns>true, if the generational index was successfully deallocated; otherwise false.</returns>
-
-    public bool Deallocate(in GenIndex genIndex)
+    /// <returns>
+    /// <list type="bullet">
+    ///     <item>
+    ///         <description>
+    ///             <see cref="AllocatorResult.DeallocatedGenIndex"/> - Then GenIndex was successfully freed for reuse.
+    ///         </description>
+    ///     </item>
+    ///     <item>
+    ///         <description>
+    ///             <see cref="AllocatorResult.InvalidGenIndex"/> - The GenIndex is not a valid handle within this allocator.
+    ///         </description>
+    ///     </item> 
+    /// </list>
+    /// </returns>
+    public AllocatorResult Deallocate(in GenIndex genIndex)
     {
         if (IsValid(genIndex))
         {
@@ -72,13 +100,13 @@ public class GenIndexAllocator
             entry.isActive = false;
             free.Add(genIndex.index);
 
-            return true;
+            return AllocatorResult.DeallocatedGenIndex;
         }
         else
         {
             // entry was nt valid.
 
-            return false;
+            return AllocatorResult.InvalidGenIndex;
         }
     }
 

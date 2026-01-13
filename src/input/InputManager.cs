@@ -1,5 +1,5 @@
 using System;
-using Howl.Monogame.Input;
+using Howl.MonoGame.Input;
 
 namespace Howl.Input;
 
@@ -22,13 +22,13 @@ public class InputManager
 
     public InputManager()
     {
-        Keyboard = new MonogameKeyboard();
-        Mouse = new MonogameMouse();
+        Keyboard = new MonoGameKeyboard();
+        Mouse = new MonoGameMouse();
         GamePads = new IGamePad[(int)GamePadId.Count];
         Span<IGamePad> gamepads = GamePads.AsSpan();
         for(int i = 0; i < gamepads.Length; i++)
         {
-            gamepads[i] = new MonogameGamePad((GamePadId)i);
+            gamepads[i] = new MonoGameGamePad((GamePadId)i);
         }
     }
 

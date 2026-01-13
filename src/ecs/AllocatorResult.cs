@@ -2,6 +2,8 @@ namespace Howl.ECS;
 
 public enum AllocatorResult : byte
 {
-    New,
-    Reuse 
+    ReusedGenIndex,
+    InvalidGenIndex,
+    AllocatedNewGenIndex,
+    DeallocatedGenIndex,
 }

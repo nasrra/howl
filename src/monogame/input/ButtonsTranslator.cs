@@ -2,10 +2,10 @@ using System;
 using Howl.Input;
 using Microsoft.Xna.Framework.Input;
 
-namespace Howl.Monogame.Input;
+namespace Howl.MonoGame.Input;
 
 public class ButtonsTranslator{
-    public static Buttons ToMonogameButtons(GamePadButton gamepadButton)
+    public static Buttons ToMonoGameButtons(GamePadButton gamepadButton)
     {
         return gamepadButton switch
         {

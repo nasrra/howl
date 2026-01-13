@@ -1,4 +1,4 @@
-namespace Howl.Monogame.Math;
+namespace Howl.MonoGame.Math;
 
 public class Vector2Translator
 {

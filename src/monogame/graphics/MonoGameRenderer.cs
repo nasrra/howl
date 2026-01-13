@@ -1,40 +1,62 @@
 using System;
+using Howl.ECS;
+using Howl.Generic;
+using Howl.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace Howl.Graphics;
+namespace Howl.MonoGame.Graphics;
 
-public class Renderer
+public class MonoGameRenderer : IRenderer
 {
     public EffectManager EffectManager { get; private set; }
-    public SpriteBatch SpriteBatch { get; private set; }
-    public Matrix ProjectionMatrix { get; private set; }
-    public Rectangle DestinationRectangle { get; private set; }
-    public RenderTarget2D RenderTarget { get; private set; }
+    private SpriteBatch spriteBatch;
 
-    public Renderer(int effectsAmount = 1, int renderTargetWidth = 1280, int renderTargetHeight = 720)
+    TextureManager<Texture2D> textureManager;
+    public ITextureManager TextureManager => textureManager;
+    
+    public Matrix ProjectionMatrix { get; private set; }
+    
+    public Rectangle DestinationRectangle { get; private set; }
+    
+    public RenderTarget2D RenderTarget { get; private set; }
+    
+    WeakReference<MonoGameApp> monoGameApp;
+
+    private MonoGameApp GetMonoGameApp()
     {
-        EffectManager = new(effectsAmount);        
-        SpriteBatch = new SpriteBatch(HowlApp.GraphicsDevice);
-        RenderTarget = new(HowlApp.GraphicsDevice, renderTargetWidth, renderTargetHeight);
-        DestinationRectangle = CalculateDestinationRectangle(); 
+        if(monoGameApp.TryGetTarget(out MonoGameApp app))
+        {
+            return app;
+        }
+        else
+        {
+            throw new NullReferenceException($"MonoGameRenderer cannot operate on a MonoGameApp that is null");   
+        }     
     }
 
-    /// <summary>
-    /// Sets the render target width.
-    /// </summary>
-    /// <param name="value">The width to set the render target to.</param>
-    /// <exception cref="NullReferenceException"></exception>
-    /// <exception cref="InvalidOperationException"></exception>
-    
+    public MonoGameRenderer(WeakReference<MonoGameApp> monoGameApp, int effectsAmount = 1, int renderTargetWidth = 1280, int renderTargetHeight = 720)
+    {
+        this.monoGameApp = monoGameApp;
+        MonoGameApp app = GetMonoGameApp();
+        
+        EffectManager = new(monoGameApp, effectsAmount);        
+        spriteBatch = new SpriteBatch(app.GraphicsDevice);
+        RenderTarget = new(app.GraphicsDevice, renderTargetWidth, renderTargetHeight);
+        DestinationRectangle = CalculateDestinationRectangle(); 
+        textureManager = new MonoGameTextureManager(monoGameApp);
+    }
+
     public void SetRenderTargetWidth(int value)
     {      
+        MonoGameApp app = GetMonoGameApp();
+
         int width = System.Math.Clamp(value, 1, int.MaxValue);  
         if(width == value)
         {            
             if(RenderTarget != null)
             {
-                RenderTarget = new RenderTarget2D(HowlApp.GraphicsDevice, width, RenderTarget.Height);
+                RenderTarget = new RenderTarget2D(app.GraphicsDevice, width, RenderTarget.Height);
                 RenderTarget.Dispose();
             }
             else
@@ -48,21 +70,16 @@ public class Renderer
         }
     }
 
-    /// <summary>
-    /// Sets the render target height. 
-    /// </summary>
-    /// <param name="value">The height to set the render target to.</param>
-    /// <exception cref="NullReferenceException"></exception>
-    /// <exception cref="InvalidOperationException"></exception>
-
     public void SetRenderTargetHeight(int value)
     {
+        MonoGameApp app = GetMonoGameApp();
+
         int height = System.Math.Clamp(value, 1, int.MaxValue);
         if(height == value)
         {
             if(RenderTarget != null)
             {
-                RenderTarget = new RenderTarget2D(HowlApp.GraphicsDevice, RenderTarget.Width, (int)value);
+                RenderTarget = new RenderTarget2D(app.GraphicsDevice, RenderTarget.Width, (int)value);
                 RenderTarget.Dispose();
             }
             else
@@ -76,23 +93,21 @@ public class Renderer
         }
     }
 
-    /// <summary>
-    /// Starts the draw call from the renderer to the gpu.
-    /// </summary>
-
     public void BeginDraw()
     {   
+        MonoGameApp app = GetMonoGameApp();
+
         // draw all sprites to a render target.
 
-        HowlApp.GraphicsDevice.SetRenderTarget(RenderTarget);
+        app.GraphicsDevice.SetRenderTarget(RenderTarget);
         
         // ensure that the projection matrix is relative to the render target
         // being drawn to and not the actual backbuffer dimensions of the program.
         UpdateProjectionMatrix();
         
-        HowlApp.GraphicsDevice.Clear(Color.Wheat);
+        app.GraphicsDevice.Clear(Color.Wheat);
 
-        SpriteBatch.Begin(
+        spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointWrap, 
             rasterizerState: RasterizerState.CullNone, 
@@ -100,35 +115,57 @@ public class Renderer
         );   
     }
 
-    /// <summary>
-    /// completes the draw call from the renderer to the gpu, displaying an image to the window.
-    /// </summary>
-
     public void EndDraw()
     {
+        MonoGameApp app = GetMonoGameApp();
+
         // present the render target over the windows back buffer.
 
-        SpriteBatch.End();
+        spriteBatch.End();
 
         // Note: when setting the render target to null, monogame draws directly to the backbuffer.
 
-        HowlApp.GraphicsDevice.SetRenderTarget(null);
+        app.GraphicsDevice.SetRenderTarget(null);
     
 
         // draw the render target back to the back buffer.
         
-        SpriteBatch.Begin(
+        spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointWrap
         );
 
-        SpriteBatch.Draw(
+        spriteBatch.Draw(
             RenderTarget,
             DestinationRectangle, // ensure to properly scale the render target to fit within the window's back buffer.
             Color.White
         );
 
-        SpriteBatch.End();
+        spriteBatch.End();
+    }
+
+    public bool DrawSprite(ref GenIndex textureId)
+    {   
+        ReadonlyRef<Texture2D> texture = textureManager.GetTextureReadonlyRef(ref textureId);
+        if (texture.Valid == false)
+        {
+            return false;
+        }
+        else
+        {
+            spriteBatch.Draw(
+                texture.Value, 
+                new System.Numerics.Vector2(0, 0), 
+                null, 
+                Color.White, 
+                0, 
+                System.Numerics.Vector2.Zero, 
+                System.Numerics.Vector2.One, 
+                SpriteEffects.FlipVertically, 
+                0
+            );
+            return true;
+        }
     }
 
     /// <summary>
@@ -137,7 +174,9 @@ public class Renderer
 
     private void UpdateProjectionMatrix()
     {
-        Viewport viewport = HowlApp.GraphicsDevice.Viewport;
+        MonoGameApp app = GetMonoGameApp();
+    
+        Viewport viewport = app.GraphicsDevice.Viewport;
         ProjectionMatrix = Matrix.CreateOrthographicOffCenter(0, viewport.Width, 0, viewport.Height, -1, 1);
         
         // update effects to use the new projection matrix.
@@ -152,7 +191,9 @@ public class Renderer
 
     private Rectangle CalculateDestinationRectangle()
     {
-        Rectangle backbufferBounds = HowlApp.GraphicsDevice.PresentationParameters.Bounds;
+        MonoGameApp app = GetMonoGameApp();
+
+        Rectangle backbufferBounds = app.GraphicsDevice.PresentationParameters.Bounds;
         float backbufferAspectRatio = (float)backbufferBounds.Width / backbufferBounds.Height;
         float renderTargetAspectRatio = (float)RenderTarget.Width / RenderTarget.Height;
 

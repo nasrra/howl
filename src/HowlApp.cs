@@ -1,25 +1,30 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Howl.Graphics;
 using Howl.Input;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
+using Howl.MonoGame;
+using Howl.MonoGame.Graphics;
 
 namespace Howl;
 
-public class HowlApp : Game
+public abstract class HowlApp : IDisposable
 {
     public static HowlApp Instance {get; private set;}
 
-    public static new GraphicsDevice GraphicsDevice {get; private set;}
+    /// <summary>
+    /// Gets the renderer used by this HowlApp.
+    /// </summary>
+    public IRenderer Renderer {get; private set;}
 
-    public static GraphicsDeviceManager GraphicsDeviceManager {get; private set;}
-    
-    public static Renderer Renderer {get; private set;}
+    /// <summary>
+    /// Gets the InputManager used by this HowlApp.
+    /// </summary>
+    public InputManager InputManager {get; private set;}
 
-    public static InputManager InputManager {get; private set;}
+    private MonoGameApp monoGameApp;
+    private HowlAppBackend backend;
 
-    public HowlApp()
+    public HowlApp(HowlAppBackend howlAppBackend)
     {
         if (Instance == null)
         {
@@ -27,55 +32,115 @@ public class HowlApp : Game
         }
         else
         {
-            Debug.WriteLine("[Error]: there can only be one Howl App Instance.");   
+            throw new System.Exception("[Error]: there can only be one Howl App Instance.");   
         }
-        GraphicsDeviceManager = new GraphicsDeviceManager(this);
-        IsMouseVisible = true;
+
+        if(howlAppBackend == HowlAppBackend.None)
+        {
+            throw new InvalidOperationException($"HowlApp cannot be created with a backend of {howlAppBackend}");
+        }
+        backend = howlAppBackend;
+        InitialiseBackend();
+        Initialise();
     }
 
-    protected override void Initialize()
+    /// <summary>
+    /// Initialises the backend used for the App.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"></exception>
+    private void InitialiseBackend()
     {
-        GraphicsDevice = base.GraphicsDevice;
-        GraphicsDeviceManager.PreferredBackBufferWidth = 1280;
-        GraphicsDeviceManager.PreferredBackBufferHeight = 720;
-        GraphicsDeviceManager.ApplyChanges();
-        Renderer = new(1, 1920, 1080);
-        InputManager = new();
-        base.Initialize();
+        switch (backend)
+        {
+            case HowlAppBackend.MonoGame:
+                InitialiseMonoGameBackend();
+            break;
+            default:
+                throw new InvalidOperationException($"HowlApp cannot be initialised with a backend of {backend}");
+        }
     }
 
-    protected sealed override void Update(GameTime gameTime)
+    /// <summary>
+    /// Application Initialisation Code for Users.
+    /// </summary>
+    public abstract void Initialise();
+
+    /// <summary>
+    /// Runs the HowlApp.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"></exception>
+    public void Run()
     {
-        float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        switch (backend)
+        {
+            case HowlAppBackend.MonoGame:
+                RunMonoGameBackend();
+            break;
+            default:
+                throw new InvalidOperationException($"HowlApp cannot be run with a backend of {backend}");
+        }
+    }
+
+    /// <summary>
+    /// Shutsdown the HowlApp.
+    /// </summary>
+    public void Shutdown()
+    {
+        switch (backend)
+        {
+            case HowlAppBackend.MonoGame:
+                ShutdownMonoGameBackend();
+            break;
+        }
+        Dispose();        
+    }
+
+    /// <summary>
+    /// Draw function for the HowlApp.
+    /// </summary>
+    /// <param name="deltaTime"></param>
+    public virtual void Draw(float deltaTime)
+    {
+    }
+    
+    /// <summary>
+    /// Update tick for the HowlApp.
+    /// </summary>
+    /// <param name="deltaTime"></param>
+    public virtual void Update(float deltaTime)
+    {
         InputManager.Update(deltaTime);
-        Update(deltaTime);
-        base.Update(gameTime);
     }
 
-    
-    protected sealed override void Draw(GameTime gameTime)
+    // public virtual void InitialiseShaders()
+    // {
+    // }
+
+
+    ///
+    /// Monogame Backend.
+    /// 
+
+
+    private void InitialiseMonoGameBackend()
     {
-        float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-        Renderer.BeginDraw();
-        Draw(deltaTime);
-        Renderer.EndDraw();
-        // this submits to the gpu.
-        // and should stay at the bottom.
-
-        base.Draw(gameTime);
+        monoGameApp = new(new(this));
+        InputManager = new();
+        Renderer = new MonoGameRenderer(new(monoGameApp));
     }
 
-    protected virtual void Draw(float deltaTime)
+    private void RunMonoGameBackend()
+    {
+        monoGameApp.Run();
+    } 
+
+    private void ShutdownMonoGameBackend()
+    {
+        monoGameApp.Exit();
+    }
+
+    public void Dispose()
     {
     }
-    
-    protected virtual void Update(float deltaTime)
-    {
-    }
 
-
-    protected virtual void InitialiseShaders()
-    {
-    }
 }
