@@ -1,15 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
 
-    <!-- Automatically create a NuGet packagge on build -->
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <TargetFramework>net9.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     
     <!-- Include the compiled DLL in the NuGet package. -->
     <IncludeBuildOutput>true</IncludeBuildOutput>
+
+    <!-- Version Number, used for both Debug and Release -->
+    <VersionNumber>0.0.1</VersionNumber>
+    <PreRelease>false</PreRelease>
+    <BuildTimestamp>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</BuildTimestamp>
   </PropertyGroup>
-  
+
+  <PropertyGroup>
+    <Version Condition="'$(Configuration)' == 'Debug'">
+      $(VersionNumber)-$(BuildTimestamp)d
+    </Version>
+
+    <Version Condition="'$(Configuration)' == 'Release' AND '$(PreRelease)' == 'true'">
+      $(VersionNumber)-$(BuildTimestamp)r
+      <!-- $(VersionNumber) -->
+    </Version>
+
+    <Version Condition="'$(Configuration)' == 'Release' AND '$(PreRelease)' != 'true'">
+      $(VersionNumber)
+    </Version>
+  </PropertyGroup>
+
+
+
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*">
       <!-- This dependenccy is only for Howl itself, not the end-user -->
@@ -32,5 +53,6 @@
     PackagePath="runtimes\"
     />
   </ItemGroup>
+
 
 </Project>

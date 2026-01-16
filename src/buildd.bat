@@ -1,13 +1,24 @@
 @echo off
-dotnet build -c Debug || exit /b
-REM Loop through all subfolders one level up.
+setlocal
+
+dotnet restore || exit /b 1
+dotnet pack -c Debug || exit /b 1
+
+REM ---- Find nupkg ----
+for %%F in ("bin\Debug\Howl.*.nupkg") do (
+    set "NUPKG_FILE=%%F"
+)
+
+if not defined NUPKG_FILE (
+    echo [ERROR] No nupkg file found
+    exit /b 1
+)
+
 for /d %%D in ("..\..\*") do (
-    REM Check if the folder contains a 'nuget-local' subfolder.
-    echo [STATUS] Checking folder: %%D
     if exist "%%D\nuget-local\" (
-        echo [SUCCESS] nupkg to: %%D\nuget-local\
-        copy "bin\Release\Howl.1.0.0.nupkg" "%%D\nuget-local\"
-    ) else (
-        @REM echo [FAIL] nuget-local folder not found in %%D
+        echo [SUCCESS] Copying %NUPKG_FILE% to %%D\nuget-local\
+        copy "%NUPKG_FILE%" "%%D\nuget-local\" >nul
     )
 )
+
+echo [DONE] %NUPKG_FILE%

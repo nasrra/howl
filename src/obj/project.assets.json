@@ -276,7 +276,7 @@
     "C:\\Users\\naser\\.nuget\\packages\\": {}
   },
   "project": {
-    "version": "1.0.0",
+    "version": "0.0.1-20260116003749d",
     "restore": {
       "projectUniqueName": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
       "projectName": "Howl",

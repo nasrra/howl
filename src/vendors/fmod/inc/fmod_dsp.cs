@@ -14,7 +14,7 @@ using System;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace FMOD
+namespace Howl.Vendors.FMOD
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct DSP_BUFFER_ARRAY
@@ -328,7 +328,7 @@ namespace FMOD
 
         public void getSpectrum(ref float[][] buffer)
         {
-            int bufferLength = Math.Min(buffer.Length, numchannels);
+            int bufferLength = int.Min(buffer.Length, numchannels);
             for (int i = 0; i < bufferLength; ++i)
             {
                 getSpectrum(i, ref buffer[i]);
@@ -337,7 +337,7 @@ namespace FMOD
 
         public void getSpectrum(int channel, ref float[] buffer)
         {
-            int bufferLength = Math.Min(buffer.Length, length);
+            int bufferLength = int.Min(buffer.Length, length);
             Marshal.Copy(spectrum_internal[channel], buffer, 0, bufferLength);
         }
     }

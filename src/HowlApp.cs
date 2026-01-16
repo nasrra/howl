@@ -40,6 +40,7 @@ public abstract class HowlApp : IDisposable
         {
             throw new InvalidOperationException($"HowlApp cannot be created with a backend of {howlAppBackend}");
         }
+                
         backend = howlAppBackend;
         InitialiseBackend();
         Initialise();

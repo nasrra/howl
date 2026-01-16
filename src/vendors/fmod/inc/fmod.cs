@@ -11,7 +11,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 
-namespace FMOD
+namespace Howl.Vendors.FMOD
 {
     /*
         FMOD version number.  Check this against FMOD::System::getVersion / System_GetVersion
@@ -165,6 +165,14 @@ namespace FMOD
         public int Data2;
         public int Data3;
         public int Data4;
+
+        public GUID(int data1, int data2, int data3, int data4)
+        {
+            Data1 = data1;
+            Data2 = data2;
+            Data3 = data3;
+            Data4 = data4;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]

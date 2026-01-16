@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Howl.Test")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a309b0a9c9eccc44f12ba1286028a58449d78cbd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2ae3c12a270e760314f098e58de9c9b31372307f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Howl.Test")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Howl.Test")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
