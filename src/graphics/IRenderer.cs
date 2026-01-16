@@ -6,7 +6,6 @@ namespace Howl.Graphics;
 
 public interface IRenderer
 {
-
     public ITextureManager TextureManager{get;}
     
     /// <summary>
@@ -36,5 +35,5 @@ public interface IRenderer
     /// </summary>
     /// <param name="textureId"></param>
     /// <returns></returns>
-    public bool DrawSprite(ref GenIndex textureId);
+    public bool DrawSprite(in GenIndex textureId);
 }

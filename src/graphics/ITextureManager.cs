@@ -19,5 +19,5 @@ public interface ITextureManager
     /// <param name="genIndexResult">The result of modifying the texture ids; may return an error description should this function fail.</param>
     /// <param name="allocatorResult">The result of modifying the loaded texture assets in memory; may return an error description should this function fail.</param>
     /// <returns>true, if the Texture was successfully unloaded; otherwise false.</returns>
-    public bool UnloadTexture(ref GenIndex index, out GenIndexResult genIndexResult, out AllocatorResult allocatorResult);
+    public bool UnloadTexture(in GenIndex index, out GenIndexResult genIndexResult, out AllocatorResult allocatorResult);
 }

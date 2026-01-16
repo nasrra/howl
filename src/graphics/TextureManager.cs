@@ -38,11 +38,11 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
 
     public abstract bool LoadTextureFromDisc(string texturePath, out T texture);
 
-    public bool UnloadTexture(ref GenIndex index, out GenIndexResult genIndexResult, out AllocatorResult allocatorResult)
+    public bool UnloadTexture(in GenIndex index, out GenIndexResult genIndexResult, out AllocatorResult allocatorResult)
     {
         // ensure to dispose of the monogame texture before deallocating it.
 
-        textures.GetDenseRef(ref index, out Ref<T> reference);
+        textures.GetDenseRef(index, out Ref<T> reference);
         reference.Value.Dispose();
         
         genIndexResult = textures.Deallocate(index);
@@ -65,9 +65,9 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
         }
     }
 
-    public ReadonlyRef<T> GetTextureReadonlyRef(ref GenIndex index)
+    public ReadonlyRef<T> GetTextureReadonlyRef(in GenIndex index)
     {
-        GenIndexResult result = textures.GetDenseReadonlyRef(ref index, out ReadonlyRef<T> readonlyRef);
+        GenIndexResult result = textures.GetDenseReadonlyRef(index, out ReadonlyRef<T> readonlyRef);
         if(result == GenIndexResult.Success)
         {
             return readonlyRef;

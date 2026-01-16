@@ -11,7 +11,7 @@
           "Microsoft.NET.Test.Sdk": "17.12.0",
           "MonoGame.Framework.DesktopGL": "3.8.4.1",
           "coverlet.collector": "6.0.2",
-          "howl": "1.0.0",
+          "howl": "0.0.1-20260116044408d",
           "xunit": "2.9.2",
           "xunit.runner.visualstudio": "2.8.2"
         },
@@ -447,11 +447,14 @@
         }
       },
       "xunit.runner.visualstudio/2.8.2": {},
-      "howl/1.0.0": {
+      "howl/0.0.1-20260116044408d": {
+        "dependencies": {
+          "MonoGame.Framework.DesktopGL": "3.8.4.1"
+        },
         "runtime": {
           "howl.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
+            "assemblyVersion": "0.0.1.0",
+            "fileVersion": "0.0.1.0"
           }
         }
       }
@@ -610,7 +613,7 @@
       "path": "xunit.runner.visualstudio/2.8.2",
       "hashPath": "xunit.runner.visualstudio.2.8.2.nupkg.sha512"
     },
-    "howl/1.0.0": {
+    "howl/0.0.1-20260116044408d": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "N5UR8SyOHkc=",
+  "dgSpecHash": "nHVYRMd/RmA=",
   "success": true,
-  "projectFilePath": "C:\\Monogame Project\\howl\\test\\howl.test.csproj",
+  "projectFilePath": "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\naser\\.nuget\\packages\\coverlet.collector\\6.0.2\\coverlet.collector.6.0.2.nupkg.sha512",
     "C:\\Users\\naser\\.nuget\\packages\\microsoft.codecoverage\\17.12.0\\microsoft.codecoverage.17.12.0.nupkg.sha512",

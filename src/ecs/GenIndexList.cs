@@ -149,7 +149,7 @@ public class GenIndexList<T>
     /// </summary>
     /// <returns>A ref handle that can be valid or invalid if data was found to be associated with the GenIndex.</returns>
 
-    public GenIndexResult GetDenseRef(ref GenIndex index, out Ref<T> reference)
+    public GenIndexResult GetDenseRef(in GenIndex index, out Ref<T> reference)
     {
         reference = default;
 
@@ -185,7 +185,7 @@ public class GenIndexList<T>
     /// </summary>
     /// <returns>A ref handle that can be valid or invalid if data was found to be associated with the GenIndex.</returns>
 
-    public GenIndexResult GetDenseReadonlyRef(ref GenIndex index, out ReadonlyRef<T> readonlyReference)
+    public GenIndexResult GetDenseReadonlyRef(in GenIndex index, out ReadonlyRef<T> readonlyReference)
     {
         readonlyReference = default;
 

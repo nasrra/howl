@@ -534,14 +534,17 @@
           "build/net6.0/xunit.runner.visualstudio.props": {}
         }
       },
-      "howl/1.0.0": {
+      "Howl/0.0.1-20260116044518d": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "MonoGame.Framework.DesktopGL": "3.8.0"
+        },
         "compile": {
-          "bin/placeholder/howl.dll": {}
+          "bin/placeholder/Howl.dll": {}
         },
         "runtime": {
-          "bin/placeholder/howl.dll": {}
+          "bin/placeholder/Howl.dll": {}
         }
       }
     }
@@ -1204,18 +1207,18 @@
         "xunit.runner.visualstudio.nuspec"
       ]
     },
-    "howl/1.0.0": {
+    "Howl/0.0.1-20260116044518d": {
       "type": "project",
-      "path": "../src/howl.csproj",
-      "msbuildProject": "../src/howl.csproj"
+      "path": "../src/Howl.csproj",
+      "msbuildProject": "../src/Howl.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net9.0": [
+      "Howl >= 0.0.1-20260116044518d",
       "Microsoft.NET.Test.Sdk >= 17.12.0",
       "MonoGame.Framework.DesktopGL >= 3.8.*",
       "coverlet.collector >= 6.0.2",
-      "howl >= 1.0.0",
       "xunit >= 2.9.2",
       "xunit.runner.visualstudio >= 2.8.2"
     ]
@@ -1226,9 +1229,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Monogame Project\\howl\\test\\howl.test.csproj",
-      "projectName": "howl.test",
-      "projectPath": "C:\\Monogame Project\\howl\\test\\howl.test.csproj",
+      "projectUniqueName": "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj",
+      "projectName": "Howl.Test",
+      "projectPath": "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj",
       "packagesPath": "C:\\Users\\naser\\.nuget\\packages\\",
       "outputPath": "C:\\Monogame Project\\howl\\test\\obj\\",
       "projectStyle": "PackageReference",
@@ -1245,8 +1248,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Monogame Project\\howl\\src\\howl.csproj": {
-              "projectPath": "C:\\Monogame Project\\howl\\src\\howl.csproj"
+            "C:\\Monogame Project\\howl\\src\\Howl.csproj": {
+              "projectPath": "C:\\Monogame Project\\howl\\src\\Howl.csproj"
             }
           }
         }

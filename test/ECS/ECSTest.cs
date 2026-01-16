@@ -60,11 +60,8 @@ public class ECSTest
 
         // ensure that the sparse references correctly link to a dense index.
 
-        ReadonlyRef<SparseEntry> sparse0 = components.GetSparseRef(index0, out _);
-        ReadonlyRef<SparseEntry> sparse1 = components.GetSparseRef(index1, out _);
-
-        Assert.True(sparse0.Valid);
-        Assert.True(sparse1.Valid);
+        Assert.Equal(GenIndexResult.Success, components.GetSparseRef(in index0, out ReadonlyRef<SparseEntry> sparse0));
+        Assert.Equal(GenIndexResult.Success, components.GetSparseRef(in index1, out ReadonlyRef<SparseEntry> sparse1));
 
         Assert.Equal(0, sparse0.Value.DenseIndex);
         Assert.Equal(1, sparse1.Value.DenseIndex);
@@ -77,13 +74,10 @@ public class ECSTest
         components.ResizeSparseEntries(allocator.GetEntriesCount());
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
-        Ref<Component> c0 = components.GetDenseRef(index0, out _);
-        Ref<Component> c1 = components.GetDenseRef(index1, out _);        
-        Ref<Component> c2 = components.GetDenseRef(index2, out _);
 
-        Assert.True(c0.Valid); 
-        Assert.True(c1.Valid); 
-        Assert.False(c2.Valid); 
+        Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index0, out Ref<Component> c0)); 
+        Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index1, out Ref<Component> c1)); 
+        Assert.Equal(GenIndexResult.DenseNotAllocated, components.GetDenseRef(index2, out Ref<Component> c2)); 
     }
 
     [Fact]
@@ -96,13 +90,13 @@ public class ECSTest
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
         
-        Ref<Component> c0A = components.GetDenseRef(index0, out _);
+        Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index0, out Ref<Component> c0A));
         Assert.True(c0A.Valid);
         c0A.Value.x = c0Value;
         c0A.Value.y = c0Value;
         c0A.Value.z = c0Value;
 
-        Ref<Component> c1A = components.GetDenseRef(index1, out _);
+        Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index1, out Ref<Component> c1A));
         Assert.True(c1A.Valid);
         c1A.Value.x = c1Value;
         c1A.Value.y = c1Value;
@@ -110,12 +104,12 @@ public class ECSTest
 
         // ensure that the values are properly set within the list.
 
-        Ref<Component> c0B = components.GetDenseRef(index0, out _);
+        components.GetDenseRef(index0, out Ref<Component> c0B);
         Assert.Equal(c0Value, c0B.Value.x);
         Assert.Equal(c0Value, c0B.Value.y);
         Assert.Equal(c0Value, c0B.Value.z);
 
-        Ref<Component> c1B = components.GetDenseRef(index1, out _);
+        components.GetDenseRef(index1, out Ref<Component> c1B);
         Assert.Equal(c1Value, c1B.Value.x);
         Assert.Equal(c1Value, c1B.Value.y);
         Assert.Equal(c1Value, c1B.Value.z);
@@ -133,13 +127,13 @@ public class ECSTest
 
         // allocate component data to the gen index's.
 
-        Ref<Component> c0A = components.GetDenseRef(index0, out _);
+        components.GetDenseRef(index0, out Ref<Component> c0A);
         Assert.True(c0A.Valid);
         c0A.Value.x = c0Value;
         c0A.Value.y = c0Value;
         c0A.Value.z = c0Value;
 
-        Ref<Component> c1A = components.GetDenseRef(index1, out _);
+        components.GetDenseRef(index1, out Ref<Component> c1A);
         Assert.True(c1A.Valid);
         c1A.Value.x = c1Value;
         c1A.Value.y = c1Value;
@@ -156,8 +150,8 @@ public class ECSTest
 
         // ensure that the dense indexes are properly handled during deallocation.
         
-        ReadonlyRef<SparseEntry> sparse0 = components.GetSparseRef(index0, out _);
-        ReadonlyRef<SparseEntry> sparse1 = components.GetSparseRef(index1, out _);
+        components.GetSparseRef(index0, out ReadonlyRef<SparseEntry> sparse0);
+        components.GetSparseRef(index1, out ReadonlyRef<SparseEntry> sparse1);
 
         Assert.True(sparse0.Valid);
         Assert.False(sparse0.Value.LinkedToADenseEntry());
@@ -167,7 +161,7 @@ public class ECSTest
 
         // ensure that the values have not changed.
 
-        Ref<Component> c1B = components.GetDenseRef(index1, out _);
+        components.GetDenseRef(index1, out Ref<Component> c1B);
         Assert.Equal(c1Value, c1B.Value.x);
         Assert.Equal(c1Value, c1B.Value.y);
         Assert.Equal(c1Value, c1B.Value.z);

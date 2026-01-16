@@ -1,0 +1,166 @@
+
+
+using System.Runtime.CompilerServices;
+
+namespace Howl.Math;
+
+public struct Rectangle
+{
+
+    /// <summary>
+    /// Gets and sets the x-coordinate of the origin point.
+    /// </summary>
+    public float X;
+
+    /// <summary>
+    /// Gets and set the y-coordinate of the origin point.
+    /// </summary>
+    public float Y;
+
+    /// <summary>
+    /// The width of this rectangle.
+    /// </summary>
+    public float Width;
+
+    /// <summary>
+    /// The height of this rectanlge.
+    /// </summary>
+    public float Height;
+
+    /// <summary>
+    /// Creates a new Rectangle instance.
+    /// </summary>
+    /// <param name="x">The x-coordinate of the origin point.</param>
+    /// <param name="y">The y-coordinate of the origin point.</param>
+    /// <param name="width">The width of this rectangle.</param>
+    /// <param name="height">The height of this rectangle.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Rectangle(float x, float y, float width, float height)
+    {
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
+    }
+
+    /// <summary>
+    /// Adds the left-hand side rectangle to the right-hand side.
+    /// </summary>
+    /// <param name="lhs">The left-hand side rectangle.</param>
+    /// <param name="rhs">The right-hand side rectangle.</param>
+    /// <returns>The result as a Rectangle struct.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Rectangle operator +(Rectangle lhs, Rectangle rhs)
+    {
+        return new Rectangle(
+            lhs.X + rhs.X,
+            lhs.Y + rhs.Y,
+            lhs.Width + rhs.Width,
+            lhs.Height + rhs.Height
+        );
+    }
+    
+    /// <summary>
+    /// Subtracts the left-hand side rectangle to the right-hand side.
+    /// </summary>
+    /// <param name="lhs">The left-hand side rectangle.</param>
+    /// <param name="rhs">The right-hand side rectangle.</param>
+    /// <returns>The result as a Rectangle struct.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Rectangle operator -(Rectangle lhs, Rectangle rhs)
+    {
+        return new Rectangle(
+            lhs.X - rhs.X,
+            lhs.Y - rhs.Y,
+            lhs.Width - rhs.Width,
+            lhs.Height - rhs.Height
+        );
+    }
+
+    /// <summary>
+    /// Multiplies the left-hand side rectangle to the right-hand side.
+    /// </summary>
+    /// <param name="lhs">The left-hand side rectangle.</param>
+    /// <param name="rhs">The right-hand side rectangle.</param>
+    /// <returns>The result as a Rectangle struct.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Rectangle operator *(Rectangle lhs, Rectangle rhs)
+    {
+        return new Rectangle(
+            lhs.X * rhs.X,
+            lhs.Y * rhs.Y,
+            lhs.Width * rhs.Width,
+            lhs.Height * rhs.Height
+        );
+    }
+
+    /// <summary>
+    /// Divides the left-hand side rectangle to the right-hand side.
+    /// </summary>
+    /// <param name="lhs">The left-hand side rectangle.</param>
+    /// <param name="rhs">The right-hand side rectangle.</param>
+    /// <returns>The result as a Rectangle struct.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Rectangle operator /(Rectangle lhs, Rectangle rhs)
+    {
+        return new Rectangle(
+            lhs.X / rhs.X,
+            lhs.Y / rhs.Y,
+            lhs.Width / rhs.Width,
+            lhs.Height / rhs.Height
+        );
+    }
+
+    /// <summary>
+    /// Checks if the left-hand side rectangle is equal to the right-hand side.
+    /// </summary>
+    /// <param name="lhs">The left-hand side rectangle.</param>
+    /// <param name="rhs">The right-hand side rectangle.</param>
+    /// <returns>true, if equal; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool operator ==(Rectangle lhs, Rectangle rhs)
+    {
+        return 
+            lhs.X == rhs.X &&
+            lhs.Y == rhs.Y &&
+            lhs.Width == rhs.Width &&
+            lhs.Height == rhs.Height; 
+    }
+
+    /// <summary>
+    /// Checks if the left-hand side rectangle is not equal to the right-hand side.
+    /// </summary>
+    /// <param name="lhs">The left-hand side rectangle.</param>
+    /// <param name="rhs">The right-hand side rectangle.</param>
+    /// <returns>true, if not equal; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool operator !=(Rectangle lhs, Rectangle rhs)
+    {
+        return 
+            lhs.X != rhs.X ||
+            lhs.Y != rhs.Y ||
+            lhs.Width != rhs.Width ||
+            lhs.Height != rhs.Height; 
+    }
+
+    /// <summary>
+    /// Checks if the object is equal to this Rectangle.
+    /// </summary>
+    /// <param name="obj">The object to check equality against.</param>
+    /// <returns>true, if the two objects are equal otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public override bool Equals(object obj)
+    {
+        return obj is Rectangle other && other == this; 
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public override int GetHashCode()
+    {   
+        return 
+            X.GetHashCode() ^
+            Y.GetHashCode() ^
+            Width.GetHashCode() ^ 
+            Height.GetHashCode();
+    }
+}

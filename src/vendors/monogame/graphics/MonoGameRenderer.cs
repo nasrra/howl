@@ -105,7 +105,7 @@ public class MonoGameRenderer : IRenderer
         // being drawn to and not the actual backbuffer dimensions of the program.
         UpdateProjectionMatrix();
         
-        app.GraphicsDevice.Clear(Color.Wheat);
+        app.GraphicsDevice.Clear(Microsoft.Xna.Framework.Color.Wheat);
 
         spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
@@ -138,15 +138,15 @@ public class MonoGameRenderer : IRenderer
         spriteBatch.Draw(
             RenderTarget,
             DestinationRectangle, // ensure to properly scale the render target to fit within the window's back buffer.
-            Color.White
+            Microsoft.Xna.Framework.Color.White
         );
 
         spriteBatch.End();
     }
 
-    public bool DrawSprite(ref GenIndex textureId)
+    public bool DrawSprite(in GenIndex textureId)
     {   
-        ReadonlyRef<Texture2D> texture = textureManager.GetTextureReadonlyRef(ref textureId);
+        ReadonlyRef<Texture2D> texture = textureManager.GetTextureReadonlyRef(textureId);
         if (texture.Valid == false)
         {
             return false;
@@ -157,7 +157,7 @@ public class MonoGameRenderer : IRenderer
                 texture.Value, 
                 new System.Numerics.Vector2(0, 0), 
                 null, 
-                Color.White, 
+                Microsoft.Xna.Framework.Color.White, 
                 0, 
                 System.Numerics.Vector2.Zero, 
                 System.Numerics.Vector2.One, 

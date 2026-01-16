@@ -1,15 +1,15 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Monogame Project\\howl\\test\\howl.test.csproj": {}
+    "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj": {}
   },
   "projects": {
-    "C:\\Monogame Project\\howl\\src\\howl.csproj": {
-      "version": "1.0.0",
+    "C:\\Monogame Project\\howl\\src\\Howl.csproj": {
+      "version": "0.0.1-20260116044518d",
       "restore": {
-        "projectUniqueName": "C:\\Monogame Project\\howl\\src\\howl.csproj",
-        "projectName": "howl",
-        "projectPath": "C:\\Monogame Project\\howl\\src\\howl.csproj",
+        "projectUniqueName": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
+        "projectName": "Howl",
+        "projectPath": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
         "packagesPath": "C:\\Users\\naser\\.nuget\\packages\\",
         "outputPath": "C:\\Monogame Project\\howl\\src\\obj\\",
         "projectStyle": "PackageReference",
@@ -45,7 +45,6 @@
           "targetAlias": "net9.0",
           "dependencies": {
             "MonoGame.Framework.DesktopGL": {
-              "suppressParent": "All",
               "target": "Package",
               "version": "[3.8.*, )"
             }
@@ -70,12 +69,12 @@
         }
       }
     },
-    "C:\\Monogame Project\\howl\\test\\howl.test.csproj": {
+    "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Monogame Project\\howl\\test\\howl.test.csproj",
-        "projectName": "howl.test",
-        "projectPath": "C:\\Monogame Project\\howl\\test\\howl.test.csproj",
+        "projectUniqueName": "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj",
+        "projectName": "Howl.Test",
+        "projectPath": "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj",
         "packagesPath": "C:\\Users\\naser\\.nuget\\packages\\",
         "outputPath": "C:\\Monogame Project\\howl\\test\\obj\\",
         "projectStyle": "PackageReference",
@@ -92,8 +91,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "C:\\Monogame Project\\howl\\src\\howl.csproj": {
-                "projectPath": "C:\\Monogame Project\\howl\\src\\howl.csproj"
+              "C:\\Monogame Project\\howl\\src\\Howl.csproj": {
+                "projectPath": "C:\\Monogame Project\\howl\\src\\Howl.csproj"
               }
             }
           }

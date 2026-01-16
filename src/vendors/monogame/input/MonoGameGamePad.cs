@@ -16,9 +16,9 @@ public class MonoGameGamePad : IGamePad
 
     public bool IsConnected => currentState.IsConnected;
 
-    public Vector2 ThumbstickLeft => Vector2Translator.ToHowlVector2(currentState.ThumbSticks.Left);
+    public Vector2 ThumbstickLeft => currentState.ThumbSticks.Left.ToHowl();
 
-    public Vector2 ThumbstickRight => Vector2Translator.ToHowlVector2(currentState.ThumbSticks.Right);
+    public Vector2 ThumbstickRight => currentState.ThumbSticks.Right.ToHowl();
 
     public float TriggerLeft => currentState.Triggers.Left;
 
@@ -33,24 +33,24 @@ public class MonoGameGamePad : IGamePad
 
     public bool IsButtonDown(GamePadButton gamePadButton)
     {
-        return currentState.IsButtonDown(ButtonsTranslator.ToMonoGameButtons(gamePadButton));
+        return currentState.IsButtonDown(gamePadButton.ToMonoGame());
     }
 
     public bool IsButtonJustPressed(GamePadButton gamePadButton)
     {
-        Buttons button = ButtonsTranslator.ToMonoGameButtons(gamePadButton);
+        Buttons button = gamePadButton.ToMonoGame();
         return currentState.IsButtonDown(button) && previousState.IsButtonUp(button);
     }
 
     public bool IsButtonJustReleased(GamePadButton gamePadButton)
     {
-        Buttons button = ButtonsTranslator.ToMonoGameButtons(gamePadButton);
+        Buttons button = gamePadButton.ToMonoGame();
         return currentState.IsButtonUp(button) && previousState.IsButtonDown(button);
     }
 
     public bool IsButtonUp(GamePadButton gamePadButton)
     {
-        return currentState.IsButtonUp(ButtonsTranslator.ToMonoGameButtons(gamePadButton));        
+        return currentState.IsButtonUp(gamePadButton.ToMonoGame());        
     }
 
     public void SetVibration(float strength)

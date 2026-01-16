@@ -34,22 +34,24 @@ public class MonoGameKeyboard : IKeyboard
 
     public bool IsKeyDown(Key key)
     {
-        return currentState.IsKeyDown(KeysTranslator.ToMonoGameKeys(key));
+        return currentState.IsKeyDown(key.ToMonoGame());
     }
 
     public bool IsKeyUp(Key key)
     {
-        return previousState.IsKeyUp(KeysTranslator.ToMonoGameKeys(key));
+        return currentState.IsKeyUp(key.ToMonoGame());
     }
 
     public bool IsKeyJustPressed(Key key)
     {
-        return previousState.IsKeyUp(KeysTranslator.ToMonoGameKeys(key)) && currentState.IsKeyDown(KeysTranslator.ToMonoGameKeys(key));
+        Microsoft.Xna.Framework.Input.Keys keys = key.ToMonoGame();
+        return previousState.IsKeyUp(keys) && currentState.IsKeyDown(keys);
     }
 
     public bool IsKeyJustReleased(Key key)
     {
-        return previousState.IsKeyDown(KeysTranslator.ToMonoGameKeys(key)) && currentState.IsKeyUp(KeysTranslator.ToMonoGameKeys(key));
+        Microsoft.Xna.Framework.Input.Keys keys = key.ToMonoGame();
+        return previousState.IsKeyDown(keys) && currentState.IsKeyUp(keys);
     }
 
 }
