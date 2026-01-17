@@ -13,10 +13,10 @@ public class ColorExtensionsTest
         byte a = 4;
         Howl.Graphics.Color color = new(r,g,b,a);
         Microsoft.Xna.Framework.Color result = color.ToMonoGame();
-        Assert.Equal(r, color.R);
-        Assert.Equal(g, color.G);
-        Assert.Equal(b, color.B);
-        Assert.Equal(a, color.A);
+        Assert.Equal(r, result.R);
+        Assert.Equal(g, result.G);
+        Assert.Equal(b, result.B);
+        Assert.Equal(a, result.A);
     }
 
     [Fact]
@@ -28,9 +28,9 @@ public class ColorExtensionsTest
         byte a = 4;
         Microsoft.Xna.Framework.Color color = new(r,g,b,a);
         Howl.Graphics.Color result = color.ToHowl();
-        Assert.Equal(r, color.R);
-        Assert.Equal(g, color.G);
-        Assert.Equal(b, color.B);
-        Assert.Equal(a, color.A);        
+        Assert.Equal(r, result.R);
+        Assert.Equal(g, result.G);
+        Assert.Equal(b, result.B);
+        Assert.Equal(a, result.A);        
     }
 }

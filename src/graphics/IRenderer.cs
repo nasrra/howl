@@ -1,11 +1,17 @@
 
 
 using Howl.ECS;
+using Howl.Math;
 
 namespace Howl.Graphics;
 
 public interface IRenderer
 {
+    /// <summary>
+    /// Gets and sets the color to clear to every frame.
+    /// </summary>
+    public Color ClearColor {get; set;}
+
     public ITextureManager TextureManager{get;}
     
     /// <summary>
@@ -29,6 +35,13 @@ public interface IRenderer
     /// completes the draw call from the renderer to the gpu, displaying an image to the window.
     /// </summary>
     public void EndDraw();
+
+    /// <summary>
+    /// Draws a primitive for a single frame.
+    /// </summary>
+    /// <param name="rectangle"></param>
+    /// <param name="color"></param>
+    public void DrawPrimitive(Rectangle rectangle, Color color);
 
     /// <summary>
     /// Draws a sprite to the currently bound render texture.

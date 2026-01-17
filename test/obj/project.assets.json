@@ -534,7 +534,7 @@
           "build/net6.0/xunit.runner.visualstudio.props": {}
         }
       },
-      "Howl/0.0.1-20260116044518d": {
+      "Howl/0.0.1-20260117010414d": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
         "dependencies": {
@@ -1207,7 +1207,7 @@
         "xunit.runner.visualstudio.nuspec"
       ]
     },
-    "Howl/0.0.1-20260116044518d": {
+    "Howl/0.0.1-20260117010414d": {
       "type": "project",
       "path": "../src/Howl.csproj",
       "msbuildProject": "../src/Howl.csproj"
@@ -1215,7 +1215,7 @@
   },
   "projectFileDependencyGroups": {
     "net9.0": [
-      "Howl >= 0.0.1-20260116044518d",
+      "Howl >= 0.0.1-20260117010414d",
       "Microsoft.NET.Test.Sdk >= 17.12.0",
       "MonoGame.Framework.DesktopGL >= 3.8.*",
       "coverlet.collector >= 6.0.2",

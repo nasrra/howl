@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
@@ -9,6 +11,13 @@ namespace Howl.Vendors.MonoGame.Graphics;
 
 public class MonoGameRenderer : IRenderer
 {
+    Howl.Graphics.Color clearColor;
+    public Howl.Graphics.Color ClearColor
+    {
+        get => clearColor;
+        set => clearColor = value;
+    }
+    
     public EffectManager EffectManager { get; private set; }
     private SpriteBatch spriteBatch;
 
@@ -21,6 +30,9 @@ public class MonoGameRenderer : IRenderer
     
     public RenderTarget2D RenderTarget { get; private set; }
     
+    private List<VertexPositionColor> primitiveVertices;
+    private List<short> primitiveIndices;
+
     WeakReference<MonoGameApp> monoGameApp;
 
     private MonoGameApp GetMonoGameApp()
@@ -32,15 +44,18 @@ public class MonoGameRenderer : IRenderer
         else
         {
             throw new NullReferenceException($"MonoGameRenderer cannot operate on a MonoGameApp that is null");   
-        }     
+        }
+
     }
 
-    public MonoGameRenderer(WeakReference<MonoGameApp> monoGameApp, int effectsAmount = 1, int renderTargetWidth = 1280, int renderTargetHeight = 720)
+    public MonoGameRenderer(WeakReference<MonoGameApp> monoGameApp, int renderTargetWidth = 1280, int renderTargetHeight = 720)
     {
         this.monoGameApp = monoGameApp;
         MonoGameApp app = GetMonoGameApp();
         
-        EffectManager = new(monoGameApp, effectsAmount);        
+        primitiveVertices = new();
+        primitiveIndices = new();     
+        EffectManager = new(monoGameApp);        
         spriteBatch = new SpriteBatch(app.GraphicsDevice);
         RenderTarget = new(app.GraphicsDevice, renderTargetWidth, renderTargetHeight);
         DestinationRectangle = CalculateDestinationRectangle(); 
@@ -56,8 +71,8 @@ public class MonoGameRenderer : IRenderer
         {            
             if(RenderTarget != null)
             {
-                RenderTarget = new RenderTarget2D(app.GraphicsDevice, width, RenderTarget.Height);
                 RenderTarget.Dispose();
+                RenderTarget = new RenderTarget2D(app.GraphicsDevice, width, RenderTarget.Height);
             }
             else
             {
@@ -79,8 +94,8 @@ public class MonoGameRenderer : IRenderer
         {
             if(RenderTarget != null)
             {
-                RenderTarget = new RenderTarget2D(app.GraphicsDevice, RenderTarget.Width, (int)value);
                 RenderTarget.Dispose();
+                RenderTarget = new RenderTarget2D(app.GraphicsDevice, RenderTarget.Width, (int)value);
             }
             else
             {
@@ -105,13 +120,13 @@ public class MonoGameRenderer : IRenderer
         // being drawn to and not the actual backbuffer dimensions of the program.
         UpdateProjectionMatrix();
         
-        app.GraphicsDevice.Clear(Microsoft.Xna.Framework.Color.Wheat);
+        app.GraphicsDevice.Clear(clearColor.ToMonoGame());
 
         spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointWrap, 
             rasterizerState: RasterizerState.CullNone, 
-            effect: EffectManager.EffectsSpan()[0]
+            effect: EffectManager.DefaultSpriteEffect
         );   
     }
 
@@ -122,6 +137,12 @@ public class MonoGameRenderer : IRenderer
         // present the render target over the windows back buffer.
 
         spriteBatch.End();
+
+        // Note: 
+        // Primitive drawing should always be outside of a sprite bath begin and end call.
+        // Primitive drawing within those states causes undefined behvaiour.
+
+        DrawPrimitives();
 
         // Note: when setting the render target to null, monogame draws directly to the backbuffer.
 
@@ -171,7 +192,6 @@ public class MonoGameRenderer : IRenderer
     /// <summary>
     // Calculates ans sets the new projection matix so that -y is down and -x is left.
     /// </summary>
-
     private void UpdateProjectionMatrix()
     {
         MonoGameApp app = GetMonoGameApp();
@@ -185,10 +205,46 @@ public class MonoGameRenderer : IRenderer
     }
 
     /// <summary>
+    /// Draws all stored primitive shapes to the next frame/screen, clearing the internal primitives cache when drawn for the frame/screen after. 
+    /// </summary>
+    private void DrawPrimitives()
+    {
+        if(primitiveIndices.Count == 0 && primitiveVertices.Count == 0)
+        {
+            return;
+        }
+
+        MonoGameApp app = GetMonoGameApp();
+
+        if(app.GraphicsDevice == null)
+        {
+            return;
+        }
+
+        foreach(EffectPass pass in EffectManager.PrimitivesEffect.CurrentTechnique.Passes)
+        {
+            pass.Apply();            
+            app.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
+                PrimitiveType.TriangleList,
+                primitiveVertices.ToArray(),
+                0,
+                primitiveVertices.Count,
+                primitiveIndices.ToArray(),
+                0,
+                primitiveIndices.Count / 3
+            );
+        }
+
+        // clear cache so primitive data is not persistent between draw calls/frames.
+
+        primitiveVertices.Clear();
+        primitiveIndices.Clear();
+    }
+
+    /// <summary>
     /// Calculates the detination rectangle for the render target onto the backbuffer of the window this application is painting to.
     /// </summary>
     /// <returns>The calculated destination rectangle.</returns>
-
     private Rectangle CalculateDestinationRectangle()
     {
         MonoGameApp app = GetMonoGameApp();
@@ -225,4 +281,39 @@ public class MonoGameRenderer : IRenderer
         );            
     }
 
+    public void DrawPrimitive(Howl.Math.Rectangle rectangle, Howl.Graphics.Color color)
+    { 
+
+        if(primitiveVertices.Count > short.MaxValue)
+        {
+            throw new OverflowException();
+        }
+
+        // Note: triangle vertices and indexes are done in
+        // a clockwise motion. 
+
+        short totalvVertices = (short)primitiveVertices.Count;
+        primitiveIndices.Add(totalvVertices);
+        primitiveIndices.Add((short)(totalvVertices+1));
+        primitiveIndices.Add((short)(totalvVertices+2));
+        primitiveIndices.Add(totalvVertices);
+        primitiveIndices.Add((short)(totalvVertices+2));
+        primitiveIndices.Add((short)(totalvVertices+3));
+
+        // Note that we are always
+        // drawing at zero z-coordinate.
+
+        Vector3 a = new(rectangle.Left, rectangle.Top, 0); 
+        Vector3 b = new(rectangle.Right, rectangle.Top, 0); 
+        Vector3 c = new(rectangle.Right, rectangle.Bottom, 0);
+        Vector3 d = new(rectangle.Left, rectangle.Bottom, 0); 
+        
+        Microsoft.Xna.Framework.Color monoGameColor = color.ToMonoGame();
+
+
+        primitiveVertices.Add(new(a, monoGameColor));
+        primitiveVertices.Add(new(b, monoGameColor));
+        primitiveVertices.Add(new(c, monoGameColor));
+        primitiveVertices.Add(new(d, monoGameColor));
+    }
 }

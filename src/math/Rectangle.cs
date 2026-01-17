@@ -28,6 +28,26 @@ public struct Rectangle
     public float Height;
 
     /// <summary>
+    /// Gets the x-coordinate of the left edge of this rectangle.
+    /// </summary>
+    public float Left => X;
+
+    /// <summary>
+    /// Gets the x-coordinate of the right edge of this rectangle.
+    /// </summary>
+    public float Right => X + Width;
+
+    /// <summary>
+    /// Gets the y-coordinate of the top edge of this rectangle.
+    /// </summary>
+    public float Bottom => Y;
+
+    /// <summary>
+    /// Gets the y-coordinate of the top edge of this rectangle.
+    /// </summary>
+    public float Top => Y + Height;
+
+    /// <summary>
     /// Creates a new Rectangle instance.
     /// </summary>
     /// <param name="x">The x-coordinate of the origin point.</param>

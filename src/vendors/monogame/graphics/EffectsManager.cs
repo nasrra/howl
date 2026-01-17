@@ -8,15 +8,18 @@ public class EffectManager
 {
     private WeakReference<MonoGameApp> monogameApp;
 
-    private const int DefaultEffectIndex = 0;
-
     private Effect[] effects;
+    
+    public BasicEffect PrimitivesEffect {get; private set;}
 
-    public EffectManager(WeakReference<MonoGameApp> monogameApp, int effectsAmount = 1)
+    public BasicEffect DefaultSpriteEffect {get; private set;}
+
+    public EffectManager(WeakReference<MonoGameApp> monogameApp, int effectsAmount = 0)
     {        
         this.monogameApp = monogameApp;
         effects = new Effect[effectsAmount];
-        CreateDefaultEffect();
+        CreateDefaultSpriteEffect();
+        CreatePrimitivesEffect();
     }
 
     private MonoGameApp GetMonoGameApp()
@@ -32,20 +35,50 @@ public class EffectManager
     }
 
     /// <summary>
-    /// Creates a default basic shader effect used by  MonoGameRenderer.
+    /// Creates a default basic shader effect used by MonoGameRenderer when renderering sprites.
     /// </summary>
-    private void CreateDefaultEffect()
+    private void CreateDefaultSpriteEffect()
     {
         MonoGameApp app = GetMonoGameApp();
-        BasicEffect Default = new BasicEffect(app.GraphicsDevice);
-        Default.FogEnabled = false;
-        Default.TextureEnabled = true;
-        Default.LightingEnabled = false;
-        Default.VertexColorEnabled = true;
-        Default.World = Matrix.Identity;
-        Default.Projection = Matrix.Identity;
-        Default.View = Matrix.Identity;
-        effects[DefaultEffectIndex] = Default;
+        DefaultSpriteEffect = new BasicEffect(app.GraphicsDevice);
+        
+        DefaultSpriteEffect.FogEnabled = false;
+        
+        DefaultSpriteEffect.TextureEnabled = true;
+        
+        DefaultSpriteEffect.LightingEnabled = false;
+        
+        DefaultSpriteEffect.VertexColorEnabled = true;
+        
+        DefaultSpriteEffect.World = Matrix.Identity;
+        
+        DefaultSpriteEffect.Projection = Matrix.Identity;
+        
+        DefaultSpriteEffect.View = Matrix.Identity;
+    }
+
+    /// <summary>
+    /// Creates a basic shader effect used by MonoGameRenderer when rendering primitive shapes.
+    /// </summary>
+    private void CreatePrimitivesEffect()
+    {
+        MonoGameApp app = GetMonoGameApp();
+        PrimitivesEffect = new BasicEffect(app.GraphicsDevice);
+        
+        PrimitivesEffect.FogEnabled = false;
+        
+        // dont use textures as this will sample the color data from an image not the vertex colour, colour
+        PrimitivesEffect.TextureEnabled = false;
+        
+        PrimitivesEffect.LightingEnabled = false;
+        
+        PrimitivesEffect.VertexColorEnabled = true;
+        
+        PrimitivesEffect.World = Matrix.Identity;
+        
+        PrimitivesEffect.Projection = Matrix.Identity;
+        
+        PrimitivesEffect.View = Matrix.Identity;
     }
 
     /// <summary>
@@ -69,10 +102,10 @@ public class EffectManager
     /// Gets a Span of all Effects stored by this EffectManager.
     /// </summary>
     /// <returns></returns>
-    public Span<Effect> EffectsSpan()
-    {
-        return effects.AsSpan();
-    }
+    // public Span<Effect> EffectsSpan()
+    // {
+    //     return effects.AsSpan();
+    // }
 
     /// <summary>
     /// Updates the projection matrix and sets it for all effects to ensure that
@@ -94,5 +127,8 @@ public class EffectManager
                 effect.Parameters["Projection"].SetValue(projectionMatrix);
             }
         }
+
+        DefaultSpriteEffect.Projection = projectionMatrix;
+        PrimitivesEffect.Projection = projectionMatrix;
     }
 }
