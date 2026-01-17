@@ -3,6 +3,7 @@
 PROJECT_PATH="Howl.Test.csproj"
 
 NAMESPACE="Howl.Test."
+MATH_NAMESPACE="${NAME_SPACE}Math."
 
 VENDORS_NAMESPACE="${NAME_SPACE}Vendors."
 
@@ -20,9 +21,11 @@ TEST_MAP=(
     ["MonoGameColorExt"]="${MONOGAME_GRAPHICS_NAMESPACE}ColorExtensionsTest"
     ["MonoGameRectangleExt"]="${MONOGAME_MATH_NAMESPACE}RectangleExtensionsTest"
     ["MonoGameVector2Ext"]="${MONOGAME_MATH_NAMESPACE}Vector2ExtensionsTest"
-    ["Rectangle"]="RectangleTest"
-    ["Vector2"]="Vector2Test"
-    ["Vector2Int"]="Vector2IntTest"
+    ["MonoGameVector3Ext"]="${MONOGAME_MATH_NAMESPACE}Vector3ExtensionsTest"
+    ["Rectangle"]="${MATH_NAMESPACE}RectangleTest"
+    ["Vector2"]="${MATH_NAMESPACE}Vector2Test"
+    ["Vector2Int"]="${MATH_NAMESPACE}Vector2IntTest"
+    ["Vector3"]="${MATH_NAMESPACE}Vector3Test"
 )
 
 # print the help menu if the test name variable has zero length.

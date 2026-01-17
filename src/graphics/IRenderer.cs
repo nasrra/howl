@@ -44,6 +44,15 @@ public interface IRenderer
     public void DrawPrimitive(Rectangle rectangle, Color color);
 
     /// <summary>
+    /// Draws a line between to points in world space.
+    /// </summary>
+    /// <param name="a">The point to start the line segment from.</param>
+    /// <param name="b">The point to end the line segment at.</param>
+    /// <param name="thickness">The thickness of th  line segment.</param>
+    /// <param name="color">The color od the line segment.</param>
+    public void DrawLine(Vector2 a, Vector2 b, float thickness, Color color);
+
+    /// <summary>
     /// Draws a sprite to the currently bound render texture.
     /// </summary>
     /// <param name="textureId"></param>

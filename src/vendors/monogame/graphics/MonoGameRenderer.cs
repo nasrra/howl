@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
+using Howl.Vendors.MonoGame.Math;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -315,5 +316,45 @@ public class MonoGameRenderer : IRenderer
         primitiveVertices.Add(new(b, monoGameColor));
         primitiveVertices.Add(new(c, monoGameColor));
         primitiveVertices.Add(new(d, monoGameColor));
+    }
+
+    public void DrawLine(Howl.Math.Vector2 a, Howl.Math.Vector2 b, float thickness, Howl.Graphics.Color color)
+    {
+        System.Math.Clamp(thickness, float.Epsilon, float.MaxValue);
+        float halfThickness = thickness * 0.5f;
+
+        // note that we apply the half thickness to the direction so that the line segment
+        // corners are offseted by the thickness amount.
+        Howl.Math.Vector2 direction = (b - a).Normalise() * halfThickness;
+        Howl.Math.Vector2 oppositeDirection = -direction;   
+        
+        Howl.Math.Vector2 normal = new(-direction.Y, direction.X);
+        Howl.Math.Vector2 oppositeNormal = -normal;
+
+        // Note: triangle vertices and indexes are done in
+        // a clockwise motion. 
+
+        short totalvVertices = (short)primitiveVertices.Count;
+        primitiveIndices.Add(totalvVertices);
+        primitiveIndices.Add((short)(totalvVertices+1));
+        primitiveIndices.Add((short)(totalvVertices+2));
+        primitiveIndices.Add(totalvVertices);
+        primitiveIndices.Add((short)(totalvVertices+2));
+        primitiveIndices.Add((short)(totalvVertices+3));
+
+        // Note that we are always
+        // drawing at zero z-coordinate.
+
+        Howl.Math.Vector3 corner1 = new(a + normal + oppositeDirection, 0); 
+        Howl.Math.Vector3 corner2 = new(b + normal + direction, 0); 
+        Howl.Math.Vector3 corner3 = new(b + oppositeNormal + direction, 0);
+        Howl.Math.Vector3 corner4 = new(a + oppositeNormal + oppositeDirection, 0); 
+        
+        Microsoft.Xna.Framework.Color monoGameColor = color.ToMonoGame();
+
+        primitiveVertices.Add(new(corner1.ToMonogame(), monoGameColor));
+        primitiveVertices.Add(new(corner2.ToMonogame(), monoGameColor));
+        primitiveVertices.Add(new(corner3.ToMonogame(), monoGameColor));
+        primitiveVertices.Add(new(corner4.ToMonogame(), monoGameColor));
     }
 }

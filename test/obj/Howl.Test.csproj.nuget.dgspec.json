@@ -4,12 +4,12 @@
     "C:\\Monogame Project\\howl\\test\\Howl.Test.csproj": {}
   },
   "projects": {
-    "C:\\Monogame Project\\howl\\src\\Howl.csproj": {
-      "version": "0.0.1-20260117010414d",
+    "C:\\Monogame Project\\howl\\src\\howl.csproj": {
+      "version": "0.0.1-20260117042415d",
       "restore": {
-        "projectUniqueName": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
-        "projectName": "Howl",
-        "projectPath": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
+        "projectUniqueName": "C:\\Monogame Project\\howl\\src\\howl.csproj",
+        "projectName": "howl",
+        "projectPath": "C:\\Monogame Project\\howl\\src\\howl.csproj",
         "packagesPath": "C:\\Users\\naser\\.nuget\\packages\\",
         "outputPath": "C:\\Monogame Project\\howl\\src\\obj\\",
         "projectStyle": "PackageReference",
@@ -91,8 +91,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "C:\\Monogame Project\\howl\\src\\Howl.csproj": {
-                "projectPath": "C:\\Monogame Project\\howl\\src\\Howl.csproj"
+              "C:\\Monogame Project\\howl\\src\\howl.csproj": {
+                "projectPath": "C:\\Monogame Project\\howl\\src\\howl.csproj"
               }
             }
           }

@@ -534,17 +534,17 @@
           "build/net6.0/xunit.runner.visualstudio.props": {}
         }
       },
-      "Howl/0.0.1-20260117010414d": {
+      "howl/0.0.1-20260117042415d": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
         "dependencies": {
           "MonoGame.Framework.DesktopGL": "3.8.0"
         },
         "compile": {
-          "bin/placeholder/Howl.dll": {}
+          "bin/placeholder/howl.dll": {}
         },
         "runtime": {
-          "bin/placeholder/Howl.dll": {}
+          "bin/placeholder/howl.dll": {}
         }
       }
     }
@@ -1207,18 +1207,18 @@
         "xunit.runner.visualstudio.nuspec"
       ]
     },
-    "Howl/0.0.1-20260117010414d": {
+    "howl/0.0.1-20260117042415d": {
       "type": "project",
-      "path": "../src/Howl.csproj",
-      "msbuildProject": "../src/Howl.csproj"
+      "path": "../src/howl.csproj",
+      "msbuildProject": "../src/howl.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net9.0": [
-      "Howl >= 0.0.1-20260117010414d",
       "Microsoft.NET.Test.Sdk >= 17.12.0",
       "MonoGame.Framework.DesktopGL >= 3.8.*",
       "coverlet.collector >= 6.0.2",
+      "howl >= 0.0.1-20260117042415d",
       "xunit >= 2.9.2",
       "xunit.runner.visualstudio >= 2.8.2"
     ]
@@ -1248,8 +1248,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Monogame Project\\howl\\src\\Howl.csproj": {
-              "projectPath": "C:\\Monogame Project\\howl\\src\\Howl.csproj"
+            "C:\\Monogame Project\\howl\\src\\howl.csproj": {
+              "projectPath": "C:\\Monogame Project\\howl\\src\\howl.csproj"
             }
           }
         }
