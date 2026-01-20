@@ -48,11 +48,51 @@ public class Renderer : IRenderer
 
     public float MainRenderTargetAspectRatio => (float)RenderTarget.Width / RenderTarget.Height;
 
-    public Renderer(MonoGameApp monoGameApp, Resolution resolution)
-    : this(monoGameApp, resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.MainRenderTargetWidth, resolution.MainRenderTargetHeight)
-    {}
+    /// <summary>
+    /// Creates a new MonoGame renderer instance.
+    /// </summary>
+    /// <param name="monoGameApp">The MonoGame app that is used as the HowlApp backend.</param>
+    /// <param name="resolution">The resolution of this application.</param>
+    /// <param name="cameraPosition">The position to place the camera.</param>
+    /// <param name="cameraZoomVirtualHeight">The base height - in world units - for the default camera zoom level.</param>
+    public Renderer(
+        MonoGameApp monoGameApp, 
+        Resolution resolution,
+        Howl.Math.Vector2 cameraPosition,
+        float cameraZoomVirtualHeight
+    )
+    : this(
+        monoGameApp, 
+        cameraPosition,
+        cameraZoomVirtualHeight,
+        resolution.BackBufferWidth, 
+        resolution.BackBufferHeight, 
+        resolution.MainRenderTargetWidth, 
+        resolution.MainRenderTargetHeight
+    )
+    {
+        
+    }
 
-    public Renderer(MonoGameApp monoGameApp, int backBufferWidth, int backbufferHeight, int mainRenderTargetWidth, int mainRenderTargetHeight)
+    /// <summary>
+    /// Creates a new MonoGame Renderer instances.
+    /// </summary>
+    /// <param name="monoGameApp">The MonoGame app that is used as the HowlApp backend.</param>
+    /// <param name="cameraPosition">The postion to place the camera at.</param>
+    /// <param name="cameraZoomVirtualheight">The base height - in world units - for the default camera zoom level.</param>
+    /// <param name="backBufferWidth">The back buffer width in pixels.</param>
+    /// <param name="backbufferHeight">The back buffer height in pixels.</param>
+    /// <param name="mainRenderTargetWidth">The main render target width in pixels.</param>
+    /// <param name="mainRenderTargetHeight">The main render target height in pixels.</param>
+    public Renderer(
+        MonoGameApp monoGameApp, 
+        Howl.Math.Vector2 cameraPosition,
+        float cameraZoomVirtualheight,
+        int backBufferWidth, 
+        int backbufferHeight, 
+        int mainRenderTargetWidth, 
+        int mainRenderTargetHeight
+    )
     {
         this.monoGameApp = monoGameApp;        
 
@@ -70,7 +110,7 @@ public class Renderer : IRenderer
         DestinationRectangle = CalculateDestinationRectangle(); 
         
         textureManager = new TextureManager(monoGameApp);
-        camera = new Camera(monoGameApp, this);
+        camera = new Camera(monoGameApp, this, cameraPosition, cameraZoomVirtualheight);
     }
 
     private void ValidateDependencies()

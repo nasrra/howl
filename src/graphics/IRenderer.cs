@@ -30,13 +30,13 @@ public interface IRenderer : IDisposable
     public void SetResolution(Resolution resolution);
 
     /// <summary>
-    /// Sets the back buffer resolution (The actual window size).
+    /// Sets the back buffer resolution (The actual application window size).
     /// </summary>
     /// <param name="resolution">the width (x) and height (y) in pixels.</param>
     public void SetBackBufferResolution(Vector2Int resolution);
 
     /// <summary>
-    /// Sets the back buffer resolution (The actual window size).
+    /// Sets the back buffer resolution (The actual application window size).
     /// </summary>
     /// <param name="width">the width in pixels.</param>
     /// <param name="height">the height in pixels.</param>

@@ -52,4 +52,14 @@ public interface ICamera : IDisposable
     /// Updates this camera.
     /// </summary>
     public void Update();
+
+    /// <summary>
+    /// Gets the reference siz for a camera's view in world units;
+    /// independent of the actual screen resolution.
+    /// Note:
+    /// The value should reflect the target resolution of the application.
+    /// - a game meant to be played at a resolution of 1920x1080: set this to 1080.
+    /// - a pixel art game meant to be played at a resolution of 640x360: set this to 360.
+    /// </summary>
+    public float ZoomVirtualHeight {get;}
 }

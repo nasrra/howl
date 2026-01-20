@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using Howl.Graphics;
 using Howl.Input;
-using Howl.Vendors.MonoGame;
 
 namespace Howl;
 
@@ -20,13 +19,13 @@ public abstract class HowlApp : IDisposable
     /// </summary>
     public IInputManager InputManager {get; private set;}
 
-    private MonoGameApp monoGameApp;
+    private Vendors.MonoGame.MonoGameApp monoGameApp;
     private HowlAppBackend backend;
 
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
-    public HowlApp(HowlAppBackend howlAppBackend, Resolution resolution)
+    public HowlApp(HowlAppBackend howlAppBackend, Resolution resolution, Math.Vector2 cameraPosition, float cameraZoomVirtualResolution)
     {
         if (Instance == null)
         {
@@ -43,7 +42,7 @@ public abstract class HowlApp : IDisposable
         }
                 
         backend = howlAppBackend;
-        InitialiseBackend(resolution);
+        InitialiseBackend(resolution, cameraPosition, cameraZoomVirtualResolution);
         Initialise();
     }
 
@@ -51,12 +50,14 @@ public abstract class HowlApp : IDisposable
     /// Initialises the backend used for the App.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    private void InitialiseBackend(Resolution resolution)
+    private void InitialiseBackend(Resolution resolution, Math.Vector2 cameraPosition, float cameraZoomVirtualResolution)
     {
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                InitialiseMonoGameBackend(resolution);
+                monoGameApp = new(this);
+                InputManager = new Vendors.MonoGame.Input.InputManager();
+                Renderer = new Vendors.MonoGame.Graphics.Renderer(monoGameApp, resolution, cameraPosition, cameraZoomVirtualResolution);
             break;
             default:
                 throw new InvalidOperationException($"HowlApp cannot be initialised with a backend of {backend}");
@@ -77,7 +78,7 @@ public abstract class HowlApp : IDisposable
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                RunMonoGameBackend();
+                monoGameApp.Run();
             break;
             default:
                 throw new InvalidOperationException($"HowlApp cannot be run with a backend of {backend}");
@@ -92,7 +93,7 @@ public abstract class HowlApp : IDisposable
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                ShutdownMonoGameBackend();
+                monoGameApp.Exit();
             break;
         }
         Dispose();        
@@ -118,30 +119,6 @@ public abstract class HowlApp : IDisposable
     // public virtual void InitialiseShaders()
     // {
     // }
-
-
-    ///
-    /// Monogame Backend.
-    /// 
-
-
-    private void InitialiseMonoGameBackend(Resolution resolution)
-    {
-        monoGameApp = new(this);
-        InputManager = new Vendors.MonoGame.Input.InputManager();
-        Renderer = new Vendors.MonoGame.Graphics.Renderer(monoGameApp, resolution);
-    }
-
-    private void RunMonoGameBackend()
-    {
-        monoGameApp.Run();
-    } 
-
-    private void ShutdownMonoGameBackend()
-    {
-        monoGameApp.Exit();
-    }
-
 
     /// 
     /// Disposal.

@@ -35,18 +35,38 @@ public class Camera : ICamera
 
     private bool disposed;
     public bool IsDisposed => disposed;
+    
+    private float zoomVirtualHeight;
+    public float ZoomVirtualHeight
+    {
+        get => zoomVirtualHeight;
+        set => zoomVirtualHeight = value;
+    }
 
+    /// <summary>
+    /// Creates a new MonoGame camera instance.
+    /// </summary>
+    /// <param name="monoGameApp">The MonoGame app that is used as the HowlApp backend.</param>
+    /// <param name="renderer">The MonoGame renderer that is in used by the HowlApp.</param>
     public Camera(MonoGameApp monoGameApp, Renderer renderer)
-    : this(monoGameApp, renderer, Howl.Math.Vector2.Zero)
+    : this(monoGameApp, renderer, Howl.Math.Vector2.Zero, 1080)
     {
         
     }
-    
-    public Camera(MonoGameApp monoGameApp, Renderer renderer, Howl.Math.Vector2 position)
+
+    /// <summary>
+    /// Creates a new MonoGame camera instance.
+    /// </summary>
+    /// <param name="monoGameApp">The MonoGame app that is used as the HowlApp backend.</param>
+    /// <param name="renderer">The MonoGame renderer that is in use by the HowlApp.</param>
+    /// <param name="position">The position to be placed at.</param>
+    /// <param name="zoomVirtualHeight">The base height - in world units - for the default zoom level.</param>
+    public Camera(MonoGameApp monoGameApp, Renderer renderer, Howl.Math.Vector2 position, float zoomVirtualHeight)
     {
         this.monoGameApp = monoGameApp;
         this.renderer = renderer;
         this.position = position;
+        this.zoomVirtualHeight = zoomVirtualHeight;
     }
 
     private void ValidateDependencies()
@@ -65,10 +85,12 @@ public class Camera : ICamera
     {
         ValidateDependencies();
 
-        // Viewport viewport = monoGameApp.GraphicsDevice.Viewport;
+        // Compute aspect ratio of the actual render target
+        float aspectRatio = (float)renderer.MainRenderTargetWidth / renderer.MainRenderTargetHeight;
 
-        float halfWidth  = renderer.MainRenderTargetWidth  * 0.5f / zoom;
-        float halfHeight = renderer.MainRenderTargetHeight * 0.5f / zoom;
+        // Compute half-width and half-height in world units based on virtual resolution
+        float halfHeight = (zoomVirtualHeight * 0.5f) / zoom;
+        float halfWidth = halfHeight * aspectRatio; // keep aspect ratio correct
 
         // Note:
         // Up is y+ and right is x+;
