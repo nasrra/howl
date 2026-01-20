@@ -1,11 +1,12 @@
 
 
+using System;
 using Howl.ECS;
 using Howl.Math;
 
 namespace Howl.Graphics;
 
-public interface IRenderer
+public interface IRenderer : IDisposable
 {
     /// <summary>
     /// Gets and sets the color to clear to every frame.

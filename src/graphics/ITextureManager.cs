@@ -1,8 +1,9 @@
+using System;
 using Howl.ECS;
 
 namespace Howl.Graphics;
 
-public interface ITextureManager
+public interface ITextureManager : IDisposable
 {
     /// <summary>
     /// Loads a new Texute asset into memory.

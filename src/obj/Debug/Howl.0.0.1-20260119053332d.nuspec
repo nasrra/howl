@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Howl</id>
+    <version>0.0.1-20260119053332d</version>
+    <authors>Howl</authors>
+    <description>Package Description</description>
+    <repository type="git" commit="991725510065aa65aad76bef67e77932c722cea4" />
+    <dependencies>
+      <group targetFramework="net9.0">
+        <dependency id="MonoGame.Framework.DesktopGL" version="3.8.4.1" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="C:\Monogame Project\howl\src\bin\Debug\net9.0\Howl.dll" target="lib\net9.0\Howl.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-arm64\native\fmod.dll" target="runtimes\win-arm64\native\fmod.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-arm64\native\fmodL.dll" target="runtimes\win-arm64\native\fmodL.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-arm64\native\fmodstudio.dll" target="runtimes\win-arm64\native\fmodstudio.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-arm64\native\fmodstudioL.dll" target="runtimes\win-arm64\native\fmodstudioL.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x64\native\fmod.dll" target="runtimes\win-x64\native\fmod.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x64\native\fmodL.dll" target="runtimes\win-x64\native\fmodL.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x64\native\fmodstudio.dll" target="runtimes\win-x64\native\fmodstudio.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x64\native\fmodstudioL.dll" target="runtimes\win-x64\native\fmodstudioL.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x64\native\fsbank.dll" target="runtimes\win-x64\native\fsbank.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x64\native\libfsbvorbis64.dll" target="runtimes\win-x64\native\libfsbvorbis64.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x64\native\opus.dll" target="runtimes\win-x64\native\opus.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\fmod.dll" target="runtimes\win-x86\native\fmod.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\fmodL.dll" target="runtimes\win-x86\native\fmodL.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\fmodstudio.dll" target="runtimes\win-x86\native\fmodstudio.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\fmodstudioL.dll" target="runtimes\win-x86\native\fmodstudioL.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\fsbank.dll" target="runtimes\win-x86\native\fsbank.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\fsbank_vc.lib" target="runtimes\win-x86\native\fsbank_vc.lib" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\libfmod.a" target="runtimes\win-x86\native\libfmod.a" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\libfmodL.a" target="runtimes\win-x86\native\libfmodL.a" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\libfmodstudio.a" target="runtimes\win-x86\native\libfmodstudio.a" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\libfmodstudioL.a" target="runtimes\win-x86\native\libfmodstudioL.a" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\libfsbvorbis.dll" target="runtimes\win-x86\native\libfsbvorbis.dll" />
+    <file src="C:\Monogame Project\howl\src\runtimes\win-x86\native\opus.dll" target="runtimes\win-x86\native\opus.dll" />
+  </files>
+</package>

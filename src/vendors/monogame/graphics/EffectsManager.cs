@@ -1,12 +1,13 @@
 using System;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
-public class EffectManager
+public class EffectManager : IDisposable
 {
-    private WeakReference<MonoGameApp> monogameApp;
+    private MonoGameApp monoGameApp;
 
     private Effect[] effects;
     
@@ -14,23 +15,22 @@ public class EffectManager
 
     public BasicEffect DefaultSpriteEffect {get; private set;}
 
-    public EffectManager(WeakReference<MonoGameApp> monogameApp, int effectsAmount = 0)
+    private bool disposed = false;
+    public bool IsDisposed => disposed;
+
+    public EffectManager(MonoGameApp monoGameApp, int effectsAmount = 0)
     {        
-        this.monogameApp = monogameApp;
+        this.monoGameApp = monoGameApp;
         effects = new Effect[effectsAmount];
         CreateDefaultSpriteEffect();
         CreatePrimitivesEffect();
     }
 
-    private MonoGameApp GetMonoGameApp()
+    private void ValidateDependencies()
     {
-        if(monogameApp.TryGetTarget(out MonoGameApp app))
+        if (monoGameApp.IsDisposed)
         {
-            return app;
-        }
-        else
-        {
-            throw new NullReferenceException("EffectManager cannot operate on a MonoGameApp that is null.");
+            throw new ObjectDisposedException("EffectManager cannot operate on/with a disposed MonoGameApp.");
         }
     }
 
@@ -39,8 +39,9 @@ public class EffectManager
     /// </summary>
     private void CreateDefaultSpriteEffect()
     {
-        MonoGameApp app = GetMonoGameApp();
-        DefaultSpriteEffect = new BasicEffect(app.GraphicsDevice);
+        ValidateDependencies();
+
+        DefaultSpriteEffect = new BasicEffect(monoGameApp.GraphicsDevice);
         
         DefaultSpriteEffect.FogEnabled = false;
         
@@ -62,8 +63,9 @@ public class EffectManager
     /// </summary>
     private void CreatePrimitivesEffect()
     {
-        MonoGameApp app = GetMonoGameApp();
-        PrimitivesEffect = new BasicEffect(app.GraphicsDevice);
+        ValidateDependencies();
+
+        PrimitivesEffect = new BasicEffect(monoGameApp.GraphicsDevice);
         
         PrimitivesEffect.FogEnabled = false;
         
@@ -130,5 +132,45 @@ public class EffectManager
 
         DefaultSpriteEffect.Projection = projectionMatrix;
         PrimitivesEffect.Projection = projectionMatrix;
+    }
+
+
+    /// 
+    /// Disposal.
+    /// 
+
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            Span<Effect> span = effects;
+
+            for(int i = 0; i < span.Length; i++)
+            {
+                span[i].Dispose();
+            }
+
+            PrimitivesEffect.Dispose();
+            DefaultSpriteEffect.Dispose();
+        }
+
+        disposed = true;
+    }
+
+    ~EffectManager()
+    {
+        Dispose(false);
     }
 }

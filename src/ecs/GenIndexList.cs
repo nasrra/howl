@@ -242,6 +242,17 @@ public class GenIndexList<T>
         return GenIndexResult.Success;
     }
 
+    /// <summary>
+    /// Gets a span of the underlying dense collection.
+    /// Note: When deallocating and allocating data from this structure, this span is then invalidated.
+    /// Do not store the span, make sure to use immeditely or before modifiying the allocations list.
+    /// </summary>
+    /// <returns>The span od the underlying dense collection.</returns>
+    public Span<DenseEntry<T>> GetDenseAsSpan()
+    {
+        return CollectionsMarshal.AsSpan(dense);
+    }
+
     public void PrintAll()
     {
         Debug.WriteLine("[GenIndexList]");

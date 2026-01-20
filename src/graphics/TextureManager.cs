@@ -10,6 +10,9 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
     GenIndexAllocator textureIds;
     GenIndexList<T> textures;
 
+    protected bool disposed;
+    public bool IsDisposed => disposed;
+
     public TextureManager(){
         textureIds = new();
         textures = new();
@@ -77,5 +80,42 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
             Debug.WriteLine($"Failed get readonly ref to texture {index} error code {result}");
             return default;
         }
+    }
+
+
+    /// 
+    /// Disposal.
+    /// 
+
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            Span<DenseEntry<T>> span = textures.GetDenseAsSpan();
+
+            for(int i= 0; i < span.Length; i++)
+            {
+                span[0].value.Dispose();
+            }
+        }
+
+        disposed = true;
+    }
+
+    ~TextureManager()
+    {
+        Dispose(false);        
     }
 }

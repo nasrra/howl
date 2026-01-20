@@ -3,8 +3,6 @@ using System.Diagnostics;
 using Howl.Graphics;
 using Howl.Input;
 using Howl.Vendors.MonoGame;
-using Howl.Vendors.MonoGame.Graphics;
-using Howl.Vendors.MonoGame.Input;
 
 namespace Howl;
 
@@ -24,6 +22,9 @@ public abstract class HowlApp : IDisposable
 
     private MonoGameApp monoGameApp;
     private HowlAppBackend backend;
+
+    private bool disposed = false;
+    public bool IsDisposed => disposed;
 
     public HowlApp(HowlAppBackend howlAppBackend)
     {
@@ -126,9 +127,9 @@ public abstract class HowlApp : IDisposable
 
     private void InitialiseMonoGameBackend()
     {
-        monoGameApp = new(new(this));
-        InputManager = new MonoGameInputManager();
-        Renderer = new MonoGameRenderer(new(monoGameApp));
+        monoGameApp = new(this);
+        InputManager = new Vendors.MonoGame.Input.InputManager();
+        Renderer = new Vendors.MonoGame.Graphics.Renderer(monoGameApp);
     }
 
     private void RunMonoGameBackend()
@@ -141,8 +142,36 @@ public abstract class HowlApp : IDisposable
         monoGameApp.Exit();
     }
 
+
+    /// 
+    /// Disposal.
+    /// 
+
+
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            monoGameApp?.Dispose();
+        }
+
+        disposed = true;
+    }
+
+    ~HowlApp()
+    {
+        Dispose(false);
     }
 
 }

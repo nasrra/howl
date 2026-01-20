@@ -276,11 +276,11 @@
     "C:\\Users\\naser\\.nuget\\packages\\": {}
   },
   "project": {
-    "version": "0.0.1-20260117042415d",
+    "version": "0.0.1-20260120020450d",
     "restore": {
-      "projectUniqueName": "C:\\Monogame Project\\howl\\src\\howl.csproj",
-      "projectName": "howl",
-      "projectPath": "C:\\Monogame Project\\howl\\src\\howl.csproj",
+      "projectUniqueName": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
+      "projectName": "Howl",
+      "projectPath": "C:\\Monogame Project\\howl\\src\\Howl.csproj",
       "packagesPath": "C:\\Users\\naser\\.nuget\\packages\\",
       "outputPath": "C:\\Monogame Project\\howl\\src\\obj\\",
       "projectStyle": "PackageReference",
