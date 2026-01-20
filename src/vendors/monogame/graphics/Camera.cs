@@ -9,14 +9,14 @@ namespace Howl.Vendors.MonoGame.Graphics;
 
 public class Camera : ICamera
 {
-    private Howl.Math.Vector3 position;
-    public Howl.Math.Vector3 Position
+    private Howl.Math.Vector2 position;
+    public Howl.Math.Vector2 Position
     {
         get => position;
         set => position = value;
     }
 
-    private float zoom;
+    private float zoom = 1;
     public float Zoom
     {
         get => zoom;
@@ -31,18 +31,21 @@ public class Camera : ICamera
     }
 
     private MonoGameApp monoGameApp;
+    private Renderer renderer;
 
     private bool disposed;
     public bool IsDisposed => disposed;
 
-    public Camera(MonoGameApp monoGameApp)
+    public Camera(MonoGameApp monoGameApp, Renderer renderer)
+    : this(monoGameApp, renderer, Howl.Math.Vector2.Zero)
     {
-        this.monoGameApp = monoGameApp;
+        
     }
-
-    public Camera(MonoGameApp monoGameApp, Howl.Math.Vector3 position)
+    
+    public Camera(MonoGameApp monoGameApp, Renderer renderer, Howl.Math.Vector2 position)
     {
         this.monoGameApp = monoGameApp;
+        this.renderer = renderer;
         this.position = position;
     }
 
@@ -52,16 +55,32 @@ public class Camera : ICamera
         {
             throw new ObjectDisposedException("Camera cannot operate on/with a diposed MonoGameApp.");
         }
+        if (renderer.IsDisposed)
+        {
+            throw new ObjectDisposedException("Camera cannot operate on/with a disposed MonoGame Renderer.");
+        }
     }
 
     public void Update()
     {
         ValidateDependencies();
-        
+
+        // Viewport viewport = monoGameApp.GraphicsDevice.Viewport;
+
+        float halfWidth  = renderer.MainRenderTargetWidth  * 0.5f / zoom;
+        float halfHeight = renderer.MainRenderTargetHeight * 0.5f / zoom;
+
         // Note:
         // Up is y+ and right is x+;
-        Viewport viewport = monoGameApp.GraphicsDevice.Viewport;
-        projectionMatrix = Matrix.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, float.Epsilon, float.MaxValue);
+        // Centered orthographic projection
+        projectionMatrix = Matrix.CreateOrthographicOffCenter(
+            -halfWidth,  halfWidth,
+            halfHeight, -halfHeight,
+            float.Epsilon,
+            float.MaxValue
+        );
+        // Viewport viewport = monoGameApp.GraphicsDevice.Viewport;
+        // projectionMatrix = Matrix.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, float.Epsilon, float.MaxValue);
     }
     
     public void Dispose()

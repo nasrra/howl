@@ -42,6 +42,12 @@ public class Renderer : IRenderer
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
+    public float MainRenderTargetWidth => RenderTarget.Width;
+
+    public float MainRenderTargetHeight => RenderTarget.Height;
+
+    public float MainRenderTargetAspectRatio => (float)RenderTarget.Width / RenderTarget.Height;
+
     public Renderer(MonoGameApp monoGameApp, Resolution resolution)
     : this(monoGameApp, resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.MainRenderTargetWidth, resolution.MainRenderTargetHeight)
     {}
@@ -64,7 +70,7 @@ public class Renderer : IRenderer
         DestinationRectangle = CalculateDestinationRectangle(); 
         
         textureManager = new TextureManager(monoGameApp);
-        camera = new Camera(monoGameApp);
+        camera = new Camera(monoGameApp, this);
     }
 
     private void ValidateDependencies()
@@ -335,7 +341,7 @@ public class Renderer : IRenderer
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, camera.Position.Z);
+        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
         Howl.Math.Vector3 a = -cameraPosition;
         Howl.Math.Vector3 b = -cameraPosition;
         Howl.Math.Vector3 c = -cameraPosition;
@@ -390,7 +396,7 @@ public class Renderer : IRenderer
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, camera.Position.Z);
+        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
         Howl.Math.Vector3 corner1 = -cameraPosition;
         Howl.Math.Vector3 corner2 = -cameraPosition;
         Howl.Math.Vector3 corner3 = -cameraPosition;

@@ -88,4 +88,19 @@ public interface IRenderer : IDisposable
     /// <param name="position"></param>
     /// <returns></returns>
     public bool DrawSprite(in GenIndex textureId, Vector2 position);
+
+    /// <summary>
+    /// Gets the main render target width.
+    /// </summary>
+    public float MainRenderTargetWidth{get;}
+
+    /// <summary>
+    /// Gets the main render target height.
+    /// </summary>
+    public float MainRenderTargetHeight{get;}
+
+    /// <summary>
+    /// Gets the main render target aspect ratio.
+    /// </summary>
+    public float MainRenderTargetAspectRatio{get;}
 }

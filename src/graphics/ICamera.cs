@@ -36,7 +36,7 @@ public interface ICamera : IDisposable
     /// <summary>
     /// The position of the camera in world-space.
     /// </summary>
-    public Vector3 Position {get; set;}
+    public Vector2 Position {get; set;}
     
     // /// <summary>
     // /// The position in world-space where this camera is pointing at.
@@ -46,7 +46,7 @@ public interface ICamera : IDisposable
     /// <summary>
     /// Gets and sets the zoom of the camera.
     /// </summary>
-    public float Zoom {get;}    
+    public float Zoom {get; set;}    
 
     /// <summary>
     /// Updates this camera.
