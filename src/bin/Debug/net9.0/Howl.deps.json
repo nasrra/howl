@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v9.0": {
-      "Howl/\n      0.0.1-20260120030943d\n    ": {
+      "Howl/\n      0.0.1-20260120064221d\n    ": {
         "dependencies": {
           "MonoGame.Framework.DesktopGL": "3.8.4.1"
         },
@@ -122,7 +122,7 @@
     }
   },
   "libraries": {
-    "Howl/\n      0.0.1-20260120030943d\n    ": {
+    "Howl/\n      0.0.1-20260120064221d\n    ": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
