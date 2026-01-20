@@ -25,6 +25,9 @@ public class Renderer : IRenderer
     TextureManager<Texture2D> textureManager;
     public ITextureManager TextureManager => textureManager;
     
+    Camera camera;
+    public ICamera Camera => camera;
+
     public Matrix ProjectionMatrix { get; private set; }
     
     public Rectangle DestinationRectangle { get; private set; }
@@ -61,6 +64,7 @@ public class Renderer : IRenderer
         DestinationRectangle = CalculateDestinationRectangle(); 
         
         textureManager = new TextureManager(monoGameApp);
+        camera = new Camera(monoGameApp);
     }
 
     private void ValidateDependencies()
@@ -89,7 +93,6 @@ public class Renderer : IRenderer
         int clampedHeight = System.Math.Clamp(height, 1, int.MaxValue);  
         if(width == clampedWidth && height == clampedHeight)
         {
-            Debug.WriteLine($"{width} {height}");
             monoGameApp.GraphicsDeviceManager.PreferredBackBufferHeight = height;
             monoGameApp.GraphicsDeviceManager.PreferredBackBufferWidth = width;
             monoGameApp.GraphicsDeviceManager.ApplyChanges();
@@ -181,7 +184,7 @@ public class Renderer : IRenderer
         spriteBatch.End();
     }
 
-    public bool DrawSprite(in GenIndex textureId)
+    public bool DrawSprite(in GenIndex textureId, Howl.Math.Vector2 position)
     {   
         ReadonlyRef<Texture2D> texture = textureManager.GetTextureReadonlyRef(textureId);
         if (texture.Valid == false)
@@ -190,15 +193,22 @@ public class Renderer : IRenderer
         }
         else
         {
+            // translate by the cameras position.
+            position -= new Howl.Math.Vector2(camera.Position.X, camera.Position.Y);
+            
+            // reverse y-coordinates because monogame
+            // sprite batch is y+ = down, Howl is y+ = up.
+            position.Y *= -1;
+
             spriteBatch.Draw(
                 texture.Value, 
-                new System.Numerics.Vector2(0, 0), 
+                position.ToMonogame(), 
                 null, 
                 Microsoft.Xna.Framework.Color.White, 
                 0, 
                 System.Numerics.Vector2.Zero, 
                 System.Numerics.Vector2.One, 
-                SpriteEffects.FlipVertically, 
+                SpriteEffects.None, 
                 0
             );
             return true;
@@ -212,12 +222,11 @@ public class Renderer : IRenderer
     {
         ValidateDependencies();
 
-        Viewport viewport = monoGameApp.GraphicsDevice.Viewport;
-        ProjectionMatrix = Matrix.CreateOrthographicOffCenter(0, viewport.Width, 0, viewport.Height, -1, 1);
-        
+        camera.Update();
+
         // update effects to use the new projection matrix.
         
-        EffectManager.UpdateProjectionMatrix(ProjectionMatrix);
+        EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
     }
 
     /// <summary>
@@ -316,21 +325,33 @@ public class Renderer : IRenderer
         primitiveIndices.Add((short)(totalvVertices+2));
         primitiveIndices.Add((short)(totalvVertices+3));
 
-        // Note that we are always
-        // drawing at zero z-coordinate.
 
-        Vector3 a = new(rectangle.Left, rectangle.Top, 0); 
-        Vector3 b = new(rectangle.Right, rectangle.Top, 0); 
-        Vector3 c = new(rectangle.Right, rectangle.Bottom, 0);
-        Vector3 d = new(rectangle.Left, rectangle.Bottom, 0); 
+        // translate in relation to the camera.
+        Howl.Math.Vector3 a = -camera.Position;
+        Howl.Math.Vector3 b = -camera.Position;
+        Howl.Math.Vector3 c = -camera.Position;
+        Howl.Math.Vector3 d = -camera.Position;
+
+        // apply the rectangles world coordinates.
+        a += new Howl.Math.Vector3(rectangle.Left, rectangle.Top, 0f); 
+        b += new Howl.Math.Vector3(rectangle.Right, rectangle.Top, 0f); 
+        c += new Howl.Math.Vector3(rectangle.Right, rectangle.Bottom, 0f);
+        d += new Howl.Math.Vector3(rectangle.Left, rectangle.Bottom, 0f); 
         
+        // reverse y-coordinates because monogame
+        // sprite batch is y+ = down, Howl is y+ = up.
+        a.Y *= -1;
+        b.Y *= -1;
+        c.Y *= -1;
+        d.Y *= -1;
+
         Microsoft.Xna.Framework.Color monoGameColor = color.ToMonoGame();
 
 
-        primitiveVertices.Add(new(a, monoGameColor));
-        primitiveVertices.Add(new(b, monoGameColor));
-        primitiveVertices.Add(new(c, monoGameColor));
-        primitiveVertices.Add(new(d, monoGameColor));
+        primitiveVertices.Add(new(a.ToMonoGame(), monoGameColor));
+        primitiveVertices.Add(new(b.ToMonoGame(), monoGameColor));
+        primitiveVertices.Add(new(c.ToMonoGame(), monoGameColor));
+        primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));
     }
 
     public void DrawLine(Howl.Math.Vector2 a, Howl.Math.Vector2 b, float thickness, Howl.Graphics.Color color)
@@ -357,14 +378,25 @@ public class Renderer : IRenderer
         primitiveIndices.Add((short)(totalvVertices+2));
         primitiveIndices.Add((short)(totalvVertices+3));
 
-        // Note that we are always
-        // drawing at zero z-coordinate.
+        // translate in relation to the camera.
+        Howl.Math.Vector3 corner1 = -camera.Position;
+        Howl.Math.Vector3 corner2 = -camera.Position;
+        Howl.Math.Vector3 corner3 = -camera.Position;
+        Howl.Math.Vector3 corner4 = -camera.Position;
 
-        Howl.Math.Vector3 corner1 = new(a + normal + oppositeDirection, 0); 
-        Howl.Math.Vector3 corner2 = new(b + normal + direction, 0); 
-        Howl.Math.Vector3 corner3 = new(b + oppositeNormal + direction, 0);
-        Howl.Math.Vector3 corner4 = new(a + oppositeNormal + oppositeDirection, 0); 
-        
+        // apply the line world coordinates.
+        corner1 += new Howl.Math.Vector3(a + normal + oppositeDirection, 0); 
+        corner2 += new Howl.Math.Vector3(b + normal + direction, 0); 
+        corner3 += new Howl.Math.Vector3(b + oppositeNormal + direction, 0);
+        corner4 += new Howl.Math.Vector3(a + oppositeNormal + oppositeDirection, 0); 
+
+        // reverse y-coordinates because monogame
+        // sprite batch is y+ = down, Howl is y+ = up.
+        corner1.Y *= -1;
+        corner2.Y *= -1;
+        corner3.Y *= -1;
+        corner4.Y *= -1;
+
         Microsoft.Xna.Framework.Color monoGameColor = color.ToMonoGame();
 
         primitiveVertices.Add(new(corner1.ToMonoGame(), monoGameColor));

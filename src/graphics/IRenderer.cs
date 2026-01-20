@@ -13,7 +13,15 @@ public interface IRenderer : IDisposable
     /// </summary>
     public Color ClearColor {get; set;}
 
+    /// <summary>
+    /// Gets the texture manager used by this renderer.
+    /// </summary>
     public ITextureManager TextureManager{get;}
+
+    /// <summary>
+    /// Gets the camera used by this renderer.
+    /// </summary>
+    public ICamera Camera{get;}
 
     /// <summary>
     /// Sets the resolution this howl application is drawing at.
@@ -77,6 +85,7 @@ public interface IRenderer : IDisposable
     /// Draws a sprite to the currently bound render texture.
     /// </summary>
     /// <param name="textureId"></param>
+    /// <param name="position"></param>
     /// <returns></returns>
-    public bool DrawSprite(in GenIndex textureId);
+    public bool DrawSprite(in GenIndex textureId, Vector2 position);
 }

@@ -38,10 +38,10 @@ public interface ICamera : IDisposable
     /// </summary>
     public Vector3 Position {get; set;}
     
-    /// <summary>
-    /// The position in world-space where this camera is pointing at.
-    /// </summary>
-    public Vector3 Target {get; set;}
+    // /// <summary>
+    // /// The position in world-space where this camera is pointing at.
+    // /// </summary>
+    // public Vector3 Target {get; set;}
 
     /// <summary>
     /// Gets and sets the zoom of the camera.
