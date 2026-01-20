@@ -14,19 +14,39 @@ public interface IRenderer : IDisposable
     public Color ClearColor {get; set;}
 
     public ITextureManager TextureManager{get;}
-    
-    /// <summary>
-    /// Sets the render target width.
-    /// </summary>
-    /// <param name="value">The width to set the render target to.</param>
-    public void SetRenderTargetWidth(int value);    
 
     /// <summary>
-    /// Sets the render target height. 
+    /// Sets the resolution this howl application is drawing at.
     /// </summary>
-    /// <param name="value">The height to set the render target to.</param>
-    public void SetRenderTargetHeight(int value);
-    
+    /// <param name="resolution">The resolution parameters.</param>
+    public void SetResolution(Resolution resolution);
+
+    /// <summary>
+    /// Sets the back buffer resolution (The actual window size).
+    /// </summary>
+    /// <param name="resolution">the width (x) and height (y) in pixels.</param>
+    public void SetBackBufferResolution(Vector2Int resolution);
+
+    /// <summary>
+    /// Sets the back buffer resolution (The actual window size).
+    /// </summary>
+    /// <param name="width">the width in pixels.</param>
+    /// <param name="height">the height in pixels.</param>
+    public void SetBackBufferResolution(int width, int height);
+
+    /// <summary>
+    /// Sets the main render target resolution (the resolution the application is renderer at.)
+    /// </summary>
+    /// <param name="resolution">the width (x) and height (y) in pixels.</param>
+    public void SetMainRenderTargetResolution(Vector2Int resolution);
+
+    /// <summary>
+    /// Sets the main render target resolution (the resolution the application is renderer at.)
+    /// </summary>
+    /// <param name="width">the width in pixels.</param>
+    /// <param name="height">the height in pixels.</param>
+    public void SetMainRenderTargetResolution(int width, int height);
+
     /// <summary>
     /// Starts the draw call from the renderer to the gpu.
     /// </summary>

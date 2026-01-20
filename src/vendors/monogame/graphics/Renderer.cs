@@ -39,7 +39,11 @@ public class Renderer : IRenderer
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
-    public Renderer(MonoGameApp monoGameApp, int renderTargetWidth = 1280, int renderTargetHeight = 720)
+    public Renderer(MonoGameApp monoGameApp, Resolution resolution)
+    : this(monoGameApp, resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.MainRenderTargetWidth, resolution.MainRenderTargetHeight)
+    {}
+
+    public Renderer(MonoGameApp monoGameApp, int backBufferWidth, int backbufferHeight, int mainRenderTargetWidth, int mainRenderTargetHeight)
     {
         this.monoGameApp = monoGameApp;        
 
@@ -47,10 +51,15 @@ public class Renderer : IRenderer
 
         primitiveVertices = new();
         primitiveIndices = new();     
+        
         EffectManager = new(monoGameApp);        
+        
         spriteBatch = new SpriteBatch(monoGameApp.GraphicsDevice);
-        RenderTarget = new(monoGameApp.GraphicsDevice, renderTargetWidth, renderTargetHeight);
+        
+        SetBackBufferResolution(backBufferWidth, backbufferHeight);
+        SetMainRenderTargetResolution(mainRenderTargetWidth, mainRenderTargetHeight);
         DestinationRectangle = CalculateDestinationRectangle(); 
+        
         textureManager = new TextureManager(monoGameApp);
     }
 
@@ -62,39 +71,56 @@ public class Renderer : IRenderer
         }
     }
 
-    public void SetRenderTargetWidth(int value)
-    {      
+    public void SetResolution(Resolution resolution)
+    {
+        SetBackBufferResolution(resolution.BackBufferWidth, resolution.BackBufferHeight);
+        SetMainRenderTargetResolution(resolution.MainRenderTargetWidth, resolution.MainRenderTargetHeight);    
+    }
+
+    public void SetBackBufferResolution(Howl.Math.Vector2Int resolution)
+    {
+        SetBackBufferResolution(resolution.X, resolution.Y);
+    }
+    
+    public void SetBackBufferResolution(int width, int height)
+    {        
         ValidateDependencies();
-        int width = System.Math.Clamp(value, 1, int.MaxValue);  
-        if(width == value)
+        int clampedWidth = System.Math.Clamp(width, 1, int.MaxValue);  
+        int clampedHeight = System.Math.Clamp(height, 1, int.MaxValue);  
+        if(width == clampedWidth && height == clampedHeight)
+        {
+            Debug.WriteLine($"{width} {height}");
+            monoGameApp.GraphicsDeviceManager.PreferredBackBufferHeight = height;
+            monoGameApp.GraphicsDeviceManager.PreferredBackBufferWidth = width;
+            monoGameApp.GraphicsDeviceManager.ApplyChanges();
+        }
+        else
+        {
+            throw new InvalidOperationException($"BackBuffer resolution cannot be set to ({width}, {height}), values must be above zero and lower than or equal to int.MaxValue");            
+        }
+    }
+
+    public void SetMainRenderTargetResolution(Howl.Math.Vector2Int resolution)
+    {
+        SetMainRenderTargetResolution(resolution.X, resolution.Y);
+    }
+
+    public void SetMainRenderTargetResolution(int width, int height)
+    {        
+        ValidateDependencies();
+        int clampedWidth = System.Math.Clamp(width, 1, int.MaxValue);  
+        int clampedHeight = System.Math.Clamp(height, 1, int.MaxValue);  
+        if(width == clampedWidth && height == clampedHeight)
         {            
             if(RenderTarget != null)
             {
                 RenderTarget.Dispose();
             }
-            RenderTarget = new RenderTarget2D(monoGameApp.GraphicsDevice, width, RenderTarget.Height);
+            RenderTarget = new RenderTarget2D(monoGameApp.GraphicsDevice, width, height);
         }
         else
         {
-            throw new InvalidOperationException($"width cannot be set to {value}, it must be above zero and lower than or equal to int.MaxValue");            
-        }
-    }
-
-    public void SetRenderTargetHeight(int value)
-    {
-        ValidateDependencies();
-        int height = System.Math.Clamp(value, 1, int.MaxValue);
-        if(height == value)
-        {
-            if(RenderTarget != null)
-            {
-                RenderTarget.Dispose();
-            }
-            RenderTarget = new RenderTarget2D(monoGameApp.GraphicsDevice, RenderTarget.Width, (int)value);
-        }
-        else
-        {
-            throw new InvalidOperationException($"height cannot be set to {value}, it must be above zero and lower than or equal to int.MaxValue");                        
+            throw new InvalidOperationException($"RenderTarget resolution cannot be set to ({width}, {height}), values must be above zero and lower than or equal to int.MaxValue");            
         }
     }
 

@@ -37,8 +37,6 @@ public class MonoGameApp : Game
 
     protected override void Initialize()
     {
-        GraphicsDeviceManager.PreferredBackBufferWidth = 1280;
-        GraphicsDeviceManager.PreferredBackBufferHeight = 720;
         GraphicsDeviceManager.ApplyChanges();
         base.Initialize();
     }

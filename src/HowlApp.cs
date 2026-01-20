@@ -26,7 +26,7 @@ public abstract class HowlApp : IDisposable
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
-    public HowlApp(HowlAppBackend howlAppBackend)
+    public HowlApp(HowlAppBackend howlAppBackend, Resolution resolution)
     {
         if (Instance == null)
         {
@@ -43,7 +43,7 @@ public abstract class HowlApp : IDisposable
         }
                 
         backend = howlAppBackend;
-        InitialiseBackend();
+        InitialiseBackend(resolution);
         Initialise();
     }
 
@@ -51,12 +51,12 @@ public abstract class HowlApp : IDisposable
     /// Initialises the backend used for the App.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    private void InitialiseBackend()
+    private void InitialiseBackend(Resolution resolution)
     {
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                InitialiseMonoGameBackend();
+                InitialiseMonoGameBackend(resolution);
             break;
             default:
                 throw new InvalidOperationException($"HowlApp cannot be initialised with a backend of {backend}");
@@ -125,11 +125,11 @@ public abstract class HowlApp : IDisposable
     /// 
 
 
-    private void InitialiseMonoGameBackend()
+    private void InitialiseMonoGameBackend(Resolution resolution)
     {
         monoGameApp = new(this);
         InputManager = new Vendors.MonoGame.Input.InputManager();
-        Renderer = new Vendors.MonoGame.Graphics.Renderer(monoGameApp);
+        Renderer = new Vendors.MonoGame.Graphics.Renderer(monoGameApp, resolution);
     }
 
     private void RunMonoGameBackend()
