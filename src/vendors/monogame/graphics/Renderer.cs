@@ -105,10 +105,10 @@ public class Renderer : IRenderer
         
         spriteBatch = new SpriteBatch(monoGameApp.GraphicsDevice);
         
-        SetBackBufferResolution(backBufferWidth, backbufferHeight);
         SetMainRenderTargetResolution(mainRenderTargetWidth, mainRenderTargetHeight);
-        DestinationRectangle = CalculateDestinationRectangle(); 
-        
+        SetBackBufferResolution(backBufferWidth, backbufferHeight);
+        UpdateMainRenderDestinationRectangle();
+
         textureManager = new TextureManager(monoGameApp);
         camera = new Camera(monoGameApp, this, cameraPosition, cameraZoomVirtualheight);
     }
@@ -142,6 +142,7 @@ public class Renderer : IRenderer
             monoGameApp.GraphicsDeviceManager.PreferredBackBufferHeight = height;
             monoGameApp.GraphicsDeviceManager.PreferredBackBufferWidth = width;
             monoGameApp.GraphicsDeviceManager.ApplyChanges();
+            UpdateMainRenderDestinationRectangle();
         }
         else
         {
@@ -171,6 +172,68 @@ public class Renderer : IRenderer
         {
             throw new InvalidOperationException($"RenderTarget resolution cannot be set to ({width}, {height}), values must be above zero and lower than or equal to int.MaxValue");            
         }
+    }
+
+    public void Windowed()
+    {
+        ValidateDependencies();
+
+        if(monoGameApp.GraphicsDeviceManager.IsFullScreen == false)
+        {
+            return;
+        }
+
+        monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
+        
+        // update the destination rectangle as the back buffer window size is modified. 
+
+        UpdateMainRenderDestinationRectangle();
+    }
+
+    public void Fullscreen()
+    {
+        throw new Exception("This method should not be used as MonoGame currently has a bad bug. Read the comment within this function.");
+
+        // NOTE:
+        // Monogame "corrupts" the computers back buffer when toggling fullscreen upon closing the application afterwards. 
+        // The screen is fine for a split second then switches to the "Clear Colour" of the renderer.
+        // nothing  can be clicked on the computer, alt+f4 doesnt work, it completely nukes the computer.
+
+
+        // ValidateDependencies();
+
+        // if(monoGameApp.GraphicsDeviceManager.IsFullScreen == true
+        // && monoGameApp.GraphicsDeviceManager.HardwareModeSwitch == true)
+        // {
+        //     return;
+        // }
+
+        // monoGameApp.GraphicsDeviceManager.HardwareModeSwitch = true;
+
+        // monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
+
+        // // update the destination rectangle as the back buffer window size is modified. 
+
+        // UpdateMainRenderDestinationRectangle();
+    }
+
+    public void BorderlessFullscreen()
+    {
+        ValidateDependencies();
+
+        if(monoGameApp.GraphicsDeviceManager.IsFullScreen == true
+        && monoGameApp.GraphicsDeviceManager.HardwareModeSwitch == false)
+        {
+            return;
+        }
+
+        monoGameApp.GraphicsDeviceManager.HardwareModeSwitch = false;
+
+        monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
+
+        // update the destination rectangle as the back buffer window size is modified. 
+
+        UpdateMainRenderDestinationRectangle();
     }
 
     public void BeginDraw()
@@ -245,6 +308,53 @@ public class Renderer : IRenderer
     }
 
     /// <summary>
+    /// Calculates the detination rectangle for the render target onto the backbuffer of the window this application is painting to.
+    /// </summary>
+    /// <returns>The calculated destination rectangle.</returns>
+    private void UpdateMainRenderDestinationRectangle()
+    {
+        ValidateDependencies();
+
+        int backBufferWidth = monoGameApp.Window.ClientBounds.Width;
+        int backBufferHeight = monoGameApp.Window.ClientBounds.Height;
+        float backbufferAspectRatio = (float)backBufferWidth / backBufferHeight;
+        float renderTargetAspectRatio = (float)RenderTarget.Width / RenderTarget.Height;
+
+        // scale the image to fit into the window's back buffer.
+        float rectX = 0;
+        float rectY = 0f;
+        float rectWidth = backBufferWidth;
+        float rectHeight = backBufferHeight;
+
+        // stretch image (render target) width to fit on the window's back buffer.
+        if(backbufferAspectRatio > renderTargetAspectRatio)
+        {
+            rectWidth = rectHeight * renderTargetAspectRatio;
+            rectX = ((float)backBufferWidth - rectWidth) * 0.5f;
+        }
+
+        // shrink image (render target) height to fit on the window's back buffer.
+        else if (backbufferAspectRatio < renderTargetAspectRatio)
+        {
+            rectHeight = rectWidth / renderTargetAspectRatio;
+            rectY = ((float)backBufferHeight - rectHeight) * 0.5f;
+        }
+
+        DestinationRectangle = new(
+            (int)rectX,
+            (int)rectY,
+            (int)rectWidth, 
+            (int)rectHeight
+        );            
+    }
+
+
+    /// 
+    /// Drawing Code.
+    /// 
+
+
+    /// <summary>
     /// Draws all stored primitive shapes to the next frame/screen, clearing the internal primitives cache when drawn for the frame/screen after. 
     /// </summary>
     private void DrawPrimitives()
@@ -280,53 +390,6 @@ public class Renderer : IRenderer
         primitiveVertices.Clear();
         primitiveIndices.Clear();
     }
-
-    /// <summary>
-    /// Calculates the detination rectangle for the render target onto the backbuffer of the window this application is painting to.
-    /// </summary>
-    /// <returns>The calculated destination rectangle.</returns>
-    private Rectangle CalculateDestinationRectangle()
-    {
-        ValidateDependencies();
-
-        Rectangle backbufferBounds = monoGameApp.GraphicsDevice.PresentationParameters.Bounds;
-        float backbufferAspectRatio = (float)backbufferBounds.Width / backbufferBounds.Height;
-        float renderTargetAspectRatio = (float)RenderTarget.Width / RenderTarget.Height;
-
-        // scale the image to fit into the window's back buffer.
-        float rectX = 0;
-        float rectY = 0f;
-        float rectWidth = backbufferBounds.Width;
-        float rectHeight = backbufferBounds.Height;
-
-        // stretch image (render target) width to fit on the window's back buffer.
-        if(backbufferAspectRatio > renderTargetAspectRatio)
-        {
-            rectWidth = rectHeight * renderTargetAspectRatio;
-            rectX = ((float)backbufferBounds.Width - rectWidth) * 0.5f;
-        }
-
-        // shrink image (render target) height to fit on the window's back buffer.
-        else if (backbufferAspectRatio < renderTargetAspectRatio)
-        {
-            rectHeight = rectWidth / renderTargetAspectRatio;
-            rectY = ((float)backbufferBounds.Height - rectHeight) * 0.5f;
-        }
-
-        return new(
-            (int)rectX,
-            (int)rectY,
-            (int)rectWidth, 
-            (int)rectHeight
-        );            
-    }
-
-
-    /// 
-    /// Drawing Code.
-    /// 
-
-
 
     public bool DrawSprite(in GenIndex textureId, Howl.Math.Vector2 position)
     {   

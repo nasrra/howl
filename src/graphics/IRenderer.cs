@@ -128,4 +128,19 @@ public interface IRenderer : IDisposable
     /// Gets the main render target aspect ratio.
     /// </summary>
     public float MainRenderTargetAspectRatio{get;}
+
+    /// <summary>
+    /// Sets the application window to be windowed.
+    /// </summary>
+    internal void Windowed();
+
+    /// <summary>
+    /// Sets the application window to be fullscreen. 
+    /// </summary>
+    internal void Fullscreen();
+
+    /// <summary>
+    /// Sets the application window to be borderless fullscreen.
+    /// </summary>
+    internal void BorderlessFullscreen();
 }

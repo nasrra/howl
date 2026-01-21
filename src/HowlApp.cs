@@ -94,6 +94,7 @@ public abstract class HowlApp : IDisposable
         {
             case HowlAppBackend.MonoGame:
                 monoGameApp.Exit();
+                Dispose();
             break;
         }
         Dispose();        
@@ -116,9 +117,29 @@ public abstract class HowlApp : IDisposable
         InputManager.Update(deltaTime);
     }
 
-    // public virtual void InitialiseShaders()
+    /// <summary>
+    /// Sets the application window to be windowed.
+    /// </summary>
+    public void Windowed()
+    {
+        Renderer.Windowed();
+    }
+
+    /// <summary>
+    /// Sets the application window to be fullscreen.
+    /// </summary>
+    // public void Fullscreen()
     // {
+    //     Renderer.Fullscreen();
     // }
+
+    /// <summary>
+    /// Sets the application window to be borderless fullscreen.
+    /// </summary>
+    public void BorderlessFullscreen()
+    {
+        Renderer.BorderlessFullscreen();
+    }
 
     /// 
     /// Disposal.
@@ -140,7 +161,8 @@ public abstract class HowlApp : IDisposable
 
         if (disposing)
         {
-            monoGameApp?.Dispose();
+            // monoGameApp?.Dispose();
+            Renderer?.Dispose();
         }
 
         disposed = true;
