@@ -48,6 +48,26 @@ public struct Rectangle
     public float Top => Y + Height;
 
     /// <summary>
+    /// Gets the top-left corner of this rectangle.
+    /// </summary>
+    public Vector2 TopLeft => new(X,Y);
+
+    /// <summary>
+    /// Gets the top-right corner of this rectangle.
+    /// </summary>
+    public Vector2 TopRight => new(X+Width,Y);
+
+    /// <summary>
+    /// Gets the bottom-left corner of this rectangle. 
+    /// </summary>
+    public Vector2 BottomLeft => new(X, Y-Height);
+
+    /// <summary>
+    /// Gets the bottom-right corner of this rectangle.
+    /// </summary>
+    public Vector2 BottomRight => new(X+Width, Y-Height);
+
+    /// <summary>
     /// Creates a new Rectangle instance.
     /// </summary>
     /// <param name="x">The x-coordinate of the origin point.</param>

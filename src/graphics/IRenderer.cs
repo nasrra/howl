@@ -70,16 +70,41 @@ public interface IRenderer : IDisposable
     /// </summary>
     /// <param name="rectangle"></param>
     /// <param name="color"></param>
-    public void DrawPrimitive(Rectangle rectangle, Color color);
+    public void DrawPrimitive(Rectangle rectangle, Color color, bool wireframe);
 
     /// <summary>
-    /// Draws a line between to points in world space.
+    /// Draws a solid rectangle for a single frame.
+    /// </summary>
+    /// <param name="rectangle"></param>
+    /// <param name="color"></param>
+    public void DrawRectangleSolid(Rectangle rectangle, Color color);
+
+    /// <summary>
+    /// Draws a wireframe rectangle for a single frame.
+    /// </summary>
+    /// <param name="rectangle">The rectangle data.</param>
+    /// <param name="color">The color to draw with.</param>
+    /// <param name="thickness">The thickness of the wireframe line segments.</param>
+    public void DrawRectangleWireframe(Rectangle rectangle, Color color, float thickness);
+
+    /// <summary>
+    /// Draws a line between to points in world space for a single frame.
     /// </summary>
     /// <param name="a">The point to start the line segment from.</param>
     /// <param name="b">The point to end the line segment at.</param>
-    /// <param name="thickness">The thickness of th  line segment.</param>
+    /// <param name="thickness">The thickness of the line segment.</param>
     /// <param name="color">The color od the line segment.</param>
-    public void DrawLine(Vector2 a, Vector2 b, float thickness, Color color);
+    /// <param name="scaleThickness">Scale the thickness by the camera zoom.</param>
+    public void DrawLine(Vector2 a, Vector2 b, Color color, float thickness, bool scaleThickness = true);
+
+    /// <summary>
+    /// Draws a circle in world space for a single frame.
+    /// </summary>
+    /// <param name="circle">The circle data.</param>
+    /// <param name="color">The color to draw with.</param>
+    /// <param name="thickness">The thickness of the wireframe line segments.</param>
+    /// <param name="points">The amount of points used to draw the circle.</param>
+    public void DrawCircleWireframe(Circle circle, Color color, float thickness, int points = 16);
 
     /// <summary>
     /// Draws a sprite to the currently bound render texture.

@@ -85,12 +85,9 @@ public class Camera : ICamera
     {
         ValidateDependencies();
 
-        // Compute aspect ratio of the actual render target
-        float aspectRatio = (float)renderer.MainRenderTargetWidth / renderer.MainRenderTargetHeight;
-
         // Compute half-width and half-height in world units based on virtual resolution
         float halfHeight = (zoomVirtualHeight * 0.5f) / zoom;
-        float halfWidth = halfHeight * aspectRatio; // keep aspect ratio correct
+        float halfWidth = halfHeight * renderer.MainRenderTargetAspectRatio; // keep aspect ratio correct
 
         // Note:
         // Up is y+ and right is x+;

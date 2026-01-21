@@ -321,6 +321,13 @@ public class Renderer : IRenderer
         );            
     }
 
+
+    /// 
+    /// Drawing Code.
+    /// 
+
+
+
     public bool DrawSprite(in GenIndex textureId, Howl.Math.Vector2 position)
     {   
         ReadonlyRef<Texture2D> texture = textureManager.GetTextureReadonlyRef(textureId);
@@ -356,14 +363,46 @@ public class Renderer : IRenderer
         }
     }
 
-    public void DrawPrimitive(Howl.Math.Rectangle rectangle, Howl.Graphics.Color color)
-    { 
-        rectangle.Y *= -1;
+    public void DrawPrimitive(Howl.Math.Rectangle rectangle, Howl.Graphics.Color color, bool wireframe)
+    {
+        if (wireframe)
+        {
+            DrawRectangleWireframe(rectangle, color);
+        }
+        else
+        {
+            DrawRectangleSolid(rectangle, color);
+        }
+    }
 
+    public void DrawRectangleWireframe(Howl.Math.Rectangle rectangle, Howl.Graphics.Color color, float thickness = 4)
+    {
         if(primitiveVertices.Count > short.MaxValue)
         {
             throw new OverflowException();
         }
+
+        // (Note):
+        // Dont reverse y-coordinates because draw line already does that.
+
+        DrawLine(rectangle.TopLeft,rectangle.TopRight, color, thickness);
+        DrawLine(rectangle.TopRight,rectangle.BottomRight, color, thickness);
+        DrawLine(rectangle.BottomRight,rectangle.BottomLeft, color, thickness);
+        DrawLine(rectangle.BottomLeft,rectangle.TopLeft, color, thickness);
+    }
+
+    public void DrawRectangleSolid(Howl.Math.Rectangle rectangle, Howl.Graphics.Color color)
+    {
+        if(primitiveVertices.Count > short.MaxValue)
+        {
+            throw new OverflowException();
+        }
+
+
+        // (Note):
+        // reverse y-coordinates because monogame
+        // sprite batch is y+ = down, Howl is y+ = up.
+        rectangle.Y *= -1;
 
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
@@ -399,11 +438,13 @@ public class Renderer : IRenderer
         primitiveVertices.Add(new(a.ToMonoGame(), monoGameColor));
         primitiveVertices.Add(new(b.ToMonoGame(), monoGameColor));
         primitiveVertices.Add(new(c.ToMonoGame(), monoGameColor));
-        primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));
+        primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));        
     }
 
-    public void DrawLine(Howl.Math.Vector2 a, Howl.Math.Vector2 b, float thickness, Howl.Graphics.Color color)
+    public void DrawLine(Howl.Math.Vector2 a, Howl.Math.Vector2 b, Howl.Graphics.Color color, float thickness, bool scaleThickness = true)
     {
+        thickness /= camera.Zoom;
+
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
         a.Y *= -1;
@@ -454,6 +495,32 @@ public class Renderer : IRenderer
         primitiveVertices.Add(new(corner2.ToMonoGame(), monoGameColor));
         primitiveVertices.Add(new(corner3.ToMonoGame(), monoGameColor));
         primitiveVertices.Add(new(corner4.ToMonoGame(), monoGameColor));
+    }
+
+    public void DrawCircleWireframe(Howl.Math.Circle circle, Howl.Graphics.Color color, float thickness, int points = 16)
+    {
+        if(points == System.Math.Clamp(points, 3, int.MaxValue))
+        {
+            float deltaAngle = (float)System.Math.Tau / points;
+            float angle = 0f;
+
+            for(int i = 0; i < points; i++)
+            {
+                float ax = MathF.Sin(angle) * circle.Radius + circle.X;
+                float ay = MathF.Cos(angle) * circle.Radius + circle.Y;
+
+                angle += deltaAngle;
+
+                float bx = MathF.Sin(angle) * circle.Radius + circle.X;
+                float by = MathF.Cos(angle) * circle.Radius + circle.Y;
+
+                DrawLine(new(ax, ay), new(bx,by), color, thickness);
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException($"Renderer can only draw a circle wireframe with 3 or inr.MaxValue points, not {points} amount of points.");   
+        }
     }
 
 
