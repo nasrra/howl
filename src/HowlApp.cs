@@ -128,10 +128,10 @@ public abstract class HowlApp : IDisposable
     /// <summary>
     /// Sets the application window to be fullscreen.
     /// </summary>
-    // public void Fullscreen()
-    // {
-    //     Renderer.Fullscreen();
-    // }
+    public void Fullscreen()
+    {
+        Renderer.Fullscreen();
+    }
 
     /// <summary>
     /// Sets the application window to be borderless fullscreen.
@@ -161,7 +161,6 @@ public abstract class HowlApp : IDisposable
 
         if (disposing)
         {
-            // monoGameApp?.Dispose();
             Renderer?.Dispose();
         }
 

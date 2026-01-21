@@ -39,14 +39,21 @@ public class Renderer : IRenderer
 
     private MonoGameApp monoGameApp;
 
-    private bool disposed = false;
-    public bool IsDisposed => disposed;
-
     public float MainRenderTargetWidth => RenderTarget.Width;
 
     public float MainRenderTargetHeight => RenderTarget.Height;
 
     public float MainRenderTargetAspectRatio => (float)RenderTarget.Width / RenderTarget.Height;
+
+    private bool disposed = false;
+    public bool IsDisposed => disposed;
+
+
+    ///
+    /// Constructors.
+    /// 
+
+
 
     /// <summary>
     /// Creates a new MonoGame renderer instance.
@@ -111,7 +118,15 @@ public class Renderer : IRenderer
 
         textureManager = new TextureManager(monoGameApp);
         camera = new Camera(monoGameApp, this, cameraPosition, cameraZoomVirtualheight);
+
+        LinkEvents();
     }
+
+
+    /// 
+    /// Validation.
+    /// 
+
 
     private void ValidateDependencies()
     {
@@ -120,6 +135,12 @@ public class Renderer : IRenderer
             throw new ObjectDisposedException("Renderer cannot operate on/with a disposed MonoGameApp.");
         }
     }
+
+
+    /// 
+    /// Setters.
+    /// 
+
 
     public void SetResolution(Resolution resolution)
     {
@@ -142,7 +163,6 @@ public class Renderer : IRenderer
             monoGameApp.GraphicsDeviceManager.PreferredBackBufferHeight = height;
             monoGameApp.GraphicsDeviceManager.PreferredBackBufferWidth = width;
             monoGameApp.GraphicsDeviceManager.ApplyChanges();
-            UpdateMainRenderDestinationRectangle();
         }
         else
         {
@@ -174,6 +194,12 @@ public class Renderer : IRenderer
         }
     }
 
+
+    /// 
+    /// Screen Mode Handling.
+    /// 
+
+
     public void Windowed()
     {
         ValidateDependencies();
@@ -184,15 +210,11 @@ public class Renderer : IRenderer
         }
 
         monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
-        
-        // update the destination rectangle as the back buffer window size is modified. 
-
-        UpdateMainRenderDestinationRectangle();
     }
 
     public void Fullscreen()
     {
-        throw new Exception("This method should not be used as MonoGame currently has a bad bug. Read the comment within this function.");
+        // throw new Exception("This method should not be used as MonoGame currently has a bad bug. Read the comment within this function.");
 
         // NOTE:
         // Monogame "corrupts" the computers back buffer when toggling fullscreen upon closing the application afterwards. 
@@ -200,21 +222,17 @@ public class Renderer : IRenderer
         // nothing  can be clicked on the computer, alt+f4 doesnt work, it completely nukes the computer.
 
 
-        // ValidateDependencies();
+        ValidateDependencies();
 
-        // if(monoGameApp.GraphicsDeviceManager.IsFullScreen == true
-        // && monoGameApp.GraphicsDeviceManager.HardwareModeSwitch == true)
-        // {
-        //     return;
-        // }
+        if(monoGameApp.GraphicsDeviceManager.IsFullScreen == true
+        && monoGameApp.GraphicsDeviceManager.HardwareModeSwitch == true)
+        {
+            return;
+        }
 
-        // monoGameApp.GraphicsDeviceManager.HardwareModeSwitch = true;
+        monoGameApp.GraphicsDeviceManager.HardwareModeSwitch = true;
 
-        // monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
-
-        // // update the destination rectangle as the back buffer window size is modified. 
-
-        // UpdateMainRenderDestinationRectangle();
+        monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
     }
 
     public void BorderlessFullscreen()
@@ -231,10 +249,75 @@ public class Renderer : IRenderer
 
         monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
 
-        // update the destination rectangle as the back buffer window size is modified. 
-
-        UpdateMainRenderDestinationRectangle();
     }
+
+
+    ///
+    /// Updating.
+    /// 
+
+
+    /// <summary>
+    // Calculates ans sets the new projection matix so that -y is down and -x is left.
+    /// </summary>
+    private void UpdateProjectionMatrix()
+    {
+        ValidateDependencies();
+
+        camera.Update();
+
+        // update effects to use the new projection matrix.
+        
+        EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
+    }
+
+    /// <summary>
+    /// Calculates the detination rectangle for the render target onto the backbuffer of the window this application is painting to.
+    /// </summary>
+    /// <returns>The calculated destination rectangle.</returns>
+    private void UpdateMainRenderDestinationRectangle()
+    {
+        ValidateDependencies();
+
+        //     Rectangle backbufferBounds = monoGameApp.GraphicsDevice.PresentationParameters.Bounds;
+        int backBufferWidth = monoGameApp.Window.ClientBounds.Width;
+        int backBufferHeight = monoGameApp.Window.ClientBounds.Height;
+        float backbufferAspectRatio = (float)backBufferWidth / backBufferHeight;
+        float renderTargetAspectRatio = (float)RenderTarget.Width / RenderTarget.Height;
+
+        // scale the image to fit into the window's back buffer.
+        float rectX = 0;
+        float rectY = 0f;
+        float rectWidth = backBufferWidth;
+        float rectHeight = backBufferHeight;
+
+        // stretch image (render target) width to fit on the window's back buffer.
+        if(backbufferAspectRatio > renderTargetAspectRatio)
+        {
+            rectWidth = rectHeight * renderTargetAspectRatio;
+            rectX = ((float)backBufferWidth - rectWidth) * 0.5f;
+        }
+
+        // shrink image (render target) height to fit on the window's back buffer.
+        else if (backbufferAspectRatio < renderTargetAspectRatio)
+        {
+            rectHeight = rectWidth / renderTargetAspectRatio;
+            rectY = ((float)backBufferHeight - rectHeight) * 0.5f;
+        }
+
+        DestinationRectangle = new(
+            (int)rectX,
+            (int)rectY,
+            (int)rectWidth, 
+            (int)rectHeight
+        );            
+    }
+
+
+    /// 
+    /// Drawing Code.
+    /// 
+
 
     public void BeginDraw()
     {   
@@ -292,67 +375,6 @@ public class Renderer : IRenderer
 
         spriteBatch.End();
     }
-
-    /// <summary>
-    // Calculates ans sets the new projection matix so that -y is down and -x is left.
-    /// </summary>
-    private void UpdateProjectionMatrix()
-    {
-        ValidateDependencies();
-
-        camera.Update();
-
-        // update effects to use the new projection matrix.
-        
-        EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
-    }
-
-    /// <summary>
-    /// Calculates the detination rectangle for the render target onto the backbuffer of the window this application is painting to.
-    /// </summary>
-    /// <returns>The calculated destination rectangle.</returns>
-    private void UpdateMainRenderDestinationRectangle()
-    {
-        ValidateDependencies();
-
-        int backBufferWidth = monoGameApp.Window.ClientBounds.Width;
-        int backBufferHeight = monoGameApp.Window.ClientBounds.Height;
-        float backbufferAspectRatio = (float)backBufferWidth / backBufferHeight;
-        float renderTargetAspectRatio = (float)RenderTarget.Width / RenderTarget.Height;
-
-        // scale the image to fit into the window's back buffer.
-        float rectX = 0;
-        float rectY = 0f;
-        float rectWidth = backBufferWidth;
-        float rectHeight = backBufferHeight;
-
-        // stretch image (render target) width to fit on the window's back buffer.
-        if(backbufferAspectRatio > renderTargetAspectRatio)
-        {
-            rectWidth = rectHeight * renderTargetAspectRatio;
-            rectX = ((float)backBufferWidth - rectWidth) * 0.5f;
-        }
-
-        // shrink image (render target) height to fit on the window's back buffer.
-        else if (backbufferAspectRatio < renderTargetAspectRatio)
-        {
-            rectHeight = rectWidth / renderTargetAspectRatio;
-            rectY = ((float)backBufferHeight - rectHeight) * 0.5f;
-        }
-
-        DestinationRectangle = new(
-            (int)rectX,
-            (int)rectY,
-            (int)rectWidth, 
-            (int)rectHeight
-        );            
-    }
-
-
-    /// 
-    /// Drawing Code.
-    /// 
-
 
     /// <summary>
     /// Draws all stored primitive shapes to the next frame/screen, clearing the internal primitives cache when drawn for the frame/screen after. 
@@ -588,6 +610,32 @@ public class Renderer : IRenderer
 
 
     /// 
+    /// Linkage.
+    /// 
+
+
+    private void LinkEvents()
+    {
+        monoGameApp.GraphicsDevice.DeviceReset += OnGraphicsDeviceReset;
+    }
+
+    private void UnlinkEvents()
+    {
+        monoGameApp.GraphicsDevice.DeviceReset -= OnGraphicsDeviceReset;        
+    }
+
+    private void OnGraphicsDeviceReset(object caller, EventArgs e)
+    {
+        // This ensures that the main render destination rectangle
+        // will always be the correct size when the window's back buffer resizes;
+        // including when toggling fullscreen and manually setting the back buffer.
+        UpdateMainRenderDestinationRectangle();
+    }
+
+
+
+
+    /// 
     /// Disposal.
     /// 
 
@@ -611,6 +659,7 @@ public class Renderer : IRenderer
             TextureManager.Dispose();
             spriteBatch.Dispose();
             RenderTarget.Dispose();
+            UnlinkEvents();
         }
 
         disposed = true;
