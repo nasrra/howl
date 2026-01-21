@@ -216,11 +216,6 @@ public class Renderer : IRenderer
     {
         // throw new Exception("This method should not be used as MonoGame currently has a bad bug. Read the comment within this function.");
 
-        // NOTE:
-        // Monogame "corrupts" the computers back buffer when toggling fullscreen upon closing the application afterwards. 
-        // The screen is fine for a split second then switches to the "Clear Colour" of the renderer.
-        // nothing  can be clicked on the computer, alt+f4 doesnt work, it completely nukes the computer.
-
 
         ValidateDependencies();
 
@@ -233,6 +228,14 @@ public class Renderer : IRenderer
         monoGameApp.GraphicsDeviceManager.HardwareModeSwitch = true;
 
         monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
+
+
+        // NOTE:
+        // Monogame "corrupts" the computers back buffer when toggling fullscreen upon closing the application afterwards. 
+        // The screen is fine for a split second then switches to the "Clear Colour" of the renderer.
+        // nothing  can be clicked on the computer, alt+f4 doesnt work, it completely nukes the computer.
+        
+        // UpdateMainRenderDestinationRectangle(); <-- DONT DO THIS at the end of this, subscribe to the monogame OnGraphicsDeviceReset(object caller, EventArgs e).
     }
 
     public void BorderlessFullscreen()
@@ -631,8 +634,6 @@ public class Renderer : IRenderer
         // including when toggling fullscreen and manually setting the back buffer.
         UpdateMainRenderDestinationRectangle();
     }
-
-
 
 
     /// 
