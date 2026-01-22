@@ -589,20 +589,22 @@ public class Renderer : IRenderer
     {
         if(points == System.Math.Clamp(points, 3, int.MaxValue))
         {
-            float deltaAngle = (float)System.Math.Tau / points;
-            float angle = 0f;
+            float rotation = (float)System.Math.Tau / points;            
+            float sin = MathF.Sin(rotation);
+            float cos = MathF.Cos(rotation);
+            Howl.Math.Vector2 start = new(0f, circle.Radius);
+            Howl.Math.Vector2 position = new(circle.X, circle.Y);
 
             for(int i = 0; i < points; i++)
             {
-                float ax = MathF.Sin(angle) * circle.Radius + circle.X;
-                float ay = MathF.Cos(angle) * circle.Radius + circle.Y;
+                Howl.Math.Vector2 end = new(
+                    cos * start.X  - sin * start.Y,
+                    sin * start.X  + cos * start.Y
+                );
 
-                angle += deltaAngle;
+                DrawLine(start + position, end + position, color, thickness);
 
-                float bx = MathF.Sin(angle) * circle.Radius + circle.X;
-                float by = MathF.Cos(angle) * circle.Radius + circle.Y;
-
-                DrawLine(new(ax, ay), new(bx,by), color, thickness);
+                start = end;
             }
         }
         else
