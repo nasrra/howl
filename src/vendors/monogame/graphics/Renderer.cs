@@ -12,11 +12,11 @@ namespace Howl.Vendors.MonoGame.Graphics;
 
 public class Renderer : IRenderer
 {
-    Howl.Graphics.Color clearColor;
-    public Howl.Graphics.Color ClearColor
+    Howl.Graphics.Colour clearColour;
+    public Howl.Graphics.Colour ClearColour
     {
-        get => clearColor;
-        set => clearColor = value;
+        get => clearColour;
+        set => clearColour = value;
     }
     
     public EffectManager EffectManager { get; private set; }
@@ -334,7 +334,7 @@ public class Renderer : IRenderer
         // being drawn to and not the actual backbuffer dimensions of the program.
         UpdateProjectionMatrix();
         
-        monoGameApp.GraphicsDevice.Clear(clearColor.ToMonoGame());
+        monoGameApp.GraphicsDevice.Clear(clearColour.ToMonoGame());
 
         spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
@@ -451,85 +451,7 @@ public class Renderer : IRenderer
         }
     }
 
-    public void DrawPrimitive(Howl.Math.Rectangle rectangle, Howl.Graphics.Color color, bool wireframe)
-    {
-        if (wireframe)
-        {
-            DrawRectangleWireframe(rectangle, color);
-        }
-        else
-        {
-            DrawRectangleSolid(rectangle, color);
-        }
-    }
-
-    public void DrawRectangleWireframe(Howl.Math.Rectangle rectangle, Howl.Graphics.Color color, float thickness = 4)
-    {
-        if(primitiveVertices.Count > short.MaxValue)
-        {
-            throw new OverflowException();
-        }
-
-        // (Note):
-        // Dont reverse y-coordinates because draw line already does that.
-
-        DrawLine(rectangle.TopLeft,rectangle.TopRight, color, thickness);
-        DrawLine(rectangle.TopRight,rectangle.BottomRight, color, thickness);
-        DrawLine(rectangle.BottomRight,rectangle.BottomLeft, color, thickness);
-        DrawLine(rectangle.BottomLeft,rectangle.TopLeft, color, thickness);
-    }
-
-    public void DrawRectangleSolid(Howl.Math.Rectangle rectangle, Howl.Graphics.Color color)
-    {
-        if(primitiveVertices.Count > short.MaxValue)
-        {
-            throw new OverflowException();
-        }
-
-
-        // (Note):
-        // reverse y-coordinates because monogame
-        // sprite batch is y+ = down, Howl is y+ = up.
-        rectangle.Y *= -1;
-
-        // Note: triangle vertices and indexes are done in
-        // a clockwise motion. 
-
-        short totalvVertices = (short)primitiveVertices.Count;
-        primitiveIndices.Add(totalvVertices);
-        primitiveIndices.Add((short)(totalvVertices+1));
-        primitiveIndices.Add((short)(totalvVertices+2));
-        primitiveIndices.Add(totalvVertices);
-        primitiveIndices.Add((short)(totalvVertices+2));
-        primitiveIndices.Add((short)(totalvVertices+3));
-
-
-        // translate in relation to the camera.
-        // (Note):
-        // reverse y-coordinates because monogame
-        // sprite batch is y+ = down, Howl is y+ = up.
-        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
-        Howl.Math.Vector3 a = -cameraPosition;
-        Howl.Math.Vector3 b = -cameraPosition;
-        Howl.Math.Vector3 c = -cameraPosition;
-        Howl.Math.Vector3 d = -cameraPosition;
-
-        // apply the rectangles world coordinates.
-        a += new Howl.Math.Vector3(rectangle.Left, rectangle.Top, 0f); 
-        b += new Howl.Math.Vector3(rectangle.Right, rectangle.Top, 0f); 
-        c += new Howl.Math.Vector3(rectangle.Right, rectangle.Bottom, 0f);
-        d += new Howl.Math.Vector3(rectangle.Left, rectangle.Bottom, 0f); 
-        
-        Microsoft.Xna.Framework.Color monoGameColor = color.ToMonoGame();
-
-
-        primitiveVertices.Add(new(a.ToMonoGame(), monoGameColor));
-        primitiveVertices.Add(new(b.ToMonoGame(), monoGameColor));
-        primitiveVertices.Add(new(c.ToMonoGame(), monoGameColor));
-        primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));        
-    }
-
-    public void DrawLine(Howl.Math.Vector2 a, Howl.Math.Vector2 b, Howl.Graphics.Color color, float thickness, bool scaleThickness = true)
+    public void DrawLine(Howl.Math.Vector2 a, Howl.Math.Vector2 b, Howl.Graphics.Colour colour, float thickness, bool scaleThickness = true)
     {
         thickness /= camera.Zoom;
 
@@ -577,7 +499,7 @@ public class Renderer : IRenderer
         corner3 += new Howl.Math.Vector3(b + oppositeNormal + direction, 0);
         corner4 += new Howl.Math.Vector3(a + oppositeNormal + oppositeDirection, 0); 
 
-        Microsoft.Xna.Framework.Color monoGameColor = color.ToMonoGame();
+        Microsoft.Xna.Framework.Color monoGameColor = colour.ToMonoGame();
 
         primitiveVertices.Add(new(corner1.ToMonoGame(), monoGameColor));
         primitiveVertices.Add(new(corner2.ToMonoGame(), monoGameColor));
@@ -585,15 +507,91 @@ public class Renderer : IRenderer
         primitiveVertices.Add(new(corner4.ToMonoGame(), monoGameColor));
     }
 
-    public void DrawCircleWireframe(Howl.Math.Circle circle, Howl.Graphics.Color color, float thickness, int points = 16)
+    public void DrawWireframeShape(Howl.Math.Transform transform, Howl.Graphics.RectangleShape shape, float thickness = 4)
+    {
+        if(primitiveVertices.Count > short.MaxValue)
+        {
+            throw new OverflowException();
+        }
+
+        // (Note):
+        // Dont reverse y-coordinates because draw line already does that.
+
+        Howl.Math.Vector2 topLeft       = shape.TopLeft.Transform(transform);
+        Howl.Math.Vector2 topRight      = shape.TopRight.Transform(transform);
+        Howl.Math.Vector2 bottomLeft    = shape.BottomLeft.Transform(transform);
+        Howl.Math.Vector2 bottomRight   = shape.BottomRight.Transform(transform); 
+
+        DrawLine(topLeft, topRight, shape.Colour, thickness);
+        DrawLine(topRight, bottomRight, shape.Colour, thickness);
+        DrawLine(bottomRight, bottomLeft, shape.Colour, thickness);
+        DrawLine(bottomLeft, topLeft, shape.Colour, thickness);
+    }
+
+    public void DrawSolidShape(Howl.Math.Transform transform, Howl.Graphics.RectangleShape shape)
+    {
+        if(primitiveVertices.Count > short.MaxValue)
+        {
+            throw new OverflowException();
+        }
+
+        // Note: triangle vertices and indexes are done in
+        // a clockwise motion. 
+
+        short totalvVertices = (short)primitiveVertices.Count;
+        primitiveIndices.Add(totalvVertices);
+        primitiveIndices.Add((short)(totalvVertices+1));
+        primitiveIndices.Add((short)(totalvVertices+2));
+        primitiveIndices.Add(totalvVertices);
+        primitiveIndices.Add((short)(totalvVertices+2));
+        primitiveIndices.Add((short)(totalvVertices+3));
+
+        // translate in relation to the camera.
+        // (Note):
+        // reverse y-coordinates because monogame
+        // sprite batch is y+ = down, Howl is y+ = up.
+        Howl.Math.Vector3 topLeft       = new(shape.TopLeft.Transform(transform),0);
+        Howl.Math.Vector3 topRight      = new(shape.TopRight.Transform(transform),0);
+        Howl.Math.Vector3 bottomLeft    = new(shape.BottomLeft.Transform(transform),0);
+        Howl.Math.Vector3 bottomRight   = new(shape.BottomRight.Transform(transform),0);
+
+        // (Note):
+        // reverse y-coordinates because monogame
+        // sprite batch is y+ = down, Howl is y+ = up.
+        topLeft.Y *= -1;
+        topRight.Y *= -1;
+        bottomLeft.Y *= -1;
+        bottomRight.Y *= -1;
+
+        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+
+        // apply the rectangles world coordinates.
+
+        Howl.Math.Vector3 a = -cameraPosition + topLeft;
+        Howl.Math.Vector3 b = -cameraPosition + topRight;
+        Howl.Math.Vector3 c = -cameraPosition + bottomRight;
+        Howl.Math.Vector3 d = -cameraPosition + bottomLeft;
+        
+        Microsoft.Xna.Framework.Color monoGameColor = shape.Colour.ToMonoGame();
+        primitiveVertices.Add(new(a.ToMonoGame(), monoGameColor));
+        primitiveVertices.Add(new(b.ToMonoGame(), monoGameColor));
+        primitiveVertices.Add(new(c.ToMonoGame(), monoGameColor));
+        primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));        
+    }
+
+    public void DrawWireframeShape(
+        Howl.Math.Transform transform, 
+        CircleShape shape, 
+        float thickness = IRenderer.DefaultWireframeThickness, 
+        int points = IRenderer.DefaultCirclePointAmount)   
     {
         if(points == System.Math.Clamp(points, 3, int.MaxValue))
         {
             float rotation = (float)System.Math.Tau / points;            
             float sin = MathF.Sin(rotation);
             float cos = MathF.Cos(rotation);
-            Howl.Math.Vector2 start = new(0f, circle.Radius);
-            Howl.Math.Vector2 position = new(circle.X, circle.Y);
+            Howl.Math.Vector2 start = new(0f, shape.Circle.Radius);
+            Howl.Math.Vector2 position = new(shape.Circle.X, shape.Circle.Y);
 
             for(int i = 0; i < points; i++)
             {
@@ -602,7 +600,12 @@ public class Renderer : IRenderer
                     sin * start.X  + cos * start.Y
                 );
 
-                DrawLine(start + position, end + position, color, thickness);
+                DrawLine(
+                    (start + position).Transform(transform), 
+                    (end + position).Transform(transform), 
+                    shape.Colour, 
+                    thickness
+                );
 
                 start = end;
             }

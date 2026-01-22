@@ -20,7 +20,7 @@ declare -A TEST_MAP
 TEST_MAP=(
     ["ECS"]="${NAMESPACE}ECS."
     ["Math"]="${NAMESPACE}Math."
-    ["MonoGameColorExt"]="${MONOGAME_GRAPHICS_NAMESPACE}ColorExtensionsTest"
+    ["MonoGameColourExt"]="${MONOGAME_GRAPHICS_NAMESPACE}ColourExtensionsTest"
     ["MonoGameRectangleExt"]="${MONOGAME_MATH_NAMESPACE}RectangleExtensionsTest"
     ["MonoGameVector2Ext"]="${MONOGAME_MATH_NAMESPACE}Vector2ExtensionsTest"
     ["MonoGameVector3Ext"]="${MONOGAME_MATH_NAMESPACE}Vector3ExtensionsTest"

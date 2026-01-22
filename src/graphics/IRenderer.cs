@@ -8,10 +8,13 @@ namespace Howl.Graphics;
 
 public interface IRenderer : IDisposable
 {
+    protected const float DefaultWireframeThickness = 4;
+    protected const int DefaultCirclePointAmount = 16;
+
     /// <summary>
     /// Gets and sets the color to clear to every frame.
     /// </summary>
-    public Color ClearColor {get; set;}
+    public Colour ClearColour {get; set;}
 
     /// <summary>
     /// Gets the texture manager used by this renderer.
@@ -66,26 +69,12 @@ public interface IRenderer : IDisposable
     public void EndDraw();
 
     /// <summary>
-    /// Draws a primitive for a single frame.
+    /// Draws a sprite to the currently bound render texture.
     /// </summary>
-    /// <param name="rectangle"></param>
-    /// <param name="color"></param>
-    public void DrawPrimitive(Rectangle rectangle, Color color, bool wireframe);
-
-    /// <summary>
-    /// Draws a solid rectangle for a single frame.
-    /// </summary>
-    /// <param name="rectangle"></param>
-    /// <param name="color"></param>
-    public void DrawRectangleSolid(Rectangle rectangle, Color color);
-
-    /// <summary>
-    /// Draws a wireframe rectangle for a single frame.
-    /// </summary>
-    /// <param name="rectangle">The rectangle data.</param>
-    /// <param name="color">The color to draw with.</param>
-    /// <param name="thickness">The thickness of the wireframe line segments.</param>
-    public void DrawRectangleWireframe(Rectangle rectangle, Color color, float thickness);
+    /// <param name="textureId"></param>
+    /// <param name="position"></param>
+    /// <returns></returns>
+    public bool DrawSprite(in GenIndex textureId, Vector2 position);
 
     /// <summary>
     /// Draws a line between to points in world space for a single frame.
@@ -95,24 +84,31 @@ public interface IRenderer : IDisposable
     /// <param name="thickness">The thickness of the line segment.</param>
     /// <param name="color">The color od the line segment.</param>
     /// <param name="scaleThickness">Scale the thickness by the camera zoom.</param>
-    public void DrawLine(Vector2 a, Vector2 b, Color color, float thickness, bool scaleThickness = true);
+    public void DrawLine(Vector2 a, Vector2 b, Colour color, float thickness, bool scaleThickness = true);
 
     /// <summary>
-    /// Draws a circle in world space for a single frame.
+    /// Draws a solid shape for a single frame.
     /// </summary>
-    /// <param name="circle">The circle data.</param>
-    /// <param name="color">The color to draw with.</param>
+    /// <param name="transform">The transform data.</param>
+    /// <param name="shape">The rectangle to draw.</param>
+    public void DrawSolidShape(Transform transform, RectangleShape shape);
+
+    /// <summary>
+    /// Draws a wireframe shape for a single frame.
+    /// </summary>
+    /// <param name="transform">The transform data.</param>
+    /// <param name="shape">The rectangle data.</param>
+    /// <param name="thickness">The thickness of the wireframe line segments.</param>
+    public void DrawWireframeShape(Transform transform, RectangleShape shape, float thickness = DefaultWireframeThickness);
+
+    /// <summary>
+    /// Draws a wireframe shape for a single frame.
+    /// </summary>
+    /// <param name="transform">The transform data.</param>
+    /// <param name="shape">The circle data.</param>
     /// <param name="thickness">The thickness of the wireframe line segments.</param>
     /// <param name="points">The amount of points used to draw the circle.</param>
-    public void DrawCircleWireframe(Circle circle, Color color, float thickness, int points = 16);
-
-    /// <summary>
-    /// Draws a sprite to the currently bound render texture.
-    /// </summary>
-    /// <param name="textureId"></param>
-    /// <param name="position"></param>
-    /// <returns></returns>
-    public bool DrawSprite(in GenIndex textureId, Vector2 position);
+    public void DrawWireframeShape(Transform transform, CircleShape shape, float thickness = DefaultWireframeThickness, int points = DefaultCirclePointAmount);
 
     /// <summary>
     /// Gets the main render target width.

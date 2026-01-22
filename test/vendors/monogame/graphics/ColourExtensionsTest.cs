@@ -2,7 +2,7 @@ using Howl.Vendors.MonoGame.Graphics;
 
 namespace Howl.Test.Vendors.MonoGame.Graphics;
 
-public class ColorExtensionsTest
+public class ColourExtensionsTest
 {
     [Fact]
     public void ToMonoGame_Test()
@@ -11,7 +11,7 @@ public class ColorExtensionsTest
         byte g = 2;
         byte b = 3;
         byte a = 4;
-        Howl.Graphics.Color color = new(r,g,b,a);
+        Howl.Graphics.Colour color = new(r,g,b,a);
         Microsoft.Xna.Framework.Color result = color.ToMonoGame();
         Assert.Equal(r, result.R);
         Assert.Equal(g, result.G);
@@ -27,7 +27,7 @@ public class ColorExtensionsTest
         byte b = 3;
         byte a = 4;
         Microsoft.Xna.Framework.Color color = new(r,g,b,a);
-        Howl.Graphics.Color result = color.ToHowl();
+        Howl.Graphics.Colour result = color.ToHowl();
         Assert.Equal(r, result.R);
         Assert.Equal(g, result.G);
         Assert.Equal(b, result.B);

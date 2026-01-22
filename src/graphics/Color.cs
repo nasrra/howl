@@ -1,17 +1,17 @@
 namespace Howl.Graphics;
 
-public struct Color
+public struct Colour
 {
 
-    public static Color White => new Color(255,255,255,255);
+    public static Colour White => new Colour(255,255,255,255);
 
-    public static Color Black => new Color(0,0,0,255);
+    public static Colour Black => new Colour(0,0,0,255);
 
-    public static Color Red => new Color(255,0,0,255);
+    public static Colour Red => new Colour(255,0,0,255);
     
-    public static Color Green => new Color(0,255,0,255);
+    public static Colour Green => new Colour(0,255,0,255);
 
-    public static Color Blue => new Color(0,0,255,255);
+    public static Colour Blue => new Colour(0,0,255,255);
 
     /// <summary>
     /// Gets and sets the red channel component.
@@ -34,13 +34,13 @@ public struct Color
     public byte A;
 
     /// <summary>
-    /// Creates a new Color.
+    /// Creates a new Colour.
     /// </summary>
     /// <param name="r">The red channel value.</param>
     /// <param name="g">The green channel value.</param>
     /// <param name="b">The blue channel value.</param>
     /// <param name="a">The alpha channel value.</param>
-    public Color(byte r, byte g, byte b, byte a)
+    public Colour(byte r, byte g, byte b, byte a)
     {
         R = r;
         G = g;

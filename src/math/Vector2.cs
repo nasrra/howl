@@ -258,6 +258,45 @@ public struct Vector2
         return new Vector2(-vector.X, -vector.Y);
     }
 
+    /// <summary>
+    /// Transforms this vector by the supplied transform.
+    /// </summary>
+    /// <param name="transform">The transform data to transform by.</param>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 Transform(Transform transform)
+    {
+        return Transform(this, transform); 
+    }
+
+    /// <summary>
+    /// Transforms a vector by the supplied transform.
+    /// </summary>
+    /// <param name="vector">The vector to transform.</param>
+    /// <param name="transform">The transform data to transform by.</param>
+    /// <returns>The resultant veector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 Transform(Vector2 vector, Transform transform)
+    {
+        // NOTE:
+        // This ordering: Scale -> Rotation -> Translation
+        // should remain the same. It is pretty much Matrix math.
+
+        // Scale:
+        float sx = vector.X * transform.Scale.X;
+        float sy = vector.Y * transform.Scale.Y; 
+
+        // Rotation:
+        float rx = sx * transform.Cos - sy * transform.Sin;
+        float ry = sx * transform.Sin + sy * transform.Cos;
+
+        // Translation:
+        float tx = rx + transform.Position.X;
+        float ty = ry + transform.Position.Y;
+
+        return new(tx, ty);
+    }        
+
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public override int GetHashCode()
     {
