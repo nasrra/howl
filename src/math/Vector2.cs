@@ -12,9 +12,21 @@ public struct Vector2
     public static Vector2 Left      = new(-1,0);
     public static Vector2 Right     = new(1,0);
 
+    /// <summary>
+    /// Gets and sets the x-coordinate value.
+    /// </summary>
     public float X;
+
+    /// <summary>
+    /// Gets and sets the y-coordinate value.
+    /// </summary>
     public float Y;
 
+    /// <summary>
+    /// Construcsts a vector.
+    /// </summary>
+    /// <param name="x">The x-coordinate value.</param>
+    /// <param name="y">The y-coordinate value.</param>
     public Vector2(float x, float y)
     {
         X = x;
@@ -22,10 +34,10 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Adds the left-hand side Vector2 to the right-hand side.
+    /// Adds the left-hand side vector to the right-hand side.
     /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
-    /// <param name="rhs">The right-hand side Vector2.</param>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
     /// <returns>The resultant Vector2.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 operator +(Vector2 lhs, Vector2 rhs)
@@ -34,11 +46,11 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Subtracts the left-hand side Vector2 from the right-hand side.
+    /// Subtracts the left-hand side vector from the right-hand side.
     /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
-    /// <param name="rhs">The right-hand side Vector2.</param>
-    /// <returns>The resultant Vector2.</returns>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
+    /// <returns>The resultant vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 operator -(Vector2 lhs, Vector2 rhs)
     {
@@ -46,11 +58,11 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Divides the left-hand side Vector2 by the right-hand side.
+    /// Divides the left-hand side vector by the right-hand side.
     /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
-    /// <param name="rhs">The right-hand side Vector2.</param>
-    /// <returns>The resultant Vector2.</returns>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
+    /// <returns>The resultant vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 operator /(Vector2 lhs, Vector2 rhs)
     {
@@ -58,11 +70,11 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Divides the left-hand side Vector2 by the right-hand side.
+    /// Divides the left-hand side vector by the right-hand side.
     /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
+    /// <param name="lhs">The left-hand side vector.</param>
     /// <param name="rhs">The right-hand side value.</param>
-    /// <returns>The resultant Vector2.</returns>
+    /// <returns>The resultant vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 operator /(Vector2 lhs, float rhs)
     {
@@ -70,11 +82,11 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Multiplies the left-hand side Vector2 by the right-hand side.
+    /// Multiplies the left-hand side vector by the right-hand side.
     /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
-    /// <param name="rhs">The right-hand side Vector2.</param>
-    /// <returns>The resultant Vector2.</returns>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
+    /// <returns>The resultant vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 operator *(Vector2 lhs, Vector2 rhs)
     {
@@ -82,11 +94,11 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Multiples the left-hand side Vector2 by the right-hand side.
+    /// Multiples the left-hand side vector by the right-hand side.
     /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
+    /// <param name="lhs">The left-hand side vector.</param>
     /// <param name="rhs">The right-hand side value.</param>
-    /// <returns>The resultant Vector2.</returns>
+    /// <returns>The resultant vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 operator *(Vector2 lhs, float rhs)
     {
@@ -94,10 +106,10 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Checks if the left-hand side Vector2 is equal to the right-hand side.
+    /// Checks if the left-hand side vector is equal to the right-hand side.
     /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
-    /// <param name="rhs">The right-hand side Vector2.</param>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
     /// <returns>true, if both are equal; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool operator ==(Vector2 lhs, Vector2 rhs)
@@ -106,10 +118,10 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Checks if the left-hand side Vector2 is not equal to the right-hand side.
+    /// Checks if the left-hand side vector is not equal to the right-hand side.
     /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
-    /// <param name="rhs">The right-hand side Vector2.</param>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
     /// <returns>true, if both are not equal; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool operator !=(Vector2 lhs, Vector2 rhs)
@@ -118,7 +130,7 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Checks if the object is equal to this Vector2.
+    /// Checks if the object is equal to this vector.
     /// </summary>
     /// <param name="obj">The object to check against.</param>
     /// <returns>true, if both are equal; otherwise false.</returns>
@@ -129,31 +141,21 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Gets the squared length of this Vector2. 
+    /// Gets the dot product between this vector and another.
     /// </summary>
-    /// <returns>The squared length of this Vector2.</returns>
+    /// <param name="vector">The vector to dot product with.</param>
+    /// <returns>The dot profduct value</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public readonly float LengthSquared()
+    public readonly float Dot(Vector2 vector)
     {
-        return Dot(this, this);        
+        return Dot(this, vector);
     }
 
     /// <summary>
-    /// Gets the length of this Vector2.
+    /// Gets the dot product of two vector.
     /// </summary>
-    /// <returns>The length of this Vector2.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public readonly float Length()
-    {
-        float lengthSquared = LengthSquared();
-        return MathF.Sqrt(lengthSquared);
-    }
-
-    /// <summary>
-    /// Gets the dot product of two Vector2.
-    /// </summary>
-    /// <param name="lhs">The left-hand side Vector2.</param>
-    /// <param name="rhs">The right-hand side Vector2.</param>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
     /// <returns>The dot product.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float Dot(Vector2 lhs, Vector2 rhs)
@@ -162,35 +164,98 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Gets a Vector2 with the same direction as the specified Vector2, but with a length of one.
+    /// Gets the squared length of this vector. 
     /// </summary>
-    /// <param name="value">The Vector2 to normalize.</param>
-    /// <returns>The normalised Vector2.</returns>
+    /// <returns>The squared length of this vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 Normalise(Vector2 value)
+    public readonly float LengthSquared()
     {
-        return value / value.Length();
+        return Dot(this, this);        
     }
 
     /// <summary>
-    /// Gets a Vector2 with the same dirrection as the specified Vector2, but with a length of one.
+    /// Gets the squared length of a vector.
     /// </summary>
-    /// <returns>The normalised Vector2.</returns>
+    /// <param name="vector">The vector data.</param>
+    /// <returns>The sqaured lenght of the vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float LengthSquared(Vector2 vector)
+    {
+        return Dot(vector, vector);        
+    }
+
+    /// <summary>
+    /// Gets the length of this vector.
+    /// </summary>
+    /// <returns>The length of this vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public readonly float Length()
+    {
+        return Length(this);
+    }
+
+    /// <summary>
+    /// Gets the length of a vector.
+    /// </summary>
+    /// <param name="vector">The vector data.</param>
+    /// <returns>The length of the vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float Length(Vector2 vector)
+    {        
+        float lengthSquared = LengthSquared(vector);
+        return MathF.Sqrt(lengthSquared);
+    }
+
+    /// <summary>
+    /// Gets the inverse length of this vector.
+    /// </summary>
+    /// <returns>The inverse length of this vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public readonly float InverseLength()
+    {
+        return InverseLength(this);
+    }
+
+    /// <summary>
+    /// Gets the inverse length of this vector.
+    /// </summary>
+    /// <returns>The inverse length of this vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float InverseLength(Vector2 vector)
+    {        
+        return 1f / Length(vector);
+    }
+
+    /// <summary>
+    /// Gets a vector with the same dirrection as the specified vector, but with a length of one.
+    /// </summary>
+    /// <returns>The normalised vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public Vector2 Normalise()
     {
-        return this / Length();
+        return Normalise(this);
     }
 
     /// <summary>
-    /// Gets a Vector2 with the signs of each value being flipped.
+    /// Gets a vector with the same direction as the specified vector, but with a length of one.
     /// </summary>
-    /// <param name="vector2">The vector2 to perform this unary operator to.</param>
-    /// <returns>The resultant Vector2.</returns>
+    /// <param name="value">The vector to normalize.</param>
+    /// <returns>The normalised vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 operator -(Vector2 vector2)
+    public static Vector2 Normalise(Vector2 value)
     {
-        return new Vector2(-vector2.X, -vector2.Y);
+        return value * value.InverseLength();
+    }
+
+    /// <summary>
+    /// Gets a vector with the signs of each value being flipped.
+    /// </summary>
+    /// <param name="vector">The vector to perform this unary operator to.</param>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 operator -(Vector2 vector)
+    {
+        return new Vector2(-vector.X, -vector.Y);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

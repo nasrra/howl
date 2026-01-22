@@ -127,7 +127,12 @@ public class Vector2Test
         Vector2 result;
 
         a = new(1,2);
+
         result = a.Normalise();
+        Assert.Equal(0.45f, result.X, precision: 2);
+        Assert.Equal(0.89f, result.Y, precision: 2);
+
+        result = Vector2.Normalise(a);
         Assert.Equal(0.45f, result.X, precision: 2);
         Assert.Equal(0.89f, result.Y, precision: 2);
     }
@@ -159,4 +164,12 @@ public class Vector2Test
         Assert.Equal(1, a.X);
         Assert.Equal(-2, a.Y);
     }       
+
+    [Fact]
+    public void InverseLength_Test()
+    {
+        Vector2 a = new(2,6);
+        float length = a.Length();
+        Assert.Equal(6.325, length, precision: 3);
+    }
 }

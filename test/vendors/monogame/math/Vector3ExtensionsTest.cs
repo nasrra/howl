@@ -18,7 +18,7 @@ public class Vector3ExtensionsTest{
     public void ToMonoGame_Test()
     {
         Howl.Math.Vector3 howlVector = new(55, 123, 256);
-        Microsoft.Xna.Framework.Vector3 monogameVector = howlVector.ToMonogame();
+        Microsoft.Xna.Framework.Vector3 monogameVector = howlVector.ToMonoGame();
         Assert.Equal(new Microsoft.Xna.Framework.Vector3(55, 123, 256), monogameVector);
     }
 }

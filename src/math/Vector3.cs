@@ -14,10 +14,28 @@ public struct Vector3
     public static Vector3 Forward   = new(0,0,1);
     public static Vector3 Backward  = new(0,0,-1);
 
+    /// <summary>
+    /// Gets and sets the x-coordinate value.
+    /// </summary>
     public float X;
+
+    /// <summary>
+    /// Gets and sets the y-coordinate value.
+    /// </summary>
     public float Y;
+
+    /// <summary>
+    /// Gets and sets the z-coordinate value.
+    /// </summary>
     public float Z;
 
+
+    /// <summary>
+    /// Constructs a Vector3.
+    /// </summary>
+    /// <param name="x">The x-coordinate value.</param>
+    /// <param name="y">The y-coordinate value.</param>
+    /// <param name="z">The z-coordinate value.</param>
     public Vector3(float x, float y, float z)
     {
         X = x;
@@ -25,6 +43,11 @@ public struct Vector3
         Z = z;
     }
 
+    /// <summary>
+    /// Constructs a Vector3.
+    /// </summary>
+    /// <param name="vector">The x and y-coordinate values.</param>
+    /// <param name="z">The z-coordinate value.</param>
     public Vector3(Vector2 vector, float z)
     {
         X=vector.X;
@@ -172,6 +195,17 @@ public struct Vector3
         return MathF.Sqrt(lengthSquared);
     }
 
+
+    /// <summary>
+    /// Gets the inverse length of this vector.
+    /// </summary>
+    /// <returns>The inverse length of this vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public readonly float InverseLength()
+    {
+        return 1f / Length();
+    }
+
     /// <summary>
     /// Gets a vector with the same direction as the specified vector, but with a length of one.
     /// </summary>
@@ -180,7 +214,7 @@ public struct Vector3
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector3 Normalise(Vector3 value)
     {
-        return value / value.Length();
+        return value * value.InverseLength();
     }
 
     /// <summary>
@@ -190,7 +224,7 @@ public struct Vector3
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public Vector3 Normalise()
     {
-        return this / Length();
+        return this * InverseLength();
     }
 
     /// <summary>
