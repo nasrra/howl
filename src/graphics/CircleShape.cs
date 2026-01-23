@@ -20,6 +20,21 @@ public struct CircleShape
     public Vector2 Origin;
 
     /// <summary>
+    /// Gets the positional x-coordinate.
+    /// </summary>
+    public float X => Circle.X - Origin.X;
+
+    /// <summary>
+    /// Gets the positional y-coordinate.
+    /// </summary>
+    public float Y => Circle.Y - Origin.Y;
+
+    /// <summary>
+    /// Gets positional coordinate values.
+    /// </summary>
+    public Vector2 Position => new(X, Y);
+
+    /// <summary>
     /// Constructs a CircleShape.
     /// </summary>
     /// <param name="circle">The circle data.</param>

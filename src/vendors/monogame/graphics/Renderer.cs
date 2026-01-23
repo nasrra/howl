@@ -602,7 +602,7 @@ public class Renderer : IRenderer
             float sin = MathF.Sin(rotation);
             float cos = MathF.Cos(rotation);
             Howl.Math.Vector2 start = new(0f, shape.Circle.Radius);
-            Howl.Math.Vector2 position = new(shape.Circle.X, shape.Circle.Y);
+            Howl.Math.Vector2 position = new(shape.X, shape.Y);
             Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
 
             for(int i = 0; i < verticeCount; i++)
@@ -640,7 +640,7 @@ public class Renderer : IRenderer
             float sin = MathF.Sin(rotation);
             float cos = MathF.Cos(rotation);
             Howl.Math.Vector2 start = new(0f, shape.Circle.Radius);
-            Howl.Math.Vector2 position = new(shape.Circle.X, shape.Circle.Y);
+            Howl.Math.Vector2 position = new(shape.X, shape.Y);
 
             for(int i = 0; i < verticeCount; i++)
             {
@@ -662,6 +662,23 @@ public class Renderer : IRenderer
         else
         {
             throw new InvalidOperationException($"Renderer can only draw a wireframe circle with 3 or int.MaxValue 'verticeCount', not {verticeCount} amount of vertices.");   
+        }
+    }
+
+    public void DrawSolidShape(Howl.Math.Transform transform, Polygon16Shape shape)
+    {
+        
+    }
+
+    public unsafe void DrawWireframeShape(Howl.Math.Transform transform, Polygon16Shape shape, float thickness = IRenderer.DefaultWireframeThickness)
+    {
+        Howl.Math.Vector2 start = shape.GetVertex(0).Transform(transform); 
+        for(int i = 1; i <= shape.Polygon.VerticesCount; i++)
+        {
+            int index = i % shape.Polygon.VerticesCount;
+            Howl.Math.Vector2 end = shape.GetVertex(index).Transform(transform); 
+            DrawLine(start, end, shape.Colour, thickness);
+            start = end;
         }
     }
 
