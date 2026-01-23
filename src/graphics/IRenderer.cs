@@ -119,13 +119,6 @@ public interface IRenderer : IDisposable
     public void DrawWireframeShape(Transform transform, CircleShape shape, int verticeCount = DefaultCirclePointAmount, float thickness = DefaultWireframeThickness);
 
     /// <summary>
-    /// Draws a solid shape for a single frame.
-    /// </summary>
-    /// <param name="transform">The transform data.</param>
-    /// <param name="shape">The polygon data.</param>
-    public void DrawSolidShape(Transform transform, Polygon16Shape shape);
-
-    /// <summary>
     /// Draws a wireframe shape for a single frame.
     /// </summary>
     /// <param name="transform">The transform data.</param>

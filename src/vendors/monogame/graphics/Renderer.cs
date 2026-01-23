@@ -665,12 +665,7 @@ public class Renderer : IRenderer
         }
     }
 
-    public void DrawSolidShape(Howl.Math.Transform transform, Polygon16Shape shape)
-    {
-        
-    }
-
-    public unsafe void DrawWireframeShape(Howl.Math.Transform transform, Polygon16Shape shape, float thickness = IRenderer.DefaultWireframeThickness)
+    public void DrawWireframeShape(Howl.Math.Transform transform, Polygon16Shape shape, float thickness = IRenderer.DefaultWireframeThickness)
     {
         Howl.Math.Vector2 start = shape.GetVertex(0).Transform(transform); 
         for(int i = 1; i <= shape.Polygon.VerticesCount; i++)
