@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
+using Howl.ECS;
 using Howl.Graphics;
 using Howl.Input;
 
@@ -18,6 +18,16 @@ public abstract class HowlApp : IDisposable
     /// Gets the InputManager used by this HowlApp.
     /// </summary>
     public IInputManager InputManager {get; private set;}
+
+    /// <summary>
+    /// Gets the ComponentRegistery used by this HowlApp.
+    /// </summary>
+    public ComponentRegistry ComponentRegistery {get; private set;}
+
+    /// <summary>
+    /// gets the GenIndexAllocator used by this HowlApp.
+    /// </summary>
+    public GenIndexAllocator GenIndexAllocator {get; private set;}
 
     private Vendors.MonoGame.MonoGameApp monoGameApp;
     private HowlAppBackend backend;
@@ -40,9 +50,11 @@ public abstract class HowlApp : IDisposable
         {
             throw new InvalidOperationException($"HowlApp cannot be created with a backend of {howlAppBackend}");
         }
-                
+        
         backend = howlAppBackend;
         InitialiseBackend(resolution, cameraPosition, cameraZoomVirtualResolution);
+        GenIndexAllocator = new();
+        ComponentRegistery = new(GenIndexAllocator);
         Initialise();
     }
 
@@ -162,6 +174,7 @@ public abstract class HowlApp : IDisposable
         if (disposing)
         {
             Renderer?.Dispose();
+            ComponentRegistery?.Dispose();
         }
 
         disposed = true;

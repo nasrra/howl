@@ -1,6 +1,6 @@
 namespace Howl.Generic;
 
-public readonly ref struct ReadonlyRef<T>
+public readonly ref struct ReadOnlyRef<T>
 {
     readonly bool valid = false;
 
@@ -18,7 +18,7 @@ public readonly ref struct ReadonlyRef<T>
 
     public ref T Value => ref value;
 
-    public ReadonlyRef(ref T value, bool valid)
+    public ReadOnlyRef(ref T value, bool valid)
     {
         this.value = ref value;
         this.valid = valid;

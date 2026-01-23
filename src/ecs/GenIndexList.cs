@@ -7,7 +7,7 @@ using Howl.Generic;
 
 namespace Howl.ECS;
 
-public class GenIndexList<T>
+public class GenIndexList<T> : IGenIndexList
 {
 
     List<SparseEntry> sparse;
@@ -20,16 +20,6 @@ public class GenIndexList<T>
         sparse = new();
         dense = new();
     }
-
-    /// <summary>
-    /// resizes the sparse entry list.
-    /// 
-    /// Note: sparse entries can only grow, not shrink.
-    /// A 'length' that is lower than the current length will not cause a resize;
-    /// returning false.     
-    /// </summary>
-    /// <param name="count">The length to resize to.</param>
-    /// <returns>true, when the operation successfully increased </returns>
 
     public bool ResizeSparseEntries(int count)
     {
@@ -52,7 +42,6 @@ public class GenIndexList<T>
     /// <param name="value">The data to assign to the dense entry.</param>
     /// <param name="result">A detailed result of what heppend dureing the allocation.</param>
     /// <returns>true, if the allocation was successful; otherwise false.</returns>
-
     public GenIndexResult Allocate(in GenIndex index, T value)
     {
         if(sparse.Count <= index.index)
@@ -84,7 +73,7 @@ public class GenIndexList<T>
 
             // set the dense entry's data.
             
-            denseEntry.value = value;
+            denseEntry.Value = value;
             denseEntry.sparseIndex = index.index;
             
             return GenIndexResult.Success;
@@ -174,7 +163,7 @@ public class GenIndexList<T>
         Span<DenseEntry<T>> denseSpan = CollectionsMarshal.AsSpan(dense);
         ref DenseEntry<T> denseEntry = ref denseSpan[sparseEntry.DenseIndex];
 
-        reference = new(ref denseSpan[sparseEntry.DenseIndex].value, true);
+        reference = new(ref denseSpan[sparseEntry.DenseIndex].Value, true);
         return GenIndexResult.Success;
     }
 
@@ -185,7 +174,7 @@ public class GenIndexList<T>
     /// </summary>
     /// <returns>A ref handle that can be valid or invalid if data was found to be associated with the GenIndex.</returns>
 
-    public GenIndexResult GetDenseReadonlyRef(in GenIndex index, out ReadonlyRef<T> readonlyReference)
+    public GenIndexResult GetDenseReadonlyRef(in GenIndex index, out ReadOnlyRef<T> readonlyReference)
     {
         readonlyReference = default;
 
@@ -210,7 +199,7 @@ public class GenIndexList<T>
         Span<DenseEntry<T>> denseSpan = CollectionsMarshal.AsSpan(dense);
         ref DenseEntry<T> denseEntry = ref denseSpan[sparseEntry.DenseIndex];
 
-        readonlyReference = new(ref denseSpan[sparseEntry.DenseIndex].value, true);
+        readonlyReference = new(ref denseSpan[sparseEntry.DenseIndex].Value, true);
         return GenIndexResult.Success;
     }
 
@@ -220,15 +209,16 @@ public class GenIndexList<T>
     /// Do not store the ref data, make sure to use immeditely or before modifiying the allocations list.
     /// </summary>
     /// <returns>A ref handle that can be valid or invalid if data was found to be associated with the GenIndex.</returns>
-
-    public GenIndexResult GetSparseRef(in GenIndex genIndex, out ReadonlyRef<SparseEntry> readonlyReference)
+    public GenIndexResult GetSparseReadonlyRef(in GenIndex genIndex, out ReadOnlyRef<SparseEntry> readonlyReference)
     {
         readonlyReference = default;
         
-        if(sparse.Count < genIndex.index)
+#if DEBUG
+        if(sparse.Count < genIndex.index || sparse.Count >= genIndex.index)
         {
             return GenIndexResult.InvalidGenIndex;
         }
+#endif
 
         Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
         ref SparseEntry sparseEntry = ref sparseSpan[genIndex.index];
@@ -237,6 +227,24 @@ public class GenIndexList<T>
         {
             return GenIndexResult.StaleAllocationFound;
         }
+
+        readonlyReference = new(ref sparseEntry, true);
+        return GenIndexResult.Success;
+    }
+
+    public GenIndexResult GetSparseReadonlyRef(int sparseIndex, out ReadOnlyRef<SparseEntry> readonlyReference)
+    {
+        readonlyReference = default;
+
+#if DEBUG
+        if(sparse.Count < sparseIndex || sparseIndex >= sparse.Count)
+        {
+            return GenIndexResult.InvalidGenIndex;
+        }
+#endif
+
+        Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
+        ref SparseEntry sparseEntry = ref sparseSpan[sparseIndex];
 
         readonlyReference = new(ref sparseEntry, true);
         return GenIndexResult.Success;

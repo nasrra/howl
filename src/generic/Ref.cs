@@ -23,4 +23,6 @@ public ref struct Ref<T>
         this.value = ref value;
         this.valid = valid;
     }
+
+    public static implicit operator T(Ref<T> r) => r.value;
 }

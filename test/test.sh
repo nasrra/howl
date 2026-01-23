@@ -6,6 +6,7 @@ PROJECT_PATH="Howl.Test.csproj"
 
 NAMESPACE="Howl.Test."
 MATH_NAMESPACE="${NAME_SPACE}Math."
+ECS_NAMESPACE="${NAME_SPACE}ECS."
 
 VENDORS_NAMESPACE="${NAME_SPACE}Vendors."
 
@@ -18,8 +19,10 @@ TEST_NAME=$1
 # Declare an associative array
 declare -A TEST_MAP
 TEST_MAP=(
-    ["ECS"]="${NAMESPACE}ECS."
-    ["Math"]="${NAMESPACE}Math."
+    ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
+    ["ECS"]="${ECS_NAMESPACE}"
+    ["GenIndex"]="${ECS_NAMESPACE}GenIndexTest"
+    ["Math"]="${MATH_NAMESPACE}"
     ["MonoGameColourExt"]="${MONOGAME_GRAPHICS_NAMESPACE}ColourExtensionsTest"
     ["MonoGameRectangleExt"]="${MONOGAME_MATH_NAMESPACE}RectangleExtensionsTest"
     ["MonoGameVector2Ext"]="${MONOGAME_MATH_NAMESPACE}Vector2ExtensionsTest"

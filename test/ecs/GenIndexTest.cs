@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Howl.Test.ECS;
 
-public class ECSTest
+public class GenIndexTest
 {
     internal struct Component
     {
@@ -19,7 +19,7 @@ public class ECSTest
     GenIndex index1;
     GenIndex index2;
 
-    public ECSTest()
+    public GenIndexTest()
     {
         allocator = new();
         components = new();
@@ -29,7 +29,7 @@ public class ECSTest
     }
 
     [Fact]
-    public void TestGenIndexAllocate()
+    public void GenIndexAllocate_Test()
     {
         allocator.Allocate(out _);
         allocator.Allocate(out _);
@@ -43,16 +43,16 @@ public class ECSTest
     }
 
     [Fact]
-    public void TestSparseResize()
+    public void SparseResize_Test()
     {
-        components.ResizeSparseEntries(allocator.GetEntriesCount());
+        components.ResizeSparseEntries(allocator.Entries.Count);
         Assert.Equal(3, components.Sparse.Count);  
     }
 
     [Fact]
-    public void TestComponentAllocate()
+    public void ComponentAllocate_Test()
     {
-        components.ResizeSparseEntries(allocator.GetEntriesCount());
+        components.ResizeSparseEntries(allocator.Entries.Count);
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
 
@@ -69,9 +69,9 @@ public class ECSTest
     }
 
     [Fact]
-    public void TestComponentGetRef()
+    public void ComponentGetRef_Test()
     {
-        components.ResizeSparseEntries(allocator.GetEntriesCount());
+        components.ResizeSparseEntries(allocator.Entries.Count);
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
 
@@ -81,12 +81,12 @@ public class ECSTest
     }
 
     [Fact]
-    public void TestComponentModify()
+    public void ComponentModify_Test()
     {
         const int c0Value = 33;
         const int c1Value = 12;
 
-        components.ResizeSparseEntries(allocator.GetEntriesCount());
+        components.ResizeSparseEntries(allocator.Entries.Count);
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
         
@@ -116,12 +116,12 @@ public class ECSTest
     }
 
     [Fact]
-    public void TestDeallocate()
+    public void ComponentDeallocate_Test()
     {
         const int c0Value = 33;
         const int c1Value = 12;
 
-        components.ResizeSparseEntries(allocator.GetEntriesCount());
+        components.ResizeSparseEntries(allocator.Entries.Count);
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
 

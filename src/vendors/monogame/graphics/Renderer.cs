@@ -418,7 +418,7 @@ public class Renderer : IRenderer
 
     public bool DrawSprite(in GenIndex textureId, Howl.Math.Vector2 position)
     {   
-        ReadonlyRef<Texture2D> texture = textureManager.GetTextureReadonlyRef(textureId);
+        ReadOnlyRef<Texture2D> texture = textureManager.GetTextureReadonlyRef(textureId);
         if (texture.Valid == false)
         {
             return false;

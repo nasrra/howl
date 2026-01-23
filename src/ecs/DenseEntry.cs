@@ -10,10 +10,10 @@ public struct DenseEntry<T>
     public int sparseIndex;
 
     /// <summary>
-    /// The data stored by this entry.
+    /// Gets and sets the stored data.
     /// </summary>
 
-    public T value;
+    public T Value;
 
     public override string ToString()
     {

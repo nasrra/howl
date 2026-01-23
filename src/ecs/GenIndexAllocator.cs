@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace Howl.ECS;
 
-public class GenIndexAllocator
+public class GenIndexAllocator : IDisposable
 {
     List<AllocatorEntry> entries;
     public IReadOnlyList<AllocatorEntry> Entries => entries;
@@ -13,6 +13,17 @@ public class GenIndexAllocator
     List<int> free;
     public IReadOnlyList<int> Free => free;
 
+    /// <summary>
+    /// A callback for when the Allocate function has been called and its result when it completed.  
+    /// </summary>
+    public event Action<AllocatorResult> OnAllocated;
+
+    private bool disposed = false;
+    public bool IsDisposed => disposed;
+
+    /// <summary>
+    /// Creates a new GenIndexAllocator instance. 
+    /// </summary>
     public GenIndexAllocator(){
         free = new();
         entries = new();
@@ -38,7 +49,6 @@ public class GenIndexAllocator
     ///   </item>
     /// </list>
     /// </returns>
-
     public AllocatorResult Allocate(out GenIndex genIndex)
     {
         if(free.Count <= 0)
@@ -48,7 +58,11 @@ public class GenIndexAllocator
             bool isActive = true;
             entries.Add(new(generation, isActive));
             genIndex = new(entries.Count-1, 0); 
-            return AllocatorResult.AllocatedNewGenIndex;
+
+            AllocatorResult result = AllocatorResult.AllocatedNewGenIndex; 
+
+            OnAllocated?.Invoke(result);
+            return result;
         }
         else
         {
@@ -67,7 +81,11 @@ public class GenIndexAllocator
             reuseEntry.isActive = true;
 
             genIndex = new(freeEntryIndex, reuseEntry.generation);
-            return AllocatorResult.ReusedGenIndex;
+            
+            AllocatorResult result = AllocatorResult.ReusedGenIndex;
+
+            OnAllocated?.Invoke(result);
+            return result;
         }
     }
 
@@ -115,7 +133,6 @@ public class GenIndexAllocator
     /// </summary>
     /// <param name="genIndex">The generational index to check.</param>
     /// <returns>true, if the generational index is valid; otherwise false.</returns>
-
     public bool IsValid(in GenIndex genIndex)
     {
         if(entries.Count > genIndex.index)
@@ -137,11 +154,6 @@ public class GenIndexAllocator
         }
     }
 
-    public int GetEntriesCount()
-    {
-        return entries.Count;
-    }
-
     public void PrintAll()
     {
         Debug.WriteLine("[Generational Index Allocator]");
@@ -150,5 +162,39 @@ public class GenIndexAllocator
         {
             Debug.WriteLine(span[i]);
         }
+    }
+
+
+    /// 
+    /// Disposal.
+    /// 
+
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected void Dispose(bool diposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        if (diposing)
+        {
+            entries.Clear();
+            free.Clear();
+            OnAllocated = null;
+        }
+
+        disposed = true;
+    }
+
+    ~GenIndexAllocator()
+    {
+        Dispose(false);
     }
 }

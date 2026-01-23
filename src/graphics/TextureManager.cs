@@ -68,9 +68,9 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
         }
     }
 
-    public ReadonlyRef<T> GetTextureReadonlyRef(in GenIndex index)
+    public ReadOnlyRef<T> GetTextureReadonlyRef(in GenIndex index)
     {
-        GenIndexResult result = textures.GetDenseReadonlyRef(index, out ReadonlyRef<T> readonlyRef);
+        GenIndexResult result = textures.GetDenseReadonlyRef(index, out ReadOnlyRef<T> readonlyRef);
         if(result == GenIndexResult.Success)
         {
             return readonlyRef;
@@ -107,7 +107,7 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
 
             for(int i= 0; i < span.Length; i++)
             {
-                span[0].value.Dispose();
+                span[0].Value.Dispose();
             }
         }
 
