@@ -35,7 +35,7 @@ public class Renderer : IRenderer
     public RenderTarget2D RenderTarget { get; private set; }
     
     private List<VertexPositionColor> primitiveVertices;
-    private List<short> primitiveIndices;
+    private List<int> primitiveIndices;
 
     private MonoGameApp monoGameApp;
 
@@ -530,21 +530,16 @@ public class Renderer : IRenderer
 
     public void DrawSolidShape(Howl.Math.Transform transform, Howl.Graphics.RectangleShape shape)
     {
-        if(primitiveVertices.Count > short.MaxValue)
-        {
-            throw new OverflowException();
-        }
-
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
 
-        short totalvVertices = (short)primitiveVertices.Count;
+        int totalvVertices = primitiveVertices.Count;
         primitiveIndices.Add(totalvVertices);
-        primitiveIndices.Add((short)(totalvVertices+1));
-        primitiveIndices.Add((short)(totalvVertices+2));
+        primitiveIndices.Add(totalvVertices+1);
+        primitiveIndices.Add(totalvVertices+2);
         primitiveIndices.Add(totalvVertices);
-        primitiveIndices.Add((short)(totalvVertices+2));
-        primitiveIndices.Add((short)(totalvVertices+3));
+        primitiveIndices.Add(totalvVertices+2);
+        primitiveIndices.Add(totalvVertices+3);
 
         // translate in relation to the camera.
         // (Note):
@@ -579,21 +574,75 @@ public class Renderer : IRenderer
         primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));        
     }
 
+    public void DrawSolidShape(Howl.Math.Transform transform, CircleShape shape, int verticeCount = IRenderer.DefaultCirclePointAmount)
+    {
+        if(verticeCount == System.Math.Clamp(verticeCount, 3, int.MaxValue))
+        {
+            // Note: triangle vertices and indexes are done in
+            // a clockwise motion. Triangles are made from the 
+            // first vertice in the circle. 
+
+            int index = 1;
+            int totalVertices = primitiveVertices.Count;
+            int triangleCount = verticeCount - 2; 
+            for(int i = 0; i < triangleCount; i++)
+            {
+                primitiveIndices.Add(totalVertices);
+                
+                primitiveIndices.Add(totalVertices+index);
+                
+                primitiveIndices.Add(totalVertices+index+1);
+                
+                index+=1;
+            }
+
+            // add the vertices.
+
+            float rotation = (float)System.Math.Tau / verticeCount;            
+            float sin = MathF.Sin(rotation);
+            float cos = MathF.Cos(rotation);
+            Howl.Math.Vector2 start = new(0f, shape.Circle.Radius);
+            Howl.Math.Vector2 position = new(shape.Circle.X, shape.Circle.Y);
+            Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+
+            for(int i = 0; i < verticeCount; i++)
+            {
+                Howl.Math.Vector3 vertice = new Howl.Math.Vector3((start + position).Transform(transform),0);
+                
+                vertice.Y *= -1;
+
+                vertice = -cameraPosition + vertice;
+
+                start = new(
+                    cos * start.X  - sin * start.Y,
+                    sin * start.X  + cos * start.Y
+                );
+
+                primitiveVertices.Add(new(vertice.ToMonoGame(),shape.Colour.ToMonoGame()));
+            }
+
+        }
+        else
+        {
+            throw new InvalidOperationException($"Renderer can only draw a solid circle with 3 or int.MaxValue 'verticeCount', not {verticeCount} amount of vertices.");               
+        }        
+    }
+
     public void DrawWireframeShape(
         Howl.Math.Transform transform, 
-        CircleShape shape, 
-        float thickness = IRenderer.DefaultWireframeThickness, 
-        int points = IRenderer.DefaultCirclePointAmount)   
+        CircleShape shape,  
+        int verticeCount = IRenderer.DefaultCirclePointAmount,
+        float thickness = IRenderer.DefaultWireframeThickness)   
     {
-        if(points == System.Math.Clamp(points, 3, int.MaxValue))
+        if(verticeCount == System.Math.Clamp(verticeCount, 3, int.MaxValue))
         {
-            float rotation = (float)System.Math.Tau / points;            
+            float rotation = (float)System.Math.Tau / verticeCount;            
             float sin = MathF.Sin(rotation);
             float cos = MathF.Cos(rotation);
             Howl.Math.Vector2 start = new(0f, shape.Circle.Radius);
             Howl.Math.Vector2 position = new(shape.Circle.X, shape.Circle.Y);
 
-            for(int i = 0; i < points; i++)
+            for(int i = 0; i < verticeCount; i++)
             {
                 Howl.Math.Vector2 end = new(
                     cos * start.X  - sin * start.Y,
@@ -612,7 +661,7 @@ public class Renderer : IRenderer
         }
         else
         {
-            throw new InvalidOperationException($"Renderer can only draw a circle wireframe with 3 or inr.MaxValue points, not {points} amount of points.");   
+            throw new InvalidOperationException($"Renderer can only draw a wireframe circle with 3 or int.MaxValue 'verticeCount', not {verticeCount} amount of vertices.");   
         }
     }
 

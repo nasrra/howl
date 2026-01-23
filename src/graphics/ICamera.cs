@@ -3,9 +3,9 @@ using Howl.Math;
 
 public interface ICamera : IDisposable
 {
-    private const float MinZoom = float.Epsilon;
+    protected const float MinZoom = float.Epsilon;
 
-    private const float MaxZoom = float.MaxValue;
+    protected const float MaxZoom = float.MaxValue;
 
     // Note:
     // The projection matrix is responsbible for turning a three dimensional
@@ -37,6 +37,11 @@ public interface ICamera : IDisposable
     /// The position of the camera in world-space.
     /// </summary>
     public Vector2 Position {get; set;}
+
+    /// <summary>
+    /// Gets the horizontal (x) and vertical (x) viewing area size of the camera in pixels.
+    /// </summary>
+    public Vector2 Extents {get;}
     
     // /// <summary>
     // /// The position in world-space where this camera is pointing at.

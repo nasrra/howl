@@ -2,26 +2,12 @@
 using System;
 using Howl.Vendors.MonoGame.Math;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
 public class Camera : ICamera
 {
-    private Howl.Math.Vector2 position;
-    public Howl.Math.Vector2 Position
-    {
-        get => position;
-        set => position = value;
-    }
-
-    private float zoom = 1;
-    public float Zoom
-    {
-        get => zoom;
-        set => zoom = value;
-    }
 
     private Matrix projectionMatrix;
     public Howl.Math.Matrix ProjectionMatrix 
@@ -30,11 +16,22 @@ public class Camera : ICamera
         set => value.ToMonoGame(); 
     }
 
-    private MonoGameApp monoGameApp;
-    private Renderer renderer;
+    private Howl.Math.Vector2 position;
+    public Howl.Math.Vector2 Position
+    {
+        get => position;
+        set => position = value;
+    }
 
-    private bool disposed;
-    public bool IsDisposed => disposed;
+    private Howl.Math.Vector2 extents;
+    public Howl.Math.Vector2 Extents {get;}
+
+    private float zoom = 1;
+    public float Zoom
+    {
+        get => zoom;
+        set => zoom = System.Math.Clamp(value, ICamera.MinZoom, ICamera.MaxZoom);
+    }
     
     private float zoomVirtualHeight;
     public float ZoomVirtualHeight
@@ -42,6 +39,13 @@ public class Camera : ICamera
         get => zoomVirtualHeight;
         set => zoomVirtualHeight = value;
     }
+
+    private MonoGameApp monoGameApp;
+    private Renderer renderer;
+
+    private bool disposed;
+    public bool IsDisposed => disposed;
+    
 
     /// <summary>
     /// Creates a new MonoGame camera instance.
@@ -89,6 +93,8 @@ public class Camera : ICamera
         float halfHeight = (zoomVirtualHeight * 0.5f) / zoom;
         float halfWidth = halfHeight * renderer.MainRenderTargetAspectRatio; // keep aspect ratio correct
 
+        extents = new(halfWidth*2, halfHeight*2); 
+
         // Note:
         // Up is y+ and right is x+;
         // Centered orthographic projection
@@ -98,6 +104,7 @@ public class Camera : ICamera
             float.Epsilon,
             float.MaxValue
         );
+        
         // Viewport viewport = monoGameApp.GraphicsDevice.Viewport;
         // projectionMatrix = Matrix.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, float.Epsilon, float.MaxValue);
     }

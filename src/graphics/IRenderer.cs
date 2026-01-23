@@ -102,13 +102,21 @@ public interface IRenderer : IDisposable
     public void DrawWireframeShape(Transform transform, RectangleShape shape, float thickness = DefaultWireframeThickness);
 
     /// <summary>
+    /// Draws a solid shape for a single frame.
+    /// </summary>
+    /// <param name="transform">The transform data.</param>
+    /// <param name="shape">The circle data.</param>
+    /// <param name="verticeCount">The amount of vertices used to draw the circle.</param>
+    public void DrawSolidShape(Transform transform, CircleShape shape, int verticeCount = DefaultCirclePointAmount);
+
+    /// <summary>
     /// Draws a wireframe shape for a single frame.
     /// </summary>
     /// <param name="transform">The transform data.</param>
     /// <param name="shape">The circle data.</param>
+    /// <param name="verticeCount">The amount of vertices used to draw the circle.</param>
     /// <param name="thickness">The thickness of the wireframe line segments.</param>
-    /// <param name="points">The amount of points used to draw the circle.</param>
-    public void DrawWireframeShape(Transform transform, CircleShape shape, float thickness = DefaultWireframeThickness, int points = DefaultCirclePointAmount);
+    public void DrawWireframeShape(Transform transform, CircleShape shape, int verticeCount = DefaultCirclePointAmount, float thickness = DefaultWireframeThickness);
 
     /// <summary>
     /// Gets the main render target width.
