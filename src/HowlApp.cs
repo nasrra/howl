@@ -20,9 +20,14 @@ public abstract class HowlApp : IDisposable
     public IInputManager InputManager {get; private set;}
 
     /// <summary>
-    /// Gets the ComponentRegistery used by this HowlApp.
+    /// Gets the ComponentRegistry used by this HowlApp.
     /// </summary>
-    public ComponentRegistry ComponentRegistery {get; private set;}
+    public ComponentRegistry ComponentRegistry {get; private set;}
+
+    /// <summary>
+    /// Gets the SystemRegistry used by this HowlApp.
+    /// </summary>
+    public SystemRegistry SystemRegistry {get; private set;}
 
     /// <summary>
     /// gets the GenIndexAllocator used by this HowlApp.
@@ -54,7 +59,8 @@ public abstract class HowlApp : IDisposable
         backend = howlAppBackend;
         InitialiseBackend(resolution, cameraPosition, cameraZoomVirtualResolution);
         GenIndexAllocator = new();
-        ComponentRegistery = new(GenIndexAllocator);
+        ComponentRegistry = new(GenIndexAllocator);
+        SystemRegistry = new();
         Initialise();
     }
 
@@ -117,7 +123,8 @@ public abstract class HowlApp : IDisposable
     /// </summary>
     /// <param name="deltaTime"></param>
     public virtual void Draw(float deltaTime)
-    {
+    {        
+        SystemRegistry.Draw(deltaTime);
     }
     
     /// <summary>
@@ -127,6 +134,7 @@ public abstract class HowlApp : IDisposable
     public virtual void Update(float deltaTime)
     {
         InputManager.Update(deltaTime);
+        SystemRegistry.Update(deltaTime);
     }
 
     /// <summary>
@@ -153,6 +161,7 @@ public abstract class HowlApp : IDisposable
         Renderer.BorderlessFullscreen();
     }
 
+
     /// 
     /// Disposal.
     /// 
@@ -174,7 +183,8 @@ public abstract class HowlApp : IDisposable
         if (disposing)
         {
             Renderer?.Dispose();
-            ComponentRegistery?.Dispose();
+            ComponentRegistry?.Dispose();
+            Instance = null;
         }
 
         disposed = true;

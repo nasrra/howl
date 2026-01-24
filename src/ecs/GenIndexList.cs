@@ -261,6 +261,18 @@ public class GenIndexList<T> : IGenIndexList
         return CollectionsMarshal.AsSpan(dense);
     }
 
+    /// <summary>
+    /// Returns a constructed GenIndex from a sparse index.
+    /// </summary>
+    /// <param name="sparseIndex">The specified sparse index.</param>
+    /// <returns>The constructed GenIndex.</returns>
+    public GenIndex GetGenIndex(int sparseIndex)
+    {
+        // reconstruct gen index.
+        GetSparseReadonlyRef(sparseIndex, out ReadOnlyRef<SparseEntry> sparseEntry);
+        return new(sparseIndex, sparseEntry.Value.generation);
+    }
+
     public void PrintAll()
     {
         Debug.WriteLine("[GenIndexList]");

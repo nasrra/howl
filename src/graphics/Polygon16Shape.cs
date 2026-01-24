@@ -26,6 +26,7 @@ public struct Polygon16Shape
     /// <param name="polygon">The polygon data.</param>
     /// <param name="colour">The colour used when drawing.</param>
     /// <param name="origin">The origin of the shape.</param>
+    /// <param name="drawMode">The draw mode..</param>
     public Polygon16Shape(Polygon16 polygon, Colour colour, Vector2 origin)
     {
         Polygon = polygon;

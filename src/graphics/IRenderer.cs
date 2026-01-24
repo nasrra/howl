@@ -87,11 +87,11 @@ public interface IRenderer : IDisposable
     public void DrawLine(Vector2 a, Vector2 b, Colour color, float thickness, bool scaleThickness = true);
 
     /// <summary>
-    /// Draws a solid shape for a single frame.
+    /// Draws a filled shape for a single frame.
     /// </summary>
     /// <param name="transform">The transform data.</param>
     /// <param name="shape">The rectangle to draw.</param>
-    public void DrawSolidShape(Transform transform, RectangleShape shape);
+    public void DrawFilledShape(Transform transform, RectangleShape shape);
 
     /// <summary>
     /// Draws a wireframe shape for a single frame.
@@ -102,12 +102,12 @@ public interface IRenderer : IDisposable
     public void DrawWireframeShape(Transform transform, RectangleShape shape, float thickness = DefaultWireframeThickness);
 
     /// <summary>
-    /// Draws a solid shape for a single frame.
+    /// Draws a filled shape for a single frame.
     /// </summary>
     /// <param name="transform">The transform data.</param>
     /// <param name="shape">The circle data.</param>
     /// <param name="verticeCount">The amount of vertices used to draw the circle.</param>
-    public void DrawSolidShape(Transform transform, CircleShape shape, int verticeCount = DefaultCirclePointAmount);
+    public void DrawFilledShape(Transform transform, CircleShape shape, int verticeCount = DefaultCirclePointAmount);
 
     /// <summary>
     /// Draws a wireframe shape for a single frame.

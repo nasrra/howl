@@ -185,8 +185,8 @@ public class GenIndexAllocator : IDisposable
 
         if (diposing)
         {
-            entries.Clear();
-            free.Clear();
+            entries = null;
+            free = null;
             OnAllocated = null;
         }
 

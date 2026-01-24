@@ -528,7 +528,7 @@ public class Renderer : IRenderer
         DrawLine(bottomLeft, topLeft, shape.Colour, thickness);
     }
 
-    public void DrawSolidShape(Howl.Math.Transform transform, Howl.Graphics.RectangleShape shape)
+    public void DrawFilledShape(Howl.Math.Transform transform, Howl.Graphics.RectangleShape shape)
     {
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
@@ -574,7 +574,7 @@ public class Renderer : IRenderer
         primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));        
     }
 
-    public void DrawSolidShape(Howl.Math.Transform transform, CircleShape shape, int verticeCount = IRenderer.DefaultCirclePointAmount)
+    public void DrawFilledShape(Howl.Math.Transform transform, CircleShape shape, int verticeCount = IRenderer.DefaultCirclePointAmount)
     {
         if(verticeCount == System.Math.Clamp(verticeCount, 3, int.MaxValue))
         {

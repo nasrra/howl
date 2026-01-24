@@ -40,15 +40,22 @@ public struct RectangleShape
     public Vector2 BottomRight => Rectangle.BottomRight - Origin;
 
     /// <summary>
+    /// Gets and sets the draw mode.
+    /// </summary>
+    public DrawMode DrawMode;
+
+    /// <summary>
     /// Constructs a RectangleShape.
     /// </summary>
     /// <param name="rectangle">The rectangle data.</param>
     /// <param name="colour">The colour to draw with.</param>
     /// <param name="origin">The origin point of the rectangle.</param>
-    public RectangleShape(Rectangle rectangle, Colour colour, Vector2 origin)
+    /// <param name="drawMode">The draw mode.</param>
+    public RectangleShape(Rectangle rectangle, Colour colour, Vector2 origin, DrawMode drawMode)
     {
         Rectangle = rectangle;
         Colour = colour;
         Origin = origin;
+        DrawMode = drawMode;
     }
 }
