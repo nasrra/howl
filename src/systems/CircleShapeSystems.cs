@@ -27,7 +27,7 @@ public static class CircleShapeSystems
             {
                 ref DenseEntry<CircleShape> dense = ref denseEntries[i];
                 ref CircleShape shape = ref dense.Value;
-                GenIndex genIndex = shapeGenIndexList.GetGenIndex(dense.sparseIndex);
+                shapeGenIndexList.GetGenIndex(dense.sparseIndex, out GenIndex genIndex);
 
                 if(transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transform) == GenIndexResult.Success)
                 {

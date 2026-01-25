@@ -44,7 +44,7 @@ public struct SparseEntry
     /// </summary>
     /// <returns>true, when linked; otherwise false.</returns>
 
-    public bool LinkedToADenseEntry()
+    public bool HasDenseEntry()
     {
         return denseIndex >= 0;
     }

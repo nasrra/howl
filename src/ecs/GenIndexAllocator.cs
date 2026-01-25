@@ -14,9 +14,12 @@ public class GenIndexAllocator : IDisposable
     public IReadOnlyList<int> Free => free;
 
     /// <summary>
-    /// A callback for when the Allocate function has been called and its result when it completed.  
+    /// A callback for when the Allocate function.  
     /// </summary>
-    public event Action<AllocatorResult> OnAllocated;
+    /// <remarks>
+    /// The boolean value is true if a free index was reused; otherwise false.
+    /// </remarks>
+    public event Action<bool> OnAllocated;
 
     private bool disposed = false;
     public bool IsDisposed => disposed;
@@ -32,24 +35,22 @@ public class GenIndexAllocator : IDisposable
     /// <summary>
     /// Allocates a new entry or reuses a previously freed one.
     /// </summary>
-    /// <param name="genIndex">
-    /// The generation index associated with the allocated entry.
-    /// </param>
+    /// <param name="genIndex"> The generation index associated with the allocated entry. </param>
     /// <returns>
-    /// <list type="bullet">
-    ///   <item>
-    ///     <description>
-    ///       <see cref="AllocatorResult.AllocatedNewGenIndex"/> — a new entry was created.
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///       <see cref="AllocatorResult.ReusedGenIndex"/> — a free entry was reused.
-    ///     </description>
-    ///   </item>
-    /// </list>
+    ///     <list type="bullet">
+    ///       <item>
+    ///         <description>
+    ///           <see cref="GenIndexResult.AllocatedNewGenIndex"/> — a new entry was created.
+    ///         </description>
+    ///       </item>
+    ///       <item>
+    ///         <description>
+    ///           <see cref="GenIndexResult.ReusedGenIndex"/> — a free entry was reused.
+    ///         </description>
+    ///       </item>
+    ///     </list>
     /// </returns>
-    public AllocatorResult Allocate(out GenIndex genIndex)
+    public void Allocate(out GenIndex genIndex, out bool reusedFreeGenIndex)
     {
         if(free.Count <= 0)
         {
@@ -59,10 +60,8 @@ public class GenIndexAllocator : IDisposable
             entries.Add(new(generation, isActive));
             genIndex = new(entries.Count-1, 0); 
 
-            AllocatorResult result = AllocatorResult.AllocatedNewGenIndex; 
-
-            OnAllocated?.Invoke(result);
-            return result;
+            reusedFreeGenIndex = false;
+            OnAllocated?.Invoke(reusedFreeGenIndex);
         }
         else
         {
@@ -82,10 +81,8 @@ public class GenIndexAllocator : IDisposable
 
             genIndex = new(freeEntryIndex, reuseEntry.generation);
             
-            AllocatorResult result = AllocatorResult.ReusedGenIndex;
-
-            OnAllocated?.Invoke(result);
-            return result;
+            reusedFreeGenIndex = true;
+            OnAllocated?.Invoke(reusedFreeGenIndex);
         }
     }
 
@@ -97,62 +94,59 @@ public class GenIndexAllocator : IDisposable
     /// <list type="bullet">
     ///     <item>
     ///         <description>
-    ///             <see cref="AllocatorResult.DeallocatedGenIndex"/> - Then GenIndex was successfully freed for reuse.
+    ///             <see cref="GenIndexResult.Success"/> - Then GenIndex was successfully freed for reuse.
     ///         </description>
     ///     </item>
-    ///     <item>
-    ///         <description>
-    ///             <see cref="AllocatorResult.InvalidGenIndex"/> - The GenIndex is not a valid handle within this allocator.
-    ///         </description>
-    ///     </item> 
     /// </list>
     /// </returns>
-    public AllocatorResult Deallocate(in GenIndex genIndex)
+    public GenIndexResult Deallocate(in GenIndex genIndex)
     {
-        if (IsValid(genIndex))
+        if (entries.Count <= genIndex.index || genIndex.index < 0)
         {
-            // retrieve the entry.
-
-            Span<AllocatorEntry> span = CollectionsMarshal.AsSpan(entries);
-            ref AllocatorEntry entry = ref span[genIndex.index];
-            entry.isActive = false;
-            free.Add(genIndex.index);
-
-            return AllocatorResult.DeallocatedGenIndex;
+            throw new InvalidGenIndexException(genIndex);
         }
-        else
+
+        // retrieve the entry.
+
+        Span<AllocatorEntry> span = CollectionsMarshal.AsSpan(entries);
+        ref AllocatorEntry entry = ref span[genIndex.index];
+        
+        if(entry.generation != genIndex.generation)
         {
-            // entry was nt valid.
-
-            return AllocatorResult.InvalidGenIndex;
+            throw new StaleGenIndexException(genIndex);
         }
+        
+        entry.isActive = false;
+        free.Add(genIndex.index);
+
+        return GenIndexResult.Success;
     }
 
-    /// <summary>
-    /// Checks whether o  not a specified GenIndex matches an entry within this allocator.
-    /// </summary>
-    /// <param name="genIndex">The generational index to check.</param>
-    /// <returns>true, if the generational index is valid; otherwise false.</returns>
-    public bool IsValid(in GenIndex genIndex)
-    {
-        if(entries.Count > genIndex.index)
-        {
-            Span<AllocatorEntry> span = CollectionsMarshal.AsSpan(entries);
-            ref AllocatorEntry entry = ref span[genIndex.index];
-            if(entry.generation == genIndex.generation && entry.isActive == true)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
+    // /// <summary>
+    // /// Checks whether or  nt a specified GenIndex matches an entry within this allocator.
+    // /// </summary>
+    // /// <param name="genIndex">The generational index to check.</param>
+    // /// <returns>true, if the generational index is valid; otherwise false.</returns>
+    // public bool IsValid(in GenIndex genIndex)
+    // {
+    //     if(entries.Count > genIndex.index)
+    //     {
+    //         Span<AllocatorEntry> span = CollectionsMarshal.AsSpan(entries);
+    //         ref AllocatorEntry entry = ref span[genIndex.index];
+    //         if(entry.generation == genIndex.generation && entry.isActive == true)
+    //         {
+    //             return true;
+    //         }
+    //         else
+    //         {
+    //             return false;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         return false;
+    //     }
+    // }
 
     public void PrintAll()
     {

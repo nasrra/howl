@@ -93,9 +93,9 @@ public class ComponentRegistry : IDisposable
         genIndexAllocator.OnAllocated -= OnGenIndexAllocatorAllocated;            
     }
 
-    private void OnGenIndexAllocatorAllocated(AllocatorResult result)
+    private void OnGenIndexAllocatorAllocated(bool reusedFreeIndex)
     {
-        if (result == AllocatorResult.AllocatedNewGenIndex)
+        if (reusedFreeIndex == false)
         {
             ResizeSparseEntries(genIndexAllocator.Entries.Count);
         }

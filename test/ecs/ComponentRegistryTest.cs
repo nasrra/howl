@@ -43,8 +43,8 @@ public class ComponentRegistryTest
         Assert.Equal(0, registry.RegisterComponent<Foo>());
         Assert.Equal(1, registry.RegisterComponent<Loo>());
 
-        allocator.Allocate(out GenIndex index1);
-        allocator.Allocate(out GenIndex index2);
+        allocator.Allocate(out GenIndex index1, out _);
+        allocator.Allocate(out GenIndex index2, out _);
 
         GenIndexList<Loo> loos = registry.Get<Loo>();
         Assert.NotNull(loos);

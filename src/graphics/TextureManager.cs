@@ -2,13 +2,14 @@ using System;
 using System.Diagnostics;
 using Howl.ECS;
 using Howl.Generic;
+using Howl.Math;
 
 namespace Howl.Graphics;
 
 public abstract class TextureManager<T> : ITextureManager where T : IDisposable
 {
-    GenIndexAllocator textureIds;
-    GenIndexList<T> textures;
+    protected GenIndexAllocator textureIds;
+    protected GenIndexList<T> textures;
 
     protected bool disposed;
     public bool IsDisposed => disposed;
@@ -18,70 +19,55 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
         textures = new();
     }  
 
-    public bool LoadTexture(string texturePath, out GenIndex genIndex)
+    public void LoadTexture(string texturePath, out GenIndex genIndex)
     {
-        AllocatorResult result = textureIds.Allocate(out genIndex);
-        if(result != AllocatorResult.AllocatedNewGenIndex)
+        textureIds.Allocate(out genIndex, out bool reusedFreeGenIndex);
+        if(reusedFreeGenIndex == false)
         {
-            return false;
+            // resize the sparse entries to match the texture ids so every texture id has a possible entry point
+            // into the textures storage.
+            textures.ResizeSparseEntries(textureIds.Entries.Count);
         }
 
-        // resize the sparse entries to match the texture ids so every texture id has a possible entry point
-        // into the textures storage.
-        textures.ResizeSparseEntries(textureIds.Entries.Count);
+        LoadTextureFromDisc(texturePath, out T texture);
         
-        if(LoadTextureFromDisc(texturePath, out T texture) == false)
-        {
-            return false;
-        }
+        GenIndexResult result = textures.Allocate(genIndex, texture);
 
-        textures.Allocate(genIndex, texture);
-        return true;
+        if(result != GenIndexResult.Success)
+        {
+            throw new LoadTextureException(result.ToString());            
+        }
     }
 
-    public abstract bool LoadTextureFromDisc(string texturePath, out T texture);
+    public abstract void LoadTextureFromDisc(string texturePath, out T texture);
 
-    public bool UnloadTexture(in GenIndex index, out GenIndexResult genIndexResult, out AllocatorResult allocatorResult)
+    public GenIndexResult UnloadTexture(in GenIndex index)
     {
         // ensure to dispose of the monogame texture before deallocating it.
+
+        GenIndexResult result;
 
         textures.GetDenseRef(index, out Ref<T> reference);
         reference.Value.Dispose();
         
-        genIndexResult = textures.Deallocate(index);
-        if(genIndexResult == GenIndexResult.Success)
+        result = textures.Deallocate(index);
+
+
+        if(result != GenIndexResult.Success)
         {
-            allocatorResult = textureIds.Deallocate(index);
-            if(allocatorResult == AllocatorResult.DeallocatedGenIndex)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return result;
         }
-        else
-        {
-            allocatorResult = AllocatorResult.InvalidGenIndex;
-            return false;
-        }
+
+        result = textureIds.Deallocate(index);
+        return result;
     }
 
-    public ReadOnlyRef<T> GetTextureReadonlyRef(in GenIndex index)
+    public GenIndexResult GetTextureReadonlyRef(in GenIndex index, out ReadOnlyRef<T> readOnlyRef)
     {
-        GenIndexResult result = textures.GetDenseReadonlyRef(index, out ReadOnlyRef<T> readonlyRef);
-        if(result == GenIndexResult.Success)
-        {
-            return readonlyRef;
-        }
-        else
-        {
-            Debug.WriteLine($"Failed get readonly ref to texture {index} error code {result}");
-            return default;
-        }
+        return textures.GetDenseReadOnlyRef(index, out readOnlyRef);
     }
 
+    public abstract GenIndexResult GetTextureDimensions(in GenIndex genIndex, out Vector2 dimensions);
 
     /// 
     /// Disposal.

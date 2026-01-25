@@ -1,4 +1,5 @@
 using System;
+using Howl.Math;
 using Howl.ECS;
 
 namespace Howl.Graphics;
@@ -6,19 +7,55 @@ namespace Howl.Graphics;
 public interface ITextureManager : IDisposable
 {
     /// <summary>
-    /// Loads a new Texute asset into memory.
+    /// Loads a new Texture asset into memory.
     /// </summary>
     /// <param name="texturePath">The file path to the Texture asset; relative to AssetManager.AssetsFolder</param>
     /// <param name="genIndex">The GenIndex assigned to the texture that was loaded.</param>
-    /// <returns>true, if the texture was successfully loaded; otherwise false.</returns>
-    public bool LoadTexture(string texturePath, out GenIndex genIndex);
+    public void LoadTexture(string texturePath, out GenIndex genIndex);
 
     /// <summary>
     /// Unloads a Texture asset from memeory.
     /// </summary>
     /// <param name="index">The GenIndex associated with the loaded Texture.</param>
-    /// <param name="genIndexResult">The result of modifying the texture ids; may return an error description should this function fail.</param>
-    /// <param name="allocatorResult">The result of modifying the loaded texture assets in memory; may return an error description should this function fail.</param>
-    /// <returns>true, if the Texture was successfully unloaded; otherwise false.</returns>
-    public bool UnloadTexture(in GenIndex index, out GenIndexResult genIndexResult, out AllocatorResult allocatorResult);
+    /// <returns>
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <description>
+    ///                 <see cref="GenIndexResult.StaleGenIndex"/>
+    ///             </description>
+    ///         </item>
+    ///         <item>
+    ///             <description>
+    ///                 <see cref="GenIndexResult.Success"/>
+    ///             </description>
+    ///         </item>
+    ///     </list>
+    /// </returns>
+    public GenIndexResult UnloadTexture(in GenIndex index);
+
+    /// <summary>
+    /// Gets the dimensions/resolution of a loaded texture.
+    /// </summary>
+    /// <param name="genIndex">The loaded texture's GenIndex.</param>
+    /// <param name="dimensions">The horizontal (x) and vertical (y) dimensions of the texture - in pixels.</param>
+    /// <returns>
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <description>
+    ///                 <see cref="GenIndexResult.DenseNotAllocated"/>
+    ///             </description>
+    ///         </item>
+    ///         <item>
+    ///             <description>
+    ///                 <see cref="GenIndexResult.StaleGenIndex"/>
+    ///             </description>
+    ///         </item>
+    ///         <item>
+    ///             <description>
+    ///                 <see cref="GenIndexResult.Success"/>
+    ///             </description>
+    ///         </item>
+    ///     </list>
+    /// </returns>
+    public abstract GenIndexResult GetTextureDimensions(in GenIndex genIndex, out Vector2 dimensions);
 }

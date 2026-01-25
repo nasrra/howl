@@ -71,10 +71,10 @@ public interface IRenderer : IDisposable
     /// <summary>
     /// Draws a sprite to the currently bound render texture.
     /// </summary>
-    /// <param name="textureId"></param>
-    /// <param name="position"></param>
+    /// <param name="transform">The transform data.</param>
+    /// <param name="sprite">The sprite data.</param>
     /// <returns></returns>
-    public bool DrawSprite(in GenIndex textureId, Vector2 position);
+    public bool DrawSprite(in Transform transform, in Sprite sprite);
 
     /// <summary>
     /// Draws a line between to points in world space for a single frame.
@@ -91,7 +91,7 @@ public interface IRenderer : IDisposable
     /// </summary>
     /// <param name="transform">The transform data.</param>
     /// <param name="shape">The rectangle to draw.</param>
-    public void DrawFilledShape(Transform transform, RectangleShape shape);
+    public void DrawFilledShape(in Transform transform, in RectangleShape shape);
 
     /// <summary>
     /// Draws a wireframe shape for a single frame.
@@ -99,7 +99,7 @@ public interface IRenderer : IDisposable
     /// <param name="transform">The transform data.</param>
     /// <param name="shape">The rectangle data.</param>
     /// <param name="thickness">The thickness of the wireframe line segments.</param>
-    public void DrawWireframeShape(Transform transform, RectangleShape shape, float thickness = DefaultWireframeThickness);
+    public void DrawWireframeShape(in Transform transform, in RectangleShape shape, float thickness = DefaultWireframeThickness);
 
     /// <summary>
     /// Draws a filled shape for a single frame.
@@ -107,7 +107,7 @@ public interface IRenderer : IDisposable
     /// <param name="transform">The transform data.</param>
     /// <param name="shape">The circle data.</param>
     /// <param name="verticeCount">The amount of vertices used to draw the circle.</param>
-    public void DrawFilledShape(Transform transform, CircleShape shape, int verticeCount = DefaultCirclePointAmount);
+    public void DrawFilledShape(in Transform transform, in CircleShape shape, int verticeCount = DefaultCirclePointAmount);
 
     /// <summary>
     /// Draws a wireframe shape for a single frame.
@@ -116,7 +116,7 @@ public interface IRenderer : IDisposable
     /// <param name="shape">The circle data.</param>
     /// <param name="verticeCount">The amount of vertices used to draw the circle.</param>
     /// <param name="thickness">The thickness of the wireframe line segments.</param>
-    public void DrawWireframeShape(Transform transform, CircleShape shape, int verticeCount = DefaultCirclePointAmount, float thickness = DefaultWireframeThickness);
+    public void DrawWireframeShape(in Transform transform, in CircleShape shape, int verticeCount = DefaultCirclePointAmount, float thickness = DefaultWireframeThickness);
 
     /// <summary>
     /// Draws a wireframe shape for a single frame.
@@ -124,7 +124,7 @@ public interface IRenderer : IDisposable
     /// <param name="transform">The transform data.</param>
     /// <param name="shape">The polygon data.</param>
     /// <param name="thickness">The thickness of the wireframe line segments.</param>
-    public void DrawWireframeShape(Transform transform, Polygon16Shape shape, float thickness = DefaultWireframeThickness);
+    public void DrawWireframeShape(in Transform transform, in Polygon16Shape shape, float thickness = DefaultWireframeThickness);
 
     /// <summary>
     /// Gets the main render target width.

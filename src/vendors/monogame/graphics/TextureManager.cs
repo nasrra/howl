@@ -1,7 +1,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using Howl.ECS;
+using Howl.Generic;
 using Howl.Graphics;
+using Howl.Math;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Howl.Vendors.MonoGame.Graphics;
@@ -29,7 +32,7 @@ public sealed class TextureManager : TextureManager<Texture2D>
     /// <param name="texturePath">The file path relative to the .csproj</param>
     /// <param name="texture">The texture2D that has been created from the file stream.</param>
     /// <returns>true, if successfully loaded; otherwise false.</returns>
-    public override bool LoadTextureFromDisc(string texturePath, out Texture2D texture)
+    public override void LoadTextureFromDisc(string texturePath, out Texture2D texture)
     {
         ValidateDependencies();
 
@@ -45,20 +48,26 @@ public sealed class TextureManager : TextureManager<Texture2D>
         }
         catch (FileNotFoundException)
         {
-            Debug.WriteLine($"Texture2D file not found: {path}");
-            return false;
+            throw new FileNotFoundException($"Texture2D file not found: {path}");
         }
         catch (DirectoryNotFoundException)
         {
-            Debug.WriteLine($"Directory not found: {path}");
-            return false;
+            throw new DirectoryNotFoundException($"Directory not found: {path}");
         }
         catch(IOException e)
         {
-            Debug.WriteLine($"Error reading file: {path}: {e.Message}");
-            return false;
+            throw new IOException($"Error reading file: {path}: {e.Message}");
         }
+    }
+
+    public override GenIndexResult GetTextureDimensions(in GenIndex genIndex, out Vector2 dimensions)
+    {
+        GenIndexResult result = textures.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Texture2D> textureRef);
         
-        return true;
+        dimensions = result == GenIndexResult.Success
+        ? new(textureRef.Value.Width, textureRef.Value.Height)
+        : default;
+
+        return result;
     }
 }

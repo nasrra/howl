@@ -27,7 +27,7 @@ public static class RectangleShapeSystems{
             {
                 ref DenseEntry<RectangleShape> denseEntry = ref denseEntries[i];
                 ref RectangleShape shape = ref denseEntry.Value;
-                GenIndex genIndex = shapeGenIndexList.GetGenIndex(denseEntry.sparseIndex);
+                shapeGenIndexList.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
                 // only draw if there is a transform associated with the rectangle.
                 if(transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transformRef) == GenIndexResult.Success)

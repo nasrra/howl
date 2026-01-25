@@ -54,7 +54,6 @@ public class Renderer : IRenderer
     /// 
 
 
-
     /// <summary>
     /// Creates a new MonoGame renderer instance.
     /// </summary>
@@ -416,10 +415,10 @@ public class Renderer : IRenderer
         primitiveIndices.Clear();
     }
 
-    public bool DrawSprite(in GenIndex textureId, Howl.Math.Vector2 position)
+    public bool DrawSprite(in Howl.Math.Transform transform, in Sprite sprite)
     {   
-        ReadOnlyRef<Texture2D> texture = textureManager.GetTextureReadonlyRef(textureId);
-        if (texture.Valid == false)
+        GenIndexResult result = textureManager.GetTextureReadonlyRef(sprite.Texture, out ReadOnlyRef<Texture2D> texture);
+        if (result != GenIndexResult.Success || texture.Valid == false)
         {
             return false;
         }
@@ -429,6 +428,7 @@ public class Renderer : IRenderer
             // (Note):
             // reverse y-coordinates because monogame
             // sprite batch is y+ = down, Howl is y+ = up.
+            Howl.Math.Vector2 position = transform.Position;
             position.Y *= -1;
             position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
             
@@ -439,13 +439,13 @@ public class Renderer : IRenderer
             spriteBatch.Draw(
                 texture.Value, 
                 position.ToMonogame(), 
-                null, 
-                Microsoft.Xna.Framework.Color.White, 
-                0, 
-                System.Numerics.Vector2.Zero, 
-                System.Numerics.Vector2.One, 
+                sprite.SourceRectangle.ToMonoGame(), 
+                sprite.ColourTint.ToMonoGame(), 
+                transform.Rotation, 
+                sprite.Origin.ToMonogame(), 
+                sprite.Scale.ToMonogame(), 
                 SpriteEffects.None, 
-                0
+                sprite.LayerDepth
             );
             return true;
         }
@@ -507,7 +507,7 @@ public class Renderer : IRenderer
         primitiveVertices.Add(new(corner4.ToMonoGame(), monoGameColor));
     }
 
-    public void DrawWireframeShape(Howl.Math.Transform transform, Howl.Graphics.RectangleShape shape, float thickness = 4)
+    public void DrawWireframeShape(in Howl.Math.Transform transform, in Howl.Graphics.RectangleShape shape, float thickness = 4)
     {
         if(primitiveVertices.Count > short.MaxValue)
         {
@@ -528,7 +528,7 @@ public class Renderer : IRenderer
         DrawLine(bottomLeft, topLeft, shape.Colour, thickness);
     }
 
-    public void DrawFilledShape(Howl.Math.Transform transform, Howl.Graphics.RectangleShape shape)
+    public void DrawFilledShape(in Howl.Math.Transform transform, in Howl.Graphics.RectangleShape shape)
     {
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
@@ -574,7 +574,7 @@ public class Renderer : IRenderer
         primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));        
     }
 
-    public void DrawFilledShape(Howl.Math.Transform transform, CircleShape shape, int verticeCount = IRenderer.DefaultCirclePointAmount)
+    public void DrawFilledShape(in Howl.Math.Transform transform, in CircleShape shape, int verticeCount = IRenderer.DefaultCirclePointAmount)
     {
         if(verticeCount == System.Math.Clamp(verticeCount, 3, int.MaxValue))
         {
@@ -629,8 +629,8 @@ public class Renderer : IRenderer
     }
 
     public void DrawWireframeShape(
-        Howl.Math.Transform transform, 
-        CircleShape shape,  
+        in Howl.Math.Transform transform, 
+        in CircleShape shape,  
         int verticeCount = IRenderer.DefaultCirclePointAmount,
         float thickness = IRenderer.DefaultWireframeThickness)   
     {
@@ -665,7 +665,7 @@ public class Renderer : IRenderer
         }
     }
 
-    public void DrawWireframeShape(Howl.Math.Transform transform, Polygon16Shape shape, float thickness = IRenderer.DefaultWireframeThickness)
+    public void DrawWireframeShape(in Howl.Math.Transform transform, in Polygon16Shape shape, float thickness = IRenderer.DefaultWireframeThickness)
     {
         Howl.Math.Vector2 start = shape.GetVertex(0).Transform(transform); 
         for(int i = 1; i <= shape.Polygon.VerticesCount; i++)

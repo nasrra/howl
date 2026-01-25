@@ -2,9 +2,7 @@ namespace Howl.ECS;
 
 public enum GenIndexResult : byte
 {
-    Success,
-    StaleAllocationFound,
-    InvalidGenIndex,
+    Success,    
     DenseNotAllocated,
-    DoubleAllocationAttempted
+    StaleGenIndex,
 }

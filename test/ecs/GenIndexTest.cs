@@ -8,43 +8,59 @@ public class GenIndexTest
 {
     internal struct Component
     {
-        public int x;
-        public int y;
-        public int z;
+        public int X;
+        public int Y;
+        public int Z;
+
+        public Component(int x, int y, int z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
     }
 
-    GenIndexAllocator allocator;
-    GenIndexList<Component> components;
-    GenIndex index0;
-    GenIndex index1;
-    GenIndex index2;
 
-    public GenIndexTest()
-    {
+    private void CreateTestBench(
+        out GenIndexAllocator allocator, 
+        out GenIndexList<Component> components,
+        out GenIndex index0,
+        out GenIndex index1,
+        out GenIndex index2
+    )
+    {        
         allocator = new();
         components = new();
-        allocator.Allocate(out index0);
-        allocator.Allocate(out index1);
-        allocator.Allocate(out index2);
+        allocator.Allocate(out index0, out _);
+        allocator.Allocate(out index1, out _);
+        allocator.Allocate(out index2, out _);
+        components.ResizeSparseEntries(allocator.Entries.Count);
     }
 
     [Fact]
     public void GenIndexAllocate_Test()
     {
-        allocator.Allocate(out _);
-        allocator.Allocate(out _);
-        allocator.Allocate(out _);
+        GenIndexAllocator allocator = new();
+
+        allocator.Allocate(out _, out _);
+        allocator.Allocate(out _, out _);
+        allocator.Allocate(out _, out _);
         for(int i = 0; i < allocator.Entries.Count; i++)
         {
             AllocatorEntry allocatorEntry = allocator.Entries[i];
             Assert.Equal(0, allocatorEntry.generation);
         }
-        Assert.Equal(6, allocator.Entries.Count);
+        Assert.Equal(3, allocator.Entries.Count);
     }
 
     [Fact]
     public void SparseResize_Test()
     {
+        GenIndexAllocator allocator = new();
+        GenIndexList<Component> components = new();
+        allocator.Allocate(out GenIndex index0, out _);
+        allocator.Allocate(out GenIndex index1, out _);
+        allocator.Allocate(out GenIndex index2, out _);
         components.ResizeSparseEntries(allocator.Entries.Count);
         Assert.Equal(3, components.Sparse.Count);  
     }
@@ -52,7 +68,8 @@ public class GenIndexTest
     [Fact]
     public void ComponentAllocate_Test()
     {
-        components.ResizeSparseEntries(allocator.Entries.Count);
+        CreateTestBench(out GenIndexAllocator allocator, out GenIndexList<Component> components, out GenIndex index0, out GenIndex index1, out GenIndex index2);
+
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
 
@@ -60,8 +77,8 @@ public class GenIndexTest
 
         // ensure that the sparse references correctly link to a dense index.
 
-        Assert.Equal(GenIndexResult.Success, components.GetSparseRef(in index0, out ReadonlyRef<SparseEntry> sparse0));
-        Assert.Equal(GenIndexResult.Success, components.GetSparseRef(in index1, out ReadonlyRef<SparseEntry> sparse1));
+        Assert.Equal(GenIndexResult.Success, components.GetSparseReadOnlyRef(in index0, out ReadOnlyRef<SparseEntry> sparse0));
+        Assert.Equal(GenIndexResult.Success, components.GetSparseReadOnlyRef(in index1, out ReadOnlyRef<SparseEntry> sparse1));
 
         Assert.Equal(0, sparse0.Value.DenseIndex);
         Assert.Equal(1, sparse1.Value.DenseIndex);
@@ -71,7 +88,8 @@ public class GenIndexTest
     [Fact]
     public void ComponentGetRef_Test()
     {
-        components.ResizeSparseEntries(allocator.Entries.Count);
+        CreateTestBench(out GenIndexAllocator allocator, out GenIndexList<Component> components, out GenIndex index0, out GenIndex index1, out GenIndex index2);
+
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
 
@@ -83,45 +101,47 @@ public class GenIndexTest
     [Fact]
     public void ComponentModify_Test()
     {
+        CreateTestBench(out GenIndexAllocator allocator, out GenIndexList<Component> components, out GenIndex index0, out GenIndex index1, out GenIndex index2);
+     
         const int c0Value = 33;
         const int c1Value = 12;
 
-        components.ResizeSparseEntries(allocator.Entries.Count);
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
         
         Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index0, out Ref<Component> c0A));
         Assert.True(c0A.Valid);
-        c0A.Value.x = c0Value;
-        c0A.Value.y = c0Value;
-        c0A.Value.z = c0Value;
+        c0A.Value.X = c0Value;
+        c0A.Value.Y = c0Value;
+        c0A.Value.Z = c0Value;
 
         Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index1, out Ref<Component> c1A));
         Assert.True(c1A.Valid);
-        c1A.Value.x = c1Value;
-        c1A.Value.y = c1Value;
-        c1A.Value.z = c1Value;
+        c1A.Value.X = c1Value;
+        c1A.Value.Y = c1Value;
+        c1A.Value.Z = c1Value;
 
         // ensure that the values are properly set within the list.
 
         components.GetDenseRef(index0, out Ref<Component> c0B);
-        Assert.Equal(c0Value, c0B.Value.x);
-        Assert.Equal(c0Value, c0B.Value.y);
-        Assert.Equal(c0Value, c0B.Value.z);
+        Assert.Equal(c0Value, c0B.Value.X);
+        Assert.Equal(c0Value, c0B.Value.Y);
+        Assert.Equal(c0Value, c0B.Value.Z);
 
         components.GetDenseRef(index1, out Ref<Component> c1B);
-        Assert.Equal(c1Value, c1B.Value.x);
-        Assert.Equal(c1Value, c1B.Value.y);
-        Assert.Equal(c1Value, c1B.Value.z);
+        Assert.Equal(c1Value, c1B.Value.X);
+        Assert.Equal(c1Value, c1B.Value.Y);
+        Assert.Equal(c1Value, c1B.Value.Z);
     }
 
     [Fact]
     public void ComponentDeallocate_Test()
     {
+        CreateTestBench(out GenIndexAllocator allocator, out GenIndexList<Component> components, out GenIndex index0, out GenIndex index1, out GenIndex index2);
+
         const int c0Value = 33;
         const int c1Value = 12;
 
-        components.ResizeSparseEntries(allocator.Entries.Count);
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
 
@@ -129,32 +149,30 @@ public class GenIndexTest
 
         components.GetDenseRef(index0, out Ref<Component> c0A);
         Assert.True(c0A.Valid);
-        c0A.Value.x = c0Value;
-        c0A.Value.y = c0Value;
-        c0A.Value.z = c0Value;
+        c0A.Value.X = c0Value;
+        c0A.Value.Y = c0Value;
+        c0A.Value.Z = c0Value;
 
         components.GetDenseRef(index1, out Ref<Component> c1A);
         Assert.True(c1A.Valid);
-        c1A.Value.x = c1Value;
-        c1A.Value.y = c1Value;
-        c1A.Value.z = c1Value;
+        c1A.Value.X = c1Value;
+        c1A.Value.Y = c1Value;
+        c1A.Value.Z = c1Value;
 
         // Deallocate the first gen index's dense data.
 
         GenIndexResult successResult = components.Deallocate(index0);
         Assert.Equal(GenIndexResult.Success, successResult);
 
-        GenIndexResult errorResult = components.Deallocate(index0);
-        Assert.Equal(GenIndexResult.DenseNotAllocated, errorResult);
-
+        Assert.Throws<DenseNotAllocatedException>(() => components.Deallocate(index0));
 
         // ensure that the dense indexes are properly handled during deallocation.
         
-        components.GetSparseRef(index0, out ReadonlyRef<SparseEntry> sparse0);
-        components.GetSparseRef(index1, out ReadonlyRef<SparseEntry> sparse1);
+        components.GetSparseReadOnlyRef(index0, out ReadOnlyRef<SparseEntry> sparse0);
+        components.GetSparseReadOnlyRef(index1, out ReadOnlyRef<SparseEntry> sparse1);
 
         Assert.True(sparse0.Valid);
-        Assert.False(sparse0.Value.LinkedToADenseEntry());
+        Assert.False(sparse0.Value.HasDenseEntry());
 
         Assert.True(sparse1.Valid);
         Assert.Equal(0, sparse1.Value.DenseIndex);
@@ -162,8 +180,51 @@ public class GenIndexTest
         // ensure that the values have not changed.
 
         components.GetDenseRef(index1, out Ref<Component> c1B);
-        Assert.Equal(c1Value, c1B.Value.x);
-        Assert.Equal(c1Value, c1B.Value.y);
-        Assert.Equal(c1Value, c1B.Value.z);
+        Assert.Equal(c1Value, c1B.Value.X);
+        Assert.Equal(c1Value, c1B.Value.Y);
+        Assert.Equal(c1Value, c1B.Value.Z);
+    }
+    
+    [Fact]
+    public void StaleAllocationResult_Test()
+    {
+        CreateTestBench(out GenIndexAllocator allocator, out GenIndexList<Component> components, out GenIndex index0, out GenIndex index1, out GenIndex index2);
+    
+        GenIndexResult result;
+
+        components.Allocate(index0, new (1,2,3));
+
+        // deallocate the component and entity.
+        components.Deallocate(index0);
+        allocator.Deallocate(index0);
+
+        // reuses the same slot as index 0 but the generation has changed.
+        allocator.Allocate(out GenIndex newIndex0, out _);
+
+        components.Allocate(newIndex0, new(2,3,4));
+
+        result = components.GetDenseRef(index0, out Ref<Component> reference);
+
+        Assert.Equal(GenIndexResult.StaleGenIndex, result); 
+
+        result = components.GetDenseReadOnlyRef(index0, out ReadOnlyRef<Component> readOnlyReference);
+
+        Assert.Equal(GenIndexResult.StaleGenIndex, result);
+    }
+
+    [Fact]
+    public void DenseNotAllocatedResult_Test()
+    {        
+        CreateTestBench(out GenIndexAllocator allocator, out GenIndexList<Component> components, out GenIndex index0, out GenIndex index1, out GenIndex index2);
+ 
+        GenIndexResult result;
+
+        result = components.GetDenseReadOnlyRef(index0, out ReadOnlyRef<Component> componentReadOnlyRef); 
+        
+        Assert.Equal(GenIndexResult.DenseNotAllocated, result);
+        
+        result = components.GetDenseRef(index0, out Ref<Component> componentRef); 
+
+        Assert.Equal(GenIndexResult.DenseNotAllocated, result);
     }
 }

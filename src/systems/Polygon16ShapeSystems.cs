@@ -28,8 +28,8 @@ public static class Polygon16ShapeSystems
             {
                 ref DenseEntry<Polygon16Shape> denseEntry = ref denseEntries[i];
                 ref Polygon16Shape shape = ref denseEntry.Value;
-                GenIndex genIndex = shapeGenIndexList.GetGenIndex(denseEntry.sparseIndex);
-
+                shapeGenIndexList.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+                
                 if (transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transform) == GenIndexResult.Success)
                 {
                     renderer.DrawWireframeShape(transform, shape);
