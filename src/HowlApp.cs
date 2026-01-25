@@ -73,9 +73,7 @@ public abstract class HowlApp : IDisposable
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                monoGameApp = new(this);
-                InputManager = new Vendors.MonoGame.Input.InputManager();
-                Renderer = new Vendors.MonoGame.Graphics.Renderer(monoGameApp, resolution, cameraPosition, cameraZoomVirtualResolution);
+                InitialiseMonoGameBackend(resolution, cameraPosition, cameraZoomVirtualResolution);
             break;
             default:
                 throw new InvalidOperationException($"HowlApp cannot be initialised with a backend of {backend}");
@@ -96,7 +94,7 @@ public abstract class HowlApp : IDisposable
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                monoGameApp.Run();
+                RunMonoGameBackend();
             break;
             default:
                 throw new InvalidOperationException($"HowlApp cannot be run with a backend of {backend}");
@@ -111,9 +109,11 @@ public abstract class HowlApp : IDisposable
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                monoGameApp.Exit();
+                ShutDownMonoGameBackend();
                 Dispose();
             break;
+            default:
+                throw new InvalidOperationException($"HowlApp cannot be shutdonw with a backend of {backend}");
         }
         Dispose();        
     }
@@ -159,6 +159,75 @@ public abstract class HowlApp : IDisposable
     public void BorderlessFullscreen()
     {
         Renderer.BorderlessFullscreen();
+    }
+
+    /// <summary>
+    /// Sets the target frame rate.
+    /// </summary>
+    /// <param name="targetFrameRate">The specified target frame rate.</param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public void SetTargetFrameRate(TargetFrameRate targetFrameRate)
+    {
+        switch (backend)
+        {
+            case HowlAppBackend.MonoGame:
+                SetTargetFrameRateMonoGameBackend(targetFrameRate);
+            break;
+            default:
+                throw new InvalidOperationException($"HowlApp cannot set target frame rate with a backend of {backend}");
+        }
+    }
+
+
+    ///
+    /// MonoGameBackEnd.
+    /// 
+
+
+    private void InitialiseMonoGameBackend(Resolution resolution, Math.Vector2 cameraPosition, float cameraZoomVirtualResolution)
+    {
+        monoGameApp = new(this);
+        InputManager = new Vendors.MonoGame.Input.InputManager();
+        Renderer = new Vendors.MonoGame.Graphics.Renderer(monoGameApp, resolution, cameraPosition, cameraZoomVirtualResolution);
+
+    }
+
+    private void RunMonoGameBackend()
+    {
+        monoGameApp.Run();
+    }
+
+    private void ShutDownMonoGameBackend()
+    {
+        monoGameApp.Exit();        
+    }
+
+    private void SetTargetFrameRateMonoGameBackend(TargetFrameRate targetFrameRate)
+    {
+        switch (targetFrameRate)
+        {
+            case TargetFrameRate.D60:
+                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/60.0);
+            break;
+            case TargetFrameRate.D90:
+                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/90.0);
+            break;
+            case TargetFrameRate.D120:
+                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/120.0);
+            break;
+            case TargetFrameRate.D144:
+                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/144.0);
+            break;
+            case TargetFrameRate.D165:
+                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/165.0);
+            break;
+            case TargetFrameRate.D240:
+                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/240.0);
+            break;
+            case TargetFrameRate.D360:
+                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/360.0);
+            break;
+        }
     }
 
 
