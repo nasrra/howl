@@ -166,6 +166,24 @@ public class Vector2Test
     }       
 
     [Fact]
+    public void Distance_Test()
+    {
+        Vector2 a = new(1,1);
+        Vector2 b = new(-23,12);
+        Assert.Equal(26.4, a.Distance(b), precision: 1);
+        Assert.Equal(26.4, Vector2.Distance(a,b), precision: 1);
+    } 
+
+    [Fact]
+    public void DistanceSquared_Test()
+    {
+        Vector2 a = new(1,1);
+        Vector2 b = new(-23,12);
+        Assert.Equal(697, a.DistanceSquared(b), precision: 1);
+        Assert.Equal(697, Vector2.DistanceSquared(a,b), precision: 1);
+    }
+
+    [Fact]
     public void InverseLength_Test()
     {
         Vector2 a = new(2,6);

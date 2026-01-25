@@ -270,6 +270,68 @@ public struct Vector2
     }
 
     /// <summary>
+    /// Gets the distance between this vector and another.
+    /// </summary>
+    /// <param name="vector">The vector to find distance against.</param>
+    /// <returns>The distance to the specified vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public float Distance(Vector2 vector)
+    {
+        return Distance(this, vector);
+    }
+
+    /// <summary>
+    /// Gets the distance between two vectors
+    /// </summary>
+    /// <param name="from">The vector to start at.</param>
+    /// <param name="to">The vector to end at.</param>
+    /// <returns>The distance.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float Distance(Vector2 from, Vector2 to)
+    {
+        float dx = from.X - to.X;
+        float dy = from.Y - to.Y;
+        return MathF.Sqrt(dx * dx + dy * dy);
+    }
+
+    /// <summary>
+    /// Gets the distance squared between this vector and another.
+    /// </summary>
+    /// <param name="vector">The vector to find distance sqaured against.</param>
+    /// <returns>The distance squared to the specified vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public float DistanceSquared(Vector2 vector)
+    {
+        return DistanceSquared(this, vector);
+    }
+
+    /// <summary>
+    /// Gets the distance squared between two vectors.
+    /// </summary>
+    /// <param name="from">The vector to start at.</param>
+    /// <param name="to">Teh vector to end at.</param>
+    /// <returns>The distance squared.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float DistanceSquared(Vector2 from, Vector2 to)
+    {
+        float dx = from.X - to.X;
+        float dy = from.Y - to.Y;
+        return dx * dx + dy * dy;
+    }
+
+    /// <summary>
+    /// Gets the cross product between to vectors.
+    /// </summary>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
+    /// <returns>The cross product.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public float Cross(Vector2 lhs, Vector2 rhs)
+    {
+        return lhs.X * rhs.Y - lhs.Y * rhs.X;    
+    }
+
+    /// <summary>
     /// Transforms a vector by the supplied transform.
     /// </summary>
     /// <param name="vector">The vector to transform.</param>
