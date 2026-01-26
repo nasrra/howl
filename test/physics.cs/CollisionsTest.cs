@@ -23,12 +23,12 @@ public class CollisionsTest
         // No Collision
 
         positionA = new(0,0);
-        radiusA = 1;
+        radiusA = 12;
         radiusSqrdA = radiusA * radiusA;
 
-        positionB = new(2,2);
-        radiusB = 1;
-        radiusSqrdB = radiusA * radiusA;
+        positionB = new(25,25);
+        radiusB = 12;
+        radiusSqrdB = radiusB * radiusB;
     
         Assert.False(
             Collisions.CirclesIntersect(
@@ -49,12 +49,12 @@ public class CollisionsTest
         // Collision
 
         positionA = new(0,0);
-        radiusA = 1;
+        radiusA = 12;
         radiusSqrdA = radiusA * radiusA;
 
-        positionB = new(0.5f,0.5f);
-        radiusB = 1;
-        radiusSqrdB = radiusA * radiusA;
+        positionB = new(5f,5f);
+        radiusB = 12;
+        radiusSqrdB = radiusB * radiusB;
     
         Assert.True(
             Collisions.CirclesIntersect(
@@ -69,7 +69,7 @@ public class CollisionsTest
             )
         );
 
-        Assert.Equal(1.29f, depth, precision: 2);
+        Assert.Equal(16.93f, depth, precision: 2);
         Assert.Equal(0.71, normal.X, precision: 2);
         Assert.Equal(0.71, normal.Y, precision: 2);
     }

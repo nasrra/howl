@@ -5,6 +5,7 @@ namespace Howl.Math;
 
 public struct Vector2
 {
+    public static Vector2 NaN       = new(float.NaN, float.NaN);
     public static Vector2 Zero      = new(0,0);
     public static Vector2 One       = new(1,1);
     public static Vector2 Up        = new(0,1);

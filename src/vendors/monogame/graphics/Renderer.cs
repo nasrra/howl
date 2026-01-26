@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
@@ -400,10 +402,10 @@ public class Renderer : IRenderer
             pass.Apply();            
             monoGameApp.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
                 PrimitiveType.TriangleList,
-                primitiveVertices.ToArray(),
+                CollectionsMarshal.AsSpan(primitiveVertices).ToArray(),
                 0,
                 primitiveVertices.Count,
-                primitiveIndices.ToArray(),
+                CollectionsMarshal.AsSpan(primitiveIndices).ToArray(),
                 0,
                 primitiveIndices.Count / 3
             );

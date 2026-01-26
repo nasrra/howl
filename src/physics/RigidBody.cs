@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Howl.ECS;
 using Howl.Math;
 
@@ -15,57 +16,81 @@ public struct RigidBody
     public const float MinRestitution = 0f;
     public const float MaxRestitution = 1f;
 
-    public Vector2 Position {get; private set;}
-    public Vector2 LinearVelocity {get; private set;}
-    public float Rotation {get; private set;}
-    public float RotationalVelocity{get; private set;}
-    public float Density {get; private set;}
-    public float Mass {get; private set;}
-    public float Restitution {get; private set;}
-    public float Area {get; private set;}
-    public bool IsStatic {get; private set;}
+    private Vector2 position;
+    public readonly Vector2 Position => position;
 
-    /// <summary>
-    /// Constructs a RigidBody.
-    /// </summary>
-    /// <param name="position"></param>
-    /// <param name="rotation"></param>
-    /// <param name="area"></param>
-    /// <param name="density"></param>
-    /// <param name="mass"></param>
-    /// <param name="restitution"></param>
-    /// <exception cref="InvalidOperationException"></exception>
-    public RigidBody(
-        Vector2 position,
-        float rotation,
-        float area,
-        float density,
-        float mass,
-        float restitution
-    )
+    private Vector2 linearVelocity;
+    public readonly Vector2 LinearVelocity => linearVelocity;
+
+    private Vector2 rotationalVelocity;
+    public readonly Vector2 RotationalVelocity => rotationalVelocity;
+
+    private float density;
+    public readonly float Density => density;
+
+    private float mass;
+    public readonly float Mass => mass;
+
+    private float restitution;
+    public readonly float Restitution => restitution;
+
+    private float area;
+    public readonly float Area => area;
+
+    public bool IsStatic;
+
+    public void SetDensity(float density)
     {
-        Position = position;
-        LinearVelocity = Vector2.Zero;
-        Rotation = rotation;
-        RotationalVelocity = 0;        
-        Density = density;
-        Area = area;
-
 #if DEBUG
         if(density < MinDensity || density > MaxDensity)
         {
             throw new InvalidOperationException($"Cannot create a RigidBody with a density of '{density}'; Min density is '{MinDensity}' and Max density is '{MaxDensity}'");
         }
+#endif
+        this.density = density;
+        mass = CalculateMass(area, this.density);
+    }
 
+    public void SetArea(float area)
+    {
+#if DEBUG
         if(area < MinBodySize || area > MaxBodySize)
         {
             throw new InvalidOperationException($"Cannot create a RigidBody with a area of '{area}'; Max body size is '{MaxBodySize}' and Min body size is '{MinBodySize}'");
         }
+#endif
+        this.area = area;
+        mass = CalculateMass(this.area, density);
+    }
 
+    private float CalculateMass(float area, float density)
+    {
+        return area * density;
+    }
+
+    public void SetRestitution(float restitution)
+    {
+#if DEBUG
         if(restitution < MinRestitution || restitution > MaxRestitution)
         {
             throw new InvalidOperationException($"Cannot create a RigidBody with a restitution of '{restitution}'; Max restitution is '{MaxRestitution}' and Min restitution is '{MinRestitution}'");
         }
 #endif
+        this.restitution = restitution;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void Move(Vector2 movement)
+    {
+        position += movement;
+    }
+
+    public RigidBody(Vector2 position, float restitution, float density, float area, bool isStatic)
+    {
+        this.position = position;
+        SetRestitution(restitution);
+        SetDensity(density);
+        SetArea(area);
+        IsStatic = isStatic;
     }
 }

@@ -135,6 +135,18 @@ public abstract class HowlApp : IDisposable
     {
         InputManager.Update(deltaTime);
         SystemRegistry.Update(deltaTime);
+        fixedUpdateTime += deltaTime;
+        if(fixedUpdateTime >= 0.016)
+        {
+            FixedUpdate(deltaTime);
+            fixedUpdateTime = 0;
+        }
+    }
+
+    private float fixedUpdateTime = 0;
+    public virtual void FixedUpdate(float deltaTime)
+    {
+        SystemRegistry.FixedUpdate(deltaTime);
     }
 
     /// <summary>

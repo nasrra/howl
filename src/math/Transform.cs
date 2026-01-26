@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Howl.Math;
 
@@ -78,5 +79,23 @@ public struct Transform
         this.rotation = rotation;
         Sin = MathF.Sin(rotation);
         Cos = MathF.Cos(rotation);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void Translate(Vector2 traslation)
+    {
+        Position += traslation;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void TranslateTo(Vector2 position)
+    {
+        Position = position;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void SetScale(Vector2 scale)
+    {
+        Scale = scale;
     }
 }

@@ -4,7 +4,7 @@ using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math;
 
-namespace Howl.Systems;
+namespace Howl.Graphics.Systems;
 
 public static class CircleShapeSystems
 {

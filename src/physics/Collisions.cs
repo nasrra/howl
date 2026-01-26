@@ -28,6 +28,9 @@ public static class Collisions
         } 
 
         normal = (centerB - centerA).Normalise();
+        normal = normal == Vector2.Zero || normal == Vector2.NaN
+        ? Vector2.One
+        : normal; 
         depth = radiusA + radiusB - MathF.Sqrt(distanceSqrd);
 
         return true;
