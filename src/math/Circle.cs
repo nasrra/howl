@@ -2,19 +2,16 @@ namespace Howl.Math;
 
 public struct Circle
 {
-    /// <summary>
-    /// Gets and sets the radius.
-    /// </summary>
-    public float Radius;
+    private float radius;
 
-    /// <summary>
-    /// Gets and sets the x-coordinate position.
-    /// </summary>
+    public readonly float Radius => radius;
+
+    private float radiusSquared;
+
+    public readonly float RadiusSquared => radiusSquared;
+
     public float X;
 
-    /// <summary>
-    /// Gets and sets the y-coordinate position.
-    /// </summary>
     public float Y;
 
     /// <summary>
@@ -25,8 +22,15 @@ public struct Circle
     /// <param name="radius">The radius</param>
     public Circle(float x, float y, float radius)
     {
-        Radius = radius;
         X = x;
-        Y = y;
+        Y =y;
+        this.radius = radius;
+        this.radiusSquared = Radius * Radius;
+    }
+
+    public void SetRadius(float radius)
+    {
+        this.radius = radius;
+        this.radiusSquared = Radius * Radius;
     }
 }

@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using Howl.ECS;
 using Howl.Graphics;
 using Howl.Input;
+using Microsoft.Xna.Framework;
 
 namespace Howl;
 
@@ -55,7 +57,7 @@ public abstract class HowlApp : IDisposable
         {
             throw new InvalidOperationException($"HowlApp cannot be created with a backend of {howlAppBackend}");
         }
-        
+
         backend = howlAppBackend;
         InitialiseBackend(resolution, cameraPosition, cameraZoomVirtualResolution);
         GenIndexAllocator = new();
@@ -122,28 +124,45 @@ public abstract class HowlApp : IDisposable
     /// Draw function for the HowlApp.
     /// </summary>
     /// <param name="deltaTime"></param>
+    float pdt;
     public virtual void Draw(float deltaTime)
-    {        
+    {   
+        // if(pdt * 1.25 < deltaTime )
+        // {
+        //     pdt = deltaTime;
+        //     Debug.WriteLine(deltaTime);
+        //     pdt = deltaTime;
+        // }
+        // else if (pdt *0.8 < deltaTime)
+        // {
+        //     pdt = deltaTime;
+        //     Debug.WriteLine(deltaTime);
+        //     pdt = deltaTime;            
+        // }
         SystemRegistry.Draw(deltaTime);
     }
-    
+
+    private const float FixedDt = 1f / 60f;
+    private float fixedUpdateTime = 0;
     /// <summary>
     /// Update tick for the HowlApp.
     /// </summary>
     /// <param name="deltaTime"></param>
+
     public virtual void Update(float deltaTime)
     {
         InputManager.Update(deltaTime);
         SystemRegistry.Update(deltaTime);
+
         fixedUpdateTime += deltaTime;
-        if(fixedUpdateTime >= 0.016)
+
+        while (fixedUpdateTime >= FixedDt)
         {
-            FixedUpdate(deltaTime);
-            fixedUpdateTime = 0;
+            FixedUpdate(FixedDt);
+            fixedUpdateTime -= FixedDt;
         }
     }
 
-    private float fixedUpdateTime = 0;
     public virtual void FixedUpdate(float deltaTime)
     {
         SystemRegistry.FixedUpdate(deltaTime);
@@ -219,25 +238,25 @@ public abstract class HowlApp : IDisposable
         switch (targetFrameRate)
         {
             case TargetFrameRate.D60:
-                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/60.0);
+                monoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(16);
             break;
             case TargetFrameRate.D90:
-                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/90.0);
+                monoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(11);
             break;
             case TargetFrameRate.D120:
-                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/120.0);
+                monoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(8);
             break;
             case TargetFrameRate.D144:
-                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/144.0);
+                monoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(7);
             break;
             case TargetFrameRate.D165:
-                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/165.0);
+                monoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(6f);
             break;
             case TargetFrameRate.D240:
-                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/240.0);
+                monoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(4);
             break;
             case TargetFrameRate.D360:
-                monoGameApp.TargetElapsedTime = TimeSpan.FromSeconds(1/360.0);
+                monoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(3);
             break;
         }
     }

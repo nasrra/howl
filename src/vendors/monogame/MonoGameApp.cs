@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Howl.Vendors.MonoGame;
 
@@ -26,19 +27,15 @@ public class MonoGameApp : Game
         this.howlApp = howlApp;
         IsMouseVisible = true;
         GraphicsDeviceManager = new(this);
-        Initialize();
+        IsFixedTimeStep = false;
+        GraphicsDeviceManager.SynchronizeWithVerticalRetrace = true;
+        GraphicsDeviceManager.ApplyChanges();
         Disposed += OnDisposed;
     }
 
     private void OnDisposed(object caller, EventArgs e)
     {
         disposed = true;
-    }
-
-    protected override void Initialize()
-    {
-        GraphicsDeviceManager.ApplyChanges();
-        base.Initialize();
     }
 
     protected override void Update(GameTime gameTime)
@@ -51,16 +48,17 @@ public class MonoGameApp : Game
 
     protected override void Draw(GameTime gameTime)
     {
+        // this submits to the gpu.
+        // and should stay at the bottom.
+
+        base.Draw(gameTime);
+
         ValidateDependencies();
         float deltaTime = GameTimeToDeltaTime(gameTime);
         howlApp.Renderer.BeginDraw();
         howlApp.Draw(deltaTime); 
         howlApp.Renderer.EndDraw();
 
-        // this submits to the gpu.
-        // and should stay at the bottom.
-
-        base.Draw(gameTime);
     }
 
     protected float GameTimeToDeltaTime(GameTime gameTime)

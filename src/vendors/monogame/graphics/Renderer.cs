@@ -210,6 +210,10 @@ public class Renderer : IRenderer
             return;
         }
 
+        // NOTE:
+        // this may need to be removed.
+        // monoGameApp.GraphicsDeviceManager.HardwareModeSwitch = false;
+
         monoGameApp.GraphicsDeviceManager.ToggleFullScreen();
     }
 
@@ -368,7 +372,7 @@ public class Renderer : IRenderer
         
         spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
-            samplerState: SamplerState.PointWrap
+            samplerState: SamplerState.PointClamp
         );
 
         spriteBatch.Draw(
@@ -440,7 +444,7 @@ public class Renderer : IRenderer
 
             spriteBatch.Draw(
                 texture.Value, 
-                position.ToMonogame(), 
+                new(position.X, position.Y), 
                 sprite.SourceRectangle.ToMonoGame(), 
                 sprite.ColourTint.ToMonoGame(), 
                 transform.Rotation, 
