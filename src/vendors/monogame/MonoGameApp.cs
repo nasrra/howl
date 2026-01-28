@@ -59,10 +59,16 @@ public class MonoGameApp : Game
 
         ValidateDependencies();
         float deltaTime = GameTimeToDeltaTime(gameTime);
+        
         howlApp.Renderer.BeginDraw();
         howlApp.Draw(deltaTime); 
         howlApp.Renderer.EndDraw();
+        
+        howlApp.Renderer.BeginDrawGui();
+        howlApp.DrawGui(deltaTime);
+        howlApp.Renderer.EndDrawGui();
 
+        howlApp.Renderer.SubmitDraw();
     }
 
     protected float GameTimeToDeltaTime(GameTime gameTime)

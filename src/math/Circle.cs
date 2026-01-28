@@ -6,10 +6,6 @@ public struct Circle
 
     public readonly float Radius => radius;
 
-    private float radiusSquared;
-
-    public readonly float RadiusSquared => radiusSquared;
-
     public float X;
 
     public float Y;
@@ -25,12 +21,10 @@ public struct Circle
         X = x;
         Y =y;
         this.radius = radius;
-        this.radiusSquared = Radius * Radius;
     }
 
     public void SetRadius(float radius)
     {
         this.radius = radius;
-        this.radiusSquared = Radius * Radius;
     }
 }

@@ -1,8 +1,7 @@
 using System;
-using Howl.Math;
 using Howl.ECS;
 
-namespace Howl.Graphics;
+namespace Howl.Graphics.Text;
 
 public interface IFontManager : IDisposable
 {

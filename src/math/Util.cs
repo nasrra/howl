@@ -17,28 +17,35 @@ public static class Util
     public static bool CirclesIntersect(
         Circle circleA,
         Circle circleB,
-        Vector2 circleAPosition,
-        Vector2 circleBPosition,
+        Vector2 posA,
+        Vector2 posB,
         out Vector2 normal,
         out float depth
     )
     {
         normal = Vector2.Zero;
-        depth = 0;
+        depth = 0f;
 
-        float distanceSqrd = circleAPosition.DistanceSquared(circleBPosition);
-        float radii = circleA.RadiusSquared + circleB.RadiusSquared;
+        float distanceSqrd = posA.DistanceSquared(posB);
 
-        if(distanceSqrd >= radii)
-        {
+        float radiusSum = circleA.Radius + circleB.Radius;
+        float radiusSumSq = radiusSum * radiusSum;
+
+        if (distanceSqrd >= radiusSumSq)
             return false;
-        } 
 
-        normal = (circleBPosition - circleAPosition).Normalise();
-        normal = normal == Vector2.Zero || normal == Vector2.NaN
-        ? Vector2.One
-        : normal; 
-        depth = circleA.Radius + circleB.Radius - MathF.Sqrt(distanceSqrd);
+        // Apply a full up force if the two colliders are in the exact same position.
+        // this also stops the whole collision system from exploding.
+        if (distanceSqrd < float.Epsilon)
+        {
+            normal = Vector2.Up;
+            depth = radiusSum;
+            return true;
+        }
+
+        float distance = MathF.Sqrt(distanceSqrd);
+        normal = (posB - posA).Normalise();
+        depth = radiusSum - distance;
 
         return true;
     }

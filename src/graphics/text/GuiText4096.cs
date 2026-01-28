@@ -1,11 +1,9 @@
 
 using System;
-using Howl.ECS;
-using Howl.Math;
 
-namespace Howl.Graphics;
+namespace Howl.Graphics.Text;
 
-public unsafe struct Text4096
+public unsafe struct GuiText4096 : IText
 {
     public const int MaxLength = 4096;
     
@@ -32,10 +30,15 @@ public unsafe struct Text4096
     /// <param name="colour">The draw colour.</param>
     /// <param name="offset">The offset - in pixels - when drawing.</param>
     /// <param name="characters">The span of characters that will render when drawing (max length of 16.)</param>
-    public Text4096(TextParameters textParameters, ReadOnlySpan<char> characters)
+    public GuiText4096(TextParameters textParameters, ReadOnlySpan<char> characters)
     {
         TextParameters = textParameters;
 
+        SetCharacters(characters);
+    }
+
+    public void SetCharacters(ReadOnlySpan<char> characters)
+    {
 #if DEBUG
         if(characters.Length > MaxLength)
         {
@@ -45,13 +48,9 @@ public unsafe struct Text4096
 
         length = System.Math.Min(characters.Length, MaxLength);
 
-        unsafe
+        fixed (char* dst = Characters)
         {
-            fixed (char* dst = Characters)
-            {
-                characters[..length].CopyTo(new Span<char>(dst, MaxLength));
-            }
+            characters[..length].CopyTo(new Span<char>(dst, MaxLength));
         }
     }
-
 }

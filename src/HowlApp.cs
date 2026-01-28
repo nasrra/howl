@@ -42,7 +42,14 @@ public abstract class HowlApp : IDisposable
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
-    public HowlApp(HowlAppBackend howlAppBackend, Resolution resolution, Math.Vector2 cameraPosition, float cameraZoomVirtualResolution)
+    public HowlApp(
+        HowlAppBackend howlAppBackend, 
+        Resolution resolution, 
+        Math.Vector2 worldCameraPosition,
+        Math.Vector2 guiCameraPosition,
+        float worldCameraZoomVirtualResolution,
+        float guiCameraZoomVirtualResolution
+    )
     {
         if (Instance == null)
         {
@@ -58,11 +65,18 @@ public abstract class HowlApp : IDisposable
             throw new InvalidOperationException($"HowlApp cannot be created with a backend of {howlAppBackend}");
         }
 
-        backend = howlAppBackend;
-        InitialiseBackend(resolution, cameraPosition, cameraZoomVirtualResolution);
         GenIndexAllocator = new();
         ComponentRegistry = new(GenIndexAllocator);
         SystemRegistry = new();
+
+        backend = howlAppBackend;
+        InitialiseBackend(
+            resolution, 
+            worldCameraPosition,
+            guiCameraPosition, 
+            worldCameraZoomVirtualResolution,
+            guiCameraZoomVirtualResolution);
+
         Initialise();
     }
 
@@ -70,12 +84,24 @@ public abstract class HowlApp : IDisposable
     /// Initialises the backend used for the App.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    private void InitialiseBackend(Resolution resolution, Math.Vector2 cameraPosition, float cameraZoomVirtualResolution)
+    private void InitialiseBackend(
+        Resolution resolution, 
+        Math.Vector2 worldCameraPosition, 
+        Math.Vector2 guiCameraPosition, 
+        float worldCameraZoomVirtualResolution, 
+        float guiCameraZoomVirtualResolution
+    )
     {
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                InitialiseMonoGameBackend(resolution, cameraPosition, cameraZoomVirtualResolution);
+                InitialiseMonoGameBackend(
+                    resolution, 
+                    worldCameraPosition,
+                    guiCameraPosition, 
+                    worldCameraZoomVirtualResolution,
+                    guiCameraZoomVirtualResolution
+                );
             break;
             default:
                 throw new InvalidOperationException($"HowlApp cannot be initialised with a backend of {backend}");
@@ -127,6 +153,15 @@ public abstract class HowlApp : IDisposable
     public virtual void Draw(float deltaTime)
     {   
         SystemRegistry.Draw(deltaTime);
+    }
+
+    /// <summary>
+    /// Draw function for the HowlApp.
+    /// </summary>
+    /// <param name="deltaTime"></param>
+    public virtual void DrawGui(float deltaTime)
+    {   
+        SystemRegistry.DrawGui(deltaTime);
     }
 
     private const float FixedDt = 1f / 60f;
@@ -202,11 +237,23 @@ public abstract class HowlApp : IDisposable
     /// 
 
 
-    private void InitialiseMonoGameBackend(Resolution resolution, Math.Vector2 cameraPosition, float cameraZoomVirtualResolution)
+    private void InitialiseMonoGameBackend(
+        Resolution resolution, 
+        Math.Vector2 worldCameraPosition, 
+        Math.Vector2 guiCameraPosition, 
+        float worldCameraZoomVirtualResolution,
+        float guiCameraZoomVirtualResolution)
     {
         monoGameApp = new(this);
         InputManager = new Vendors.MonoGame.Input.InputManager();
-        Renderer = new Vendors.MonoGame.Graphics.Renderer(monoGameApp, resolution, cameraPosition, cameraZoomVirtualResolution);
+        Renderer = new Vendors.MonoGame.Graphics.Renderer(
+            monoGameApp, 
+            resolution, 
+            worldCameraPosition, 
+            guiCameraPosition, 
+            worldCameraZoomVirtualResolution, 
+            guiCameraZoomVirtualResolution
+        );
 
     }
 

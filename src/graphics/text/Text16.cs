@@ -1,11 +1,9 @@
 
 using System;
-using Howl.ECS;
-using Howl.Math;
 
-namespace Howl.Graphics;
+namespace Howl.Graphics.Text;
 
-public unsafe struct Text16
+public unsafe struct Text16 : IText
 {
     public const int MaxLength = 16;
     
@@ -35,7 +33,11 @@ public unsafe struct Text16
     public Text16(TextParameters textParameters, ReadOnlySpan<char> characters)
     {
         TextParameters = textParameters;
+        SetCharacters(characters);
+    }
 
+    public void SetCharacters(ReadOnlySpan<char> characters)
+    {
 #if DEBUG
         if(characters.Length > MaxLength)
         {
@@ -45,13 +47,9 @@ public unsafe struct Text16
 
         length = System.Math.Min(characters.Length, MaxLength);
 
-        unsafe
+        fixed (char* dst = Characters)
         {
-            fixed (char* dst = Characters)
-            {
-                characters[..length].CopyTo(new Span<char>(dst, MaxLength));
-            }
+            characters[..length].CopyTo(new Span<char>(dst, MaxLength));
         }
     }
-
 }

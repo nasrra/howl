@@ -5,7 +5,7 @@ using Howl.Math;
 
 namespace Howl.Test.Graphics.Text;
 
-public class Text16Test
+public class GuiText16Test
 {
     [Fact]
     public unsafe void Constructor_Test()
@@ -14,7 +14,7 @@ public class Text16Test
         Vector2 offset = new(1,2);
         GenIndex fontGenIndex = new(0,1);
 
-        Text16 text = new(
+        GuiText16 text = new(
             new TextParameters(colour, offset, fontGenIndex), 
             ['H','e','l','l','o',' ','W','o','r','l','d','.']
         );

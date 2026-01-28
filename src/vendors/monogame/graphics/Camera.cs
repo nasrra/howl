@@ -1,5 +1,6 @@
 
 using System;
+using Howl.Graphics;
 using Howl.Vendors.MonoGame.Math;
 using Microsoft.Xna.Framework;
 
@@ -40,23 +41,19 @@ public class Camera : ICamera
         set => zoomVirtualHeight = value;
     }
 
+    private CoordinateSpace coordinateSpace;
+    public CoordinateSpace CoordinateSpace
+    {
+        get => coordinateSpace;
+        set => coordinateSpace = value;
+    }
+
     private MonoGameApp monoGameApp;
     private Renderer renderer;
 
     private bool disposed;
     public bool IsDisposed => disposed;
-    
 
-    /// <summary>
-    /// Creates a new MonoGame camera instance.
-    /// </summary>
-    /// <param name="monoGameApp">The MonoGame app that is used as the HowlApp backend.</param>
-    /// <param name="renderer">The MonoGame renderer that is in used by the HowlApp.</param>
-    public Camera(MonoGameApp monoGameApp, Renderer renderer)
-    : this(monoGameApp, renderer, Howl.Math.Vector2.Zero, 1080)
-    {
-        
-    }
 
     /// <summary>
     /// Creates a new MonoGame camera instance.
@@ -65,12 +62,14 @@ public class Camera : ICamera
     /// <param name="renderer">The MonoGame renderer that is in use by the HowlApp.</param>
     /// <param name="position">The position to be placed at.</param>
     /// <param name="zoomVirtualHeight">The base height - in world units - for the default zoom level.</param>
-    public Camera(MonoGameApp monoGameApp, Renderer renderer, Howl.Math.Vector2 position, float zoomVirtualHeight)
+    /// <param name="coordinateSpace">The coordinate space to project in.</param>
+    public Camera(MonoGameApp monoGameApp, Renderer renderer, Howl.Math.Vector2 position, float zoomVirtualHeight, CoordinateSpace coordinateSpace)
     {
         this.monoGameApp = monoGameApp;
         this.renderer = renderer;
         this.position = position;
         this.zoomVirtualHeight = zoomVirtualHeight;
+        this.coordinateSpace = coordinateSpace;
     }
 
     private void ValidateDependencies()
@@ -89,21 +88,41 @@ public class Camera : ICamera
     {
         ValidateDependencies();
 
-        // Compute half-width and half-height in world units based on virtual resolution
-        float halfHeight = (zoomVirtualHeight * 0.5f) / zoom;
-        float halfWidth = halfHeight * renderer.MainRenderTargetAspectRatio; // keep aspect ratio correct
-
-        extents = new(halfWidth*2, halfHeight*2); 
 
         // Note:
         // Up is y+ and right is x+;
         // Centered orthographic projection
-        projectionMatrix = Matrix.CreateOrthographicOffCenter(
-            -halfWidth,  halfWidth,
-            halfHeight, -halfHeight,
-            float.Epsilon,
-            float.MaxValue
-        );
+
+        // Compute half-width and half-height in world units based on virtual resolution
+        float halfHeight = (zoomVirtualHeight * 0.5f) / zoom;
+        float halfWidth = halfHeight * renderer.OutputResolutionAspectRatio; // keep aspect ratio correct
+        extents = new(halfWidth*2, halfHeight*2);
+
+        switch (coordinateSpace)
+        {
+            case CoordinateSpace.Cartesian:
+                extents = new(halfWidth*2, halfHeight*2);
+                projectionMatrix = Matrix.CreateOrthographicOffCenter(
+                    -halfWidth,  halfWidth,
+                    halfHeight, -halfHeight,
+                    float.Epsilon,
+                    float.MaxValue
+                );
+                break;
+            case CoordinateSpace.Rasterized:
+                float height = halfHeight * 2;
+                float width = halfWidth * 2;
+                extents = new(width, height);
+                projectionMatrix = Matrix.CreateOrthographicOffCenter(
+                    0,  width,
+                    height, 0,
+                    float.Epsilon,
+                    float.MaxValue
+                );
+                break;
+            default:
+                throw new InvalidOperationException($"Camera does not support coordinate space: '{coordinateSpace}'");
+        }
         
         // Viewport viewport = monoGameApp.GraphicsDevice.Viewport;
         // projectionMatrix = Matrix.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, float.Epsilon, float.MaxValue);

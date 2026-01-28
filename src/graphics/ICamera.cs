@@ -1,4 +1,5 @@
 using System;
+using Howl.Graphics;
 using Howl.Math;
 
 public interface ICamera : IDisposable
@@ -43,15 +44,15 @@ public interface ICamera : IDisposable
     /// </summary>
     public Vector2 Extents {get;}
     
-    // /// <summary>
-    // /// The position in world-space where this camera is pointing at.
-    // /// </summary>
-    // public Vector3 Target {get; set;}
-
     /// <summary>
     /// Gets and sets the zoom of the camera.
     /// </summary>
     public float Zoom {get; set;}    
+
+    /// <summary>
+    /// Gets and sets the coordinate space of the camera.
+    /// </summary>
+    public CoordinateSpace CoordinateSpace {get; set;}
 
     /// <summary>
     /// Updates this camera.

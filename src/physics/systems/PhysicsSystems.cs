@@ -10,6 +10,9 @@ namespace Howl.Physics.Systems;
 
 public static class PhysicsSystems
 {
+    public readonly static Stopwatch IntersectStep = new Stopwatch();
+    public readonly static Stopwatch ResolutionStep = new Stopwatch();
+
     private static List<Collision> CollisionManifold = new(4096);
 
     public static void RegisterComponents(ComponentRegistry componentRegistry)
@@ -42,8 +45,14 @@ public static class PhysicsSystems
             {
                 CollisionManifold.Clear();
             }
+            
+            IntersectStep.Restart();
             FindCircleCollisions(componentRegistry);
+            IntersectStep.Stop();
+
+            ResolutionStep.Restart();
             ResolveCircleCollisions(componentRegistry);
+            ResolutionStep.Stop();    
         };
     }
 

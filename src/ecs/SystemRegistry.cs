@@ -21,6 +21,11 @@ public class SystemRegistry : IDisposable
     /// </summary>
     private List<DrawSystem> drawSystems;
 
+    /// <summary>
+    /// The registered draw-gui systems within this registry.
+    /// </summary>
+    private List<DrawGuiSystem> drawGuiSystems;
+
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
@@ -32,6 +37,7 @@ public class SystemRegistry : IDisposable
         updateSystems = new();
         fixedUpdateSystems = new();
         drawSystems = new();
+        drawGuiSystems = new();
     }
 
     /// <summary>
@@ -46,10 +52,19 @@ public class SystemRegistry : IDisposable
     /// <summary>
     /// Registers a fixed-update system to take place in the fixed-update loop.
     /// </summary>
-    /// <param name="fixedUpdateSystem"></param>
+    /// <param name="fixedUpdateSystem">The fixed-update system to register.</param>
     public void RegisterFixedUpdateSystem(FixedUpdateSystem fixedUpdateSystem)
     {
         fixedUpdateSystems.Add(fixedUpdateSystem);
+    }
+
+    /// <summary>
+    /// Registers a draw-gui system to take place in the draw-gui loop.
+    /// </summary>
+    /// <param name="drawGuiSystem"></param>
+    public void RegisterDrawGuiSystem(DrawGuiSystem drawGuiSystem)
+    {
+        drawGuiSystems.Add(drawGuiSystem);
     }
 
     /// <summary>
@@ -62,7 +77,7 @@ public class SystemRegistry : IDisposable
     }
 
     /// <summary>
-    /// Calls all registered update system delegates.
+    /// Calls all registered update system delegates in sequential order.
     /// </summary>
     /// <param name="deltaTime"></param>
     public void Update(float deltaTime)
@@ -75,7 +90,7 @@ public class SystemRegistry : IDisposable
     }
 
     /// <summary>
-    /// Calls all registered fixed-update system delegates.
+    /// Calls all registered fixed-update system delegates in sequential order.
     /// </summary>
     /// <param name="deltaTime"></param>
     public void FixedUpdate(float deltaTime)
@@ -88,7 +103,7 @@ public class SystemRegistry : IDisposable
     }
 
     /// <summary>
-    /// Calls all registered draw system delegates.
+    /// Calls all registered draw system delegates in sequential order.
     /// </summary>
     /// <param name="deltaTime"></param>
     public void Draw(float deltaTime)
@@ -100,6 +115,18 @@ public class SystemRegistry : IDisposable
         }        
     }
 
+    /// <summary>
+    /// Calls all registered draw-gui system delegates in sequential order.
+    /// </summary>
+    /// <param name="deltaTime"></param>
+    public void DrawGui(float deltaTime)
+    {
+        Span<DrawGuiSystem> span = CollectionsMarshal.AsSpan(drawGuiSystems);
+        for(int i = 0; i < span.Length; i++)
+        {
+            span[i](deltaTime);
+        }
+    }
 
     /// 
     /// Disposal.

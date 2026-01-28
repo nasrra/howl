@@ -1,10 +1,10 @@
 using System;
 using Howl.ECS;
 using Howl.Generic;
-using Howl.Graphics;
+using Howl.Graphics.Text;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace Howl.Vendors.MonoGame;
+namespace Howl.Vendors.MonoGame.Text;
 
 public class FontManager : IFontManager
 {

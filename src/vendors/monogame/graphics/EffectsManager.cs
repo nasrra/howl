@@ -13,7 +13,15 @@ public class EffectManager : IDisposable
     
     public BasicEffect PrimitivesEffect {get; private set;}
 
+    /// <summary>
+    /// Gets the default effect for drawing world-space sprites.
+    /// </summary>
     public BasicEffect DefaultSpriteEffect {get; private set;}
+
+    /// <summary>
+    /// Gets the default effect for drawing screen-space sprites.
+    /// </summary>
+    public BasicEffect DefaultGuiSpriteEffect {get; private set;}
 
     private bool disposed = false;
     public bool IsDisposed => disposed;
@@ -23,6 +31,7 @@ public class EffectManager : IDisposable
         this.monoGameApp = monoGameApp;
         effects = new Effect[effectsAmount];
         CreateDefaultSpriteEffect();
+        CreateDefaultGuiSpriteEffect();
         CreatePrimitivesEffect();
     }
 
@@ -42,20 +51,28 @@ public class EffectManager : IDisposable
         ValidateDependencies();
 
         DefaultSpriteEffect = new BasicEffect(monoGameApp.GraphicsDevice);
-        
         DefaultSpriteEffect.FogEnabled = false;
-        
         DefaultSpriteEffect.TextureEnabled = true;
-        
         DefaultSpriteEffect.LightingEnabled = false;
-        
         DefaultSpriteEffect.VertexColorEnabled = true;
-        
         DefaultSpriteEffect.World = Matrix.Identity;
-        
         DefaultSpriteEffect.Projection = Matrix.Identity;
-        
         DefaultSpriteEffect.View = Matrix.Identity;
+    }
+
+    /// <summary>
+    /// Creates a default basic shader effect used by MonoGameRenderer when rendering gui-sprites.
+    /// </summary>
+    private void CreateDefaultGuiSpriteEffect()
+    {
+        DefaultGuiSpriteEffect = new BasicEffect(monoGameApp.GraphicsDevice);
+        DefaultGuiSpriteEffect.FogEnabled = false;
+        DefaultGuiSpriteEffect.TextureEnabled = true;
+        DefaultGuiSpriteEffect.LightingEnabled = false;
+        DefaultGuiSpriteEffect.VertexColorEnabled = true;
+        DefaultGuiSpriteEffect.World = Matrix.Identity;
+        DefaultGuiSpriteEffect.Projection = Matrix.Identity;
+        DefaultGuiSpriteEffect.View = Matrix.Identity;        
     }
 
     /// <summary>
@@ -131,6 +148,7 @@ public class EffectManager : IDisposable
         }
 
         DefaultSpriteEffect.Projection = projectionMatrix;
+        DefaultGuiSpriteEffect.Projection = projectionMatrix;
         PrimitivesEffect.Projection = projectionMatrix;
     }
 

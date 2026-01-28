@@ -5,16 +5,18 @@ using System.Text;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
+using Howl.Graphics.Text;
 using Howl.Vendors.MonoGame.Math;
+using Howl.Vendors.MonoGame.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
-public class Renderer : IRenderer
-{
-    Howl.Graphics.Colour clearColour;
-    public Howl.Graphics.Colour ClearColour
+public sealed class Renderer : IRenderer
+{    
+    Colour clearColour;
+    public Colour ClearColour
     {
         get => clearColour;
         set => clearColour = value;
@@ -23,28 +25,31 @@ public class Renderer : IRenderer
     public EffectManager EffectManager { get; private set; }
     private SpriteBatch spriteBatch;
 
-    TextureManager<Texture2D> textureManager;
+    private TextureManager<Texture2D> textureManager;
     public ITextureManager TextureManager => textureManager;
     
-    Camera camera;
-    public ICamera Camera => camera;
-
-    public Matrix ProjectionMatrix { get; private set; }
+    private Camera worldCamera;
+    public ICamera WorldCamera => worldCamera;
     
+    private Camera guiCamera;
+    public ICamera GuiCamera => guiCamera;
+
     public Rectangle DestinationRectangle { get; private set; }
     
     public RenderTarget2D RenderTarget { get; private set; }
+    public RenderTarget2D GuiRenderTarget {get; private set; }
     
     private List<VertexPositionColor> primitiveVertices;
     private List<int> primitiveIndices;
 
     private MonoGameApp monoGameApp;
 
-    public float MainRenderTargetWidth => RenderTarget.Width;
+    private Howl.Math.Vector2Int outputResolution;
+    public Howl.Math.Vector2Int OutputResolution => outputResolution;
 
-    public float MainRenderTargetHeight => RenderTarget.Height;
+    public float OutputResolutionAspectRatio => (float)outputResolution.X / outputResolution.Y;
 
-    public float MainRenderTargetAspectRatio => (float)RenderTarget.Width / RenderTarget.Height;
+
 
     private bool disposed = false;
     public bool IsDisposed => disposed;
@@ -65,22 +70,28 @@ public class Renderer : IRenderer
     /// </summary>
     /// <param name="monoGameApp">The MonoGame app that is used as the HowlApp backend.</param>
     /// <param name="resolution">The resolution of this application.</param>
-    /// <param name="cameraPosition">The position to place the camera.</param>
-    /// <param name="cameraZoomVirtualHeight">The base height - in world units - for the default camera zoom level.</param>
+    /// <param name="worldCameraPosition">The position to place the world-space camera.</param>
+    /// <param name="guiCameraPosition">The position to place the screen-space camera.</param>
+    /// <param name="worldCameraZoomVirtualHeight">The base height - in world units - for the default world-space camera zoom level.</param>
+    /// <param name="guiCameraZoomVirtualHeight">The base height - in world units - for the default screen-space camera zoom level.</param>
     public Renderer(
         MonoGameApp monoGameApp, 
         Resolution resolution,
-        Howl.Math.Vector2 cameraPosition,
-        float cameraZoomVirtualHeight
+        Howl.Math.Vector2 worldCameraPosition,
+        Howl.Math.Vector2 guiCameraPosition,
+        float worldCameraZoomVirtualHeight,
+        float guiCameraZoomVirtualHeight
     )
     : this(
         monoGameApp, 
-        cameraPosition,
-        cameraZoomVirtualHeight,
+        worldCameraPosition,
+        guiCameraPosition,
+        worldCameraZoomVirtualHeight,
+        guiCameraZoomVirtualHeight,
         resolution.BackBufferWidth, 
         resolution.BackBufferHeight, 
-        resolution.MainRenderTargetWidth, 
-        resolution.MainRenderTargetHeight
+        resolution.OutputWidth, 
+        resolution.OutputHeight
     )
     {
     }
@@ -89,20 +100,24 @@ public class Renderer : IRenderer
     /// Creates a new MonoGame Renderer instances.
     /// </summary>
     /// <param name="monoGameApp">The MonoGame app that is used as the HowlApp backend.</param>
-    /// <param name="cameraPosition">The postion to place the camera at.</param>
-    /// <param name="cameraZoomVirtualheight">The base height - in world units - for the default camera zoom level.</param>
+    /// <param name="worldCameraPosition">The postion to place the world-space camera at.</param>
+    /// <param name="guiCameraPosition">The position to place the screen-space camera at.</param>
+    /// <param name="worldCameraZoomVirtualHeight">The base height - in world units - for the default world-space camera zoom level.</param>
+    /// <param name="guiCameraZoomVirtualHeight">The base height - in world units - for the default scree-space camera zoom level.</param>
     /// <param name="backBufferWidth">The back buffer width in pixels.</param>
     /// <param name="backbufferHeight">The back buffer height in pixels.</param>
-    /// <param name="mainRenderTargetWidth">The main render target width in pixels.</param>
-    /// <param name="mainRenderTargetHeight">The main render target height in pixels.</param>
+    /// <param name="outputResolutionWidth">The output resolution width in pixels.</param>
+    /// <param name="outputResolutionHeight">The output resolution height in pixels.</param>
     public Renderer(
         MonoGameApp monoGameApp, 
-        Howl.Math.Vector2 cameraPosition,
-        float cameraZoomVirtualheight,
+        Howl.Math.Vector2 worldCameraPosition,
+        Howl.Math.Vector2 guiCameraPosition,
+        float worldCameraZoomVirtualHeight,
+        float guiCameraZoomVirtualHeight,
         int backBufferWidth, 
         int backbufferHeight, 
-        int mainRenderTargetWidth, 
-        int mainRenderTargetHeight
+        int outputResolutionWidth, 
+        int outputResolutionHeight
     )
     {
         this.monoGameApp = monoGameApp;        
@@ -116,16 +131,18 @@ public class Renderer : IRenderer
         
         spriteBatch = new SpriteBatch(monoGameApp.GraphicsDevice);
         
-        SetMainRenderTargetResolution(mainRenderTargetWidth, mainRenderTargetHeight);
+        SetOutputResolution(outputResolutionWidth, outputResolutionHeight);
         SetBackBufferResolution(backBufferWidth, backbufferHeight);
         UpdateMainRenderDestinationRectangle();
 
         textureManager = new TextureManager(monoGameApp);
-        camera = new Camera(monoGameApp, this, cameraPosition, cameraZoomVirtualheight);
-
+        
         fontManager = new(monoGameApp);
-
         stringBuilder = new(Text4096.MaxLength);
+        
+        // create cameras.
+        worldCamera = new Camera(monoGameApp, this, worldCameraPosition, worldCameraZoomVirtualHeight, CoordinateSpace.Cartesian);
+        guiCamera = new Camera(monoGameApp, this, guiCameraPosition, guiCameraZoomVirtualHeight, CoordinateSpace.Rasterized);
 
         LinkEvents();
     }
@@ -153,7 +170,7 @@ public class Renderer : IRenderer
     public void SetResolution(Resolution resolution)
     {
         SetBackBufferResolution(resolution.BackBufferWidth, resolution.BackBufferHeight);
-        SetMainRenderTargetResolution(resolution.MainRenderTargetWidth, resolution.MainRenderTargetHeight);    
+        SetOutputResolution(resolution.OutputWidth, resolution.OutputHeight);    
     }
 
     public void SetBackBufferResolution(Howl.Math.Vector2Int resolution)
@@ -178,27 +195,29 @@ public class Renderer : IRenderer
         }
     }
 
-    public void SetMainRenderTargetResolution(Howl.Math.Vector2Int resolution)
+    public void SetOutputResolution(Howl.Math.Vector2Int resolution)
     {
-        SetMainRenderTargetResolution(resolution.X, resolution.Y);
+        SetOutputResolution(resolution.X, resolution.Y);
     }
 
-    public void SetMainRenderTargetResolution(int width, int height)
+    public void SetOutputResolution(int width, int height)
     {        
         ValidateDependencies();
         int clampedWidth = System.Math.Clamp(width, 1, int.MaxValue);  
         int clampedHeight = System.Math.Clamp(height, 1, int.MaxValue);  
         if(width == clampedWidth && height == clampedHeight)
         {            
-            if(RenderTarget != null)
-            {
-                RenderTarget.Dispose();
-            }
+            RenderTarget?.Dispose();
             RenderTarget = new RenderTarget2D(monoGameApp.GraphicsDevice, width, height);
+        
+            GuiRenderTarget?.Dispose();
+            GuiRenderTarget = new RenderTarget2D(monoGameApp.GraphicsDevice, width, height);
+        
+            outputResolution = new Howl.Math.Vector2Int(width, height);
         }
         else
         {
-            throw new InvalidOperationException($"RenderTarget resolution cannot be set to ({width}, {height}), values must be above zero and lower than or equal to int.MaxValue");            
+            throw new InvalidOperationException($"Output resolution cannot be set to ({width}, {height}), values must be above zero and lower than or equal to int.MaxValue");            
         }
     }
 
@@ -273,21 +292,7 @@ public class Renderer : IRenderer
 
 
     /// <summary>
-    // Calculates ans sets the new projection matix so that -y is down and -x is left.
-    /// </summary>
-    private void UpdateProjectionMatrix()
-    {
-        ValidateDependencies();
-
-        camera.Update();
-
-        // update effects to use the new projection matrix.
-        
-        EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
-    }
-
-    /// <summary>
-    /// Calculates the detination rectangle for the render target onto the backbuffer of the window this application is painting to.
+    /// Calculates the detination rectangle for a render target onto the backbuffer of the window this application is painting to.
     /// </summary>
     /// <returns>The calculated destination rectangle.</returns>
     private void UpdateMainRenderDestinationRectangle()
@@ -339,14 +344,16 @@ public class Renderer : IRenderer
         ValidateDependencies();
 
         // draw all sprites to a render target.
-
         monoGameApp.GraphicsDevice.SetRenderTarget(RenderTarget);
-        
-        // ensure that the projection matrix is relative to the render target
+                
+        // Update camera after setting the render target to ensure that the projection matrix is relative to the render target
         // being drawn to and not the actual backbuffer dimensions of the program.
-        UpdateProjectionMatrix();
+        worldCamera.Update();
+
+        // update effects to use the new projection matrix.        
+        EffectManager.UpdateProjectionMatrix(worldCamera.ProjectionMatrix.ToMonoGame());
         
-        monoGameApp.GraphicsDevice.Clear(clearColour.ToMonoGame());
+        monoGameApp.GraphicsDevice.Clear(ClearColour.ToMonoGame());
 
         spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
@@ -361,22 +368,55 @@ public class Renderer : IRenderer
         ValidateDependencies();
 
         // present the render target over the windows back buffer.
-
         spriteBatch.End();
 
         // Note: 
         // Primitive drawing should always be outside of a sprite bath begin and end call.
         // Primitive drawing within those states causes undefined behvaiour.
-
         DrawPrimitives();
 
         // Note: when setting the render target to null, monogame draws directly to the backbuffer.
-
         monoGameApp.GraphicsDevice.SetRenderTarget(null);
-    
+    }
 
-        // draw the render target back to the back buffer.
+    public void BeginDrawGui()
+    {
+        ValidateDependencies();
+
+        // // draw all sprites to a render target.
+        monoGameApp.GraphicsDevice.SetRenderTarget(GuiRenderTarget);
         
+        // Update camera after setting the render target to ensure that the projection matrix is relative to the render target
+        // being drawn to and not the actual backbuffer dimensions of the program.
+        guiCamera.Update();
+
+        // update effects to use the new projection matrix.        
+        EffectManager.UpdateProjectionMatrix(guiCamera.ProjectionMatrix.ToMonoGame());
+
+        monoGameApp.GraphicsDevice.Clear(IRenderer.GuiClearColour.ToMonoGame());
+
+        spriteBatch.Begin(
+            blendState: BlendState.AlphaBlend, 
+            samplerState: SamplerState.PointWrap, 
+            rasterizerState: RasterizerState.CullNone,
+            effect: EffectManager.DefaultGuiSpriteEffect
+        );
+    }
+
+    public void EndDrawGui()
+    {
+        ValidateDependencies();
+
+        // // present the render target over the windows back buffer.
+        spriteBatch.End();
+
+        // // Note: when setting the render target to null, monogame draws directly to the backbuffer.
+        monoGameApp.GraphicsDevice.SetRenderTarget(null);
+    }
+
+    public void SubmitDraw()
+    {
+        // draw the render target back to the back buffer.
         spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointClamp
@@ -384,6 +424,12 @@ public class Renderer : IRenderer
 
         spriteBatch.Draw(
             RenderTarget,
+            DestinationRectangle, // ensure to properly scale the render target to fit within the window's back buffer.
+            Microsoft.Xna.Framework.Color.White
+        );
+
+        spriteBatch.Draw(
+            GuiRenderTarget,
             DestinationRectangle, // ensure to properly scale the render target to fit within the window's back buffer.
             Microsoft.Xna.Framework.Color.White
         );
@@ -443,7 +489,7 @@ public class Renderer : IRenderer
             // sprite batch is y+ = down, Howl is y+ = up.
             Howl.Math.Vector2 position = transform.Position;
             position.Y *= -1;
-            position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
+            position -= new Howl.Math.Vector2(worldCamera.Position.X, -worldCamera.Position.Y);
             
             // reverse y-coordinates because monogame
             // sprite batch is y+ = down, Howl is y+ = up.
@@ -464,7 +510,7 @@ public class Renderer : IRenderer
         }
     }
 
-    public unsafe GenIndexResult DrawString(in Howl.Math.Transform transform, in Text16 text)
+    public unsafe GenIndexResult DrawText(in Howl.Math.Transform transform, in Text16 text)
     {
         GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
 
@@ -473,7 +519,7 @@ public class Renderer : IRenderer
             return result;
         }
 
-        Howl.Math.Vector2 position = transform.Position.InvertY() - camera.Position.InvertY();
+        Howl.Math.Vector2 position = transform.Position.InvertY() - worldCamera.Position.InvertY();
 
         stringBuilder.Clear();
         fixed (char* characters = text.Characters)
@@ -496,9 +542,105 @@ public class Renderer : IRenderer
         return result;
     }
 
+    public unsafe GenIndexResult DrawText(in Howl.Math.Transform transform, in Text4096 text)
+    {
+        GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
+
+        if(result != GenIndexResult.Success)
+        {
+            return result;
+        }
+
+        Howl.Math.Vector2 position = transform.Position.InvertY() - worldCamera.Position.InvertY();
+
+        stringBuilder.Clear();
+        fixed (char* characters = text.Characters)
+        {
+            stringBuilder.Append(new ReadOnlySpan<char>(characters, text.Length));
+        }
+
+        spriteBatch.DrawString(
+            font.Value, 
+            stringBuilder, 
+            position.ToMonogame(), 
+            text.TextParameters.Colour.ToMonoGame(), 
+            transform.Rotation, 
+            text.TextParameters.Offset.ToMonogame(), 
+            MathF.Max(transform.Scale.X, transform.Scale.Y), 
+            SpriteEffects.None, 
+            0
+        );
+
+        return result;
+    }
+
+    public unsafe GenIndexResult DrawText(in Howl.Math.Transform transform, in GuiText16 text)
+    {
+        GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
+
+        if(result != GenIndexResult.Success)
+        {
+            return result;
+        }
+
+        Vector2 position = (transform.Position.InvertY() - guiCamera.Position.InvertY()).ToMonogame();
+
+        stringBuilder.Clear();
+        fixed (char* characters = text.Characters)
+        {
+            stringBuilder.Append(new ReadOnlySpan<char>(characters, text.Length));
+        }
+
+        spriteBatch.DrawString(
+            font.Value, 
+            stringBuilder, 
+            position, 
+            text.TextParameters.Colour.ToMonoGame(), 
+            transform.Rotation, 
+            text.TextParameters.Offset.ToMonogame(), 
+            MathF.Max(transform.Scale.X, transform.Scale.Y), 
+            SpriteEffects.None, 
+            0
+        );
+
+        return result;
+    }
+
+    public unsafe GenIndexResult DrawText(in Howl.Math.Transform transform, in GuiText4096 text)
+    {
+        GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
+
+        if(result != GenIndexResult.Success)
+        {
+            return result;
+        }
+
+        Vector2 position = (transform.Position.InvertY() - guiCamera.Position.InvertY()).ToMonogame();
+
+        stringBuilder.Clear();
+        fixed (char* characters = text.Characters)
+        {
+            stringBuilder.Append(new ReadOnlySpan<char>(characters, text.Length));
+        }
+
+        spriteBatch.DrawString(
+            font.Value, 
+            stringBuilder, 
+            position, 
+            text.TextParameters.Colour.ToMonoGame(), 
+            transform.Rotation, 
+            text.TextParameters.Offset.ToMonogame(), 
+            MathF.Max(transform.Scale.X, transform.Scale.Y), 
+            SpriteEffects.None, 
+            0
+        );
+
+        return result;
+    }
+
     public void DrawLine(Howl.Math.Vector2 a, Howl.Math.Vector2 b, Howl.Graphics.Colour colour, float thickness, bool scaleThickness = true)
     {
-        thickness /= camera.Zoom;
+        thickness /= worldCamera.Zoom;
 
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
@@ -532,7 +674,7 @@ public class Renderer : IRenderer
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+        Howl.Math.Vector3 cameraPosition = new(worldCamera.Position.X, -worldCamera.Position.Y, 0);
         Howl.Math.Vector3 corner1 = -cameraPosition;
         Howl.Math.Vector3 corner2 = -cameraPosition;
         Howl.Math.Vector3 corner3 = -cameraPosition;
@@ -603,7 +745,7 @@ public class Renderer : IRenderer
         bottomLeft.Y *= -1;
         bottomRight.Y *= -1;
 
-        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+        Howl.Math.Vector3 cameraPosition = new(worldCamera.Position.X, -worldCamera.Position.Y, 0);
 
         // apply the rectangles world coordinates.
 
@@ -648,7 +790,7 @@ public class Renderer : IRenderer
             float cos = MathF.Cos(rotation);
             Howl.Math.Vector2 start = new(0f, shape.Circle.Radius);
             Howl.Math.Vector2 position = new(shape.X, shape.Y);
-            Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+            Howl.Math.Vector3 cameraPosition = new(worldCamera.Position.X, -worldCamera.Position.Y, 0);
 
             for(int i = 0; i < verticeCount; i++)
             {
@@ -758,7 +900,7 @@ public class Renderer : IRenderer
         GC.SuppressFinalize(this);
     }
 
-    protected void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (disposed)
         {

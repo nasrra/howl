@@ -3,6 +3,7 @@
 using System;
 using Howl.ECS;
 using Howl.Math;
+using Howl.Graphics.Text;
 
 namespace Howl.Graphics;
 
@@ -12,9 +13,34 @@ public interface IRenderer : IDisposable
     protected const int DefaultCirclePointAmount = 16;
 
     /// <summary>
+    /// Gets the minimum back buffer resolution (horizontal and vertical) in pixels.
+    /// </summary>
+    protected const int MinBackBufferResolutionInPixels = 1;
+
+    /// <summary>
+    /// Gets the maximum back buffer resolution (horizontal and vertical) in pixels.
+    /// </summary>
+    protected const int MaxBackBufferResolutionInPixels = int.MaxValue;
+
+    /// <summary>
+    /// Gets the minimum output resolution (horizontal and vertical) in pixels.
+    /// </summary>
+    protected const int MinOutputResolutionInPixels = 1;
+
+    /// <summary>
+    /// Gets the maximum output resolution (horizontal and vertical) in pixels.
+    /// </summary>
+    protected const int MaxOutputResolutionInPixels = int.MaxValue;
+
+    /// <summary>
     /// Gets and sets the color to clear to every frame.
     /// </summary>
     public Colour ClearColour {get; set;}
+
+    /// <summary>
+    /// Gets the colour to clear the Gui to every frame.
+    /// </summary>
+    public static Colour GuiClearColour => Colour.Transparent; 
 
     /// <summary>
     /// Gets the texture manager used by this renderer.
@@ -27,9 +53,24 @@ public interface IRenderer : IDisposable
     public IFontManager FontManager{get;}
 
     /// <summary>
-    /// Gets the camera used by this renderer.
+    /// Gets the world-space camera used by this renderer.
     /// </summary>
-    public ICamera Camera{get;}
+    public ICamera WorldCamera{get;}
+
+    /// <summary>
+    /// Gets the screen-space camera used by this renderer.
+    /// </summary>
+    public ICamera GuiCamera{get;}
+
+    /// <summary>
+    /// Gets the set output resolution - in pixels..
+    /// </summary>
+    public Vector2Int OutputResolution{get;}
+
+    /// <summary>
+    /// Gets the output resolution aspect ratio.
+    /// </summary>
+    public float OutputResolutionAspectRatio{get;}
 
     /// <summary>
     /// Sets the resolution this howl application is drawing at.
@@ -51,27 +92,42 @@ public interface IRenderer : IDisposable
     public void SetBackBufferResolution(int width, int height);
 
     /// <summary>
-    /// Sets the main render target resolution (the resolution the application is renderer at.)
+    /// Sets the output resolution (the resolution the application is renderer at.)
     /// </summary>
     /// <param name="resolution">the width (x) and height (y) in pixels.</param>
-    public void SetMainRenderTargetResolution(Vector2Int resolution);
+    public void SetOutputResolution(Vector2Int resolution);
 
     /// <summary>
-    /// Sets the main render target resolution (the resolution the application is renderer at.)
+    /// Sets the output resolution (the resolution the application is renderer at.)
     /// </summary>
     /// <param name="width">the width in pixels.</param>
     /// <param name="height">the height in pixels.</param>
-    public void SetMainRenderTargetResolution(int width, int height);
+    public void SetOutputResolution(int width, int height);
 
     /// <summary>
-    /// Starts the draw call from the renderer to the gpu.
+    /// Starts the draw state.
     /// </summary>
     public void BeginDraw();
 
     /// <summary>
-    /// completes the draw call from the renderer to the gpu, displaying an image to the window.
+    /// Completes the draw state.
     /// </summary>
     public void EndDraw();
+
+    /// <summary>
+    /// Starts the draw-gui state.
+    /// </summary>
+    public void BeginDrawGui();
+
+    /// <summary>
+    /// Completes the draw-gui state.
+    /// </summary>
+    public void EndDrawGui();
+
+    /// <summary>
+    /// Submits the draw calls to the gpu to be displayed to the screen.
+    /// </summary>
+    public void SubmitDraw();
 
     /// <summary>
     /// Draws a sprite to the currently bound render texture.
@@ -137,22 +193,31 @@ public interface IRenderer : IDisposable
     /// <param name="transform">The transform data.</param>
     /// <param name="text">The text to draw.</param>
     /// <returns>The result when retrieving the font of the text.</returns>
-    public GenIndexResult DrawString(in Transform transform, in Text16 text);    
-    
-    /// <summary>
-    /// Gets the main render target width.
-    /// </summary>
-    public float MainRenderTargetWidth{get;}
+    public GenIndexResult DrawText(in Transform transform, in Text16 text);    
 
     /// <summary>
-    /// Gets the main render target height.
+    /// Draws text for a single frame.
     /// </summary>
-    public float MainRenderTargetHeight{get;}
+    /// <param name="transform">The transform data.</param>
+    /// <param name="text">The text to draw.</param>
+    /// <returns>The result when retrieving the font of the text.</returns>
+    public GenIndexResult DrawText(in Transform transform, in Text4096 text);
 
     /// <summary>
-    /// Gets the main render target aspect ratio.
+    /// Draws text for a single frame.
     /// </summary>
-    public float MainRenderTargetAspectRatio{get;}
+    /// <param name="transform">The transform data.</param>
+    /// <param name="text">The text to draw.</param>
+    /// <returns>The result when retrieving the font of the text.</returns>
+    public GenIndexResult DrawText(in Transform transform, in GuiText4096 text);
+
+    /// <summary>
+    /// Draws text for a single frame.
+    /// </summary>
+    /// <param name="transform">The transform data.</param>
+    /// <param name="text">The text to draw.</param>
+    /// <returns>The result when retrieving the font of the text.</returns>
+    public GenIndexResult DrawText(in Transform transform, in GuiText16 text);
 
     /// <summary>
     /// Sets the application window to be windowed.
