@@ -7,7 +7,7 @@ using Howl.Generic;
 
 namespace Howl.ECS;
 
-public class GenIndexList<T> : IGenIndexList
+public sealed class GenIndexList<T> : IGenIndexList
 {
 
     List<SparseEntry> sparse;
@@ -15,6 +15,9 @@ public class GenIndexList<T> : IGenIndexList
     
     SwapbackList<DenseEntry<T>> dense;
     public IReadOnlyList<DenseEntry<T>> Dense => dense;
+
+    private bool disposed;
+    public bool IsDisposed => disposed;
 
     public GenIndexList(){
         sparse = new();
@@ -389,5 +392,39 @@ public class GenIndexList<T> : IGenIndexList
         {
             Debug.WriteLine($"\t\t{dense[i]}");
         }
+    }
+
+
+    /// 
+    /// Disposal.
+    /// 
+
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            sparse.Clear();
+            sparse = null;
+            dense.Clear();
+            dense = null;
+        }
+
+        disposed = true;
+    }
+
+    ~GenIndexList(){
+        Dispose(false);
     }
 }

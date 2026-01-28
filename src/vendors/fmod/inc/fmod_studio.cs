@@ -11,7 +11,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections;
 
-namespace Howl.Vendors.FMOD.Studio
+namespace FMOD.Studio
 {
     public partial class STUDIO_VERSION
     {

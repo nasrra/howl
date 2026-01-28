@@ -122,8 +122,13 @@ public class ComponentRegistry : IDisposable
 
         if (disposing)
         {
-            storage.Clear();
             UnlinkEvents();
+
+            storage.Clear();
+            storage = null;
+            
+            genIndexAllocator.Dispose();
+            genIndexAllocator = null;
         }
 
         disposed = true;

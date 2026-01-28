@@ -1,0 +1,85 @@
+using System;
+using Howl.ECS;
+using Howl.Generic;
+using Howl.Graphics;
+using Microsoft.Xna.Framework.Graphics;
+
+namespace Howl.Vendors.MonoGame;
+
+public class FontManager : IFontManager
+{
+    GenIndexAllocator spriteFontIds;
+    GenIndexList<SpriteFont> spriteFonts;
+
+    private MonoGameApp monoGameApp;
+
+    private bool disposed;
+    public bool IsDisposed => disposed;
+    
+    public FontManager(MonoGameApp monoGameApp)
+    {
+        spriteFontIds = new();
+        spriteFonts = new();
+        this.monoGameApp = monoGameApp;
+    }
+
+    private void ValidateDependencies()
+    {
+        if (monoGameApp.IsDisposed)
+        {
+            throw new ObjectDisposedException("FontManager cannot operate on/with a diposed MonoGameApp.");
+        }
+    }
+
+    public void LoadFont(string fontFilePath, out GenIndex genIndex)
+    {
+        ValidateDependencies();
+
+        spriteFontIds.Allocate(out genIndex, out bool reusedFreeIndex);
+
+        if (reusedFreeIndex == false)
+        {
+            spriteFonts.ResizeSparseEntries(spriteFontIds.Entries.Count);
+        }
+
+        SpriteFont spriteFont = monoGameApp.Content.Load<SpriteFont>(AssetManagement.AssetManager.FontFolder+fontFilePath);
+
+        spriteFonts.Allocate(genIndex, spriteFont);
+    }
+
+    public GenIndexResult GetFontReadOnlyRef(in GenIndex genIndex, out ReadOnlyRef<SpriteFont> readOnlyRef)
+    {
+        return spriteFonts.GetDenseReadOnlyRef(genIndex, out readOnlyRef);
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    public void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            spriteFontIds.Dispose();
+            spriteFontIds = null;
+
+            // this is fine as SpriteFont does not implement a Dispose method.
+            spriteFonts.Dispose();
+            spriteFonts = null;
+        }
+
+        disposed = true;
+    }
+
+    ~FontManager()
+    {
+        Dispose(false);           
+    }
+}

@@ -124,21 +124,8 @@ public abstract class HowlApp : IDisposable
     /// Draw function for the HowlApp.
     /// </summary>
     /// <param name="deltaTime"></param>
-    float pdt;
     public virtual void Draw(float deltaTime)
     {   
-        // if(pdt * 1.25 < deltaTime )
-        // {
-        //     pdt = deltaTime;
-        //     Debug.WriteLine(deltaTime);
-        //     pdt = deltaTime;
-        // }
-        // else if (pdt *0.8 < deltaTime)
-        // {
-        //     pdt = deltaTime;
-        //     Debug.WriteLine(deltaTime);
-        //     pdt = deltaTime;            
-        // }
         SystemRegistry.Draw(deltaTime);
     }
 

@@ -8,6 +8,7 @@ NAMESPACE="Howl.Test."
 MATH_NAMESPACE="${NAME_SPACE}Math."
 ECS_NAMESPACE="${NAME_SPACE}ECS."
 PHYSICS_NAMESPACE="${NAME_SPACE}Physics."
+GRAPHICS_NAMESPACE="${NAME_SPACE}Graphics."
 
 VENDORS_NAMESPACE="${NAME_SPACE}Vendors."
 
@@ -31,6 +32,8 @@ TEST_MAP=(
     ["MonoGameVector3Ext"]="${MONOGAME_MATH_NAMESPACE}Vector3ExtensionsTest"
     ["Polygon16"]="${MATH_NAMESPACE}Polygon16Test"
     ["Rectangle"]="${MATH_NAMESPACE}RectangleTest"
+    ["Text16"]="${GRAPHICS_NAMESPACE}Text16Test"
+    ["Transform"]="${MATH_NAMESPACE}TransformTest"
     ["Vector2"]="${MATH_NAMESPACE}Vector2Test"
     ["Vector2Int"]="${MATH_NAMESPACE}Vector2IntTest"
     ["Vector3"]="${MATH_NAMESPACE}Vector3Test"

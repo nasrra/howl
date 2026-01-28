@@ -31,11 +31,10 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
 
         LoadTextureFromDisc(texturePath, out T texture);
         
-        GenIndexResult result = textures.Allocate(genIndex, texture);
-
-        if(result != GenIndexResult.Success)
+        switch(textures.Allocate(genIndex, texture))
         {
-            throw new LoadTextureException(result.ToString());            
+            case GenIndexResult.StaleGenIndex:
+                throw new StaleGenIndexException(genIndex);
         }
     }
 
@@ -93,8 +92,14 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
 
             for(int i= 0; i < span.Length; i++)
             {
-                span[0].Value.Dispose();
+                span[i].Value.Dispose();
             }
+
+            textures = null;
+
+            textureIds.Dispose();
+
+            textureIds = null;
         }
 
         disposed = true;

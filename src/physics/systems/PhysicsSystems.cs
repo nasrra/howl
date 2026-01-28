@@ -55,10 +55,13 @@ public static class PhysicsSystems
 
         for(int i = 0; i < denseEntries.Length - 1; i++)
         {
+
+            // get the current circle.
             ref DenseEntry<CircleCollider> denseEntryA = ref denseEntries[i];
             ref CircleCollider circleA = ref denseEntryA.Value;
             circleColliders.GetGenIndex(denseEntryA.sparseIndex, out GenIndex genIndexA);
             
+            // make sure the circle has a transform component.
             switch(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA))
             {
                 case GenIndexResult.DenseNotAllocated:
@@ -66,15 +69,17 @@ public static class PhysicsSystems
                 case GenIndexResult.StaleGenIndex:
                     continue;
             }
-                        
             ref Transform tranformA = ref transformRefA.Value;
 
             for(int j = i + 1; j < denseEntries.Length; j++)
             {
 
+                // get the other circle to check intersection against.
                 ref DenseEntry<CircleCollider> denseEntryB = ref denseEntries[j];
                 ref CircleCollider circleB = ref denseEntryB.Value;
                 circleColliders.GetGenIndex(denseEntryB.sparseIndex, out GenIndex genIndexB);                
+                
+                // make sure this circle has a transform component.
                 switch(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB))
                 {
                     case GenIndexResult.DenseNotAllocated:
@@ -82,9 +87,9 @@ public static class PhysicsSystems
                     case GenIndexResult.StaleGenIndex:
                         continue;
                 }
-        
                 ref Transform transformB = ref transformRefB.Value;
 
+                // check if the two circles intersect.
                 if(Util.CirclesIntersect(
                     circleA.Shape,
                     circleB.Shape,
@@ -94,6 +99,8 @@ public static class PhysicsSystems
                     out float depth
                 ))
                 {
+
+                    // add the collision to the collisions manifold for later resolution.
                     CollisionManifold.Add(
                         new Collision(
                             genIndexA, 
@@ -102,6 +109,7 @@ public static class PhysicsSystems
                             depth
                         )
                     );
+                    
                 }
             }
         }

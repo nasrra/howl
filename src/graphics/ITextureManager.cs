@@ -7,7 +7,7 @@ namespace Howl.Graphics;
 public interface ITextureManager : IDisposable
 {
     /// <summary>
-    /// Loads a new Texture asset into memory.
+    /// Loads a new Texture (.png or .jpg) asset into memory.
     /// </summary>
     /// <param name="texturePath">The file path to the Texture asset; relative to AssetManager.AssetsFolder</param>
     /// <param name="genIndex">The GenIndex assigned to the texture that was loaded.</param>

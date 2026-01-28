@@ -360,6 +360,48 @@ public struct Vector2
         return new(tx, ty);
     }        
 
+    /// <summary>
+    /// Inverts the y-value of this vector.
+    /// </summary>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 InvertY()
+    {
+        return InvertY(this);
+    }
+
+    /// <summary>
+    /// Inverts the y-value of a vector.
+    /// </summary>
+    /// <param name="vector">The vector to invert.</param>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 InvertY(Vector2 vector)
+    {
+        return new Vector2(vector.X, -vector.Y);
+    }
+
+    /// <summary>
+    /// Inverts the x-value of this vector.
+    /// </summary>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 InvertX()
+    {
+        return InvertX(this);
+    }
+
+    /// <summary>
+    /// Inverts the x-value of a vector.
+    /// </summary>
+    /// <param name="vector">The vector to invert.</param>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 InvertX(Vector2 vector)
+    {
+        return new Vector2(-vector.X, vector.Y);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public override int GetHashCode()
     {

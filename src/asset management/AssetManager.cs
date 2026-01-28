@@ -23,6 +23,13 @@ public class AssetManager
     /// </summary>
     public static string AudioFolder => Path.Combine(AssetsFolder,audioFolder);
 
+    private static string fontFolder => "fonts/";
+
+    /// <summary>
+    /// Gets the font folder path relative to the AssetsFolder.
+    /// </summary>
+    public static string FontFolder => Path.Combine(AssetsFolder, fontFolder);
+
     /// <summary>
     /// Sets the assets folder path relative to the compiled executable file.
     /// </summary>

@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
@@ -50,6 +49,11 @@ public class Renderer : IRenderer
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
+    private FontManager fontManager;
+    public IFontManager FontManager => fontManager;
+
+    private StringBuilder stringBuilder;
+
 
     ///
     /// Constructors.
@@ -79,7 +83,6 @@ public class Renderer : IRenderer
         resolution.MainRenderTargetHeight
     )
     {
-        
     }
 
     /// <summary>
@@ -119,6 +122,10 @@ public class Renderer : IRenderer
 
         textureManager = new TextureManager(monoGameApp);
         camera = new Camera(monoGameApp, this, cameraPosition, cameraZoomVirtualheight);
+
+        fontManager = new(monoGameApp);
+
+        stringBuilder = new(Text4096.MaxLength);
 
         LinkEvents();
     }
@@ -421,12 +428,12 @@ public class Renderer : IRenderer
         primitiveIndices.Clear();
     }
 
-    public bool DrawSprite(in Howl.Math.Transform transform, in Sprite sprite)
+    public GenIndexResult DrawSprite(in Howl.Math.Transform transform, in Sprite sprite)
     {   
         GenIndexResult result = textureManager.GetTextureReadonlyRef(sprite.Texture, out ReadOnlyRef<Texture2D> texture);
         if (result != GenIndexResult.Success || texture.Valid == false)
         {
-            return false;
+            return result;
         }
         else
         {
@@ -453,8 +460,40 @@ public class Renderer : IRenderer
                 SpriteEffects.None, 
                 sprite.LayerDepth
             );
-            return true;
+            return result;
         }
+    }
+
+    public unsafe GenIndexResult DrawString(in Howl.Math.Transform transform, in Text16 text)
+    {
+        GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
+
+        if(result != GenIndexResult.Success)
+        {
+            return result;
+        }
+
+        Howl.Math.Vector2 position = transform.Position.InvertY() - camera.Position.InvertY();
+
+        stringBuilder.Clear();
+        fixed (char* characters = text.Characters)
+        {
+            stringBuilder.Append(new ReadOnlySpan<char>(characters, text.Length));
+        }
+
+        spriteBatch.DrawString(
+            font.Value, 
+            stringBuilder, 
+            position.ToMonogame(), 
+            text.TextParameters.Colour.ToMonoGame(), 
+            transform.Rotation, 
+            text.TextParameters.Offset.ToMonogame(), 
+            MathF.Max(transform.Scale.X, transform.Scale.Y), 
+            SpriteEffects.None, 
+            0
+        );
+
+        return result;
     }
 
     public void DrawLine(Howl.Math.Vector2 a, Howl.Math.Vector2 b, Howl.Graphics.Colour colour, float thickness, bool scaleThickness = true)

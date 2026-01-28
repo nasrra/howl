@@ -32,17 +32,15 @@
 
 
   <ItemGroup>
-    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*">
-      <!-- This dependenccy is only for Howl itself, not the end-user -->
-      <!-- <PrivateAssets>All</PrivateAssets> -->
-    </PackageReference>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />
+    <!-- <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" /> -->
   </ItemGroup>
 
 
   <!-- Include native runtime assets -->
   <!-- 
     Note:
-    - Include all files in the 'ruintimes' folder and subfolders
+    - Include all files in the 'runtimes' folder and subfolders
     - Pack them into the NuGetPackage
     - The folder 'runtimes/<rid>/native' is special in NuGet as .NET
       automatically copies native DLLs for the correct platform.

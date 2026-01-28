@@ -22,6 +22,11 @@ public interface IRenderer : IDisposable
     public ITextureManager TextureManager{get;}
 
     /// <summary>
+    /// Gets the font manager used by this renderer.
+    /// </summary>
+    public IFontManager FontManager{get;}
+
+    /// <summary>
     /// Gets the camera used by this renderer.
     /// </summary>
     public ICamera Camera{get;}
@@ -73,8 +78,8 @@ public interface IRenderer : IDisposable
     /// </summary>
     /// <param name="transform">The transform data.</param>
     /// <param name="sprite">The sprite data.</param>
-    /// <returns></returns>
-    public bool DrawSprite(in Transform transform, in Sprite sprite);
+    /// <returns>A gen index result in relation to retrieving the texture stored within the sprite.</returns>
+    public GenIndexResult DrawSprite(in Transform transform, in Sprite sprite);
 
     /// <summary>
     /// Draws a line between to points in world space for a single frame.
@@ -126,6 +131,14 @@ public interface IRenderer : IDisposable
     /// <param name="thickness">The thickness of the wireframe line segments.</param>
     public void DrawWireframeShape(in Transform transform, in Polygon16Shape shape, float thickness = DefaultWireframeThickness);
 
+    /// <summary>
+    /// Draws text for a single frame.
+    /// </summary>
+    /// <param name="transform">The transform data.</param>
+    /// <param name="text">The text to draw.</param>
+    /// <returns>The result when retrieving the font of the text.</returns>
+    public GenIndexResult DrawString(in Transform transform, in Text16 text);    
+    
     /// <summary>
     /// Gets the main render target width.
     /// </summary>

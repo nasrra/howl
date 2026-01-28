@@ -1,7 +1,14 @@
+using System;
+
 namespace Howl.ECS;
 
-internal interface IGenIndexList
+internal interface IGenIndexList : IDisposable
 {
+    /// <summary>
+    /// Gets whether or not this has been disposed.
+    /// </summary>
+    public bool IsDisposed{get;}
+
     /// <summary>
     /// resizes the sparse entry list.
     /// 

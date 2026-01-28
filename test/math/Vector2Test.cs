@@ -11,7 +11,7 @@ public class Vector2Test
     }
 
     [Fact]
-    public void Vector2Constructor()
+    public void Vector2Constructor_Test()
     {
         Vector2 vector2 = new(1,3);
         Assert.Equal(1, vector2.X);
@@ -189,5 +189,23 @@ public class Vector2Test
         Vector2 a = new(2,6);
         float length = a.Length();
         Assert.Equal(6.325, length, precision: 3);
+    }
+
+    [Fact]
+    public void InvertX_Test()
+    {
+        Vector2 vector = new Vector2(1,1);
+        Vector2 expected = new Vector2(-1,1);
+        Assert.Equal(expected, vector.InvertX());        
+        Assert.Equal(expected, Vector2.InvertX(vector));
+    }
+
+    [Fact]
+    public void InvertY_Test()
+    {
+        Vector2 vector = new Vector2(1,1);
+        Vector2 expected = new Vector2(1,-1);
+        Assert.Equal(expected, vector.InvertY());        
+        Assert.Equal(expected, Vector2.InvertY(vector));
     }
 }

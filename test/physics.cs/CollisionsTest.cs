@@ -13,31 +13,25 @@ public class CollisionsTest
         float depth;
 
         Vector2 positionA;
-        float radiusA;
-        float radiusSqrdA;
+        Circle circleA;
 
         Vector2 positionB;
-        float radiusB;
-        float radiusSqrdB;
+        Circle circleB;
 
-        // No Collision
+        // No Collision Test.
 
         positionA = new(0,0);
-        radiusA = 12;
-        radiusSqrdA = radiusA * radiusA;
+        circleA = new(0,0,12);
 
         positionB = new(25,25);
-        radiusB = 12;
-        radiusSqrdB = radiusB * radiusB;
+        circleB = new(0,0,12);
     
         Assert.False(
-            Collisions.CirclesIntersect(
+            Util.CirclesIntersect(
+                circleA,
+                circleB,
                 positionA,
                 positionB,
-                radiusSqrdA,
-                radiusA,
-                radiusSqrdB,
-                radiusB,
                 out normal,
                 out depth
             )
@@ -46,24 +40,17 @@ public class CollisionsTest
         Assert.Equal(0, depth);
         Assert.Equal(Vector2.Zero, normal);
     
-        // Collision
+        // Collision Test.
 
         positionA = new(0,0);
-        radiusA = 12;
-        radiusSqrdA = radiusA * radiusA;
+        positionB = new(5,5);
 
-        positionB = new(5f,5f);
-        radiusB = 12;
-        radiusSqrdB = radiusB * radiusB;
-    
         Assert.True(
-            Collisions.CirclesIntersect(
+            Util.CirclesIntersect(
+                circleA,
+                circleB,
                 positionA,
                 positionB,
-                radiusSqrdA,
-                radiusA,
-                radiusSqrdB,
-                radiusB,
                 out normal,
                 out depth
             )

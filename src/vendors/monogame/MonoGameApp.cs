@@ -30,6 +30,10 @@ public class MonoGameApp : Game
         IsFixedTimeStep = false;
         GraphicsDeviceManager.SynchronizeWithVerticalRetrace = true;
         GraphicsDeviceManager.ApplyChanges();
+        
+        // set this to the same directory as the csproj as loading is handled via full paths fomr AssetManager.
+        Content.RootDirectory = "";
+        
         Disposed += OnDisposed;
     }
 

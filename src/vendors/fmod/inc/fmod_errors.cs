@@ -9,7 +9,7 @@
 /* https://fmod.com/docs/2.03/api/core-api-common.html#fmod_result                                 */
 /* =============================================================================================== */
 
-namespace Howl.Vendors.FMOD
+namespace FMOD
 {
     public class Error
     {
