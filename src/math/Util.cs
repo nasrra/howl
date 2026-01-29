@@ -54,9 +54,14 @@ public static class Util
 
     public unsafe static bool FixedRectanglesIntersect(
         PolygonRectangle a,
-        PolygonRectangle b
+        PolygonRectangle b,
+        out Vector2 normal,
+        out float depth
     )
     {
+        normal = Vector2.Up;
+        depth = float.MaxValue;
+
         for(int i = 0; i < PolygonRectangle.MaxVertices; i++)
         {
             int vAIndex = i;
@@ -81,6 +86,13 @@ public static class Util
             {
                 // there is separation.
                 return false;
+            }
+
+            float axisDepth = MathF.Min(maxB - minA, maxA - minB);
+            if(depth > axisDepth)
+            {
+                depth = axisDepth;
+                normal = axis;
             }
         }
 
@@ -109,6 +121,26 @@ public static class Util
                 // there is separation.
                 return false;
             }
+
+            float axisDepth = MathF.Min(maxB - minA, maxA - minB);
+            if(depth > axisDepth)
+            {
+                depth = axisDepth;
+                normal = axis;
+            }
+        }
+
+        depth /= normal.Length();
+        normal = normal.Normalise();
+
+        // when a new smaller   
+        // depth is found but in relation to rect B, not A.
+        // this is so that the resolution code will always push A out of B
+        // and not push the two into each other when a smaller depth is found when 
+        // looping through rect B.
+        if ((b.GetCentroid() - a.GetCentroid()).Dot(normal) < 0)
+        {
+            normal = -normal;
         }
 
         

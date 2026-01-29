@@ -50,7 +50,7 @@ public static class PhysicsSystems
             IntersectStep.Stop();
 
             ResolutionStep.Restart();
-            ResolveCircleCollisions(componentRegistry);
+            ResolveCollisions(componentRegistry);
             ResolutionStep.Stop();    
         };
     }
@@ -168,16 +168,26 @@ public static class PhysicsSystems
                 // check if the two circles intersect.
                 if(Util.FixedRectanglesIntersect(
                     PolygonRectangle.Transform(rectangleA.Shape,transformA),
-                    PolygonRectangle.Transform(rectangleB.Shape,transformB)
+                    PolygonRectangle.Transform(rectangleB.Shape,transformB),
+                    out Vector2 normal,
+                    out float depth
                 ))
                 {
-                    Debug.WriteLine("Collision!");                    
+                    // add the collision to the collisions manifold for later resolution.
+                    CollisionManifold.Add(
+                        new Collision(
+                            genIndexA, 
+                            genIndexB, 
+                            normal, 
+                            depth
+                        )
+                    );                
                 }
             }
         }        
     }
 
-    private static void ResolveCircleCollisions(ComponentRegistry componentRegistry)
+    private static void ResolveCollisions(ComponentRegistry componentRegistry)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         Span<Collision> span = CollectionsMarshal.AsSpan(CollisionManifold);

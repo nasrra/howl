@@ -128,4 +128,19 @@ public unsafe struct PolygonRectangle
         }
         return new PolygonRectangle(transformedVertices);
     }
+
+    /// <summary>
+    /// Calculates the centroid-vector of this polygon rectangle.
+    /// </summary>
+    /// <returns>The centroid-vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 GetCentroid()
+    {
+        Vector2 sum = Vector2.Zero;
+        for(int i = 0; i < MaxVertices; i++)
+        {
+            sum += new Vector2(XVertices[i], YVertices[i]);
+        }
+        return sum /= MaxVertices;
+    }
 }
