@@ -37,6 +37,10 @@
   </ItemGroup>
 
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Howl.Test"/>
+  </ItemGroup>
+
   <!-- Include native runtime assets -->
   <!-- 
     Note:

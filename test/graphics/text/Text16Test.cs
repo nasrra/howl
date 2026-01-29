@@ -5,7 +5,7 @@ using Howl.Math;
 
 namespace Howl.Test.Graphics.Text;
 
-public class GuiText16Test
+public class Text16Test
 {
     [Fact]
     public unsafe void Constructor_Test()
@@ -14,7 +14,7 @@ public class GuiText16Test
         Vector2 offset = new(1,2);
         GenIndex fontGenIndex = new(0,1);
 
-        GuiText16 text = new(
+        Text16 text = new(
             new TextParameters(colour, offset, fontGenIndex), 
             ['H','e','l','l','o',' ','W','o','r','l','d','.']
         );
@@ -29,5 +29,26 @@ public class GuiText16Test
         string actual;
         actual = new string(text.Characters, 0, text.Length);
         Assert.Equal("Hello World.",actual);
+    }
+
+    [Fact]
+    public void SetCharacters_Test()
+    {
+        Text16 text = new Text16(
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0)),
+            ""
+        );
+
+        Span<char> characters = stackalloc char[Text16.MaxLength];
+        float num = 123456789.12f;
+        num.TryFormat(characters, out int charsWritten, "0.00");
+
+        // set the full span regardless of length.
+        text.SetCharacters(characters);
+        Assert.Equal(Text16.MaxLength, text.Length);
+
+        // set the span with a specefied length of the valid characters written to it.
+        text.SetCharacters(characters, charsWritten);
+        Assert.Equal(charsWritten, text.Length);
     }
 }

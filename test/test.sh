@@ -23,6 +23,7 @@ declare -A TEST_MAP
 TEST_MAP=(
     ["Collisions"]="${PHYSICS_NAMESPACE}CollisionsTest"
     ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
+    ["ComponentType"]="${ECS_NAMESPACE}ComponentTypeTest"
     ["ECS"]="${ECS_NAMESPACE}"
     ["GenIndex"]="${ECS_NAMESPACE}GenIndexTest"
     ["GuiText16"]="${GRAPHICS_NAMESPACE}Text.GuiText16Test"

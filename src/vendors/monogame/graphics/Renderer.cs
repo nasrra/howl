@@ -16,7 +16,7 @@ namespace Howl.Vendors.MonoGame.Graphics;
 public sealed class Renderer : IRenderer
 {    
     Colour clearColour;
-    public Colour ClearColour
+    public Colour WorldClearColour
     {
         get => clearColour;
         set => clearColour = value;
@@ -49,7 +49,7 @@ public sealed class Renderer : IRenderer
 
     public float OutputResolutionAspectRatio => (float)outputResolution.X / outputResolution.Y;
 
-
+    private RenderState renderState = RenderState.None;
 
     private bool disposed = false;
     public bool IsDisposed => disposed;
@@ -339,9 +339,11 @@ public sealed class Renderer : IRenderer
     /// 
 
 
-    public void BeginDraw()
+    public void BeginDrawWorld()
     {   
         ValidateDependencies();
+
+        renderState = RenderState.World;
 
         // draw all sprites to a render target.
         monoGameApp.GraphicsDevice.SetRenderTarget(RenderTarget);
@@ -353,7 +355,7 @@ public sealed class Renderer : IRenderer
         // update effects to use the new projection matrix.        
         EffectManager.UpdateProjectionMatrix(worldCamera.ProjectionMatrix.ToMonoGame());
         
-        monoGameApp.GraphicsDevice.Clear(ClearColour.ToMonoGame());
+        monoGameApp.GraphicsDevice.Clear(WorldClearColour.ToMonoGame());
 
         spriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
@@ -363,9 +365,11 @@ public sealed class Renderer : IRenderer
         );   
     }
 
-    public void EndDraw()
+    public void EndDrawWorld()
     {
         ValidateDependencies();
+
+        renderState = RenderState.None;
 
         // present the render target over the windows back buffer.
         spriteBatch.End();
@@ -382,6 +386,8 @@ public sealed class Renderer : IRenderer
     public void BeginDrawGui()
     {
         ValidateDependencies();
+
+        renderState = RenderState.Gui;
 
         // // draw all sprites to a render target.
         monoGameApp.GraphicsDevice.SetRenderTarget(GuiRenderTarget);
@@ -406,6 +412,8 @@ public sealed class Renderer : IRenderer
     public void EndDrawGui()
     {
         ValidateDependencies();
+
+        renderState = RenderState.None;
 
         // // present the render target over the windows back buffer.
         spriteBatch.End();
@@ -519,7 +527,12 @@ public sealed class Renderer : IRenderer
             return result;
         }
 
-        Howl.Math.Vector2 position = transform.Position.InvertY() - worldCamera.Position.InvertY();
+        Howl.Math.Vector2 position = renderState switch
+        {
+            RenderState.World => transform.Position.InvertY() - worldCamera.Position.InvertY(),
+            RenderState.Gui => transform.Position.InvertY() - guiCamera.Position.InvertY(), // example
+            _ => throw new Exception($"Cannot draw text in when Renderer is in render state '{renderState}'")
+        };
 
         stringBuilder.Clear();
         fixed (char* characters = text.Characters)
@@ -551,7 +564,12 @@ public sealed class Renderer : IRenderer
             return result;
         }
 
-        Howl.Math.Vector2 position = transform.Position.InvertY() - worldCamera.Position.InvertY();
+        Howl.Math.Vector2 position = renderState switch
+        {
+            RenderState.World => transform.Position.InvertY() - worldCamera.Position.InvertY(),
+            RenderState.Gui => transform.Position.InvertY() - guiCamera.Position.InvertY(), // example
+            _ => throw new Exception($"Cannot draw text in when Renderer is in render state '{renderState}'")
+        };
 
         stringBuilder.Clear();
         fixed (char* characters = text.Characters)
@@ -563,70 +581,6 @@ public sealed class Renderer : IRenderer
             font.Value, 
             stringBuilder, 
             position.ToMonogame(), 
-            text.TextParameters.Colour.ToMonoGame(), 
-            transform.Rotation, 
-            text.TextParameters.Offset.ToMonogame(), 
-            MathF.Max(transform.Scale.X, transform.Scale.Y), 
-            SpriteEffects.None, 
-            0
-        );
-
-        return result;
-    }
-
-    public unsafe GenIndexResult DrawText(in Howl.Math.Transform transform, in GuiText16 text)
-    {
-        GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
-
-        if(result != GenIndexResult.Success)
-        {
-            return result;
-        }
-
-        Vector2 position = (transform.Position.InvertY() - guiCamera.Position.InvertY()).ToMonogame();
-
-        stringBuilder.Clear();
-        fixed (char* characters = text.Characters)
-        {
-            stringBuilder.Append(new ReadOnlySpan<char>(characters, text.Length));
-        }
-
-        spriteBatch.DrawString(
-            font.Value, 
-            stringBuilder, 
-            position, 
-            text.TextParameters.Colour.ToMonoGame(), 
-            transform.Rotation, 
-            text.TextParameters.Offset.ToMonogame(), 
-            MathF.Max(transform.Scale.X, transform.Scale.Y), 
-            SpriteEffects.None, 
-            0
-        );
-
-        return result;
-    }
-
-    public unsafe GenIndexResult DrawText(in Howl.Math.Transform transform, in GuiText4096 text)
-    {
-        GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
-
-        if(result != GenIndexResult.Success)
-        {
-            return result;
-        }
-
-        Vector2 position = (transform.Position.InvertY() - guiCamera.Position.InvertY()).ToMonogame();
-
-        stringBuilder.Clear();
-        fixed (char* characters = text.Characters)
-        {
-            stringBuilder.Append(new ReadOnlySpan<char>(characters, text.Length));
-        }
-
-        spriteBatch.DrawString(
-            font.Value, 
-            stringBuilder, 
-            position, 
             text.TextParameters.Colour.ToMonoGame(), 
             transform.Rotation, 
             text.TextParameters.Offset.ToMonogame(), 

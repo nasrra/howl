@@ -22,9 +22,14 @@ public abstract class HowlApp : IDisposable
     public IInputManager InputManager {get; private set;}
 
     /// <summary>
-    /// Gets the ComponentRegistry used by this HowlApp.
+    /// Gets the ComponentRegistry used for gameplay.
     /// </summary>
-    public ComponentRegistry ComponentRegistry {get; private set;}
+    public ComponentRegistry WorldComponentRegistry {get; private set;}
+
+    /// <summary>
+    /// Gets the ComponentRegistry used for Gui.
+    /// </summary>
+    public ComponentRegistry GuiComponentRegistry {get; private set;}
 
     /// <summary>
     /// Gets the SystemRegistry used by this HowlApp.
@@ -66,7 +71,8 @@ public abstract class HowlApp : IDisposable
         }
 
         GenIndexAllocator = new();
-        ComponentRegistry = new(GenIndexAllocator);
+        WorldComponentRegistry = new(GenIndexAllocator);
+        GuiComponentRegistry = new(GenIndexAllocator);
         SystemRegistry = new();
 
         backend = howlAppBackend;
@@ -317,7 +323,7 @@ public abstract class HowlApp : IDisposable
         if (disposing)
         {
             Renderer?.Dispose();
-            ComponentRegistry?.Dispose();
+            WorldComponentRegistry?.Dispose();
             Instance = null;
         }
 

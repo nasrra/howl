@@ -33,9 +33,9 @@ public interface IRenderer : IDisposable
     protected const int MaxOutputResolutionInPixels = int.MaxValue;
 
     /// <summary>
-    /// Gets and sets the color to clear to every frame.
+    /// Gets and sets the color to clear the world to every frame.
     /// </summary>
-    public Colour ClearColour {get; set;}
+    public Colour WorldClearColour {get; set;}
 
     /// <summary>
     /// Gets the colour to clear the Gui to every frame.
@@ -105,14 +105,14 @@ public interface IRenderer : IDisposable
     public void SetOutputResolution(int width, int height);
 
     /// <summary>
-    /// Starts the draw state.
+    /// Starts the draw-world state.
     /// </summary>
-    public void BeginDraw();
+    public void BeginDrawWorld();
 
     /// <summary>
-    /// Completes the draw state.
+    /// Completes the draw-world state.
     /// </summary>
-    public void EndDraw();
+    public void EndDrawWorld();
 
     /// <summary>
     /// Starts the draw-gui state.
@@ -202,22 +202,6 @@ public interface IRenderer : IDisposable
     /// <param name="text">The text to draw.</param>
     /// <returns>The result when retrieving the font of the text.</returns>
     public GenIndexResult DrawText(in Transform transform, in Text4096 text);
-
-    /// <summary>
-    /// Draws text for a single frame.
-    /// </summary>
-    /// <param name="transform">The transform data.</param>
-    /// <param name="text">The text to draw.</param>
-    /// <returns>The result when retrieving the font of the text.</returns>
-    public GenIndexResult DrawText(in Transform transform, in GuiText4096 text);
-
-    /// <summary>
-    /// Draws text for a single frame.
-    /// </summary>
-    /// <param name="transform">The transform data.</param>
-    /// <param name="text">The text to draw.</param>
-    /// <returns>The result when retrieving the font of the text.</returns>
-    public GenIndexResult DrawText(in Transform transform, in GuiText16 text);
 
     /// <summary>
     /// Sets the application window to be windowed.

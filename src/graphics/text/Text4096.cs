@@ -41,11 +41,28 @@ public unsafe struct Text4096 : IText
 #if DEBUG
         if(characters.Length > MaxLength)
         {
-            throw new InvalidOperationException($"Text4096 cannot be constructed with a span of characters of length '{characters.Length}'. Max span length is '{MaxLength}'");
+            throw new InvalidOperationException($"Text cannot be constructed with a span of characters of length '{characters.Length}'. Max span length is '{MaxLength}'");
         }
 #endif
 
         length = System.Math.Min(characters.Length, MaxLength);
+
+        fixed (char* dst = Characters)
+        {
+            characters[..length].CopyTo(new Span<char>(dst, MaxLength));
+        }
+    }
+
+    public void SetCharacters(ReadOnlySpan<char> characters, int length)
+    {
+#if DEBUG
+        if(characters.Length > MaxLength || length < 0 || length > MaxLength)
+        {
+            throw new InvalidOperationException($"Text cannot be constructed with a span of characters of length '{characters.Length}'. Max span length is '{MaxLength}' and Min span length is '0'");
+        }
+#endif
+        
+        this.length = length;
 
         fixed (char* dst = Characters)
         {

@@ -32,4 +32,25 @@ public class Text4096Test
         actual = new string(text.Characters, 0, text.Length);
         Assert.Equal(Text,actual);
     }
+
+    [Fact]
+    public void SetCharacters_Test()
+    {
+        Text4096 text = new Text4096(
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0)),
+            ""
+        );
+
+        Span<char> characters = stackalloc char[Text4096.MaxLength];
+        float num = 123456789.12f;
+        num.TryFormat(characters, out int charsWritten, "0.00");
+
+        // set the full span regardless of length.
+        text.SetCharacters(characters);
+        Assert.Equal(Text4096.MaxLength, text.Length);
+
+        // set the span with a specefied length of the valid characters written to it.
+        text.SetCharacters(characters, charsWritten);
+        Assert.Equal(charsWritten, text.Length);
+    }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics.Metrics;
 using System.Threading;
 
@@ -12,6 +13,8 @@ internal static class ComponentTypeId
     /// </summary>
     public static int Count => count;
 
+    public static event Action<int> ComponentTypeIdAllocated;
+
     /// <summary>
     /// Gets the next available Id for a component type.
     /// </summary>
@@ -20,6 +23,10 @@ internal static class ComponentTypeId
     {
         // This is thread-safe, so even if multiple threads ask for a new ID simultaneously, each gets a unique one.
         // Interlocked.Increment returns the incremented value, so subtracting 1 gives the current ID before increment.
-        return Interlocked.Increment(ref count) - 1;
+        int id = Interlocked.Increment(ref count) - 1;
+        
+        ComponentTypeIdAllocated?.Invoke(id);
+
+        return id;
     } 
 }

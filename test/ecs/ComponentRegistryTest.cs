@@ -38,22 +38,38 @@ public class ComponentRegistryTest
     public void Test()
     {
         GenIndexAllocator allocator = new();
-        ComponentRegistry registry = new(allocator);
+        ComponentRegistry worldRegistry = new(allocator);
+        ComponentRegistry guiRegistry = new(allocator);
 
-        Assert.Equal(0, registry.RegisterComponent<Foo>());
-        Assert.Equal(1, registry.RegisterComponent<Loo>());
+        // check that registering a component returns the correct 
+        // component Id.
+        Assert.Equal(0, worldRegistry.RegisterComponent<Foo>());
+        Assert.Equal(1, worldRegistry.RegisterComponent<Loo>());
 
+        // ensure that duplicate calls to registering a component
+        // returns the same 
+        Assert.Equal(0, worldRegistry.RegisterComponent<Foo>());
+        Assert.Equal(1, worldRegistry.RegisterComponent<Loo>());
+
+        // allocate entity entries.
         allocator.Allocate(out GenIndex index1, out _);
         allocator.Allocate(out GenIndex index2, out _);
 
-        GenIndexList<Loo> loos = registry.Get<Loo>();
+        // check that the registry has updated its spars entries alongside the allocator.
+        GenIndexList<Loo> loos = worldRegistry.Get<Loo>();
         Assert.NotNull(loos);
         Assert.Equal(2, loos.Sparse.Count);
-        
-        GenIndexList<Foo> foos = registry.Get<Foo>();
+
+        // check that the registry has updated its spars entries alongside the allocator.        
+        GenIndexList<Foo> foos = worldRegistry.Get<Foo>();
         Assert.NotNull(foos);
         Assert.Equal(2, foos.Sparse.Count);
 
-        Assert.True(registry.ResizeSparseEntries(allocator.Entries.Count+1));
+        // no gen index list should have been allocated as the component was not registered in this component registry.
+        Assert.Null(guiRegistry.Get<Foo>());
+        Assert.Null(guiRegistry.Get<Loo>());
+
+        // resize to one above the current entry count.
+        Assert.True(worldRegistry.ResizeSparseEntries(allocator.Entries.Count+1));
     }
 }
