@@ -66,7 +66,7 @@ public static class PhysicsSystems
 
             // get the current circle.
             ref DenseEntry<CircleCollider> denseEntryA = ref denseEntries[i];
-            ref CircleCollider circleA = ref denseEntryA.Value;
+            ref CircleCollider colliderA = ref denseEntryA.Value;
             circleColliders.GetGenIndex(denseEntryA.sparseIndex, out GenIndex genIndexA);
             
             // make sure the circle has a transform component.
@@ -77,14 +77,14 @@ public static class PhysicsSystems
                 case GenIndexResult.StaleGenIndex:
                     continue;
             }
-            ref Transform tranformA = ref transformRefA.Value;
+            ref Transform transformA = ref transformRefA.Value;
 
             for(int j = i + 1; j < denseEntries.Length; j++)
             {
 
                 // get the other circle to check intersection against.
                 ref DenseEntry<CircleCollider> denseEntryB = ref denseEntries[j];
-                ref CircleCollider circleB = ref denseEntryB.Value;
+                ref CircleCollider colliderB = ref denseEntryB.Value;
                 circleColliders.GetGenIndex(denseEntryB.sparseIndex, out GenIndex genIndexB);                
                 
                 // make sure this circle has a transform component.
@@ -99,10 +99,8 @@ public static class PhysicsSystems
 
                 // check if the two circles intersect.
                 if(Util.CirclesIntersect(
-                    circleA.Shape,
-                    circleB.Shape,
-                    tranformA.Position,
-                    transformB.Position,
+                    Circle.Transform(colliderA.Shape, transformA),
+                    Circle.Transform(colliderB.Shape, transformB),
                     out Vector2 normal,
                     out float depth
                 ))

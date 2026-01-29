@@ -17,10 +17,8 @@ public static class Util
     }
 
     public static bool CirclesIntersect(
-        Circle circleA,
-        Circle circleB,
-        Vector2 posA,
-        Vector2 posB,
+        Circle a,
+        Circle b,
         out Vector2 normal,
         out float depth
     )
@@ -28,9 +26,9 @@ public static class Util
         normal = Vector2.Zero;
         depth = 0f;
 
-        float distanceSqrd = posA.DistanceSquared(posB);
+        float distanceSqrd = a.Origin.DistanceSquared(b.Origin);
 
-        float radiusSum = circleA.Radius + circleB.Radius;
+        float radiusSum = a.Radius + b.Radius;
         float radiusSumSq = radiusSum * radiusSum;
 
         if (distanceSqrd >= radiusSumSq)
@@ -46,7 +44,7 @@ public static class Util
         }
 
         float distance = MathF.Sqrt(distanceSqrd);
-        normal = (posB - posA).Normalise();
+        normal = (b.Origin - a.Origin).Normalise();
         depth = radiusSum - distance;
 
         return true;
