@@ -648,7 +648,7 @@ public sealed class Renderer : IRenderer
         primitiveVertices.Add(new(corner4.ToMonoGame(), monoGameColor));
     }
 
-    public void DrawWireframeShape(in Howl.Math.Transform transform, in Howl.Graphics.RectangleShape shape, float thickness = 4)
+    public void DrawWireframeShape(in Howl.Math.Transform transform, in Howl.Graphics.RectangleShape rectangle, float thickness = 4)
     {
         if(primitiveVertices.Count > short.MaxValue)
         {
@@ -658,18 +658,18 @@ public sealed class Renderer : IRenderer
         // (Note):
         // Dont reverse y-coordinates because draw line already does that.
 
-        Howl.Math.Vector2 topLeft       = shape.TopLeft.Transform(transform);
-        Howl.Math.Vector2 topRight      = shape.TopRight.Transform(transform);
-        Howl.Math.Vector2 bottomLeft    = shape.BottomLeft.Transform(transform);
-        Howl.Math.Vector2 bottomRight   = shape.BottomRight.Transform(transform); 
+        Howl.Math.Vector2 topLeft       = rectangle.Shape.TopLeft.Transform(transform);
+        Howl.Math.Vector2 topRight      = rectangle.Shape.TopRight.Transform(transform);
+        Howl.Math.Vector2 bottomLeft    = rectangle.Shape.BottomLeft.Transform(transform);
+        Howl.Math.Vector2 bottomRight   = rectangle.Shape.BottomRight.Transform(transform); 
 
-        DrawLine(topLeft, topRight, shape.Colour, thickness);
-        DrawLine(topRight, bottomRight, shape.Colour, thickness);
-        DrawLine(bottomRight, bottomLeft, shape.Colour, thickness);
-        DrawLine(bottomLeft, topLeft, shape.Colour, thickness);
+        DrawLine(topLeft, topRight, rectangle.Colour, thickness);
+        DrawLine(topRight, bottomRight, rectangle.Colour, thickness);
+        DrawLine(bottomRight, bottomLeft, rectangle.Colour, thickness);
+        DrawLine(bottomLeft, topLeft, rectangle.Colour, thickness);
     }
 
-    public void DrawFilledShape(in Howl.Math.Transform transform, in Howl.Graphics.RectangleShape shape)
+    public void DrawFilledShape(in Howl.Math.Transform transform, in Howl.Graphics.RectangleShape rectangle)
     {
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
@@ -686,10 +686,10 @@ public sealed class Renderer : IRenderer
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Howl.Math.Vector3 topLeft       = new(shape.TopLeft.Transform(transform),0);
-        Howl.Math.Vector3 topRight      = new(shape.TopRight.Transform(transform),0);
-        Howl.Math.Vector3 bottomLeft    = new(shape.BottomLeft.Transform(transform),0);
-        Howl.Math.Vector3 bottomRight   = new(shape.BottomRight.Transform(transform),0);
+        Howl.Math.Vector3 topLeft       = new(rectangle.Shape.TopLeft.Transform(transform),0);
+        Howl.Math.Vector3 topRight      = new(rectangle.Shape.TopRight.Transform(transform),0);
+        Howl.Math.Vector3 bottomLeft    = new(rectangle.Shape.BottomLeft.Transform(transform),0);
+        Howl.Math.Vector3 bottomRight   = new(rectangle.Shape.BottomRight.Transform(transform),0);
 
         // (Note):
         // reverse y-coordinates because monogame
@@ -708,14 +708,14 @@ public sealed class Renderer : IRenderer
         Howl.Math.Vector3 c = -cameraPosition + bottomRight;
         Howl.Math.Vector3 d = -cameraPosition + bottomLeft;
         
-        Microsoft.Xna.Framework.Color monoGameColor = shape.Colour.ToMonoGame();
+        Microsoft.Xna.Framework.Color monoGameColor = rectangle.Colour.ToMonoGame();
         primitiveVertices.Add(new(a.ToMonoGame(), monoGameColor));
         primitiveVertices.Add(new(b.ToMonoGame(), monoGameColor));
         primitiveVertices.Add(new(c.ToMonoGame(), monoGameColor));
         primitiveVertices.Add(new(d.ToMonoGame(), monoGameColor));        
     }
 
-    public void DrawFilledShape(in Howl.Math.Transform transform, in CircleShape shape, int verticeCount = IRenderer.DefaultCirclePointAmount)
+    public void DrawFilledShape(in Howl.Math.Transform transform, in CircleShape circle, int verticeCount = IRenderer.DefaultCirclePointAmount)
     {
         if(verticeCount == System.Math.Clamp(verticeCount, 3, int.MaxValue))
         {
@@ -742,8 +742,8 @@ public sealed class Renderer : IRenderer
             float rotation = (float)System.Math.Tau / verticeCount;            
             float sin = MathF.Sin(rotation);
             float cos = MathF.Cos(rotation);
-            Howl.Math.Vector2 start = new(0f, shape.Circle.Radius);
-            Howl.Math.Vector2 position = new(shape.X, shape.Y);
+            Howl.Math.Vector2 start = new(0f, circle.Shape.Radius);
+            Howl.Math.Vector2 position = new(circle.Shape.X, circle.Shape.Y);
             Howl.Math.Vector3 cameraPosition = new(worldCamera.Position.X, -worldCamera.Position.Y, 0);
 
             for(int i = 0; i < verticeCount; i++)
@@ -759,7 +759,7 @@ public sealed class Renderer : IRenderer
                     sin * start.X  + cos * start.Y
                 );
 
-                primitiveVertices.Add(new(vertice.ToMonoGame(),shape.Colour.ToMonoGame()));
+                primitiveVertices.Add(new(vertice.ToMonoGame(),circle.Colour.ToMonoGame()));
             }
 
         }
@@ -771,7 +771,7 @@ public sealed class Renderer : IRenderer
 
     public void DrawWireframeShape(
         in Howl.Math.Transform transform, 
-        in CircleShape shape,  
+        in CircleShape circle,  
         int verticeCount = IRenderer.DefaultCirclePointAmount,
         float thickness = IRenderer.DefaultWireframeThickness)   
     {
@@ -780,8 +780,8 @@ public sealed class Renderer : IRenderer
             float rotation = (float)System.Math.Tau / verticeCount;            
             float sin = MathF.Sin(rotation);
             float cos = MathF.Cos(rotation);
-            Howl.Math.Vector2 start = new(0f, shape.Circle.Radius);
-            Howl.Math.Vector2 position = new(shape.X, shape.Y);
+            Howl.Math.Vector2 start = new(0f, circle.Shape.Radius);
+            Howl.Math.Vector2 position = new(circle.Shape.X, circle.Shape.Y);
 
             for(int i = 0; i < verticeCount; i++)
             {
@@ -793,7 +793,7 @@ public sealed class Renderer : IRenderer
                 DrawLine(
                     (start + position).Transform(transform), 
                     (end + position).Transform(transform), 
-                    shape.Colour, 
+                    circle.Colour, 
                     thickness
                 );
 
