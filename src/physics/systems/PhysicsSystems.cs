@@ -164,7 +164,7 @@ public static class PhysicsSystems
                 ref Transform transformB = ref transformRefB.Value;
 
                 // check if the two circles intersect.
-                if(Util.FixedRectanglesIntersect(
+                if(Util.RectanglesIntersect(
                     PolygonRectangle.Transform(rectangleA.Shape,transformA),
                     PolygonRectangle.Transform(rectangleB.Shape,transformB),
                     out Vector2 normal,

@@ -50,82 +50,61 @@ public static class Util
         return true;
     }
 
-    public unsafe static bool FixedRectanglesIntersect(
+    public static bool RectanglesIntersect(
         PolygonRectangle a,
         PolygonRectangle b,
         out Vector2 normal,
         out float depth
     )
     {
+
+        Vector2 foundNormal;
+        float foundDepth;
+
         normal = Vector2.Up;
         depth = float.MaxValue;
 
-        for(int i = 0; i < PolygonRectangle.MaxVertices; i++)
-        {
-            int vAIndex = i;
-            int vBIndex = (i+1)%PolygonRectangle.MaxVertices;
 
-            Vector2 va = new Vector2(a.XVertices[vAIndex], a.YVertices[vAIndex]);
-            Vector2 vb = new Vector2(a.XVertices[vBIndex], a.YVertices[vBIndex]);
-
-            Vector2 edge = vb - va;
-
-            // the normal of the edge.
-            // note: this only works as vertices are assumed to be in clockwise winding order.
-            // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
-            Vector2 axis = new Vector2(-edge.Y, edge.X); 
-        
-            // project all vertices onto the current edge to find the min and max values
-            // of the two rectangles along the edge.
-            ProjectVertices(a.GetXVerticesAsSpan(), a.GetYVerticesAsSpan(), axis, out float minA, out float maxA);
-            ProjectVertices(b.GetXVerticesAsSpan(), b.GetYVerticesAsSpan(), axis, out float minB, out float maxB);
-        
-            if(minA >= maxB || minB >= maxA)
+        if (PolygonIntersect(
+                a.GetXVerticesAsSpan(), 
+                a.GetYVerticesAsSpan(), 
+                b.GetXVerticesAsSpan(), 
+                b.GetYVerticesAsSpan(), 
+                out foundNormal, 
+                out foundDepth
+            )
+        )
+        {            
+            if(depth > foundDepth)
             {
-                // there is separation.
-                return false;
-            }
-
-            float axisDepth = MathF.Min(maxB - minA, maxA - minB);
-            if(depth > axisDepth)
-            {
-                depth = axisDepth;
-                normal = axis;
+                depth = foundDepth;
+                normal = foundNormal;
             }
         }
-
-        for(int i = 0; i < PolygonRectangle.MaxVertices; i++)
+        else
         {
-            int vAIndex = i;
-            int vBIndex = (i+1)%PolygonRectangle.MaxVertices;
+            return false;
+        }
 
-            Vector2 va = new Vector2(b.XVertices[vAIndex], b.YVertices[vAIndex]);
-            Vector2 vb = new Vector2(b.XVertices[vBIndex], b.YVertices[vBIndex]);
-
-            Vector2 edge = vb - va;
-
-            // the normal of the edge.
-            // note: this only works as vertices are assumed to be in clockwise winding order.
-            // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
-            Vector2 axis = new Vector2(-edge.Y, edge.X); 
-        
-            // project all vertices onto the current edge to find the min and max values
-            // of the two rectangles along the edge.
-            ProjectVertices(a.GetXVerticesAsSpan(), a.GetYVerticesAsSpan(), axis, out float minA, out float maxA);
-            ProjectVertices(b.GetXVerticesAsSpan(), b.GetYVerticesAsSpan(), axis, out float minB, out float maxB);
-        
-            if(minA >= maxB || minB >= maxA)
+        if (PolygonIntersect(
+                b.GetXVerticesAsSpan(), 
+                b.GetYVerticesAsSpan(), 
+                a.GetXVerticesAsSpan(), 
+                a.GetYVerticesAsSpan(), 
+                out foundNormal, 
+                out foundDepth
+            )
+        )
+        {            
+            if(depth > foundDepth)
             {
-                // there is separation.
-                return false;
+                depth = foundDepth;
+                normal = foundNormal;
             }
-
-            float axisDepth = MathF.Min(maxB - minA, maxA - minB);
-            if(depth > axisDepth)
-            {
-                depth = axisDepth;
-                normal = axis;
-            }
+        }
+        else
+        {
+            return false;
         }
 
         depth /= normal.Length();
@@ -142,6 +121,64 @@ public static class Util
         }
 
         
+        return true;
+    }
+
+    private static bool PolygonIntersect(        
+        ReadOnlySpan<float> xVerticesA, 
+        ReadOnlySpan<float> yVerticesA, 
+        ReadOnlySpan<float> xVerticesB, 
+        ReadOnlySpan<float> yVerticesB, 
+        out Vector2 normal,
+        out float depth)
+    {
+        depth = float.MaxValue;
+        normal = Vector2.Up;
+
+        if(xVerticesA.Length != yVerticesA.Length)
+        {
+            throw new ArgumentException($"xVerticesA with length '{xVerticesA.Length}' does not match yVerticesA length '{xVerticesA.Length}'");
+        }
+        if(xVerticesB.Length != yVerticesB.Length)
+        {
+            throw new ArgumentException($"xVerticesB with length '{xVerticesB.Length}' does not match yVerticesB length '{xVerticesB.Length}'");
+        }
+
+        for(int i = 0; i < xVerticesA.Length; i++)
+        {
+            int vAIndex = i;
+            int vBIndex = (i+1)%xVerticesA.Length;
+
+            Vector2 va = new Vector2(xVerticesA[vAIndex], yVerticesA[vAIndex]);
+            Vector2 vb = new Vector2(xVerticesA[vBIndex], yVerticesA[vBIndex]);
+
+            Vector2 edge = vb - va;
+
+            // the normal of the edge.
+            // note: this only works as vertices are assumed to be in clockwise winding order.
+            // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
+            Vector2 axis = new Vector2(-edge.Y, edge.X); 
+        
+            // project all vertices onto the current edge to find the min and max values
+            // of the two rectangles along the edge.
+            ProjectVertices(xVerticesA, yVerticesA, axis, out float minA, out float maxA);
+            ProjectVertices(xVerticesB, yVerticesB, axis, out float minB, out float maxB);
+        
+            if(minA >= maxB || minB >= maxA)
+            {
+                // there is separation.
+                return false;
+            }
+
+            float axisDepth = MathF.Min(maxB - minA, maxA - minB);
+            if(depth > axisDepth)
+            {
+                // only assign if the newly found intersection depth is smaller.
+                depth = axisDepth;
+                normal = axis;
+            }
+        }
+
         return true;
     }
 

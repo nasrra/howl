@@ -87,7 +87,7 @@ public unsafe struct PolygonRectangle
     /// <summary>
     /// Gets the x-value of the vertices in a span.
     /// </summary>
-    /// <returns>A float span</returns>
+    /// <returns>The span</returns>
     public Span<float> GetXVerticesAsSpan()
     {
         Span<float> span;
@@ -101,7 +101,7 @@ public unsafe struct PolygonRectangle
     /// <summary>
     /// Gets y-value of the vertices in a span.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The span</returns>
     public Span<float> GetYVerticesAsSpan()
     {
         Span<float> span;
@@ -110,7 +110,7 @@ public unsafe struct PolygonRectangle
             span = new Span<float>(ptr, MaxVertices);
         }
         return span;
-    }    
+    }
 
     /// <summary>
     /// Constructs a new rectangle by transform the vertices of the specified rectangle.
