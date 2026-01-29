@@ -27,11 +27,16 @@ public unsafe struct Polygon16
     /// </summary>
     public int VerticesCount => verticesCount;
 
+    /// <summary>
+    /// Constructs a Polygon16
+    /// </summary>
+    /// <param name="vertices">The vertices to insert into this polygon.</param>
+    /// <exception cref="InvalidOperationException">thrown when the passed vertices span length is unsupported.</exception>
     public Polygon16(Span<Vector2> vertices)
     {
         if(vertices.Length > MaxVertices)
         {
-            throw new InvalidOperationException($"Polygon16 can only store {MaxVertices} amount of vertices; not {vertices.Length}");
+            throw new ArgumentException($"Polygon16 cannot store '{vertices.Length}' amount of vertices. The amount of vertices length must be between '{0}' and '{MaxVertices}'");
         }
 
         verticesCount = System.Math.Min(vertices.Length, MaxVertices);

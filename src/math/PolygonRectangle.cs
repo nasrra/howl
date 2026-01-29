@@ -1,0 +1,131 @@
+using System;
+using System.Runtime.CompilerServices;
+
+namespace Howl.Math;
+
+public unsafe struct PolygonRectangle
+{
+    /// <summary>
+    /// The maximum amount of vertices a PolygonRectangle can store.
+    /// </summary>
+    public const int MaxVertices = 4;
+
+    /// <summary>
+    /// Gets and sets the x-coordinate value for each vertice.
+    /// </summary>
+    public fixed float XVertices[MaxVertices];
+
+    /// <summary>
+    /// Gets and sets the y-coordinate value for each vertice.
+    /// </summary>
+    public fixed float YVertices[MaxVertices];
+
+    /// <summary>
+    /// Constructs a PolygonRectangle.
+    /// </summary>
+    /// <param name="vertices">The vertices to insert into this polygon.</param>
+    /// <exception cref="ArgumentException">thrown when the passed vertices span length is unsupported.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public PolygonRectangle(ReadOnlySpan<Vector2> vertices)
+    {
+        if(vertices.Length != MaxVertices)
+        {
+            throw new ArgumentException($"PolygonRectangle cannot store '{vertices.Length}' amount of vertices. The amount of vertices length must be '{MaxVertices}'.");
+        }
+
+        fixed(float* xDst = XVertices)
+        {
+            fixed(float* yDst = YVertices)
+            {
+                for(int i = 0; i < MaxVertices; i++)
+                {
+                    xDst[i] = vertices[i].X;
+                    yDst[i] = vertices[i].Y;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Constructs a PolygonRectangle.
+    /// </summary>
+    /// <param name="x">The x-coordinate of the origin point.</param>
+    /// <param name="y">The y-coordinate of the origin point.</param>
+    /// <param name="width">The width of this rectangle.</param>
+    /// <param name="height">The height of this rectangle.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public PolygonRectangle(float x, float y, float width, float height)
+    {
+        fixed(float* xDst = XVertices)
+        {
+            fixed(float* yDst = YVertices)
+            {
+                float left = x;
+                float top = y;
+                float right = x+width;
+                float bottom = y-width;
+
+                // top left.
+                xDst[0] = left;
+                yDst[0] = top;
+
+                // top right.
+                xDst[1] = right;
+                yDst[1] = top;
+
+                // bottom right.
+                xDst[2] = right;
+                yDst[2] = bottom;
+
+                // bottom left.
+                xDst[3] = left;
+                yDst[3] = bottom;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the x-value of the vertices in a span.
+    /// </summary>
+    /// <returns>A float span</returns>
+    public Span<float> GetXVerticesAsSpan()
+    {
+        Span<float> span;
+        fixed(float* ptr = XVertices)
+        {
+            span = new Span<float>(ptr, MaxVertices);
+        }
+        return span;
+    }
+
+    /// <summary>
+    /// Gets y-value of the vertices in a span.
+    /// </summary>
+    /// <returns></returns>
+    public Span<float> GetYVerticesAsSpan()
+    {
+        Span<float> span;
+        fixed(float* ptr = YVertices)
+        {
+            span = new Span<float>(ptr, MaxVertices);
+        }
+        return span;
+    }    
+
+    /// <summary>
+    /// Constructs a new rectangle by transform the vertices of the specified rectangle.
+    /// </summary>
+    /// <param name="rectangle">The rectangle to transform.</param>
+    /// <param name="transform">The transform data.</param>
+    /// <returns>The resultant rectangle.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static PolygonRectangle Transform(PolygonRectangle rectangle, Transform transform)
+    {
+        Span<Vector2> transformedVertices = stackalloc Vector2[MaxVertices];
+        for(int i = 0; i < MaxVertices; i++)
+        {
+            transformedVertices[i] = Vector2.Transform(rectangle.XVertices[i], rectangle.YVertices[i], transform);
+        }
+        return new PolygonRectangle(transformedVertices);
+    }
+}

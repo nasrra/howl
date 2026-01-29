@@ -271,6 +271,47 @@ public struct Vector2
     }
 
     /// <summary>
+    /// Transforms a vector by the supplied transform.
+    /// </summary>
+    /// <param name="vector">The vector to transform.</param>
+    /// <param name="transform">The transform data to transform by.</param>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 Transform(Vector2 vector, Transform transform)
+    {
+        return Transform(vector.X, vector.Y, transform);
+    }
+
+    /// <summary>
+    /// Transforms a vector by the supplied transform.
+    /// </summary>
+    /// <param name="x">the x-value of the vector.</param>
+    /// <param name="y">the y-value of the vector.</param>
+    /// <param name="transform">The transform data to transform by.</param>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 Transform(float x, float  y, Transform transform)
+    {
+        // NOTE:
+        // This ordering: Scale -> Rotation -> Translation
+        // should remain the same. It is pretty much Matrix math.
+
+        // Scale:
+        float sx = x * transform.Scale.X;
+        float sy = y * transform.Scale.Y; 
+
+        // Rotation:
+        float rx = sx * transform.Cos - sy * transform.Sin;
+        float ry = sx * transform.Sin + sy * transform.Cos;
+
+        // Translation:
+        float tx = rx + transform.Position.X;
+        float ty = ry + transform.Position.Y;
+
+        return new(tx, ty);
+    }
+
+    /// <summary>
     /// Gets the distance between this vector and another.
     /// </summary>
     /// <param name="vector">The vector to find distance against.</param>
@@ -330,35 +371,7 @@ public struct Vector2
     public float Cross(Vector2 lhs, Vector2 rhs)
     {
         return lhs.X * rhs.Y - lhs.Y * rhs.X;    
-    }
-
-    /// <summary>
-    /// Transforms a vector by the supplied transform.
-    /// </summary>
-    /// <param name="vector">The vector to transform.</param>
-    /// <param name="transform">The transform data to transform by.</param>
-    /// <returns>The resultant veector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 Transform(Vector2 vector, Transform transform)
-    {
-        // NOTE:
-        // This ordering: Scale -> Rotation -> Translation
-        // should remain the same. It is pretty much Matrix math.
-
-        // Scale:
-        float sx = vector.X * transform.Scale.X;
-        float sy = vector.Y * transform.Scale.Y; 
-
-        // Rotation:
-        float rx = sx * transform.Cos - sy * transform.Sin;
-        float ry = sx * transform.Sin + sy * transform.Cos;
-
-        // Translation:
-        float tx = rx + transform.Position.X;
-        float ty = ry + transform.Position.Y;
-
-        return new(tx, ty);
-    }        
+    }   
 
     /// <summary>
     /// Inverts the y-value of this vector.

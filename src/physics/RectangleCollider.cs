@@ -2,12 +2,12 @@ using Howl.Math;
 
 namespace Howl.Physics;
 
-public struct CircleCollider
+public struct RectangleCollider
 {
-    public Circle Shape;
+    public PolygonRectangle Shape;
     public ColliderParameters Parameters;
 
-    public CircleCollider(Circle shape, ColliderParameters parameters)
+    public RectangleCollider(PolygonRectangle shape, ColliderParameters parameters)
     {
         Shape = shape;
         Parameters = parameters;

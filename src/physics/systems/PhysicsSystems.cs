@@ -18,6 +18,7 @@ public static class PhysicsSystems
     public static void RegisterComponents(ComponentRegistry componentRegistry)
     {
         componentRegistry.RegisterComponent<CircleCollider>();
+        componentRegistry.RegisterComponent<RectangleCollider>();
         componentRegistry.RegisterComponent<RigidBody>();
     }
 
@@ -31,9 +32,6 @@ public static class PhysicsSystems
     {
         return dt =>
         {
-            // CollisionManifold.Clear();
-            // FindCircleCollisions(componentRegistry);
-            // ResolveCircleCollisions(componentRegistry);
         };
     }
 
@@ -48,6 +46,7 @@ public static class PhysicsSystems
             
             IntersectStep.Restart();
             FindCircleCollisions(componentRegistry);
+            FindRectangleCollisions(componentRegistry);
             IntersectStep.Stop();
 
             ResolutionStep.Restart();
@@ -122,6 +121,60 @@ public static class PhysicsSystems
                 }
             }
         }
+    }
+
+    private static void FindRectangleCollisions(ComponentRegistry componentRegistry)
+    {
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
+        GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
+        Span<DenseEntry<RectangleCollider>> denseEntries = colliders.GetDenseAsSpan();
+
+        for(int i = 0; i < denseEntries.Length - 1; i++)
+        {
+
+            // get the current collider.
+            ref DenseEntry<RectangleCollider> denseEntryA = ref denseEntries[i];
+            ref RectangleCollider rectangleA = ref denseEntryA.Value;
+            colliders.GetGenIndex(denseEntryA.sparseIndex, out GenIndex genIndexA);
+            
+            // make sure the collider has a transform component.
+            switch(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA))
+            {
+                case GenIndexResult.DenseNotAllocated:
+                    throw new DenseNotAllocatedException(genIndexA);
+                case GenIndexResult.StaleGenIndex:
+                    continue;
+            }
+            ref Transform transformA = ref transformRefA.Value;
+
+            for(int j = i + 1; j < denseEntries.Length; j++)
+            {
+
+                // get the other collider to check intersection against.
+                ref DenseEntry<RectangleCollider> denseEntryB = ref denseEntries[j];
+                ref RectangleCollider rectangleB = ref denseEntryB.Value;
+                colliders.GetGenIndex(denseEntryB.sparseIndex, out GenIndex genIndexB);                
+                
+                // make sure this collider has a transform component.
+                switch(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB))
+                {
+                    case GenIndexResult.DenseNotAllocated:
+                        throw new DenseNotAllocatedException(genIndexA);
+                    case GenIndexResult.StaleGenIndex:
+                        continue;
+                }
+                ref Transform transformB = ref transformRefB.Value;
+
+                // check if the two circles intersect.
+                if(Util.FixedRectanglesIntersect(
+                    PolygonRectangle.Transform(rectangleA.Shape,transformA),
+                    PolygonRectangle.Transform(rectangleB.Shape,transformB)
+                ))
+                {
+                    Debug.WriteLine("Collision!");                    
+                }
+            }
+        }        
     }
 
     private static void ResolveCircleCollisions(ComponentRegistry componentRegistry)

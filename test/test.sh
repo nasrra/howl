@@ -34,6 +34,7 @@ TEST_MAP=(
     ["MonoGameVector2Ext"]="${MONOGAME_MATH_NAMESPACE}Vector2ExtensionsTest"
     ["MonoGameVector3Ext"]="${MONOGAME_MATH_NAMESPACE}Vector3ExtensionsTest"
     ["Polygon16"]="${MATH_NAMESPACE}Polygon16Test"
+    ["PolygonRectangle"]="${MATH_NAMESPACE}PolygonRectangleTest"
     ["Rectangle"]="${MATH_NAMESPACE}RectangleTest"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"
     ["Text4096"]="${GRAPHICS_NAMESPACE}Text.Text4096Test"
