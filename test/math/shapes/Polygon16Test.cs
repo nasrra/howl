@@ -1,6 +1,7 @@
 using Howl.Math;
+using Howl.Math.Shapes;
 
-namespace Howl.Test.Math;
+namespace Howl.Test.Math.Shapes;
 
 public class Polygon16Test
 {

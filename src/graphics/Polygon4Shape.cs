@@ -4,12 +4,12 @@ using Howl.Math.Shapes;
 
 namespace Howl.Graphics;
 
-public struct Polygon16Shape
+public struct Polygon4Shape
 {
     /// <summary>
     /// Gets and sets the polygon data.
     /// </summary>
-    public Polygon16 Polygon;
+    public Polygon4 Polygon;
 
     /// <summary>
     /// Gets and sets the colour used when drawing.
@@ -28,7 +28,7 @@ public struct Polygon16Shape
     /// <param name="colour">The colour used when drawing.</param>
     /// <param name="origin">The origin of the shape.</param>
     /// <param name="drawMode">The draw mode..</param>
-    public Polygon16Shape(Polygon16 polygon, Colour colour, Vector2 origin)
+    public Polygon4Shape(Polygon4 polygon, Colour colour, Vector2 origin)
     {
         Polygon = polygon;
         Colour = colour;

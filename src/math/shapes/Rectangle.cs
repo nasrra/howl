@@ -2,7 +2,7 @@
 
 using System.Runtime.CompilerServices;
 
-namespace Howl.Math;
+namespace Howl.Math.Shapes;
 
 public struct Rectangle
 {

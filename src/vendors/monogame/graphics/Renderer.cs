@@ -6,6 +6,7 @@ using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
 using Howl.Graphics.Text;
+using Howl.Vendors.MonoGame.Math.Shapes;
 using Howl.Vendors.MonoGame.Math;
 using Howl.Vendors.MonoGame.Text;
 using Microsoft.Xna.Framework;
@@ -807,6 +808,18 @@ public sealed class Renderer : IRenderer
     }
 
     public void DrawWireframeShape(in Howl.Math.Transform transform, in Polygon16Shape shape, float thickness = IRenderer.DefaultWireframeThickness)
+    {
+        Howl.Math.Vector2 start = shape.GetVertex(0).Transform(transform); 
+        for(int i = 1; i <= shape.Polygon.VerticesCount; i++)
+        {
+            int index = i % shape.Polygon.VerticesCount;
+            Howl.Math.Vector2 end = shape.GetVertex(index).Transform(transform); 
+            DrawLine(start, end, shape.Colour, thickness);
+            start = end;
+        }
+    }
+
+    public void DrawWireframeShape(in Howl.Math.Transform transform, in Polygon4Shape shape, float thickness = IRenderer.DefaultWireframeThickness)
     {
         Howl.Math.Vector2 start = shape.GetVertex(0).Transform(transform); 
         for(int i = 1; i <= shape.Polygon.VerticesCount; i++)
