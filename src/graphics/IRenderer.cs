@@ -188,6 +188,14 @@ public interface IRenderer : IDisposable
     public void DrawWireframeShape(in Transform transform, in Polygon16Shape shape, float thickness = DefaultWireframeThickness);
 
     /// <summary>
+    /// Draws a wireframe shape for a single frame.
+    /// </summary>
+    /// <param name="transform">The transform data.</param>
+    /// <param name="shape">The polygon data.</param>
+    /// <param name="thickness">The thickness of the wireframe line segments.</param>
+    public void DrawWireframeShape(in Transform transform, in Polygon4Shape shape, float thickness = DefaultWireframeThickness);
+
+    /// <summary>
     /// Draws text for a single frame.
     /// </summary>
     /// <param name="transform">The transform data.</param>

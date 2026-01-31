@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Howl.Math;
+namespace Howl.Math.Shapes;
 
 public unsafe struct PolygonRectangle
 {
@@ -13,12 +13,12 @@ public unsafe struct PolygonRectangle
     /// <summary>
     /// Gets and sets the x-coordinate value for each vertice.
     /// </summary>
-    public fixed float XVertices[MaxVertices];
+    public fixed float VerticesX[MaxVertices];
 
     /// <summary>
     /// Gets and sets the y-coordinate value for each vertice.
     /// </summary>
-    public fixed float YVertices[MaxVertices];
+    public fixed float VerticesY[MaxVertices];
 
     /// <summary>
     /// Constructs a PolygonRectangle.
@@ -33,9 +33,9 @@ public unsafe struct PolygonRectangle
             throw new ArgumentException($"PolygonRectangle cannot store '{vertices.Length}' amount of vertices. The amount of vertices length must be '{MaxVertices}'.");
         }
 
-        fixed(float* xDst = XVertices)
+        fixed(float* xDst = VerticesX)
         {
-            fixed(float* yDst = YVertices)
+            fixed(float* yDst = VerticesY)
             {
                 for(int i = 0; i < MaxVertices; i++)
                 {
@@ -56,9 +56,9 @@ public unsafe struct PolygonRectangle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public PolygonRectangle(float x, float y, float width, float height)
     {
-        fixed(float* xDst = XVertices)
+        fixed(float* xDst = VerticesX)
         {
-            fixed(float* yDst = YVertices)
+            fixed(float* yDst = VerticesY)
             {
                 float left = x;
                 float top = y;
@@ -88,10 +88,10 @@ public unsafe struct PolygonRectangle
     /// Gets the x-value of the vertices in a span.
     /// </summary>
     /// <returns>The span</returns>
-    public Span<float> GetXVerticesAsSpan()
+    public Span<float> GetVerticesXAsSpan()
     {
         Span<float> span;
-        fixed(float* ptr = XVertices)
+        fixed(float* ptr = VerticesX)
         {
             span = new Span<float>(ptr, MaxVertices);
         }
@@ -102,10 +102,10 @@ public unsafe struct PolygonRectangle
     /// Gets y-value of the vertices in a span.
     /// </summary>
     /// <returns>The span</returns>
-    public Span<float> GetYVerticesAsSpan()
+    public Span<float> GetVerticesYAsSpan()
     {
         Span<float> span;
-        fixed(float* ptr = YVertices)
+        fixed(float* ptr = VerticesY)
         {
             span = new Span<float>(ptr, MaxVertices);
         }
@@ -124,7 +124,7 @@ public unsafe struct PolygonRectangle
         Span<Vector2> transformedVertices = stackalloc Vector2[MaxVertices];
         for(int i = 0; i < MaxVertices; i++)
         {
-            transformedVertices[i] = Vector2.Transform(rectangle.XVertices[i], rectangle.YVertices[i], transform);
+            transformedVertices[i] = Vector2.Transform(rectangle.VerticesX[i], rectangle.VerticesY[i], transform);
         }
         return new PolygonRectangle(transformedVertices);
     }
@@ -136,11 +136,6 @@ public unsafe struct PolygonRectangle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public Vector2 GetCentroid()
     {
-        Vector2 sum = Vector2.Zero;
-        for(int i = 0; i < MaxVertices; i++)
-        {
-            sum += new Vector2(XVertices[i], YVertices[i]);
-        }
-        return sum /= MaxVertices;
+        return ShapeUtils.GetCentroid(GetVerticesXAsSpan(), GetVerticesYAsSpan());
     }
 }

@@ -208,4 +208,30 @@ public class Vector2Test
         Assert.Equal(expected, vector.InvertY());        
         Assert.Equal(expected, Vector2.InvertY(vector));
     }
+
+    [Fact]
+    public void Transform_Test()
+    {
+        Transform transform;
+        Vector2 vector;
+        Vector2 position;
+        Vector2 scale;
+        float rotation;
+
+        // translate test.
+        vector      = Vector2.Zero;
+        position    = new(2,2);
+        scale       = new(1,1);
+        rotation    = 0;
+        transform   = new Transform(position, scale, rotation);
+        Assert.Equal(new Vector2(2,2), vector.Transform(transform));
+
+        // scale test.
+        vector      = Vector2.Zero;
+        position    = new(1,1);
+        scale       = new(4,4);
+        rotation    = 0;
+        transform   = new Transform(position, scale, rotation);
+        Assert.Equal(new Vector2(1,1), vector.Transform(transform));
+    }
 }

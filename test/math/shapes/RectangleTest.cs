@@ -1,7 +1,7 @@
 using Howl.Math;
-using Xunit;
+using Howl.Math.Shapes;
 
-namespace Howl.Test.Math;
+namespace Howl.Test.Math.Shapes;
 
 public class RectangleTest
 {

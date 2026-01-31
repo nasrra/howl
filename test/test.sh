@@ -6,6 +6,7 @@ PROJECT_PATH="Howl.Test.csproj"
 
 NAMESPACE="Howl.Test."
 MATH_NAMESPACE="${NAME_SPACE}Math."
+SHAPES_MATH_NAMESPACE="${MATH_NAMESPACE}Shapes."
 ECS_NAMESPACE="${NAME_SPACE}ECS."
 PHYSICS_NAMESPACE="${NAME_SPACE}Physics."
 GRAPHICS_NAMESPACE="${NAME_SPACE}Graphics."
@@ -14,6 +15,7 @@ VENDORS_NAMESPACE="${NAME_SPACE}Vendors."
 
 MONOGAME_NAMESPACE="${VENDORS_NAME_SPACE}MonoGame."
 MONOGAME_MATH_NAMESPACE="${MONOGAME_NAMESPACE}Math."
+MONOGAME_SHAPES_MATH_NAMESPACE="${MONOGAME_MATH_NAMESPACE}Shapes."
 MONOGAME_GRAPHICS_NAMESPACE="${MONOGAME_NAMESPACE}Graphics."
 
 TEST_NAME=$1
@@ -21,7 +23,6 @@ TEST_NAME=$1
 # Declare an associative array
 declare -A TEST_MAP
 TEST_MAP=(
-    ["Collisions"]="${PHYSICS_NAMESPACE}CollisionsTest"
     ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
     ["ComponentType"]="${ECS_NAMESPACE}ComponentTypeTest"
     ["ECS"]="${ECS_NAMESPACE}"
@@ -30,12 +31,13 @@ TEST_MAP=(
     ["GuiText4096"]="${GRAPHICS_NAMESPACE}Text.GuiText4096Test"
     ["Math"]="${MATH_NAMESPACE}"
     ["MonoGameColourExt"]="${MONOGAME_GRAPHICS_NAMESPACE}ColourExtensionsTest"
-    ["MonoGameRectangleExt"]="${MONOGAME_MATH_NAMESPACE}RectangleExtensionsTest"
+    ["MonoGameRectangleExt"]="${MONOGAME_SHAPES_MATH_NAMESPACE}RectangleExtensionsTest"
     ["MonoGameVector2Ext"]="${MONOGAME_MATH_NAMESPACE}Vector2ExtensionsTest"
     ["MonoGameVector3Ext"]="${MONOGAME_MATH_NAMESPACE}Vector3ExtensionsTest"
-    ["Polygon16"]="${MATH_NAMESPACE}Polygon16Test"
-    ["PolygonRectangle"]="${MATH_NAMESPACE}PolygonRectangleTest"
-    ["Rectangle"]="${MATH_NAMESPACE}RectangleTest"
+    ["Polygon16"]="${SHAPES_MATH_NAMESPACE}Polygon16Test"
+    ["PolygonRectangle"]="${SHAPES_MATH_NAMESPACE}PolygonRectangleTest"
+    ["Rectangle"]="${SHAPES_MATH_NAMESPACE}RectangleTest"
+    ["SAT"]="${SHAPES_MATH_NAMESPACE}SATTest"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"
     ["Text4096"]="${GRAPHICS_NAMESPACE}Text.Text4096Test"
     ["Transform"]="${MATH_NAMESPACE}TransformTest"

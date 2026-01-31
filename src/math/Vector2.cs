@@ -420,4 +420,10 @@ public struct Vector2
     {
         return X.GetHashCode() ^ Y.GetHashCode(); // XOR the two hash codes together.
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public override string ToString()
+    {   
+        return $"({X},{Y})";
+    }
 }

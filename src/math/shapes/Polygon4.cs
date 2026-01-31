@@ -1,14 +1,14 @@
 using System;
 
-namespace Howl.Math;
+namespace Howl.Math.Shapes;
 
-public unsafe struct Polygon16
+public unsafe struct Polygon4
 {
 
     /// <summary>
     /// The maximum amount of vertices a Polygon16 can store.
     /// </summary>
-    public const int MaxVertices = 16;
+    public const int MaxVertices = 4;
 
     /// <summary>
     /// Gets and sets the x-coordinate vertices of this polygon.
@@ -28,15 +28,15 @@ public unsafe struct Polygon16
     public int VerticesCount => verticesCount;
 
     /// <summary>
-    /// Constructs a Polygon16
+    /// Constructs a polygon.
     /// </summary>
     /// <param name="vertices">The vertices to insert into this polygon.</param>
-    /// <exception cref="InvalidOperationException">thrown when the passed vertices span length is unsupported.</exception>
-    public Polygon16(Span<Vector2> vertices)
+    /// <exception cref="ArgumentException">thrown when the passed vertices span length is unsupported.</exception>
+    public Polygon4(Span<Vector2> vertices)
     {
         if(vertices.Length > MaxVertices)
         {
-            throw new ArgumentException($"Polygon16 cannot store '{vertices.Length}' amount of vertices. The amount of vertices length must be between '{0}' and '{MaxVertices}'");
+            throw new ArgumentException($"Polygon4 cannot store '{vertices.Length}' amount of vertices. The amount of vertices length must be between '{0}' and '{MaxVertices}'");
         }
 
         verticesCount = System.Math.Min(vertices.Length, MaxVertices);

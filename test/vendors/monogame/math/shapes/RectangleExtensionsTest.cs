@@ -1,8 +1,8 @@
-using Howl.Vendors.MonoGame.Math;
+using Howl.Vendors.MonoGame.Math.Shapes;
 
 using Xunit;
 
-namespace Howl.Test.Vendors.MonoGame.Math;
+namespace Howl.Test.Vendors.MonoGame.Math.Shapes;
 
 public class RectangleExtensionsTest
 {
@@ -14,7 +14,7 @@ public class RectangleExtensionsTest
         int width = 3;
         int height = 4;
         Microsoft.Xna.Framework.Rectangle rectangle = new(x,y,width,height);
-        Howl.Math.Rectangle result = rectangle.ToHowl();
+        Howl.Math.Shapes.Rectangle result = rectangle.ToHowl();
 
         Assert.Equal(x, result.X);
         Assert.Equal(y, result.Y);
@@ -29,7 +29,7 @@ public class RectangleExtensionsTest
         float y = 2;
         float width = 3;
         float height = 4;
-        Howl.Math.Rectangle rectangle = new(x,y,width,height);
+        Howl.Math.Shapes.Rectangle rectangle = new(x,y,width,height);
         Microsoft.Xna.Framework.Rectangle result = rectangle.ToMonoGame();
 
         Assert.Equal(x, result.X);
