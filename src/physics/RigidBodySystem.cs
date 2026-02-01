@@ -8,7 +8,7 @@ namespace Howl.Physics;
 
 public static class RigidBodySystems
 {
-    public static FixedUpdateSystem MovementSystem(ComponentRegistry componentRegistry)
+    public static FixedUpdateSystem MovementSystem(ComponentRegistry componentRegistry, RigidbodySystemState state)
     => deltaTime =>
     {
         GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
@@ -30,6 +30,14 @@ public static class RigidBodySystems
                 case GenIndexResult.StaleGenIndex:
                     throw new StaleGenIndexException(genIndex);
             }
+
+            
+            if(rigidbody.Mode == RigidBodyMode.Dynamic)
+            {
+                // apply gravity.
+                rigidbody.ImpulseForce(state.GravityDirection * state.Gravity * deltaTime);
+            }
+
 
             // force = mass * acceleration.
             // acceleration = force / mass.
@@ -73,12 +81,12 @@ public static class RigidBodySystems
             float j = -(1f + e) * relative;
             j /= (1f/rigidbodyA.Mass) + (1f/rigidbodyB.Mass);
 
-            if(collision.ColliderAParameters.Mode != ColliderMode.Kinematic)
+            if(rigidbodyA.Mode == RigidBodyMode.Dynamic)
             {
                 rigidbodyA.ImpulseForce(-(j / rigidbodyA.Mass * collision.Normal));            
             }
 
-            if(collision.ColliderBParameters.Mode != ColliderMode.Kinematic)
+            if(rigidbodyB.Mode == RigidBodyMode.Dynamic)
             {
                 rigidbodyB.ImpulseForce(j / rigidbodyB.Mass * collision.Normal);
             }

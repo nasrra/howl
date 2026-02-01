@@ -14,7 +14,7 @@ public struct RigidBody
     public const float MaxDensity = 22.6f; // osmium density.
 
     public const float MinRestitution = 0f;
-    public const float MaxRestitution = 1f;
+    public const float MaxRestitution = 10f;
 
     private Vector2 force;
     public readonly Vector2 Force => force;
@@ -37,7 +37,15 @@ public struct RigidBody
     private float area;
     public readonly float Area => area;
 
-    public bool IsStatic;
+    public RigidBodyMode Mode;
+
+    public RigidBody(float restitution, float density, float area, RigidBodyMode rigidBodyMode)
+    {
+        SetRestitution(restitution);
+        SetDensity(density);
+        SetArea(area);
+        Mode = rigidBodyMode;
+    }
 
     public void SetDensity(float density)
     {
@@ -96,13 +104,5 @@ public struct RigidBody
     public void ClearRotationalVelocity()
     {
         rotationalVelocity = 0;
-    }
-
-    public RigidBody(float restitution, float density, float area, bool isStatic)
-    {
-        SetRestitution(restitution);
-        SetDensity(density);
-        SetArea(area);
-        IsStatic = isStatic;
     }
 }
