@@ -13,12 +13,12 @@ public sealed class CollisionSystemState : IDisposable
     /// <summary>
     /// Gets and sets the debug stopwatch for timing a collision system intersect step.
     /// </summary>
-    public Stopwatch IntersectStep;
+    public Stopwatch IntersectStepStopwatch;
 
     /// <summary>
-    /// Gets and sets the debug stopewatch for timing a collision system resolution step.
+    /// Gets and sets the debug stopwatch for timing a collision system resolution step.
     /// </summary>
-    public Stopwatch ResolutionStep;
+    public Stopwatch ResolutionStepStopwatch;
 
     /// <summary>
     /// Gets and sets the collision manifold for.
@@ -82,8 +82,8 @@ public sealed class CollisionSystemState : IDisposable
 
     public CollisionSystemState()
     {
-        IntersectStep       = new Stopwatch();
-        ResolutionStep      = new Stopwatch();
+        IntersectStepStopwatch       = new Stopwatch();
+        ResolutionStepStopwatch      = new Stopwatch();
         CollisionManifold   = new(CollisionManifoldInitialCapacity);
         
         SolidColliderColour             = Colour.Green;
@@ -126,8 +126,8 @@ public sealed class CollisionSystemState : IDisposable
 
         if (disposing)
         {
-            IntersectStep = null;
-            ResolutionStep = null;
+            IntersectStepStopwatch = null;
+            ResolutionStepStopwatch = null;
             CollisionManifold.Clear();
             CollisionManifold = null;
         }

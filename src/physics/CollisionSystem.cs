@@ -50,15 +50,15 @@ public static class CollisionSystem
             state.CollisionManifold.Clear();
         }
         
-        state.IntersectStep.Restart();
+        state.IntersectStepStopwatch.Restart();
         FindCircleCollisions(componentRegistry, state);
         FindRectangleCollisions(componentRegistry, state);
         FindRectangleToCircleCollisions(componentRegistry, state);
-        state.IntersectStep.Stop();
+        state.IntersectStepStopwatch.Stop();
 
-        state.ResolutionStep.Restart();
+        state.ResolutionStepStopwatch.Restart();
         ResolveCollisions(componentRegistry, state);
-        state.ResolutionStep.Stop();            
+        state.ResolutionStepStopwatch.Stop();            
     }
 
     /// <summary>

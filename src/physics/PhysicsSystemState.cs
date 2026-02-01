@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Howl.ECS;
 
 namespace Howl.Physics;
@@ -14,6 +15,16 @@ public sealed class PhysicsSystemState : IDisposable
     /// Gets and sets the RigidbodySystemState.
     /// </summary>
     public RigidbodySystemState RigidbodySystemState;
+
+    /// <summary>
+    /// Gets and sets the debug stopwatch for timing a physics system fixed-update substep.
+    /// </summary>
+    public Stopwatch FixedUpdateSubStepStopwatch;
+
+    /// <summary>
+    /// Gets and sets the debug stopwatch for timing a physics system fixed-update step.
+    /// </summary>
+    public Stopwatch FixedUpdateStepStopwatch;
 
     /// <summary>
     /// Gets and sets whether or not this instance has been diposed.
@@ -39,6 +50,8 @@ public sealed class PhysicsSystemState : IDisposable
 
         CollisionSystemState = collisionSystemState;
         RigidbodySystemState = rigidbodySystemState;
+        FixedUpdateSubStepStopwatch = new();
+        FixedUpdateStepStopwatch = new();
     }
 
     /// <summary>

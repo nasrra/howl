@@ -38,19 +38,25 @@ public static class PhysicsSystem
     /// <param name="deltaTime"></param>
     public static void FixedUpdateStep(ComponentRegistry componentRegistry, PhysicsSystemState state, float deltaTime, int subSteps)
     {
+        state.FixedUpdateStepStopwatch.Restart();
+        
         deltaTime /= (float)subSteps;
 
         for(int i = 0; i < subSteps; i++)
-        {            
+        {   
+            state.FixedUpdateSubStepStopwatch.Restart();
             RigidBodySystem.MovementStep(componentRegistry, state.RigidbodySystemState, deltaTime);
             CollisionSystem.FixedUpdateStep(componentRegistry, state.CollisionSystemState, deltaTime);
             RigidBodySystem.ResolveCollisionsStep(componentRegistry, state.CollisionSystemState, deltaTime);
+            state.FixedUpdateSubStepStopwatch.Stop();
         }
 
         // clear added forces at the end so that the forces are fully
         // applied over the course of the fixed update step, and not 
         // sub-step dependent.
         RigidBodySystem.ClearForces(componentRegistry);
+
+        state.FixedUpdateStepStopwatch.Stop();
     }
 
     /// <summary>
