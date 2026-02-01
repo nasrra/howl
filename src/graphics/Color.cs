@@ -13,7 +13,12 @@ public struct Colour
 
     public static Colour Blue => new Colour(0,0,255,255);
 
+    public static Colour Orange => new Colour(255,150,0,255);
+
+    public static Colour LightBlue => new Colour(0,150,255,255);
+
     public static Colour Transparent => new Colour(0,0,0,0);
+
 
     /// <summary>
     /// Gets and sets the red channel component.

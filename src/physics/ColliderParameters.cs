@@ -5,12 +5,11 @@ namespace Howl.Physics;
 
 public struct ColliderParameters
 {
-    public bool IsTrigger;
-    public bool IsStatic;
+    public ColliderMode Mode;
+    // public readonly bool IsStatic;
 
-    public ColliderParameters(bool isTrigger, bool isStatic)
+    public ColliderParameters(ColliderMode mode)
     {
-        IsTrigger = isTrigger;
-        IsStatic = isStatic;
+        Mode = mode;
     }
 }

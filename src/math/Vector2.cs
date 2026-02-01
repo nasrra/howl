@@ -71,7 +71,7 @@ public struct Vector2
     }
 
     /// <summary>
-    /// Divides the left-hand side vector by the right-hand side.
+    /// Divides the left-hand side vector by the right-hand side value.
     /// </summary>
     /// <param name="lhs">The left-hand side vector.</param>
     /// <param name="rhs">The right-hand side value.</param>
@@ -80,6 +80,18 @@ public struct Vector2
     public static Vector2 operator /(Vector2 lhs, float rhs)
     {
         return new Vector2(lhs.X/rhs, lhs.Y/rhs);
+    }
+
+    /// <summary>
+    /// Divides the left-hand side value by the right-hand side vector.
+    /// </summary>
+    /// <param name="lhs">The left-hand side vector.</param>
+    /// <param name="rhs">The right-hand side value.</param>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 operator /(float lhs, Vector2 rhs)
+    {
+        return new Vector2(lhs/rhs.X, lhs/rhs.Y);
     }
 
     /// <summary>
@@ -104,6 +116,18 @@ public struct Vector2
     public static Vector2 operator *(Vector2 lhs, float rhs)
     {
         return new Vector2(lhs.X*rhs, lhs.Y*rhs);
+    }
+
+    /// <summary>
+    /// Multiples the left-hand side value by the right-hand vector.
+    /// </summary>
+    /// <param name="lhs">The left-hand side value.</param>
+    /// <param name="rhs">The right-hand side vector.</param>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 operator *(float lhs, Vector2 rhs)
+    {
+        return new Vector2(lhs*rhs.X, lhs*rhs.Y);
     }
 
     /// <summary>

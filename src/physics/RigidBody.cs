@@ -16,14 +16,14 @@ public struct RigidBody
     public const float MinRestitution = 0f;
     public const float MaxRestitution = 1f;
 
-    private Vector2 position;
-    public readonly Vector2 Position => position;
+    private Vector2 force;
+    public readonly Vector2 Force => force;
 
     private Vector2 linearVelocity;
     public readonly Vector2 LinearVelocity => linearVelocity;
 
-    private Vector2 rotationalVelocity;
-    public readonly Vector2 RotationalVelocity => rotationalVelocity;
+    private float rotationalVelocity;
+    public readonly float RotationalVelocity => rotationalVelocity;
 
     private float density;
     public readonly float Density => density;
@@ -41,24 +41,20 @@ public struct RigidBody
 
     public void SetDensity(float density)
     {
-#if DEBUG
         if(density < MinDensity || density > MaxDensity)
         {
-            throw new InvalidOperationException($"Cannot create a RigidBody with a density of '{density}'; Min density is '{MinDensity}' and Max density is '{MaxDensity}'");
+            throw new ArgumentException($"Cannot set density to '{density}'; Min density is '{MinDensity}' and Max density is '{MaxDensity}'");
         }
-#endif
         this.density = density;
         mass = CalculateMass(area, this.density);
     }
 
     public void SetArea(float area)
     {
-#if DEBUG
         if(area < MinBodySize || area > MaxBodySize)
         {
-            throw new InvalidOperationException($"Cannot create a RigidBody with a area of '{area}'; Max body size is '{MaxBodySize}' and Min body size is '{MinBodySize}'");
+            throw new ArgumentException($"Cannot set area to '{area}'; Max body size is '{MaxBodySize}' and Min body size is '{MinBodySize}'");
         }
-#endif
         this.area = area;
         mass = CalculateMass(this.area, density);
     }
@@ -70,24 +66,40 @@ public struct RigidBody
 
     public void SetRestitution(float restitution)
     {
-#if DEBUG
         if(restitution < MinRestitution || restitution > MaxRestitution)
         {
-            throw new InvalidOperationException($"Cannot create a RigidBody with a restitution of '{restitution}'; Max restitution is '{MaxRestitution}' and Min restitution is '{MinRestitution}'");
+            throw new ArgumentException($"Cannot set restitution to '{restitution}'; Max restitution is '{MaxRestitution}' and Min restitution is '{MinRestitution}'");
         }
-#endif
         this.restitution = restitution;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public void Move(Vector2 movement)
+    public void AddForce(Vector2 force)
     {
-        position += movement;
+        this.force += force;    
     }
 
-    public RigidBody(Vector2 position, float restitution, float density, float area, bool isStatic)
+    public void ImpulseForce(Vector2 force)
     {
-        this.position = position;
+        linearVelocity += force;
+    }
+
+    public void ClearForces()
+    {
+        force = Vector2.Zero;
+    }
+
+    public void ClearLinearVelocity()
+    {
+        linearVelocity = Vector2.Zero;
+    }
+
+    public void ClearRotationalVelocity()
+    {
+        rotationalVelocity = 0;
+    }
+
+    public RigidBody(float restitution, float density, float area, bool isStatic)
+    {
         SetRestitution(restitution);
         SetDensity(density);
         SetArea(area);

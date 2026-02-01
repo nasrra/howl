@@ -8,17 +8,10 @@ using Howl.Graphics;
 using Howl.Math;
 using Howl.Math.Shapes;
 
-namespace Howl.Physics.Systems;
+namespace Howl.Physics;
 
-public static class PhysicsSystems
+public static class CollisionSystem
 {
-    public readonly static Stopwatch IntersectStep = new Stopwatch();
-    public readonly static Stopwatch ResolutionStep = new Stopwatch();
-
-    private static List<Collision> CollisionManifold = new(4096);
-
-    private static Colour debugColour = Colour.Green;
-
     public static void RegisterComponents(ComponentRegistry componentRegistry)
     {
         componentRegistry.RegisterComponent<CircleCollider>();
@@ -26,37 +19,48 @@ public static class PhysicsSystems
         componentRegistry.RegisterComponent<RigidBody>();
     }
 
-    public static FixedUpdateSystem FixedUpdateSystem(ComponentRegistry componentRegistry)
+    public static FixedUpdateSystem FixedUpdateSystem(ComponentRegistry componentRegistry, CollisionSystemState state)
+    => deltaTime => 
     {
-        return dt =>
-        {  
-            if(CollisionManifold.Count > 0)
-            {
-                CollisionManifold.Clear();
-            }
-            
-            IntersectStep.Restart();
-            FindCircleCollisions(componentRegistry);
-            FindRectangleCollisions(componentRegistry);
-            FindRectangleToCircleCollisions(componentRegistry);
-            IntersectStep.Stop();
-
-            ResolutionStep.Restart();
-            ResolveCollisions(componentRegistry);
-            ResolutionStep.Stop();    
-        };
-    }
-
-    public static DrawSystem DebugDrawSystem(ComponentRegistry componentRegistry, IRenderer renderer)
-    {
-        return dy =>
+        if (state.IsDisposed)
         {
-            DebugDrawCircleColliders(componentRegistry, renderer);
-            DebugDrawRectangleColliders(componentRegistry, renderer);
-        };
-    }
+            throw new ObjectDisposedException("Collision System cannot operate on/with a disposed Collision System State");
+        }
 
-    private static void FindCircleCollisions(ComponentRegistry componentRegistry)
+        if(state.CollisionManifold.Count > 0)
+        {
+            state.CollisionManifold.Clear();
+        }
+        
+        state.IntersectStep.Restart();
+        FindCircleCollisions(componentRegistry, state);
+        FindRectangleCollisions(componentRegistry, state);
+        FindRectangleToCircleCollisions(componentRegistry, state);
+        state.IntersectStep.Stop();
+
+        state.ResolutionStep.Restart();
+        ResolveCollisions(componentRegistry, state);
+        state.ResolutionStep.Stop();            
+    };
+
+    public static DrawSystem DebugDrawSystem(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
+    => deltaTime =>
+    {
+        if (state.IsDisposed)
+        {
+            throw new ObjectDisposedException("Collision System cannot operate on/with a disposed Collision System State");
+        }
+    
+        DebugDrawCircleColliders(componentRegistry, renderer, state);
+        DebugDrawRectangleColliders(componentRegistry, renderer, state);            
+    };
+
+    /// <summary>
+    /// Finds all intersecting circles in the component registry and adds it to the collision systems collision manifold.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <exception cref="DenseNotAllocatedException"></exception>
+    private static void FindCircleCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
@@ -108,10 +112,12 @@ public static class PhysicsSystems
                 {
 
                     // add the collision to the collisions manifold for later resolution.
-                    CollisionManifold.Add(
+                    state.CollisionManifold.Add(
                         new Collision(
                             genIndexA, 
-                            genIndexB, 
+                            genIndexB,
+                            colliderA.Parameters,
+                            colliderB.Parameters, 
                             normal, 
                             depth
                         )
@@ -122,7 +128,7 @@ public static class PhysicsSystems
         }
     }
 
-    private static void FindRectangleCollisions(ComponentRegistry componentRegistry)
+    private static void FindRectangleCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
@@ -133,7 +139,7 @@ public static class PhysicsSystems
 
             // get the current collider.
             ref DenseEntry<RectangleCollider> denseEntryA = ref denseEntries[i];
-            ref RectangleCollider rectangleA = ref denseEntryA.Value;
+            ref RectangleCollider colliderA = ref denseEntryA.Value;
             colliders.GetGenIndex(denseEntryA.sparseIndex, out GenIndex genIndexA);
             
             // make sure the collider has a transform component.
@@ -150,7 +156,7 @@ public static class PhysicsSystems
 
                 // get the other collider to check intersection against.
                 ref DenseEntry<RectangleCollider> denseEntryB = ref denseEntries[j];
-                ref RectangleCollider rectangleB = ref denseEntryB.Value;
+                ref RectangleCollider colliderB = ref denseEntryB.Value;
                 colliders.GetGenIndex(denseEntryB.sparseIndex, out GenIndex genIndexB);                
                 
                 // make sure this collider has a transform component.
@@ -164,17 +170,19 @@ public static class PhysicsSystems
 
                 // check if the two circles intersect.
                 if(SAT.Intersect(
-                    PolygonRectangle.Transform(rectangleA.Shape,transformRefA.Value),
-                    PolygonRectangle.Transform(rectangleB.Shape,transformRefB.Value),
+                    PolygonRectangle.Transform(colliderA.Shape,transformRefA.Value),
+                    PolygonRectangle.Transform(colliderB.Shape,transformRefB.Value),
                     out Vector2 normal,
                     out float depth
                 ))
                 {
                     // add the collision to the collisions manifold for later resolution.
-                    CollisionManifold.Add(
+                    state.CollisionManifold.Add(
                         new Collision(
                             genIndexA, 
-                            genIndexB, 
+                            genIndexB,
+                            colliderA.Parameters,
+                            colliderB.Parameters,
                             normal, 
                             depth
                         )
@@ -184,7 +192,7 @@ public static class PhysicsSystems
         }        
     }
 
-    private static void FindRectangleToCircleCollisions(ComponentRegistry componentRegistry)
+    private static void FindRectangleToCircleCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         
@@ -236,10 +244,12 @@ public static class PhysicsSystems
                 ))
                 {
                     // add the collision to the collisions manifold for later resolution.
-                    CollisionManifold.Add(
+                    state.CollisionManifold.Add(
                         new Collision(
                             rectangleGenIndex,
                             circleGenIndex,
+                            rectangle.Parameters,
+                            circle.Parameters,
                             normal, 
                             depth
                         )
@@ -249,10 +259,10 @@ public static class PhysicsSystems
         }
     }
 
-    private static void ResolveCollisions(ComponentRegistry componentRegistry)
+    private static void ResolveCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        Span<Collision> span = CollectionsMarshal.AsSpan(CollisionManifold);
+        Span<Collision> span = CollectionsMarshal.AsSpan(state.CollisionManifold);
 
         for(int i = 0; i < span.Length; i++)
         {
@@ -273,21 +283,37 @@ public static class PhysicsSystems
                     throw new StaleGenIndexException(collision.ColliderB);
             }
 
-            Vector2 displacement = collision.Normal * collision.Depth * 0.5f;
+            if(collision.ColliderAParameters.Mode == ColliderMode.Kinematic)
+            {
+                // separate only collider B if A is Kinematic.
+                Vector2 displacement = collision.Normal * collision.Depth * 0.5f;
+                transformRefB.Value.Position += displacement;
+            }
+            else if(collision.ColliderBParameters.Mode == ColliderMode.Kinematic)
+            {
+                // separate only collider A if B is Kinematic.
+                Vector2 displacement = collision.Normal * collision.Depth;                
+                transformRefA.Value.Position -= displacement;
+            }
+            else
+            {
+                // separate both colliders if they are both dynamic.
+                Vector2 displacement = collision.Normal * collision.Depth * 0.5f;
+                transformRefA.Value.Position -= displacement;
+                transformRefB.Value.Position += displacement;    
+            }
 
-            transformRefA.Value.Position -= displacement;
-            transformRefB.Value.Position += displacement;            
         }
     }
 
-    private static void DebugDrawCircleColliders(ComponentRegistry componentRegistry, IRenderer renderer)
+    private static void DebugDrawCircleColliders(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<CircleCollider> colliders = componentRegistry.Get<CircleCollider>();
         Span<DenseEntry<CircleCollider>> denseEntries = colliders.GetDenseAsSpan();
         for(int i = 0; i < denseEntries.Length; i++)
         {
-            DenseEntry<CircleCollider> denseEntry = denseEntries[i];
+            ref DenseEntry<CircleCollider> denseEntry = ref denseEntries[i];
             ref CircleCollider collider = ref denseEntry.Value;
             colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
@@ -300,11 +326,12 @@ public static class PhysicsSystems
                     throw new StaleGenIndexException(genIndex);
             } 
 
-            renderer.DrawWireframeShape(transformRef.Value, new CircleShape(collider.Shape, debugColour, DrawMode.Wireframe));
+            Colour drawColour = state.GetColliderColour(collider.Parameters);
+            renderer.DrawWireframeShape(transformRef.Value, new CircleShape(collider.Shape, drawColour, DrawMode.Wireframe));
         }
     }
 
-    private static void DebugDrawRectangleColliders(ComponentRegistry componentRegistry, IRenderer renderer)
+    private static void DebugDrawRectangleColliders(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
@@ -313,7 +340,7 @@ public static class PhysicsSystems
         
         for(int i = 0; i < denseEntries.Length; i++)
         {
-            DenseEntry<RectangleCollider> denseEntry = denseEntries[i];
+            ref DenseEntry<RectangleCollider> denseEntry = ref denseEntries[i];
             ref RectangleCollider collider = ref denseEntry.Value;
             colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
@@ -339,32 +366,10 @@ public static class PhysicsSystems
                 transformRef.Value, 
                 new Polygon4Shape(
                     new Polygon4(vertices), 
-                    debugColour, 
+                    state.GetColliderColour(collider.Parameters), 
                     Vector2.Zero // note that origin is zero, as polygon rectangle does not have an origin field at all.
                 )
             );
         }
     }
-
-    // private static void SyncCircleRigidBodyTransforms(ComponentRegistry componentRegistry)
-    // {
-    //     GenIndexList<CircleRigidBody> rigidBodyComponents = componentRegistry.Get<CircleRigidBody>();
-    //     Span<DenseEntry<CircleRigidBody>> denseEntries = rigidBodyComponents.GetDenseAsSpan();
-
-    //     GenIndexList<Transform> transformComponents = componentRegistry.Get<Transform>();
-
-    //     for(int i = 0; i < denseEntries.Length; i++)
-    //     {
-    //         ref DenseEntry<CircleRigidBody> denseEntry = ref denseEntries[i];
-    //         ref CircleRigidBody rigidBody = ref denseEntry.Value;
-    //         rigidBodyComponents.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
-
-    //         if(transformComponents.GetDenseRef(genIndex, out Ref<Transform> transformRef) == GenIndexResult.Success)
-    //         {
-    //             // sync the position.
-
-    //             transformRef.Value.Position = rigidBody.RigidBody.Position;
-    //         }
-    //     } 
-    // }
 }
