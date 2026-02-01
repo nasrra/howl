@@ -68,7 +68,7 @@ public struct Rectangle
     public Vector2 BottomRight => new(X+Width, Y-Height);
 
     /// <summary>
-    /// Creates a new Rectangle instance.
+    /// Constructs a Rectangle.
     /// </summary>
     /// <param name="x">The x-coordinate of the origin point.</param>
     /// <param name="y">The y-coordinate of the origin point.</param>
@@ -81,6 +81,20 @@ public struct Rectangle
         Y = y;
         Width = width;
         Height = height;
+    }
+
+    /// <summary>
+    /// Constructs a Rectangle.
+    /// </summary>
+    /// <param name="min">The minimum vector.</param>
+    /// <param name="max">The maximum vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Rectangle(Vector2 min, Vector2 max)
+    {
+        X = min.X;
+        Y = max.Y;
+        Width = max.X - min.X;
+        Height = max.Y - min.Y;
     }
 
     /// <summary>

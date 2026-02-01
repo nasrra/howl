@@ -63,7 +63,7 @@ public unsafe struct PolygonRectangle
                 float left = x;
                 float top = y;
                 float right = x+width;
-                float bottom = y-width;
+                float bottom = y-height;
 
                 // top left.
                 xDst[0] = left;
@@ -137,5 +137,54 @@ public unsafe struct PolygonRectangle
     public Vector2 GetCentroid()
     {
         return ShapeUtils.GetCentroid(GetVerticesXAsSpan(), GetVerticesYAsSpan());
+    }
+
+    /// <summary>
+    /// Gets the Axis-Aligned-Bounding-Box of this rectangle.
+    /// </summary>
+    /// <returns>The calculated AABB.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public AABB GetAABB()
+    {
+        float minX = float.MaxValue;
+        float minY = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxY = float.MinValue;
+
+        ReadOnlySpan<float> verticesX = GetVerticesXAsSpan();
+        ReadOnlySpan<float> verticesY = GetVerticesYAsSpan();
+
+        for(int i = 0; i < MaxVertices; i++)
+        {
+            float x = verticesX[i];
+            if (x < minX)
+            {
+                minX = x;
+            }
+            if(x > maxX)
+            {
+                maxX = x;
+            }
+        }
+
+        for(int i = 0; i < MaxVertices; i++)
+        {
+            float y = verticesY[i];
+            if(y < minY)
+            {
+                minY = y;
+            }
+            if(y > maxY)
+            {
+                maxY = y;
+            }
+        }
+
+        return new(
+            minX,
+            minY,
+            maxX,
+            maxY
+        );
     }
 }

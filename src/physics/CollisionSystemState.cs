@@ -45,6 +45,11 @@ public sealed class CollisionSystemState : IDisposable
     public Colour TriggerColliderTriggeredColour;
 
     /// <summary>
+    /// Gets and sets the debug draw colour for AABB's.
+    /// </summary>
+    public Colour AABBColour;
+
+    /// <summary>
     /// Gets and sets the fallback debug draw colour for colliders.
     /// </summary>
     public Colour FallbackColliderColour;
@@ -54,20 +59,42 @@ public sealed class CollisionSystemState : IDisposable
     /// </summary>
     public Colour InactiveColliderColour;
 
+    /// <summary>
+    /// Gets and sets whether or not to draw collider wireframes.
+    /// </summary>
+    public bool DrawColliderWireframes;
+
+    /// <summary>
+    /// Gets and sets whether or not to draw collider AABB wireframes.
+    /// </summary>
+    public bool DrawAABBWireframes;
+
+    /// <summary>
+    /// Gets and sets whether or not this instance has been disposed.
+    /// </summary>
     private bool disposed;
+
+    /// <summary>
+    /// Gets whether or not this instance has been disposed.
+    /// </summary>
     public bool IsDisposed => disposed;
 
     public CollisionSystemState()
     {
-        IntersectStep = new Stopwatch();
-        ResolutionStep = new Stopwatch();
-        CollisionManifold = new(CollisionManifoldInitialCapacity);
+        IntersectStep       = new Stopwatch();
+        ResolutionStep      = new Stopwatch();
+        CollisionManifold   = new(CollisionManifoldInitialCapacity);
+        
         SolidColliderColour             = Colour.Green;
         KinematicColliderColour         = Colour.Orange;
         TriggerColliderColour           = Colour.LightBlue;
         TriggerColliderTriggeredColour  = Colour.Red;
+        AABBColour                      = new Colour(Colour.Pink.R, Colour.Pink.G, Colour.Pink.B, 50);
         FallbackColliderColour          = Colour.White;
-        InactiveColliderColour          = Colour.Black;    
+        InactiveColliderColour          = Colour.Black;
+
+        DrawColliderWireframes = false;
+        DrawAABBWireframes = false;
     }
 
     public void Dispose()

@@ -5,9 +5,10 @@ namespace Howl.Math.Shapes;
 
 public struct Circle
 {
-    private float radius;
-
-    public readonly float Radius => radius;
+    /// <summary>
+    /// Gets and sets the radius.
+    /// </summary>
+    public float Radius;
 
     /// <summary>
     /// The x-positional origin value.
@@ -33,21 +34,36 @@ public struct Circle
     public Circle(float x, float y, float radius)
     {
         X = x;
-        Y =y;
-        this.radius = radius;
+        Y = y;
+        Radius = radius;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public void SetRadius(float radius)
-    {
-        this.radius = radius;
-    }
-
+    /// <summary>
+    /// Constructs a Circle by transforming an existing circle.
+    /// </summary>
+    /// <param name="circle">The circle to transform.</param>
+    /// <param name="transform">The transform data.</param>
+    /// <returns>The resultant circle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Circle Transform(Circle circle, Transform transform)
     {
         Vector2 origin = Vector2.Transform(circle.X, circle.Y, transform);
         float radius = circle.Radius * MathF.Max(transform.Scale.X, transform.Scale.Y); 
         return new Circle(origin.X, origin.Y, radius);
+    }
+
+    /// <summary>
+    /// Gets the Axis-Aligned-Bounding-Box of this circle.
+    /// </summary>
+    /// <returns>The calculated AABB.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public AABB GetAABB()
+    {
+        return new(
+            X - Radius,
+            Y - Radius,
+            X + Radius,
+            Y + Radius
+        );
     }
 }

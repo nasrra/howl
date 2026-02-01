@@ -19,6 +19,8 @@ public struct Colour
 
     public static Colour Transparent => new Colour(0,0,0,0);
 
+    public static Colour Pink => new Colour(255,0,150,255);
+
 
     /// <summary>
     /// Gets and sets the red channel component.

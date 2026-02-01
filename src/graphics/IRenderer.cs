@@ -9,7 +9,7 @@ namespace Howl.Graphics;
 
 public interface IRenderer : IDisposable
 {
-    protected const float DefaultWireframeThickness = 4;
+    protected const float DefaultWireframeThickness = 2;
     protected const int DefaultCirclePointAmount = 16;
 
     /// <summary>
