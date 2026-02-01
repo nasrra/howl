@@ -6,15 +6,44 @@ using Howl.Math;
 
 namespace Howl.Physics;
 
-public static class RigidBodySystems
+public static class RigidBodySystem
 {
+    /// <summary>
+    /// Registers all necesarry components for this system.
+    /// </summary>
+    /// <param name="componentRegistry">The component registery to register to.</param>
+    public static void RegisterComponents(ComponentRegistry componentRegistry)
+    {
+        componentRegistry.RegisterComponent<RigidBody>();
+    }
+
+    /// <summary>
+    /// Creates a new movement step system instance.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <param name="state"></param>
+    /// <returns></returns>
     public static FixedUpdateSystem MovementSystem(ComponentRegistry componentRegistry, RigidbodySystemState state)
     => deltaTime =>
     {
-        GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
-        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>(); 
+        MovementStep(componentRegistry, state, deltaTime);
+        ClearForces(componentRegistry);
+    };
 
+    /// <summary>
+    /// The movement step for this rigid body system.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <param name="state"></param>
+    /// <param name="deltaTime"></param>
+    /// <exception cref="DenseNotAllocatedException"></exception>
+    /// <exception cref="StaleGenIndexException"></exception>
+    public static void MovementStep(ComponentRegistry componentRegistry, RigidbodySystemState state, float deltaTime)
+    {        
+        GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
         Span<DenseEntry<RigidBody>> denseEntries = rigidbodies.GetDenseAsSpan();
+
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>(); 
 
         for(int i = 0; i < denseEntries.Length; i++)
         {
@@ -45,13 +74,45 @@ public static class RigidBodySystems
             rigidbody.ImpulseForce(rigidbody.Force / rigidbody.Mass * deltaTime);
             transformRef.Value.Position += rigidbody.LinearVelocity * deltaTime;
             transformRef.Value.Rotation += rigidbody.RotationalVelocity * deltaTime;
-            rigidbody.ClearForces();
         } 
-    };
+    }
 
+    /// <summary>
+    /// Clears applied force of all rigidbodies.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    public static void ClearForces(ComponentRegistry componentRegistry)
+    {
+        GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
+        Span<DenseEntry<RigidBody>> denseEntries = rigidbodies.GetDenseAsSpan();
+        for(int i = 0; i < denseEntries.Length; i++)
+        {
+            ref DenseEntry<RigidBody> denseEntry = ref denseEntries[i];
+            ref RigidBody rigidbody = ref denseEntry.Value;
+            rigidbody.ClearForces();
+        }        
+    }
+
+    /// <summary>
+    /// Creates a new resolve collision step system instance.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <param name="state"></param>
+    /// <returns></returns>
     public static FixedUpdateSystem ResolveCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
     => deltaTime =>
     {
+        ResolveCollisionsStep(componentRegistry, state, deltaTime);
+    };
+
+    /// <summary>
+    /// The collision resolution step for this rigibody system.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <param name="state"></param>
+    /// <param name="deltaTime"></param>
+    public static void ResolveCollisionsStep(ComponentRegistry componentRegistry, CollisionSystemState state, float deltaTime)
+    {        
         GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
         Span<Collision> collisions = CollectionsMarshal.AsSpan(state.CollisionManifold);
 
@@ -91,5 +152,5 @@ public static class RigidBodySystems
                 rigidbodyB.ImpulseForce(j / rigidbodyB.Mass * collision.Normal);
             }
         }
-    };
+    }
 }

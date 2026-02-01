@@ -12,21 +12,39 @@ namespace Howl.Physics;
 
 public static class CollisionSystem
 {
+    /// <summary>
+    /// Registers all necessary components of this system.
+    /// </summary>
+    /// <param name="componentRegistry">The component registry to register to.</param>
     public static void RegisterComponents(ComponentRegistry componentRegistry)
     {
+        componentRegistry.ThrowIfDisposed();
+ 
         componentRegistry.RegisterComponent<CircleCollider>();
         componentRegistry.RegisterComponent<RectangleCollider>();
         componentRegistry.RegisterComponent<RigidBody>();
     }
 
+    /// <summary>
+    /// Creates a new FixedUpdateSystem instance.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <param name="state"></param>
+    /// <returns></returns>
     public static FixedUpdateSystem FixedUpdateSystem(ComponentRegistry componentRegistry, CollisionSystemState state)
-    => deltaTime => 
+    => deltaTime =>
     {
-        if (state.IsDisposed)
-        {
-            throw new ObjectDisposedException("Collision System cannot operate on/with a disposed Collision System State");
-        }
+        FixedUpdateStep(componentRegistry, state, deltaTime);
+    };
 
+    /// <summary>
+    /// FixedUpdate step for this collision system.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <param name="state"></param>
+    /// <param name="deltaTime"></param>
+    public static void FixedUpdateStep(ComponentRegistry componentRegistry, CollisionSystemState state, float deltaTime)
+    {        
         if(state.CollisionManifold.Count > 0)
         {
             state.CollisionManifold.Clear();
@@ -41,16 +59,30 @@ public static class CollisionSystem
         state.ResolutionStep.Restart();
         ResolveCollisions(componentRegistry, state);
         state.ResolutionStep.Stop();            
-    };
+    }
 
+    /// <summary>
+    /// Creates a new DrawSystem instance.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <param name="renderer"></param>
+    /// <param name="state"></param>
+    /// <returns></returns>
+    /// <exception cref="ObjectDisposedException"></exception>
     public static DrawSystem DrawSystem(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
     => deltaTime =>
     {
-        if (state.IsDisposed)
-        {
-            throw new ObjectDisposedException("Collision System cannot operate on/with a disposed Collision System State");
-        }
+        DrawStep(componentRegistry, renderer, state, deltaTime);
+    };
 
+    /// <summary>
+    /// Draw step for this Collision System.
+    /// </summary>
+    /// <param name="componentRegistry"></param>
+    /// <param name="renderer"></param>
+    /// <param name="state"></param>
+    public static void DrawStep(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state, float deltaTime)
+    {        
         if (state.DrawColliderWireframes)
         {            
             DebugDrawCircleColliders(componentRegistry, renderer, state);
@@ -62,8 +94,7 @@ public static class CollisionSystem
             DebugDrawCircleAABBs(componentRegistry, renderer, state);
             DebugDrawRectangleAABBs(componentRegistry, renderer, state);
         }
-
-    };
+    }
 
     /// <summary>
     /// Finds all intersecting circles in the component registry and adds it to the collision systems collision manifold.

@@ -18,11 +18,17 @@ public sealed class RigidbodySystemState : IDisposable
     /// </summary>
     public Vector2 GravityDirection = Vector2.Down;
 
-
-    /// 
-    /// Disposal.
-    /// 
-
+    /// <summary>
+    /// Throws an exception if this instance is disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException"></exception>
+    public void ThrowIfDisposed()
+    {
+        if (disposed)
+        {
+            throw new ObjectDisposedException($"{nameof(RigidbodySystemState)}");
+        }
+    }
 
     public void Dispose()
     {

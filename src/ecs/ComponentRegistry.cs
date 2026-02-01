@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Howl.ECS;
@@ -140,11 +141,18 @@ public class ComponentRegistry : IDisposable
         storage.Add(null);
     }
 
-
-    /// 
-    /// Disposal.
-    /// 
-
+    /// <summary>
+    /// Throws an exception if this instance is disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException"></exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void ThrowIfDisposed()
+    {
+        if (disposed)
+        {
+            throw new ObjectDisposedException($"{nameof(ComponentRegistry)}");
+        }
+    }
 
     public void Dispose()
     {

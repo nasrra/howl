@@ -4,6 +4,7 @@ using System;
 using Howl.ECS;
 using Howl.Math;
 using Howl.Graphics.Text;
+using System.Runtime.CompilerServices;
 
 namespace Howl.Graphics;
 
@@ -11,6 +12,11 @@ public interface IRenderer : IDisposable
 {
     protected const float DefaultWireframeThickness = 2;
     protected const int DefaultCirclePointAmount = 16;
+
+    /// <summary>
+    /// Gets whether or not this instance is disposed.
+    /// </summary>
+    public bool IsDisposed {get;}
 
     /// <summary>
     /// Gets the minimum back buffer resolution (horizontal and vertical) in pixels.
@@ -225,4 +231,17 @@ public interface IRenderer : IDisposable
     /// Sets the application window to be borderless fullscreen.
     /// </summary>
     internal void BorderlessFullscreen();
+
+    /// <summary>
+    /// Throws an exception if this instance is disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException"></exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void ThrowIfDisposed()
+    {
+        if (IsDisposed)
+        {
+            throw new ObjectDisposedException($"{nameof(IRenderer)}");
+        }
+    }
 }

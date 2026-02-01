@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Howl.Graphics;
 
 namespace Howl.Physics;
@@ -95,6 +96,19 @@ public sealed class CollisionSystemState : IDisposable
 
         DrawColliderWireframes = false;
         DrawAABBWireframes = false;
+    }
+
+    /// <summary>
+    /// Throws an exception if this instance is disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException"></exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void ThrowIfDisposed()
+    {
+        if (disposed)
+        {
+            throw new ObjectDisposedException($"{nameof(CollisionSystemState)}");
+        }
     }
 
     public void Dispose()
