@@ -143,10 +143,22 @@ public static class CollisionSystem
                 }
                 ref Transform transformB = ref transformRefB.Value;
 
-                // check if the two circles intersect.
+                // transform shapes.
+                Circle circleA = Circle.Transform(colliderA.Shape, transformA); 
+                Circle circleB = Circle.Transform(colliderB.Shape, transformB); 
+
+                // Broad Phase:
+                // perform an AABB check. 
+                if(AABB.Intersect(circleA.GetAABB(), circleB.GetAABB()) == false)
+                {
+                    continue;
+                }
+
+                // Narrow Phase:
+                // perform an SAT check.
                 if(SAT.Intersect(
-                    Circle.Transform(colliderA.Shape, transformA),
-                    Circle.Transform(colliderB.Shape, transformB),
+                    circleA,
+                    circleB,
                     out Vector2 normal,
                     out float depth
                 ))
@@ -209,10 +221,22 @@ public static class CollisionSystem
                         continue;
                 }
 
-                // check if the two circles intersect.
+                // transform shapes.
+                PolygonRectangle rectangleA = PolygonRectangle.Transform(colliderA.Shape,transformRefA.Value);
+                PolygonRectangle rectangleB = PolygonRectangle.Transform(colliderB.Shape,transformRefB.Value); 
+
+                // Broad Phase:
+                // perform an AABB check.
+                if(AABB.Intersect(rectangleA.GetAABB(), rectangleB.GetAABB()) == false)
+                {
+                    continue;
+                }
+
+                // Narrow Phase:
+                // perform an SAT check.
                 if(SAT.Intersect(
-                    PolygonRectangle.Transform(colliderA.Shape,transformRefA.Value),
-                    PolygonRectangle.Transform(colliderB.Shape,transformRefB.Value),
+                    rectangleA,
+                    rectangleB,
                     out Vector2 normal,
                     out float depth
                 ))
@@ -247,7 +271,7 @@ public static class CollisionSystem
         {
             // get the rectangle collider.
             ref DenseEntry<RectangleCollider> rectangleDenseEntry = ref rectangleDenseEntries[i];
-            ref RectangleCollider rectangle = ref rectangleDenseEntry.Value;
+            ref RectangleCollider rectangleCollider = ref rectangleDenseEntry.Value;
             rectangleColliders.GetGenIndex(rectangleDenseEntry.sparseIndex, out GenIndex rectangleGenIndex);
 
             // make sure the collider has a transform component
@@ -264,7 +288,7 @@ public static class CollisionSystem
                 
                 // get the circle to test intersect against.
                 ref DenseEntry<CircleCollider> circleDenseEntry = ref circleDenseEntries[j];
-                ref CircleCollider circle = ref circleDenseEntry.Value;
+                ref CircleCollider circleCollider = ref circleDenseEntry.Value;
                 circleColliders.GetGenIndex(circleDenseEntry.sparseIndex, out GenIndex circleGenIndex);
 
                 // make sure the collider has a transform component.
@@ -276,10 +300,22 @@ public static class CollisionSystem
                         throw new StaleGenIndexException(circleGenIndex);
                 }
 
-                // check if the two circles intersect.
+                // transform shapes.
+                PolygonRectangle rectangle = PolygonRectangle.Transform(rectangleCollider.Shape,rectangleTransformRef.Value); 
+                Circle circle = Circle.Transform(circleCollider.Shape,circleTransformRef.Value); 
+
+                // Broad Phase:
+                // perform AABB check.
+                if(AABB.Intersect(rectangle.GetAABB(), circle.GetAABB()) == false)
+                {
+                    continue;
+                }
+
+                // Narrow Phase:
+                // perfom SAT check.
                 if(SAT.Intersect(
-                    PolygonRectangle.Transform(rectangle.Shape,rectangleTransformRef.Value),
-                    Circle.Transform(circle.Shape,circleTransformRef.Value),
+                    rectangle,
+                    circle,
                     out Vector2 normal,
                     out float depth
                 ))
@@ -289,8 +325,8 @@ public static class CollisionSystem
                         new Collision(
                             rectangleGenIndex,
                             circleGenIndex,
-                            rectangle.Parameters,
-                            circle.Parameters,
+                            rectangleCollider.Parameters,
+                            circleCollider.Parameters,
                             normal, 
                             depth
                         )
