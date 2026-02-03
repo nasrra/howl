@@ -5,6 +5,11 @@ using System.Runtime.InteropServices;
 
 namespace Howl.ECS;
 
+// Note:
+// may want to store multiple component registers inside this.
+// each register could be similar to a unity 'scene' containing scene data.
+// each register would have their own gen index, so they can be loaded and unloaded.
+
 public class ComponentRegistry : IDisposable
 {
     private bool disposed = false;

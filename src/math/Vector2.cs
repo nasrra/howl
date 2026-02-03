@@ -5,6 +5,8 @@ namespace Howl.Math;
 
 public struct Vector2
 {
+    public static Vector2 MaxValue  = new(float.MaxValue, float.MaxValue);
+    public static Vector2 MinValue  = new(float.MinValue, float.MinValue);
     public static Vector2 NaN       = new(float.NaN, float.NaN);
     public static Vector2 Zero      = new(0,0);
     public static Vector2 One       = new(1,1);
@@ -437,6 +439,106 @@ public struct Vector2
     public static Vector2 InvertX(Vector2 vector)
     {
         return new Vector2(-vector.X, vector.Y);
+    }
+
+    /// <summary>
+    /// Constructs a minimum-component vector from this and another vector.
+    /// </summary>
+    /// <param name="vector">The vector to compare to.</param>
+    /// <returns>The minimum-component vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 MinComponent(Vector2 vector)
+    {
+        return MinComponent(this, vector);                
+    }
+
+    /// <summary>
+    /// Constructs a minimum-component vector from two vectors.
+    /// </summary>
+    /// <param name="a">vector-a</param>
+    /// <param name="b">vector-b</param>
+    /// <returns>The minimum-component vector between the two.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 MinComponent(Vector2 a, Vector2 b)
+    {
+        float x = MathF.Min(a.X, b.X);
+        float y = MathF.Min(a.Y, b.Y);
+        return new (x,y);
+    }
+
+    /// <summary>
+    /// Gets the minimum vector between this and another vector.
+    /// </summary>
+    /// <param name="vector">The vector to compare to.</param>
+    /// <returns>The minimum vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 Min(Vector2 vector)
+    {
+        return Min(this, vector);
+    }
+
+    /// <summary>
+    /// Gets the minimum vector between two vectors.
+    /// </summary>
+    /// <param name="a">vector-a</param>
+    /// <param name="b">vector-b</param>
+    /// <returns>The minimum vector</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 Min(Vector2 a, Vector2 b)
+    {
+        return a.LengthSquared() < b.LengthSquared()
+        ? a
+        : b;
+    }
+
+    /// <summary>
+    /// Constructs a maximum-component vector from this and another vector.
+    /// </summary>
+    /// <param name="vector">The vector to compare to.</param>
+    /// <returns>The maximum-component vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 MaxComponent(Vector2 vector)
+    {
+        return MaxComponent(this, vector);    
+    }
+
+    /// <summary>
+    /// Constructs a maximum-component vector from two vectors.
+    /// </summary>
+    /// <param name="a">vector-a</param>
+    /// <param name="b">vector-b</param>
+    /// <returns>The maximum-component vector between the two.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 MaxComponent(Vector2 a, Vector2 b)
+    { 
+        float x = MathF.Max(a.X, b.X);
+        float y = MathF.Max(a.Y, b.Y);
+        return new(x,y);
+    }
+
+    /// <summary>
+    /// Gets the maximum vector between this and another vector.
+    /// </summary>
+    /// <param name="vector">The vector to compare to.</param>
+    /// <returns>The maximum vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 Max(Vector2 vector)
+    {
+        return Max(this, vector);
+    }
+
+    /// <summary>
+    /// Gets the maximum vector between two vectors.
+    /// </summary>
+    /// <param name="a">vector-a</param>
+    /// <param name="b">vector-b</param>
+    /// <returns>The maximum vector</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 Max(Vector2 a, Vector2 b)
+    {
+        return a.LengthSquared() > b.LengthSquared()
+        ? a
+        : b;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

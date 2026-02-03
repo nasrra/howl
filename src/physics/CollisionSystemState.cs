@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Howl.Graphics;
+using Howl.Physics.BVH;
 
 namespace Howl.Physics;
 
 public sealed class CollisionSystemState : IDisposable
 {
     private const int CollisionManifoldInitialCapacity = 4096;
+
+    /// <summary>
+    /// Gets the bounding volume hierarchy for a collision system.
+    /// </summary>
+    public BoundingVolumeHierarchy BVH;
 
     /// <summary>
     /// Gets and sets the debug stopwatch for timing a collision system intersect step.
@@ -71,6 +77,11 @@ public sealed class CollisionSystemState : IDisposable
     public bool DrawAABBWireframes;
 
     /// <summary>
+    /// Gets and sets whether or not to draw the BVH.
+    /// </summary>
+    public bool DrawBvh;
+
+    /// <summary>
     /// Gets and sets whether or not this instance has been disposed.
     /// </summary>
     private bool disposed;
@@ -94,8 +105,11 @@ public sealed class CollisionSystemState : IDisposable
         FallbackColliderColour          = Colour.White;
         InactiveColliderColour          = Colour.Black;
 
-        DrawColliderWireframes = false;
-        DrawAABBWireframes = false;
+        DrawColliderWireframes  = false;
+        DrawAABBWireframes      = false;
+        DrawBvh                 = false;
+
+        BVH = new();
     }
 
     /// <summary>

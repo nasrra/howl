@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Howl.ECS;
@@ -7,6 +8,7 @@ using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math;
 using Howl.Math.Shapes;
+using Howl.Physics.BVH;
 
 namespace Howl.Physics;
 
@@ -50,6 +52,10 @@ public static class CollisionSystem
             state.CollisionManifold.Clear();
         }
         
+        // reconstruct the bvh.
+        state.BVH.Clear();
+        ConstructBvhTree(componentRegistry, state.BVH);
+
         state.IntersectStepStopwatch.Restart();
         FindCircleCollisions(componentRegistry, state);
         FindRectangleCollisions(componentRegistry, state);
@@ -93,6 +99,11 @@ public static class CollisionSystem
         {
             DebugDrawCircleAABBs(componentRegistry, renderer, state);
             DebugDrawRectangleAABBs(componentRegistry, renderer, state);
+        }
+
+        if (state.DrawBvh)
+        {
+            DebugDrawBvh(renderer, state.BVH);
         }
     }
 
@@ -512,6 +523,56 @@ public static class CollisionSystem
                 new RectangleShape(
                     new Rectangle(aabb.Min, aabb.Max), 
                     state.AABBColour,
+                    DrawMode.Wireframe
+                )
+            );
+        }
+    }
+
+    private static void ConstructBvhTree(ComponentRegistry componentRegistry, BoundingVolumeHierarchy bvh)
+    {   
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
+        GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
+        Span<DenseEntry<CircleCollider>> denseEntries = circleColliders.GetDenseAsSpan();
+
+        for(int i = 0; i < denseEntries.Length; i++)
+        {
+            ref DenseEntry<CircleCollider> denseEntry = ref denseEntries[i];
+            ref CircleCollider collider = ref denseEntry.Value;
+            circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+
+            // ensure the collider has a transform component.
+            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            {
+                case GenIndexResult.DenseNotAllocated:
+                    throw new DenseNotAllocatedException(genIndex);
+                case GenIndexResult.StaleGenIndex:
+                    throw new StaleGenIndexException(genIndex);
+            } 
+
+            bvh.AddEntry(
+                new Entry(
+                    Circle.Transform(collider.Shape, transformRef).GetAABB(),
+                    genIndex, 
+                    (byte)collider.Parameters.Mode
+                )
+            );
+        }
+
+        bvh.Construct();
+    }
+
+    private static void DebugDrawBvh(IRenderer renderer, BoundingVolumeHierarchy bvh)
+    {
+        ReadOnlySpan<Leaf> leaves = bvh.GetLeavesAsReadOnlySpan();
+
+        for(int i = 0; i < leaves.Length; i++)
+        {
+            renderer.DrawWireframeShape(
+                new Transform(Vector2.Zero, Vector2.One, 0),
+                new RectangleShape(
+                    new Rectangle(leaves[i].AABB.Min, leaves[i].AABB.Max), 
+                    Colour.White,
                     DrawMode.Wireframe
                 )
             );

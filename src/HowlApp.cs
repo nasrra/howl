@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using Howl.ECS;
 using Howl.Graphics;
 using Howl.Input;
-using Microsoft.Xna.Framework;
 
 namespace Howl;
 

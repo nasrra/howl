@@ -234,4 +234,56 @@ public class Vector2Test
         transform   = new Transform(position, scale, rotation);
         Assert.Equal(new Vector2(1,1), vector.Transform(transform));
     }
+
+    [Fact]
+    public void MinComponent_Test()
+    {
+        Vector2 a = new(-2,12);
+        Vector2 b = new(33,-19);
+        Vector2 expected = new(-2,-19);
+
+        Assert.Equal(expected, Vector2.MinComponent(a,b));
+        Assert.Equal(expected, Vector2.MinComponent(b,a));
+        Assert.Equal(expected, a.MinComponent(b));
+        Assert.Equal(expected, b.MinComponent(a));
+    }
+
+    [Fact]
+    public void Min_Test()
+    {
+        Vector2 a = new (-33, 12);
+        Vector2 b = new (33, 99);
+        Vector2 expected = a;
+
+        Assert.Equal(expected, a.Min(b));
+        Assert.Equal(expected, b.Min(a));
+        Assert.Equal(expected, Vector2.Min(a,b));
+        Assert.Equal(expected, Vector2.Min(b,a));
+    }
+
+    [Fact]
+    public void MaxComponent_Test()
+    {
+        Vector2 a = new (-120, 120);
+        Vector2 b = new (33, 12);
+        Vector2 expected = new(33,120);
+
+        Assert.Equal(expected, Vector2.MaxComponent(a,b));
+        Assert.Equal(expected, Vector2.MaxComponent(b,a));
+        Assert.Equal(expected, a.MaxComponent(b));
+        Assert.Equal(expected, b.MaxComponent(a));        
+    }
+
+    [Fact]
+    public void Max_Test()
+    {
+        Vector2 a = new(12,-99);
+        Vector2 b = new(-10,100);
+        Vector2 expected = b;
+
+        Assert.Equal(expected, a.Max(b));
+        Assert.Equal(expected, b.Max(a));
+        Assert.Equal(expected, Vector2.Max(a,b));
+        Assert.Equal(expected, Vector2.Max(b,a));
+    }
 }

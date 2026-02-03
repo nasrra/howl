@@ -1,7 +1,13 @@
+using System;
+using System.Runtime.CompilerServices;
+using Howl.Math;
+
 namespace Howl.Math.Shapes;
 
 public struct AABB
 {
+    public static AABB Zero => new AABB(Vector2.Zero, Vector2.Zero);
+
     /// <summary>
     /// Gets and sets the minimum vector.
     /// </summary>
@@ -11,6 +17,16 @@ public struct AABB
     /// Gets and sets the maximum vector.
     /// </summary>
     public Vector2 Max;
+
+    /// <summary>
+    /// Calculates and gets the height of this AABB.
+    /// </summary>
+    public float Height => Max.Y - Min.Y;
+
+    /// <summary>
+    /// Calculates and gets the width of this AABB.
+    /// </summary>
+    public float Width => Max.X - Min.X;
 
     /// <summary>
     /// Constructs a Axis-Aligned-Bounding-Box.
@@ -37,6 +53,17 @@ public struct AABB
     }
 
     /// <summary>
+    /// Constructs a Axis-Aligned-Bounding-Box from two AABB's
+    /// </summary>
+    /// <param name="a">aabb-a</param>
+    /// <param name="b">aabb-b</param>
+    public AABB(AABB a, AABB b)
+    {
+        Min = a.Min.MinComponent(b.Min);
+        Max = a.Max.MaxComponent(b.Max);
+    }
+
+    /// <summary>
     /// Checks whether two Axis-Aligned-Bounding-Boxes are intersecting.
     /// </summary>
     /// <param name="a">The first AABB.</param>
@@ -54,5 +81,88 @@ public struct AABB
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Adds a vector to a AABB.
+    /// </summary>
+    /// <param name="aabb">The aabb to add to.</param>
+    /// <param name="vector">The vector to add.</param>
+    /// <returns>The resultant aabb.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static AABB operator +(AABB aabb, Vector2 vector)
+    {
+        return new(aabb.Min + vector, aabb.Max + vector);
+    }
+
+    /// <summary>
+    /// Subtracts a vector from an AABB.
+    /// </summary>
+    /// <param name="aabb">The aabb to remove from.</param>
+    /// <param name="vector">The aabb to remove.</param>
+    /// <returns>The resultant aabb.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static AABB operator -(AABB aabb, Vector2 vector)
+    {
+        return new(aabb.Min - vector, aabb.Max - vector);        
+    }
+
+    /// <summary>
+    /// Gets the center point of this AABB.
+    /// </summary>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Vector2 GetCentroid()
+    {
+        return (Max + Min) * 0.5f; 
+    }
+
+    /// <summary>
+    /// Gets whether or not two AABB are equal.
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns>true, if both AABB are equal; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool operator ==(AABB a, AABB b)
+    {
+        return a.Min == b.Min && a.Max == b.Max;   
+    }
+
+    /// <summary>
+    /// Gets whether or not two AABB are not equal.
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns>true, if both are not equal; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool operator !=(AABB a, AABB b)
+    {
+        return a.Min != b.Min || a.Max != b.Max;
+    }
+
+    /// <summary>
+    /// Gets whether or not an object is equal to this.
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <returns>true, if the object is equal to this; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public override bool Equals(object obj)
+    {
+        return obj is AABB other && this == other;
+    }
+
+    /// <summary>
+    /// Gets the hash code.
+    /// </summary>
+    /// <returns>The hash code.</returns>
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
+    }
+
+    public override string ToString()
+    {
+        return $"Min: '{Min}', Max: '{Max}'";
     }
 }

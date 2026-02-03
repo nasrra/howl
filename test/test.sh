@@ -23,6 +23,7 @@ TEST_NAME=$1
 # Declare an associative array
 declare -A TEST_MAP
 TEST_MAP=(
+    ["AABB"]="${SHAPES_MATH_NAMESPACE}AABBTest"
     ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
     ["ComponentType"]="${ECS_NAMESPACE}ComponentTypeTest"
     ["ECS"]="${ECS_NAMESPACE}"
