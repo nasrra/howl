@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Howl.ECS;
 using Howl.Graphics;
 using Howl.Input;
@@ -33,6 +34,21 @@ public abstract class HowlApp : IDisposable
     /// Gets the SystemRegistry used by this HowlApp.
     /// </summary>
     public SystemRegistry SystemRegistry {get; private set;}
+
+    /// <summary>
+    /// Gets and sets the update-step stopwatch.
+    /// </summary>
+    public Stopwatch UpdateStepStopwatch;    
+
+    /// <summary>
+    /// Gets and sets the fixed-update-step stopwatch.
+    /// </summary>
+    public Stopwatch FixedUpdateStepStopwatch;
+
+    /// <summary>
+    /// Gets and sets the draw-step stopwatch.
+    /// </summary>
+    public Stopwatch DrawStepStopwatch;
 
     /// <summary>
     /// gets the GenIndexAllocator used by this HowlApp.
@@ -72,6 +88,11 @@ public abstract class HowlApp : IDisposable
         WorldComponentRegistry = new(GenIndexAllocator);
         GuiComponentRegistry = new(GenIndexAllocator);
         SystemRegistry = new();
+
+        // instantiate debug stop watches.
+        UpdateStepStopwatch         = new();
+        FixedUpdateStepStopwatch    = new();
+        DrawStepStopwatch           = new();
 
         backend = howlAppBackend;
         InitialiseBackend(
@@ -177,15 +198,27 @@ public abstract class HowlApp : IDisposable
 
     public virtual void Update(float deltaTime)
     {
+        UpdateStepStopwatch.Restart();
+
         InputManager.Update(deltaTime);
         SystemRegistry.Update(deltaTime);
 
-        fixedUpdateTime += deltaTime;
+        UpdateStepStopwatch.Stop();
 
-        while (fixedUpdateTime >= FixedDt)
-        {
-            FixedUpdate(FixedDt);
-            fixedUpdateTime -= FixedDt;
+        // try fixed update.
+        fixedUpdateTime += deltaTime;
+        if(fixedUpdateTime >= FixedDt)
+        {            
+            FixedUpdateStepStopwatch.Restart();
+            
+            // iterate and do fixed update steps.
+            while (fixedUpdateTime >= FixedDt)
+            {
+                FixedUpdate(FixedDt);
+                fixedUpdateTime -= FixedDt;
+            }
+
+            FixedUpdateStepStopwatch.Stop();
         }
     }
 
@@ -323,6 +356,9 @@ public abstract class HowlApp : IDisposable
             Renderer?.Dispose();
             WorldComponentRegistry?.Dispose();
             Instance = null;
+            UpdateStepStopwatch = null;
+            FixedUpdateStepStopwatch = null;
+            DrawStepStopwatch = null;
         }
 
         disposed = true;

@@ -45,7 +45,7 @@ public unsafe struct Leaf
     /// <param name="generations">A span of generations from GenIndex.</param>
     /// <param name="flags">Any byte flags to associate with the data.</param>
     /// <exception cref="ArgumentException"></exception>
-    public Leaf(Span<int> indices, Span<int> generations, Span<byte> flags, AABB aabb)
+    public Leaf(Span<int> indices, Span<int> generations, Span<byte> flags, AABB aabb, int entriesCount)
     {
         if(indices.Length != MaxEntries)
         {
@@ -58,6 +58,10 @@ public unsafe struct Leaf
         if(flags.Length != MaxEntries)
         {
             throw new ArgumentException($"flags length '{flags.Length}' is not eqaul to MaxEntries '{MaxEntries}'");
+        }
+        if(entriesCount > MaxEntries)
+        {
+            throw new ArgumentException($"entriesCount '{entriesCount}' is greater than MaxEntries '{MaxEntries}'");            
         }
 
         // copy indices.
@@ -88,6 +92,7 @@ public unsafe struct Leaf
         }
 
         AABB = aabb;
+        EntriesCount = entriesCount;
     }
 
     /// <summary>
@@ -111,6 +116,18 @@ public unsafe struct Leaf
         fixed(int* generationsPtr = generations)
         {
             return new ReadOnlySpan<int>(generationsPtr, EntriesCount);
+        }
+    }
+
+    /// <summary>
+    /// Gets the flags stored as a readonly span.
+    /// </summary>
+    /// <returns>A readonly span.</returns>
+    public ReadOnlySpan<byte> GetFlags()
+    {
+        fixed(byte* flagsPtr = flags)
+        {
+            return new ReadOnlySpan<byte>(flagsPtr, EntriesCount);
         }
     }
 

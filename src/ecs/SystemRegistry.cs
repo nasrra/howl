@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Howl.ECS;
@@ -148,9 +149,9 @@ public class SystemRegistry : IDisposable
 
         if (disposing)
         {
-            updateSystems = null;
-            fixedUpdateSystems = null;
-            drawSystems = null;
+            updateSystems               = null;
+            fixedUpdateSystems          = null;
+            drawSystems                 = null;
         }
 
         disposed = true;

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Xml.Serialization;
+using Howl.ECS;
 using Howl.Math.Shapes;
 
 namespace Howl.Physics.BVH;
@@ -12,12 +14,14 @@ public class BoundingVolumeHierarchy
     private List<Entry> entries;
     private List<Leaf> leaves;
     private List<Branch> branches;
+    private List<QueryResult> queryResults;
 
     public BoundingVolumeHierarchy()
     {
         entries = new();
         leaves = new();
         branches = new();
+        queryResults = new(4096);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -37,6 +41,7 @@ public class BoundingVolumeHierarchy
         entries.Clear();
         leaves.Clear();
         branches.Clear();
+        queryResults.Clear();
     }
 
     public ReadOnlySpan<Leaf> GetLeavesAsReadOnlySpan()
@@ -53,6 +58,7 @@ public class BoundingVolumeHierarchy
         Span<int> indices       = stackalloc int[Leaf.MaxEntries]; // gen index.
         Span<int> generations   = stackalloc int[Leaf.MaxEntries];
         Span<byte> flags        = stackalloc byte[Leaf.MaxEntries];
+        int entriesCount        = 0;
 
         for(int i = 0; i < entrySpan.Length - 1; i++)
         {
@@ -64,8 +70,17 @@ public class BoundingVolumeHierarchy
                 continue;
             }
 
-            // reset the previous iterations leaf data.
-            for(int j = 0; j < Leaf.MaxEntries; j++)
+
+            // set the first entry to the current entry.
+            entriesCount    = 1;
+            distances[0]    = 0;
+            entryIndices[0] = i; 
+            indices[0]      = currentEntry.GenIndex.index;
+            generations[0]  = currentEntry.GenIndex.generation;
+            flags[0]        = currentEntry.Flag;
+
+            // reset the rest of the previous iterations leaf data.
+            for(int j = 1; j < Leaf.MaxEntries; j++)
             {
                 distances[j]    = float.MaxValue;
                 entryIndices[j] = -1; 
@@ -74,7 +89,7 @@ public class BoundingVolumeHierarchy
                 flags[j]        = 0;
             }
 
-            for(int j = i; j < entrySpan.Length; j++)
+            for(int j = i + 1; j < entrySpan.Length; j++)
             {
                 ref Entry otherEntry = ref entrySpan[j];
 
@@ -85,19 +100,16 @@ public class BoundingVolumeHierarchy
                 }
 
                 // get the data relative to the other entry.
-                float distance = currentEntry.AABB.GetCentroid().DistanceSquared(otherEntry.AABB.GetCentroid());
-                int entryIndex = j;
-                int index = otherEntry.GenIndex.index;
-                int generation = otherEntry.GenIndex.generation;
-                byte flag = otherEntry.Flag;
+                float distance  = currentEntry.AABB.GetCentroid().DistanceSquared(otherEntry.AABB.GetCentroid());
+                int entryIndex  = j;
+                int index       = otherEntry.GenIndex.index;
+                int generation  = otherEntry.GenIndex.generation;
+                byte flag       = otherEntry.Flag;
 
-                for(int k = 0; k < Leaf.MaxEntries; k++)
+                for(int k = 1; k < Leaf.MaxEntries; k++)
                 {
                     if(distance < distances[k])
-                    {
-                        // the entry is now scheduled for leaf construction.
-                        entrySpan[entryIndex].Leafed = true;
-                        
+                    {                        
                         // create temp values of the data that is swapped
                         // out, the swapeed entry is used in later iteration loops.
                         // this is to ensure that if the swapped entry is still one 
@@ -123,22 +135,10 @@ public class BoundingVolumeHierarchy
                         flag        = swappedFlag;
                     }
                 }
-
-                // set the entry that not within the minimum distances
-                // back to leafed for later loops to check it.
-                if(entryIndex != -1)
-                {
-                    entrySpan[entryIndex].Leafed = false;
-                }
-            }
-
-            // if nothing was set return.
-            if(entryIndices[0] == -1)
-            {
-                continue;
             }
 
             ref Entry firstEntry = ref entrySpan[entryIndices[0]];
+            firstEntry.Leafed = true;
 
             // create a cummulative AABB of the entry AABB's for the leaf
             // the holds them.
@@ -149,13 +149,40 @@ public class BoundingVolumeHierarchy
                 {
                     break;
                 }
-                leafAABB = new AABB(leafAABB, entrySpan[entryIndices[j]].AABB);
+                entriesCount++;
+                ref Entry nextEntry = ref entrySpan[entryIndices[j]];
+                nextEntry.Leafed = true;
+                leafAABB = new AABB(leafAABB, nextEntry.AABB);
             }
 
             // add the new leaf to the leaves list.
-            leaves.Add(new Leaf(indices, generations, flags, leafAABB));
+            leaves.Add(new Leaf(indices, generations, flags, leafAABB, entriesCount));
+        }
+    }
+
+    public ReadOnlySpan<QueryResult> Query(AABB aabb)
+    {
+        queryResults.Clear();
+
+        Span<Leaf> leafSpan = CollectionsMarshal.AsSpan(leaves);
+        Span<GenIndex> genIndices = stackalloc GenIndex[Leaf.MaxEntries];
+
+        for(int i = 0; i < leafSpan.Length; i++)
+        {
+            ref Leaf leaf = ref leafSpan[i];
+            if(AABB.Intersect(aabb, leaf.AABB))
+            {
+                leaf.GetGenIndices(ref genIndices, out int written);
+                ReadOnlySpan<byte> flags = leaf.GetFlags();
+                for(int j = 0; j < written; j++)
+                {
+                    queryResults.Add(new(genIndices[j], flags[j]));
+                }
+            }
         }
 
+        ReadOnlySpan<QueryResult> span = CollectionsMarshal.AsSpan(queryResults);
+        return span;
     }
 
 }

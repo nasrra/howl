@@ -651,7 +651,7 @@ public sealed class Renderer : IRenderer
 
     public void DrawWireframeShape(in Howl.Math.Transform transform, in Howl.Graphics.RectangleShape rectangle, float thickness = 4)
     {
-        if(primitiveVertices.Count > short.MaxValue)
+        if(primitiveVertices.Count > int.MaxValue)
         {
             throw new OverflowException();
         }

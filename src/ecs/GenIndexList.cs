@@ -175,6 +175,24 @@ public sealed class GenIndexList<T> : IGenIndexList
         return GenIndexResult.Success;            
     }
 
+    /// <summary>
+    /// Deallocates all Dense entries.
+    /// </summary>
+    public void DeallocateAll()
+    {
+        Span<DenseEntry<T>> denseSpan = CollectionsMarshal.AsSpan(dense);
+        Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
+
+        for(int i = 0; i < denseSpan.Length; i++)
+        {
+            ref DenseEntry<T> denseEntry = ref denseSpan[i];
+            ref SparseEntry sparseEntry = ref sparseSpan[denseEntry.sparseIndex];
+            sparseEntry.ClearDenseIndex();
+        }
+
+        dense.Clear();
+    }
+
 
     /// <summary>
     /// Gets a reference to stored data associated with a GenIndex.
