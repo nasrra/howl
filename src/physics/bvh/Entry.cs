@@ -21,11 +21,6 @@ public struct Entry
     public readonly byte Flag;
 
     /// <summary>
-    /// Whether or not this entry has been used to construct a leaf.
-    /// </summary>
-    public bool Leafed;
-
-    /// <summary>
     /// Constructs and Entry.
     /// </summary>
     /// <param name="aabb">The AABB.</param>
@@ -36,6 +31,5 @@ public struct Entry
         AABB = aabb;
         GenIndex = genIndex;
         Flag = flag;
-        Leafed = false;
     }
 }

@@ -55,9 +55,11 @@ public static class CollisionSystem
         state.IntersectStepStopwatch.Restart();
         ReconstructBvhTree(componentRegistry, state.BVH);
         FindCollisions(componentRegistry, state);
+
         // FindCircleCollisions(componentRegistry, state);
         // FindRectangleCollisions(componentRegistry, state);
         // FindRectangleToCircleCollisions(componentRegistry, state);
+
         state.IntersectStepStopwatch.Stop();
 
         state.ResolutionStepStopwatch.Restart();
@@ -99,9 +101,19 @@ public static class CollisionSystem
             DebugDrawRectangleAABBs(componentRegistry, renderer, state);
         }
 
-        if (state.DrawBvh)
+        if (state.DrawBvhLeaves)
         {
-            DebugDrawBvh(renderer, state.BVH);
+            DebugDrawBvhLeaves(state, renderer, state.BVH);
+        }
+
+        if (state.DrawBvhBranches)
+        {
+            DebugDrawBvhBranches(state, renderer, state.BVH);
+        }
+
+        if (state.DrawBvhRoot)
+        {
+            DebugDrawBvhRoot(state, renderer, state.BVH);
         }
     }
 
@@ -120,7 +132,7 @@ public static class CollisionSystem
             ReadOnlySpan<byte> flags = leaves[i].GetFlags();
 
             // get all near collider to the leaf AABB.
-            ReadOnlySpan<QueryResult> near = state.BVH.Query(leaves[i].AABB);
+            ReadOnlySpan<QueryResult> near = state.BVH.QuerySlow(leaves[i].AABB);
             
             for(int j = 0; j < leaves[i].EntriesCount; j++)
             {
@@ -612,7 +624,7 @@ public static class CollisionSystem
         bvh.Construct();
     }
 
-    private static void DebugDrawBvh(IRenderer renderer, BoundingVolumeHierarchy bvh)
+    private static void DebugDrawBvhLeaves(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
     {
         ReadOnlySpan<Leaf> leaves = bvh.GetLeavesAsReadOnlySpan();
 
@@ -622,13 +634,46 @@ public static class CollisionSystem
                 new Transform(Vector2.Zero, Vector2.One, 0),
                 new RectangleShape(
                     new Rectangle(leaves[i].AABB.Min, leaves[i].AABB.Max), 
-                    Colour.White,
+                    state.BvhLeafAABBColour,
                     DrawMode.Wireframe
                 )
             );
         }
     }
 
+    private static void DebugDrawBvhBranches(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
+    {
+        ReadOnlySpan<Branch> branch = bvh.GetBranchesAsReadOnlySpan();
+
+        for(int i = 0; i < branch.Length; i++)
+        {
+            renderer.DrawWireframeShape(
+                new Transform(Vector2.Zero, Vector2.One, 0),
+                new RectangleShape(
+                    new Rectangle(branch[i].AABB.Min, branch[i].AABB.Max), 
+                    state.BvhBranchAABBColour,
+                    DrawMode.Wireframe
+                )
+            );
+        }
+    }
+
+    private static void DebugDrawBvhRoot(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
+    {
+        ReadOnlySpan<Branch> branch = bvh.GetBranchesAsReadOnlySpan();
+
+        for(int i = 0; i < branch.Length; i++)
+        {
+            renderer.DrawWireframeShape(
+                new Transform(Vector2.Zero, Vector2.One, 0),
+                new RectangleShape(
+                    new Rectangle(branch[branch.Length - 1].AABB.Min, branch[branch.Length - 1].AABB.Max), 
+                    state.BvhBranchAABBColour,
+                    DrawMode.Wireframe
+                )
+            );
+        }
+    }
 
 
     // slow.
