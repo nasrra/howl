@@ -1,14 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Howl.DataStructures.Trees;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math;
 using Howl.Math.Shapes;
-using Howl.Physics.BVH;
 
 namespace Howl.Physics;
 
@@ -53,13 +50,8 @@ public static class CollisionSystem
         
         // reconstruct the bvh.
         state.IntersectStepStopwatch.Restart();
-        ReconstructBvhTree(componentRegistry, state.BVH);
+        ReconstructBvhTree(componentRegistry, state.Bvh);
         FindCollisions(componentRegistry, state);
-
-        // FindCircleCollisions(componentRegistry, state);
-        // FindRectangleCollisions(componentRegistry, state);
-        // FindRectangleToCircleCollisions(componentRegistry, state);
-
         state.IntersectStepStopwatch.Stop();
 
         state.ResolutionStepStopwatch.Restart();
@@ -101,19 +93,9 @@ public static class CollisionSystem
             DebugDrawRectangleAABBs(componentRegistry, renderer, state);
         }
 
-        if (state.DrawBvhLeaves)
-        {
-            DebugDrawBvhLeaves(state, renderer, state.BVH);
-        }
-
         if (state.DrawBvhBranches)
         {
-            DebugDrawBvhBranches(state, renderer, state.BVH);
-        }
-
-        if (state.DrawBvhRoot)
-        {
-            DebugDrawBvhRoot(state, renderer, state.BVH);
+            DebugDrawBvhBranches(state, renderer, state.Bvh);
         }
     }
 
@@ -123,60 +105,54 @@ public static class CollisionSystem
         GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
         GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>(); 
 
-        ReadOnlySpan<Leaf> leaves = state.BVH.GetLeavesAsReadOnlySpan();
-        Span<GenIndex> genIndices = stackalloc GenIndex[Leaf.MaxEntries];
+        ReadOnlySpan<Leaf> leaves = state.Bvh.GetLeaves();
 
         for(int i = 0; i < leaves.Length; i++)
         {
-            leaves[i].GetGenIndices(ref genIndices, out int written);
-            ReadOnlySpan<byte> flags = leaves[i].GetFlags();
-
-            // get all near collider to the leaf AABB.
-            ReadOnlySpan<QueryResult> near = state.BVH.QuerySlow(leaves[i].AABB);
+            ColliderType colliderTypeA = (ColliderType)leaves[i].Flag;
             
-            for(int j = 0; j < leaves[i].EntriesCount; j++)
+            // get all near collider to the leaf AABB.
+            ReadOnlySpan<QueryResult> near = state.Bvh.Query(leaves[i].AABB);
+            
+            for(int j = 0; j < near.Length; j++)
             {
-                ColliderType colliderTypeA = (ColliderType)flags[j];
 
-                for(int k = 0; k < near.Length; k++)
+                // ensure that intersection tests are one way.
+                // This stops two colliding objects applying the same
+                // collision resolution to eachother. Instead its only
+                // one that applys the resolution to eachother. This also stops 
+                // the same collider from colliding with itself.
+                if(leaves[i].GenIndex.index <= near[j].GenIndex.index)
                 {
-                    // ensure that intersection tests are one way.
-                    // This stops two colliding objects applying the same
-                    // collision resolution to eachother. Instead its only
-                    // one that applys the resolution to eachother. This also stops 
-                    // the same collider from colliding with itself.
-                    if(genIndices[j].index <= near[k].GenIndex.index)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    ColliderType colliderTypeB = (ColliderType)near[k].Flags;
+                ColliderType colliderTypeB = (ColliderType)near[j].Flag;
 
-                    switch (colliderTypeA)
-                    {
-                        case ColliderType.Circle:
-                            switch (colliderTypeB)
-                            {
-                                case ColliderType.Circle:
-                                    CircleToCircleIntersect(state, transforms, circleColliders, genIndices[j], near[k].GenIndex);
-                                break;
-                                case ColliderType.Rectangle:
-                                    RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, near[k].GenIndex, genIndices[j]);
-                                break;
-                            }
-                        break;
-                        case ColliderType.Rectangle:
-                            switch (colliderTypeB)
-                            {
-                                case ColliderType.Rectangle:
-                                    RectangleToRectangleIntersect(state, transforms, rectangleColliders, genIndices[j], near[k].GenIndex);
-                                break;
-                                case ColliderType.Circle:
-                                    RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, genIndices[j], near[k].GenIndex);
-                                break;
-                            }
-                        break;
-                    }
+                switch (colliderTypeA)
+                {
+                    case ColliderType.Circle:
+                        switch (colliderTypeB)
+                        {
+                            case ColliderType.Circle:
+                                CircleToCircleIntersect(state, transforms, circleColliders, leaves[i].GenIndex, near[j].GenIndex);
+                            break;
+                            case ColliderType.Rectangle:
+                                RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, near[j].GenIndex, leaves[i].GenIndex);
+                            break;
+                        }
+                    break;
+                    case ColliderType.Rectangle:
+                        switch (colliderTypeB)
+                        {
+                            case ColliderType.Rectangle:
+                                RectangleToRectangleIntersect(state, transforms, rectangleColliders, leaves[i].GenIndex, near[j].GenIndex);
+                            break;
+                            case ColliderType.Circle:
+                                RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, leaves[i].GenIndex, near[j].GenIndex);
+                            break;
+                        }
+                    break;
                 }
             }
         }
@@ -585,8 +561,8 @@ public static class CollisionSystem
                     throw new StaleGenIndexException(genIndex);
             } 
 
-            bvh.AddEntry(
-                new Entry(
+            bvh.RegisterLeaf(
+                new Leaf(
                     Circle.Transform(collider.Shape, transformRef).GetAABB(),
                     genIndex, 
                     (byte)ColliderType.Circle
@@ -611,8 +587,8 @@ public static class CollisionSystem
                     throw new StaleGenIndexException(genIndex);
             } 
 
-            bvh.AddEntry(
-                new Entry(
+            bvh.RegisterLeaf(
+                new Leaf(
                     PolygonRectangle.Transform(collider.Shape, transformRef).GetAABB(),
                     genIndex, 
                     (byte)ColliderType.Rectangle
@@ -624,26 +600,9 @@ public static class CollisionSystem
         bvh.Construct();
     }
 
-    private static void DebugDrawBvhLeaves(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
-    {
-        ReadOnlySpan<Leaf> leaves = bvh.GetLeavesAsReadOnlySpan();
-
-        for(int i = 0; i < leaves.Length; i++)
-        {
-            renderer.DrawWireframeShape(
-                new Transform(Vector2.Zero, Vector2.One, 0),
-                new RectangleShape(
-                    new Rectangle(leaves[i].AABB.Min, leaves[i].AABB.Max), 
-                    state.BvhLeafAABBColour,
-                    DrawMode.Wireframe
-                )
-            );
-        }
-    }
-
     private static void DebugDrawBvhBranches(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
     {
-        ReadOnlySpan<Branch> branch = bvh.GetBranchesAsReadOnlySpan();
+        ReadOnlySpan<Branch> branch = bvh.GetBranches();
 
         for(int i = 0; i < branch.Length; i++)
         {
@@ -657,262 +616,4 @@ public static class CollisionSystem
             );
         }
     }
-
-    private static void DebugDrawBvhRoot(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
-    {
-        ReadOnlySpan<Branch> branch = bvh.GetBranchesAsReadOnlySpan();
-
-        for(int i = 0; i < branch.Length; i++)
-        {
-            renderer.DrawWireframeShape(
-                new Transform(Vector2.Zero, Vector2.One, 0),
-                new RectangleShape(
-                    new Rectangle(branch[branch.Length - 1].AABB.Min, branch[branch.Length - 1].AABB.Max), 
-                    state.BvhBranchAABBColour,
-                    DrawMode.Wireframe
-                )
-            );
-        }
-    }
-
-
-    // slow.
-
-
-
-
-    private static void FindCircleCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
-    {
-        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
-        Span<DenseEntry<CircleCollider>> denseEntries = circleColliders.GetDenseAsSpan();
-
-        for(int i = 0; i < denseEntries.Length - 1; i++)
-        {
-
-            // get the current circle.
-            ref DenseEntry<CircleCollider> denseEntryA = ref denseEntries[i];
-            ref CircleCollider colliderA = ref denseEntryA.Value;
-            circleColliders.GetGenIndex(denseEntryA.sparseIndex, out GenIndex genIndexA);
-            
-            // make sure the circle has a transform component.
-            switch(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA))
-            {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndexA);
-                case GenIndexResult.StaleGenIndex:
-                    continue;
-            }
-            ref Transform transformA = ref transformRefA.Value;
-
-            for(int j = i + 1; j < denseEntries.Length; j++)
-            {
-
-                // get the other circle to check intersection against.
-                ref DenseEntry<CircleCollider> denseEntryB = ref denseEntries[j];
-                ref CircleCollider colliderB = ref denseEntryB.Value;
-                circleColliders.GetGenIndex(denseEntryB.sparseIndex, out GenIndex genIndexB);                
-                
-                // make sure this circle has a transform component.
-                switch(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB))
-                {
-                    case GenIndexResult.DenseNotAllocated:
-                        throw new DenseNotAllocatedException(genIndexA);
-                    case GenIndexResult.StaleGenIndex:
-                        continue;
-                }
-                ref Transform transformB = ref transformRefB.Value;
-
-                // transform shapes.
-                Circle circleA = Circle.Transform(colliderA.Shape, transformA); 
-                Circle circleB = Circle.Transform(colliderB.Shape, transformB); 
-
-                // Broad Phase:
-                // perform an AABB check. 
-                if(AABB.Intersect(circleA.GetAABB(), circleB.GetAABB()) == false)
-                {
-                    continue;
-                }
-
-                // Narrow Phase:
-                // perform an SAT check.
-                if(SAT.Intersect(
-                    circleA,
-                    circleB,
-                    out Vector2 normal,
-                    out float depth
-                ))
-                {
-
-                    // add the collision to the collisions manifold for later resolution.
-                    state.CollisionManifold.Add(
-                        new Collision(
-                            genIndexA, 
-                            genIndexB,
-                            colliderA.Parameters,
-                            colliderB.Parameters, 
-                            normal, 
-                            depth
-                        )
-                    );
-                    
-                }
-            }
-        }
-    }
-
-    private static void FindRectangleCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
-    {
-        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
-        Span<DenseEntry<RectangleCollider>> denseEntries = colliders.GetDenseAsSpan();
-
-        for(int i = 0; i < denseEntries.Length - 1; i++)
-        {
-
-            // get the current collider.
-            ref DenseEntry<RectangleCollider> denseEntryA = ref denseEntries[i];
-            ref RectangleCollider colliderA = ref denseEntryA.Value;
-            colliders.GetGenIndex(denseEntryA.sparseIndex, out GenIndex genIndexA);
-            
-            // make sure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA))
-            {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndexA);
-                case GenIndexResult.StaleGenIndex:
-                    continue;
-            }
-
-            for(int j = i + 1; j < denseEntries.Length; j++)
-            {
-
-                // get the other collider to check intersection against.
-                ref DenseEntry<RectangleCollider> denseEntryB = ref denseEntries[j];
-                ref RectangleCollider colliderB = ref denseEntryB.Value;
-                colliders.GetGenIndex(denseEntryB.sparseIndex, out GenIndex genIndexB);                
-                
-                // make sure this collider has a transform component.
-                switch(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB))
-                {
-                    case GenIndexResult.DenseNotAllocated:
-                        throw new DenseNotAllocatedException(genIndexA);
-                    case GenIndexResult.StaleGenIndex:
-                        continue;
-                }
-
-                // transform shapes.
-                PolygonRectangle rectangleA = PolygonRectangle.Transform(colliderA.Shape,transformRefA.Value);
-                PolygonRectangle rectangleB = PolygonRectangle.Transform(colliderB.Shape,transformRefB.Value); 
-
-                // Broad Phase:
-                // perform an AABB check.
-                if(AABB.Intersect(rectangleA.GetAABB(), rectangleB.GetAABB()) == false)
-                {
-                    continue;
-                }
-
-                // Narrow Phase:
-                // perform an SAT check.
-                if(SAT.Intersect(
-                    rectangleA,
-                    rectangleB,
-                    out Vector2 normal,
-                    out float depth
-                ))
-                {
-                    // add the collision to the collisions manifold for later resolution.
-                    state.CollisionManifold.Add(
-                        new Collision(
-                            genIndexA, 
-                            genIndexB,
-                            colliderA.Parameters,
-                            colliderB.Parameters,
-                            normal, 
-                            depth
-                        )
-                    );                
-                }
-            }
-        }        
-    }
-
-    private static void FindRectangleToCircleCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
-    {
-        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        
-        GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>();
-        Span<DenseEntry<RectangleCollider>> rectangleDenseEntries = rectangleColliders.GetDenseAsSpan();
-        
-        GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
-        Span<DenseEntry<CircleCollider>> circleDenseEntries = circleColliders.GetDenseAsSpan();
-
-        for(int i = 0; i < rectangleDenseEntries.Length; i++)
-        {
-            // get the rectangle collider.
-            ref DenseEntry<RectangleCollider> rectangleDenseEntry = ref rectangleDenseEntries[i];
-            ref RectangleCollider rectangleCollider = ref rectangleDenseEntry.Value;
-            rectangleColliders.GetGenIndex(rectangleDenseEntry.sparseIndex, out GenIndex rectangleGenIndex);
-
-            // make sure the collider has a transform component
-            switch(transforms.GetDenseRef(rectangleGenIndex, out Ref<Transform> rectangleTransformRef))
-            {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(rectangleGenIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(rectangleGenIndex);
-            }
-
-            for(int j = 0; j < circleDenseEntries.Length; j++)
-            {
-                
-                // get the circle to test intersect against.
-                ref DenseEntry<CircleCollider> circleDenseEntry = ref circleDenseEntries[j];
-                ref CircleCollider circleCollider = ref circleDenseEntry.Value;
-                circleColliders.GetGenIndex(circleDenseEntry.sparseIndex, out GenIndex circleGenIndex);
-
-                // make sure the collider has a transform component.
-                switch(transforms.GetDenseRef(circleGenIndex, out Ref<Transform> circleTransformRef))
-                {
-                    case GenIndexResult.DenseNotAllocated:
-                        throw new DenseNotAllocatedException(circleGenIndex);
-                    case GenIndexResult.StaleGenIndex:
-                        throw new StaleGenIndexException(circleGenIndex);
-                }
-
-                // transform shapes.
-                PolygonRectangle rectangle = PolygonRectangle.Transform(rectangleCollider.Shape,rectangleTransformRef.Value); 
-                Circle circle = Circle.Transform(circleCollider.Shape,circleTransformRef.Value); 
-
-                // Broad Phase:
-                // perform AABB check.
-                if(AABB.Intersect(rectangle.GetAABB(), circle.GetAABB()) == false)
-                {
-                    continue;
-                }
-
-                // Narrow Phase:
-                // perfom SAT check.
-                if(SAT.Intersect(
-                    rectangle,
-                    circle,
-                    out Vector2 normal,
-                    out float depth
-                ))
-                {
-                    // add the collision to the collisions manifold for later resolution.
-                    state.CollisionManifold.Add(
-                        new Collision(
-                            rectangleGenIndex,
-                            circleGenIndex,
-                            rectangleCollider.Parameters,
-                            circleCollider.Parameters,
-                            normal, 
-                            depth
-                        )
-                    );                
-                }
-            }
-        }
-    }    
 }

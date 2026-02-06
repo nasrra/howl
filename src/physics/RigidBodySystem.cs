@@ -137,6 +137,11 @@ public static class RigidBodySystem
 
             float relative = Vector2.Dot(relativeVelocity, collision.Normal);
 
+            if(relative > 0)
+            {
+                continue;
+            }
+
             float e = MathF.Min(rigidbodyA.Restitution, rigidbodyB.Restitution);
 
             float j = -(1f + e) * relative;

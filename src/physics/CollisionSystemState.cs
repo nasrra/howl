@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Howl.DataStructures.Trees;
 using Howl.Graphics;
-using Howl.Physics.BVH;
 
 namespace Howl.Physics;
 
@@ -14,7 +14,7 @@ public sealed class CollisionSystemState : IDisposable
     /// <summary>
     /// Gets the bounding volume hierarchy for a collision system.
     /// </summary>
-    public BoundingVolumeHierarchy BVH;
+    public BoundingVolumeHierarchy Bvh;
 
     /// <summary>
     /// Gets and sets the debug stopwatch for timing a collision system intersect step.
@@ -88,19 +88,9 @@ public sealed class CollisionSystemState : IDisposable
     public bool DrawAABBWireframes;
 
     /// <summary>
-    /// Gets and sets whether or not to draw bvh leaves.
-    /// </summary>
-    public bool DrawBvhLeaves;
-
-    /// <summary>
     /// Gets and sets whether or not to draw bvh branches.
     /// </summary>
     public bool DrawBvhBranches;
-
-    /// <summary>
-    /// Gets and sets whether or not to draw the bvh root.
-    /// </summary>
-    public bool DrawBvhRoot;
 
     /// <summary>
     /// Gets and sets whether or not this instance has been disposed.
@@ -130,11 +120,9 @@ public sealed class CollisionSystemState : IDisposable
 
         DrawColliderWireframes  = false;
         DrawAABBWireframes      = false;
-        DrawBvhLeaves           = false;
         DrawBvhBranches         = false;
-        DrawBvhRoot             = false;
 
-        BVH = new();
+        Bvh = new();
     }
 
     /// <summary>
@@ -169,6 +157,7 @@ public sealed class CollisionSystemState : IDisposable
             ResolutionStepStopwatch = null;
             CollisionManifold.Clear();
             CollisionManifold = null;
+            Bvh.Dispose();
         }
 
         disposed = true;
