@@ -9,8 +9,6 @@ namespace Howl.Physics;
 
 public sealed class CollisionSystemState : IDisposable
 {
-    private const int CollisionManifoldInitialCapacity = 4096;
-
     /// <summary>
     /// Gets the bounding volume hierarchy for a collision system.
     /// </summary>
@@ -27,9 +25,14 @@ public sealed class CollisionSystemState : IDisposable
     public Stopwatch ResolutionStepStopwatch;
 
     /// <summary>
-    /// Gets and sets the collision manifold for.
+    /// Gets and sets the collision manifold.
     /// </summary>
-    public List<Collision> CollisionManifold;
+    private CollisionManifold collisionManifold;
+
+    /// <summary>
+    /// Gets the collision manifold.
+    /// </summary>
+    public CollisionManifold CollisionManifold => collisionManifold;
 
     /// <summary>
     /// Gets and sets the debug draw colour for the solid-colliders.
@@ -104,9 +107,9 @@ public sealed class CollisionSystemState : IDisposable
 
     public CollisionSystemState()
     {
-        IntersectStepStopwatch       = new Stopwatch();
-        ResolutionStepStopwatch      = new Stopwatch();
-        CollisionManifold   = new(CollisionManifoldInitialCapacity);
+        IntersectStepStopwatch  = new Stopwatch();
+        ResolutionStepStopwatch = new Stopwatch();
+        collisionManifold       = new();
         
         SolidColliderColour             = Colour.Green;
         KinematicColliderColour         = Colour.Orange;
@@ -155,8 +158,8 @@ public sealed class CollisionSystemState : IDisposable
         {
             IntersectStepStopwatch = null;
             ResolutionStepStopwatch = null;
-            CollisionManifold.Clear();
-            CollisionManifold = null;
+            collisionManifold.Clear();
+            collisionManifold = null;
             Bvh.Dispose();
         }
 

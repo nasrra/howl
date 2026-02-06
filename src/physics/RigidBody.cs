@@ -1,6 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
-using Howl.ECS;
 using Howl.Math;
 
 namespace Howl.Physics;

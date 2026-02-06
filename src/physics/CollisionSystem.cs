@@ -24,42 +24,6 @@ public static class CollisionSystem
     }
 
     /// <summary>
-    /// Creates a new FixedUpdateSystem instance.
-    /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="state"></param>
-    /// <returns></returns>
-    public static FixedUpdateSystem FixedUpdateSystem(ComponentRegistry componentRegistry, CollisionSystemState state)
-    => deltaTime =>
-    {
-        FixedUpdateStep(componentRegistry, state, deltaTime);
-    };
-
-    /// <summary>
-    /// FixedUpdate step for this collision system.
-    /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="state"></param>
-    /// <param name="deltaTime"></param>
-    public static void FixedUpdateStep(ComponentRegistry componentRegistry, CollisionSystemState state, float deltaTime)
-    {        
-        if(state.CollisionManifold.Count > 0)
-        {
-            state.CollisionManifold.Clear();
-        }
-        
-        // reconstruct the bvh.
-        state.IntersectStepStopwatch.Restart();
-        ReconstructBvhTree(componentRegistry, state.Bvh);
-        FindCollisions(componentRegistry, state);
-        state.IntersectStepStopwatch.Stop();
-
-        state.ResolutionStepStopwatch.Restart();
-        ResolveCollisions(componentRegistry, state);
-        state.ResolutionStepStopwatch.Stop();            
-    }
-
-    /// <summary>
     /// Creates a new DrawSystem instance.
     /// </summary>
     /// <param name="componentRegistry"></param>
@@ -99,7 +63,7 @@ public static class CollisionSystem
         }
     }
 
-    private static void FindCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
+    public static void FindCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
@@ -207,17 +171,14 @@ public static class CollisionSystem
             out float depth
         ))
         {
-
-            // add the collision to the collisions manifold for later resolution.
-            state.CollisionManifold.Add(
-                new Collision(
-                    genIndexA, 
-                    genIndexB,
-                    colliderA.Parameters,
-                    colliderB.Parameters, 
-                    normal, 
-                    depth
-                )
+            RegisterCollision(
+                state,
+                genIndexA,
+                genIndexB,
+                colliderA.Parameters,
+                colliderB.Parameters,
+                normal,
+                depth
             );
         }                
     }
@@ -271,17 +232,14 @@ public static class CollisionSystem
             out float depth
         ))
         {
-
-            // add the collision to the collisions manifold for later resolution.
-            state.CollisionManifold.Add(
-                new Collision(
-                    genIndexA, 
-                    genIndexB,
-                    colliderA.Parameters,
-                    colliderB.Parameters, 
-                    normal, 
-                    depth
-                )
+            RegisterCollision(
+                state,
+                genIndexA,
+                genIndexB,
+                colliderA.Parameters,
+                colliderB.Parameters,
+                normal,
+                depth
             );
         }                
     }
@@ -291,34 +249,34 @@ public static class CollisionSystem
         GenIndexList<Transform> transforms,
         GenIndexList<RectangleCollider> rectangleColliders,
         GenIndexList<CircleCollider> circleColliders,
-        in GenIndex rectangleGenIndexA, 
-        in GenIndex circleGenIndexB
+        in GenIndex rectangleGenIndex, 
+        in GenIndex circleGenIndex
     )
     {
-        rectangleColliders.GetDenseRef(rectangleGenIndexA, out Ref<RectangleCollider> colliderRefA);
-        circleColliders.GetDenseRef(circleGenIndexB, out Ref<CircleCollider> colliderRefB);
-        ref RectangleCollider colliderA = ref colliderRefA.Value;
-        ref CircleCollider colliderB = ref colliderRefB.Value;
+        rectangleColliders.GetDenseRef(rectangleGenIndex, out Ref<RectangleCollider> colliderRefA);
+        circleColliders.GetDenseRef(circleGenIndex, out Ref<CircleCollider> colliderRefB);
+        ref RectangleCollider rectangleCollider = ref colliderRefA.Value;
+        ref CircleCollider circleCollider = ref colliderRefB.Value;
 
         // make sure the circle has a transform component.
-        switch(transforms.GetDenseRef(rectangleGenIndexA, out Ref<Transform> transformRefA))
+        switch(transforms.GetDenseRef(rectangleGenIndex, out Ref<Transform> transformRefA))
         {
             case GenIndexResult.DenseNotAllocated:
-                throw new DenseNotAllocatedException(rectangleGenIndexA);
+                throw new DenseNotAllocatedException(rectangleGenIndex);
             case GenIndexResult.StaleGenIndex:
                 return;
         }
 
-        switch(transforms.GetDenseRef(circleGenIndexB, out Ref<Transform> transformRefB))
+        switch(transforms.GetDenseRef(circleGenIndex, out Ref<Transform> transformRefB))
         {
             case GenIndexResult.DenseNotAllocated:
-                throw new DenseNotAllocatedException(circleGenIndexB);
+                throw new DenseNotAllocatedException(circleGenIndex);
             case GenIndexResult.StaleGenIndex:
                 return;
         }
 
-        PolygonRectangle rectangle = PolygonRectangle.Transform(colliderA.Shape,transformRefA.Value);
-        Circle circle = Circle.Transform(colliderB.Shape,transformRefB.Value); 
+        PolygonRectangle rectangle = PolygonRectangle.Transform(rectangleCollider.Shape,transformRefA.Value);
+        Circle circle = Circle.Transform(circleCollider.Shape,transformRefB.Value); 
 
         // Broad Phase:
         if(AABB.Intersect(rectangle.GetAABB(), circle.GetAABB()) == false)
@@ -336,53 +294,96 @@ public static class CollisionSystem
             out float depth
         ))
         {
-
-            // add the collision to the collisions manifold for later resolution.
-            state.CollisionManifold.Add(
-                new Collision(
-                    rectangleGenIndexA, 
-                    circleGenIndexB,
-                    colliderA.Parameters,
-                    colliderB.Parameters, 
-                    normal, 
-                    depth
-                )
+            RegisterCollision(
+                state,
+                rectangleGenIndex, 
+                circleGenIndex, 
+                rectangleCollider.Parameters,
+                circleCollider.Parameters,
+                normal,
+                depth
             );
         }                
     }
 
-    private static void ResolveCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
+    /// <summary>
+    /// Registers a collision into the collision manifold.
+    /// </summary>
+    /// <param name="state"></param>
+    /// <param name="genIndexA">The gen index of collider a.</param>
+    /// <param name="genIndexB">The gen index of collider b.</param>
+    /// <param name="parametersA">The parameters of collider a.</param>
+    /// <param name="parametersB">The parameters of collider b.</param>
+    /// <param name="normal">The normal of the collision.</param>
+    /// <param name="depth">The depth of the collision.</param>
+    private static void RegisterCollision(
+        CollisionSystemState state,
+        in GenIndex genIndexA, 
+        in GenIndex genIndexB,
+        in ColliderParameters parametersA,
+        in ColliderParameters parametersB,
+        in Vector2 normal,
+        in float depth
+    )
+    {        
+            // Add the sibling collisions to the collisions manifold for later resolution.
+            // NOTE: this is done so that the collision manifold can correctly binary search
+            // for collisions outside of the collision system.
+            state.CollisionManifold.AddCollision(
+                new Collision(
+                    genIndexA, 
+                    genIndexB,
+                    parametersA,
+                    parametersB, 
+                    normal, 
+                    depth
+                )
+            );
+
+            state.CollisionManifold.AddCollision(
+                new Collision(
+                    genIndexB,
+                    genIndexA, 
+                    parametersB,
+                    parametersA, 
+                    normal, 
+                    depth
+                )
+            );
+    }
+
+    public static void ResolveCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        Span<Collision> span = CollectionsMarshal.AsSpan(state.CollisionManifold);
+        ReadOnlySpan<Collision> span = state.CollisionManifold.GetCollisionsAsReadOnlySpan();
 
-        for(int i = 0; i < span.Length; i++)
+        for(int i = 0; i < span.Length; i+=2) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
         {
-            ref Collision collision = ref span[i];
-            switch(transforms.GetDenseRef(collision.ColliderA, out Ref<Transform> transformRefA))
+            ref readonly Collision collision = ref span[i]; 
+            switch(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformRefA))
             {
                 case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(collision.ColliderA);
+                    throw new DenseNotAllocatedException(collision.Owner);
                 case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(collision.ColliderA);
+                    throw new StaleGenIndexException(collision.Owner);
             }
 
-            switch(transforms.GetDenseRef(collision.ColliderB, out Ref<Transform> transformRefB))
+            switch(transforms.GetDenseRef(collision.Other, out Ref<Transform> transformRefB))
             {
                 case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(collision.ColliderB);
+                    throw new DenseNotAllocatedException(collision.Other);
                 case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(collision.ColliderB);
+                    throw new StaleGenIndexException(collision.Other);
             }
 
-            if(collision.ColliderAParameters.Mode == ColliderMode.Kinematic)
+            if(collision.OwnerParameters.Mode == ColliderMode.Kinematic)
             {
                 // separate only collider B if A is Kinematic.
                 // Debug.WriteLine($"{collision.ColliderA}, {collision.ColliderB}");
                 Vector2 displacement = collision.Normal * collision.Depth * 0.5f;
                 transformRefB.Value.Position += displacement;
             }
-            else if(collision.ColliderBParameters.Mode == ColliderMode.Kinematic)
+            else if(collision.OtherParameters.Mode == ColliderMode.Kinematic)
             {
                 // separate only collider A if B is Kinematic.
                 // Debug.WriteLine($"{collision.ColliderA}, {collision.ColliderB}");
@@ -535,7 +536,7 @@ public static class CollisionSystem
         }
     }
 
-    private static void ReconstructBvhTree(ComponentRegistry componentRegistry, BoundingVolumeHierarchy bvh)
+    public static void ReconstructBvhTree(ComponentRegistry componentRegistry, BoundingVolumeHierarchy bvh)
     {   
         // clear the previous bvh data.
         bvh.Clear();

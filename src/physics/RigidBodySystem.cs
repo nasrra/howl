@@ -18,19 +18,6 @@ public static class RigidBodySystem
     }
 
     /// <summary>
-    /// Creates a new movement step system instance.
-    /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="state"></param>
-    /// <returns></returns>
-    public static FixedUpdateSystem MovementSystem(ComponentRegistry componentRegistry, RigidbodySystemState state)
-    => deltaTime =>
-    {
-        MovementStep(componentRegistry, state, deltaTime);
-        ClearForces(componentRegistry);
-    };
-
-    /// <summary>
     /// The movement step for this rigid body system.
     /// </summary>
     /// <param name="componentRegistry"></param>
@@ -94,18 +81,6 @@ public static class RigidBodySystem
     }
 
     /// <summary>
-    /// Creates a new resolve collision step system instance.
-    /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="state"></param>
-    /// <returns></returns>
-    public static FixedUpdateSystem ResolveCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
-    => deltaTime =>
-    {
-        ResolveCollisionsStep(componentRegistry, state, deltaTime);
-    };
-
-    /// <summary>
     /// The collision resolution step for this rigibody system.
     /// </summary>
     /// <param name="componentRegistry"></param>
@@ -114,18 +89,16 @@ public static class RigidBodySystem
     public static void ResolveCollisionsStep(ComponentRegistry componentRegistry, CollisionSystemState state, float deltaTime)
     {        
         GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
-        Span<Collision> collisions = CollectionsMarshal.AsSpan(state.CollisionManifold);
+        ReadOnlySpan<Collision> collisions = state.CollisionManifold.GetCollisionsAsReadOnlySpan();
 
-        for(int i = 0; i < collisions.Length; i++)
-        {
-            ref Collision collision = ref collisions[i];
-            
-            if(rigidbodies.GetDenseRef(collision.ColliderA, out Ref<RigidBody> rigidbodyARef) != GenIndexResult.Success)
+        for(int i = 0; i < collisions.Length; i+=2) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
+        {            
+            if(rigidbodies.GetDenseRef(collisions[i].Owner, out Ref<RigidBody> rigidbodyARef) != GenIndexResult.Success)
             {
                 continue;
             }
 
-            if(rigidbodies.GetDenseRef(collision.ColliderB, out Ref<RigidBody> rigidbodyBRef) != GenIndexResult.Success)
+            if(rigidbodies.GetDenseRef(collisions[i].Other, out Ref<RigidBody> rigidbodyBRef) != GenIndexResult.Success)
             {
                 continue;
             }
@@ -135,7 +108,7 @@ public static class RigidBodySystem
 
             Vector2 relativeVelocity = rigidbodyB.LinearVelocity - rigidbodyA.LinearVelocity;
 
-            float relative = Vector2.Dot(relativeVelocity, collision.Normal);
+            float relative = Vector2.Dot(relativeVelocity, collisions[i].Normal);
 
             if(relative > 0)
             {
@@ -149,12 +122,12 @@ public static class RigidBodySystem
 
             if(rigidbodyA.Mode == RigidBodyMode.Dynamic)
             {
-                rigidbodyA.ImpulseForce(-(j / rigidbodyA.Mass * collision.Normal));            
+                rigidbodyA.ImpulseForce(-(j / rigidbodyA.Mass * collisions[i].Normal));            
             }
 
             if(rigidbodyB.Mode == RigidBodyMode.Dynamic)
             {
-                rigidbodyB.ImpulseForce(j / rigidbodyB.Mass * collision.Normal);
+                rigidbodyB.ImpulseForce(j / rigidbodyB.Mass * collisions[i].Normal);
             }
         }
     }
