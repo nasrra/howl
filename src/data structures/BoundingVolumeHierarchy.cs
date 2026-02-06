@@ -259,7 +259,47 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     }
 
     /// <summary>
-    /// Queries a leaf for any data the may overlap within a given area
+    /// Queries the tree for any given leaves that may overlap a given raycast.
+    /// </summary>
+    /// <param name="raycastStart">The starting position of the raycast.</param>
+    /// <param name="raycastEnd">The end position of the raycast.</param>
+    /// <returns></returns>
+    public ReadOnlySpan<QueryResult> Query(Vector2 raycastStart, Vector2 raycastEnd)
+    {
+        queryResult.Clear();
+
+        Span<Branch> branchSpan = CollectionsMarshal.AsSpan(branches);
+
+        int i = 0;
+
+        while (i < branchSpan.Length)
+        {
+            ref Branch branch = ref branchSpan[i];
+
+            if (!AABB.Intersect(branch.AABB, raycastStart, raycastEnd))
+            {
+                // skip entire subtree
+                i += branch.SubtreeSize;
+                continue;
+            }
+
+            if (branch.LeafCount > 0)
+            {
+                QueryLeaf(branch.GetLeafIndices(), raycastStart, raycastEnd);
+                i++;
+            }
+            else
+            {
+                // descend to left child (always i + 1)
+                i++;
+            }
+        }
+
+        return CollectionsMarshal.AsSpan(queryResult);
+    }
+
+    /// <summary>
+    /// Queries a leaf for any data the may overlap within a given area.
     /// </summary>
     /// <param name="leafIndices">The leaves to query.</param>
     /// <param name="aabb">The area to check intersects against.</param>
@@ -270,6 +310,25 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         {
             ref Leaf leaf = ref leafSpan[leafIndices[i]];
             if(AABB.Intersect(leaf.AABB, aabb))
+            {
+                queryResult.Add(new QueryResult(leaf.GenIndex, leaf.Flag));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Queries a leaf for any data the may overlap a given raycast.
+    /// </summary>
+    /// <param name="leafIndices">The leaves to query.</param>
+    /// <param name="raycastStart">The starting position of the raycast.</param>
+    /// <param name="raycastEnd">The end position of the raycast.</param>
+    private void QueryLeaf(ReadOnlySpan<int> leafIndices, Vector2 raycastStart, Vector2 raycastEnd)
+    {
+        Span<Leaf> leafSpan = CollectionsMarshal.AsSpan(leaves);
+        for(int i = 0; i < leafIndices.Length; i++)
+        {
+            ref Leaf leaf = ref leafSpan[leafIndices[i]];
+            if(AABB.Intersect(leaf.AABB, raycastStart, raycastEnd))
             {
                 queryResult.Add(new QueryResult(leaf.GenIndex, leaf.Flag));
             }

@@ -78,7 +78,7 @@ public class BoundingVolumeHierarchyTest
     }
 
     [Fact]
-    public void QueryTree_Test()
+    public void QueryAABB_Test()
     {
         BoundingVolumeHierarchy bvh = new();
 
@@ -114,6 +114,50 @@ public class BoundingVolumeHierarchyTest
 
         // find dual intersect.
         ReadOnlySpan<QueryResult> doubleResult = bvh.Query(new AABB(5,5,20,20));
+        Assert.Equal(2,doubleResult.Length);
+        Assert.Equal(leaf1.GenIndex,    doubleResult[0].GenIndex);
+        Assert.Equal(leaf1.Flag,        doubleResult[0].Flag);
+        Assert.Equal(leaf2.GenIndex,    doubleResult[1].GenIndex);
+        Assert.Equal(leaf2.Flag,        doubleResult[1].Flag);
+    }
+
+    [Fact]
+    public void QueryRaycast_Test()
+    {
+        BoundingVolumeHierarchy bvh = new();
+
+        AABB leafAABB;
+        GenIndex genIndex;
+        byte flag;
+
+        // leaf 1 
+        leafAABB = new AABB(0,0,10,10);
+        genIndex = new GenIndex(0,0);
+        flag = 0;
+        Leaf leaf1 = new Leaf(leafAABB, genIndex, flag);
+        bvh.InsertLeaf(leaf1);
+
+        // leaf 2
+        leafAABB = new AABB(10,10,20,20);
+        genIndex = new GenIndex(1,0);
+        flag = 0;
+        Leaf leaf2 = new Leaf(leafAABB, genIndex, flag);
+        bvh.InsertLeaf(leaf2);
+
+        bvh.Construct();
+
+        // fail to interset.
+        ReadOnlySpan<QueryResult> zeroResult = bvh.Query(new Vector2(-1,-1), new Vector2(-10,-10));
+        Assert.Equal(0, zeroResult.Length);
+
+        // find single intersect.
+        ReadOnlySpan<QueryResult> singleResult = bvh.Query(new Vector2(5,0), new Vector2(5,30));
+        Assert.Equal(1,singleResult.Length);
+        Assert.Equal(leaf1.GenIndex,    singleResult[0].GenIndex);
+        Assert.Equal(leaf1.Flag,        singleResult[0].Flag);
+
+        // find double intersect.
+        ReadOnlySpan<QueryResult> doubleResult = bvh.Query(new Vector2(0,0), new Vector2(40,40));
         Assert.Equal(2,doubleResult.Length);
         Assert.Equal(leaf1.GenIndex,    doubleResult[0].GenIndex);
         Assert.Equal(leaf1.Flag,        doubleResult[0].Flag);
