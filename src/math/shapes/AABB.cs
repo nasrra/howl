@@ -113,6 +113,25 @@ public struct AABB
     }
 
     /// <summary>
+    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a line segment.
+    /// </summary>
+    /// <param name="aabb">The aabb.</param>
+    /// <param name="lineSegmentStart">the start of the line-segment.</param>
+    /// <param name="lineSegmentEnd">the end of the line-segment.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    public static bool Intersect(in AABB aabb, Vector2 lineSegmentStart, Vector2 lineSegmentEnd)
+    {
+        if(Intersect(aabb,Util.ClosestPoint(lineSegmentStart, lineSegmentEnd, aabb.Min)))
+        {
+            if(Intersect(aabb,Util.ClosestPoint(lineSegmentStart, lineSegmentEnd, aabb.Max)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Adds a vector to a AABB.
     /// </summary>
     /// <param name="aabb">The aabb to add to.</param>

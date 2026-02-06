@@ -182,4 +182,21 @@ public class AABBTest
         query = new AABB(11,11,15,15);
         Assert.False(AABB.Intersect(aabb, query));
     }
+
+    [Fact]
+    public void LineSegmentIntersect_Test()
+    {
+        AABB aabb = new AABB(0,0,10,10);
+
+        Vector2 lineSegmentStart;
+        Vector2 lineSegmentEnd;
+
+        lineSegmentStart = new Vector2(-1,-1);
+        lineSegmentEnd = new Vector2(10,10);
+
+        Assert.True(AABB.Intersect(aabb, lineSegmentStart, lineSegmentEnd));
+
+        lineSegmentEnd = new Vector2(-1,10);
+        Assert.False(AABB.Intersect(aabb, lineSegmentStart, lineSegmentEnd));
+    }
 }
