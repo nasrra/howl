@@ -1,5 +1,6 @@
 
 
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Howl.Math.Shapes;
@@ -211,10 +212,6 @@ public struct Rectangle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public override int GetHashCode()
     {   
-        return 
-            X.GetHashCode() ^
-            Y.GetHashCode() ^
-            Width.GetHashCode() ^ 
-            Height.GetHashCode();
+        return HashCode.Combine(X,Y,Height,Width);
     }
 }

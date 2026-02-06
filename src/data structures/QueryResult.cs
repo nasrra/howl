@@ -1,6 +1,6 @@
 using Howl.ECS;
 
-namespace Howl.DataStructures.Trees;
+namespace Howl.DataStructures;
 
 public readonly struct QueryResult
 {

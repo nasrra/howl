@@ -1,6 +1,8 @@
 using System;
 using Howl.Math.Shapes;
 
+namespace Howl.DataStructures;
+
 public unsafe struct Branch
 {
     public const int MaxLeaves = 2;

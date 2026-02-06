@@ -10,6 +10,7 @@ SHAPES_MATH_NAMESPACE="${MATH_NAMESPACE}Shapes."
 ECS_NAMESPACE="${NAME_SPACE}ECS."
 PHYSICS_NAMESPACE="${NAME_SPACE}Physics."
 GRAPHICS_NAMESPACE="${NAME_SPACE}Graphics."
+DATA_STRUCTURES_NAMESPACE="${NAME_SPACE}DataStructures."
 
 VENDORS_NAMESPACE="${NAME_SPACE}Vendors."
 
@@ -24,6 +25,7 @@ TEST_NAME=$1
 declare -A TEST_MAP
 TEST_MAP=(
     ["AABB"]="${SHAPES_MATH_NAMESPACE}AABBTest"
+    ["BoundingVolumeHierarchy"]="${DATA_STRUCTURES_NAMESPACE}BoundingVolumeHierarchyTest"
     ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
     ["ComponentType"]="${ECS_NAMESPACE}ComponentTypeTest"
     ["ECS"]="${ECS_NAMESPACE}"

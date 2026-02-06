@@ -101,7 +101,7 @@ public class GenIndexAllocator : IDisposable
     /// </returns>
     public GenIndexResult Deallocate(in GenIndex genIndex)
     {
-        if (entries.Count <= genIndex.index || genIndex.index < 0)
+        if (entries.Count <= genIndex.Index || genIndex.Index < 0)
         {
             throw new InvalidGenIndexException(genIndex);
         }
@@ -109,15 +109,15 @@ public class GenIndexAllocator : IDisposable
         // retrieve the entry.
 
         Span<AllocatorEntry> span = CollectionsMarshal.AsSpan(entries);
-        ref AllocatorEntry entry = ref span[genIndex.index];
+        ref AllocatorEntry entry = ref span[genIndex.Index];
         
-        if(entry.generation != genIndex.generation)
+        if(entry.generation != genIndex.Generation)
         {
             throw new StaleGenIndexException(genIndex);
         }
         
         entry.isActive = false;
-        free.Add(genIndex.index);
+        free.Add(genIndex.Index);
 
         return GenIndexResult.Success;
     }

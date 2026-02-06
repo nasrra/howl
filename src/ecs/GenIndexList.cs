@@ -40,21 +40,21 @@ public sealed class GenIndexList<T> : IGenIndexList
 
     private GenIndexResult ValidateGenIndex(in GenIndex genIndex, out Ref<SparseEntry> sprarseEntryRef)
     {
-        if(sparse.Count <= genIndex.index || genIndex.index < 0)
+        if(sparse.Count <= genIndex.Index || genIndex.Index < 0)
         {
             throw new InvalidGenIndexException(genIndex);
         }
 
         Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
-        ref SparseEntry sparseEntry = ref sparseSpan[genIndex.index];
+        ref SparseEntry sparseEntry = ref sparseSpan[genIndex.Index];
 
         if (sparseEntry.HasDenseEntry())
         {            
-            if(sparseEntry.generation < genIndex.generation)
+            if(sparseEntry.generation < genIndex.Generation)
             {
-                throw new StaleDenseAllocationException(new(genIndex.index, sparseEntry.generation), genIndex);
+                throw new StaleDenseAllocationException(new(genIndex.Index, sparseEntry.generation), genIndex);
             }
-            else if(sparseEntry.generation > genIndex.generation)
+            else if(sparseEntry.generation > genIndex.Generation)
             {
                 sprarseEntryRef = new(ref sparseEntry, true);
                 return GenIndexResult.StaleGenIndex;            
@@ -93,14 +93,14 @@ public sealed class GenIndexList<T> : IGenIndexList
             return result;
         }
 
-        if(sparseEntryRef.Value.HasDenseEntry() && sparseEntryRef.Value.generation == genIndex.generation)
+        if(sparseEntryRef.Value.HasDenseEntry() && sparseEntryRef.Value.generation == genIndex.Generation)
         {
             throw new DuplicateDenseAllocationException(genIndex);
         }
 
         // update the generation.
         
-        sparseEntryRef.Value.generation = genIndex.generation;
+        sparseEntryRef.Value.generation = genIndex.Generation;
     
         // allocate a new dense entry.
         
@@ -113,7 +113,7 @@ public sealed class GenIndexList<T> : IGenIndexList
         // set the dense entry's data.
         
         denseEntry.Value = value;
-        denseEntry.sparseIndex = genIndex.index;
+        denseEntry.sparseIndex = genIndex.Index;
         
         return GenIndexResult.Success;            
     }
@@ -336,7 +336,7 @@ public sealed class GenIndexList<T> : IGenIndexList
 
         ref SparseEntry sparseEntry = ref sparseEntryRef.Value;
 
-        if(sparseEntry.generation != genIndex.generation)
+        if(sparseEntry.generation != genIndex.Generation)
         {
             return GenIndexResult.StaleGenIndex;
         }

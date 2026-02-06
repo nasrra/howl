@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 using Howl.Math;
 using Howl.Math.Shapes;
 
-namespace Howl.DataStructures.Trees;
+namespace Howl.DataStructures;
 
 public sealed class BoundingVolumeHierarchy : IDisposable
 {   
     /// <summary>
-    /// Gets and sets the registered leaves for constructin branches to.
+    /// Gets and sets the inserted leaves for constructin branches to.
     /// </summary>
     private List<Leaf> leaves;
 
@@ -19,7 +19,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     private List<QueryResult> queryResult;
 
     /// <summary>
-    /// Gets the contructed branches from the registered leaves.
+    /// Gets the contructed branches from the inserted leaves.
     /// </summary>
     private List<Branch> branches;
 
@@ -44,10 +44,10 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     }
 
     /// <summary>
-    /// Registers a leaf for constructing branches to.
+    /// Inserts a leaf for constructing branches to.
     /// </summary>
     /// <param name="leaf">The leaf data.</param>
-    public void RegisterLeaf(Leaf leaf)
+    public void InsertLeaf(Leaf leaf)
     {
         leaves.Add(leaf);
     }
@@ -68,20 +68,22 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     /// <returns>the span.</returns>
     public ReadOnlySpan<Branch> GetBranches()
     {
+        ThrowIfDisposed();
         return CollectionsMarshal.AsSpan(branches);
     }
 
     /// <summary>
-    /// Gets a span of the registered leaves.
+    /// Gets a span of the inserted leaves.
     /// </summary>
     /// <returns>the span.</returns>
     public ReadOnlySpan<Leaf> GetLeaves()
     {
+        ThrowIfDisposed();
         return CollectionsMarshal.AsSpan(leaves);
     }
 
     /// <summary>
-    /// Constructs the tree with the registered leaves.
+    /// Constructs the tree with the inserted leaves.
     /// </summary>
     public void Construct()
     {
@@ -299,6 +301,14 @@ public sealed class BoundingVolumeHierarchy : IDisposable
 
         disposed = true;
         GC.SuppressFinalize(true);
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (disposed)
+        {
+            throw new ObjectDisposedException(nameof(BoundingVolumeHierarchy));
+        }
     }
 
     ~BoundingVolumeHierarchy()

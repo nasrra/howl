@@ -35,7 +35,7 @@ public struct SparseEntry
 
     public SparseEntry(in GenIndex genIndex)
     {
-        generation = genIndex.generation;
+        generation = genIndex.Generation;
         denseIndex = -1;
     }
 

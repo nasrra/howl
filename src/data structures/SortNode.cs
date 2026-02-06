@@ -1,5 +1,7 @@
 using Howl.Math;
 
+namespace Howl.DataStructures;
+
 public readonly struct SortNode
 {
     /// <summary>

@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using Howl.DataStructures.Trees;
+using Howl.DataStructures;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
@@ -122,7 +122,7 @@ public static class CollisionSystem
                 // collision resolution to eachother. Instead its only
                 // one that applys the resolution to eachother. This also stops 
                 // the same collider from colliding with itself.
-                if(leaves[i].GenIndex.index <= near[j].GenIndex.index)
+                if(leaves[i].GenIndex.Index <= near[j].GenIndex.Index)
                 {
                     continue;
                 }
@@ -561,7 +561,7 @@ public static class CollisionSystem
                     throw new StaleGenIndexException(genIndex);
             } 
 
-            bvh.RegisterLeaf(
+            bvh.InsertLeaf(
                 new Leaf(
                     Circle.Transform(collider.Shape, transformRef).GetAABB(),
                     genIndex, 
@@ -587,7 +587,7 @@ public static class CollisionSystem
                     throw new StaleGenIndexException(genIndex);
             } 
 
-            bvh.RegisterLeaf(
+            bvh.InsertLeaf(
                 new Leaf(
                     PolygonRectangle.Transform(collider.Shape, transformRef).GetAABB(),
                     genIndex, 

@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Howl.Math;
@@ -65,6 +66,6 @@ public struct Vector2Int
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public override int GetHashCode()
     {
-        return X.GetHashCode() ^ Y.GetHashCode(); // XOR the two hash codes together.
+        return HashCode.Combine(X,Y);
     }
 }

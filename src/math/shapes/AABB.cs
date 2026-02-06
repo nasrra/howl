@@ -158,7 +158,7 @@ public struct AABB
     /// <returns>The hash code.</returns>
     public override int GetHashCode()
     {
-        return base.GetHashCode();
+        return HashCode.Combine(Min, Max);
     }
 
     public override string ToString()

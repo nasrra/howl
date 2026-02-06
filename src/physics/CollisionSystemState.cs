@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Howl.DataStructures.Trees;
+using Howl.DataStructures;
 using Howl.Graphics;
 
 namespace Howl.Physics;
