@@ -36,7 +36,7 @@ public class AABBTest
     }
 
     [Fact]
-    public void DualAABBConstructor_Test()
+    public void UnionAABBConstructor_Test()
     {
         AABB a = new(
             new Vector2(-20, 20), 
@@ -142,5 +142,44 @@ public class AABBTest
         vector = new Vector2(4,-33);
         expected = new AABB(new Vector2(16,-132),new Vector2(204,-66));
         Assert.Equal(expected, aabb + vector);
+    }
+
+    [Fact]
+    public void VectorIntersect_Test()
+    {
+        AABB aabb = new AABB(0,0,10,10);
+        Vector2 vector;
+
+        vector = new Vector2(5,5);
+        Assert.True(AABB.Intersect(aabb, vector));
+        Assert.True(AABB.Intersect(vector, aabb));
+
+        vector = new Vector2(10,10);
+        Assert.True(AABB.Intersect(aabb, vector));
+        Assert.True(AABB.Intersect(vector, aabb));
+
+        vector = new Vector2(12,12);
+        Assert.False(AABB.Intersect(aabb, vector));
+        Assert.False(AABB.Intersect(vector, aabb));
+
+        vector = new Vector2(-12,12);
+        Assert.False(AABB.Intersect(aabb, vector));
+        Assert.False(AABB.Intersect(vector, aabb));
+    }
+
+    [Fact]
+    public void AABBIntersect_Test()
+    {
+        AABB aabb = new AABB(0,0,10,10);
+        AABB query;
+
+        query = new AABB(0,0,5,5);
+        Assert.True(AABB.Intersect(aabb, query));
+
+        query = new AABB(10,10,15,15);
+        Assert.False(AABB.Intersect(aabb, query));
+
+        query = new AABB(11,11,15,15);
+        Assert.False(AABB.Intersect(aabb, query));
     }
 }

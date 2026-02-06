@@ -53,7 +53,7 @@ public struct AABB
     }
 
     /// <summary>
-    /// Constructs a Axis-Aligned-Bounding-Box from two AABB's
+    /// Constructs a Axis-Aligned-Bounding-Box from the union of two AABB's
     /// </summary>
     /// <param name="a">aabb-a</param>
     /// <param name="b">aabb-b</param>
@@ -69,6 +69,7 @@ public struct AABB
     /// <param name="a">The first AABB.</param>
     /// <param name="b">The other AABB.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect(in AABB a, in AABB b)
     {
         if(a.Max.X <= b.Min.X || b.Max.X <= a.Min.X)
@@ -81,6 +82,34 @@ public struct AABB
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
+    /// </summary>
+    /// <param name="a">the aabb.</param>
+    /// <param name="vector">the vector.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(Vector2 vector, in AABB aabb)
+    {
+        return Intersect(aabb, vector);
+    }
+
+    /// <summary>
+    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
+    /// </summary>
+    /// <param name="a">the aabb.</param>
+    /// <param name="vector">the vector.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(in AABB aabb, Vector2 vector)
+    {
+        return 
+        aabb.Min.X <= vector.X &&
+        aabb.Min.Y <= vector.Y && 
+        aabb.Max.X >= vector.X &&
+        aabb.Max.Y >= vector.Y;
     }
 
     /// <summary>
