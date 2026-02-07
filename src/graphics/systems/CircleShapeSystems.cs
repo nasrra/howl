@@ -29,17 +29,17 @@ public static class CircleShapeSystems
                 ref CircleShape shape = ref dense.Value;
                 shapeGenIndexList.GetGenIndex(dense.sparseIndex, out GenIndex genIndex);
 
-                if(transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transform) == GenIndexResult.Success)
+                if(transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transform).Fail(out var result))
+                    continue;
+
+                switch (shape.DrawMode)
                 {
-                    switch (shape.DrawMode)
-                    {
-                        case DrawMode.Fill:
-                            renderer.DrawFilledShape(transform, shape);
-                        break;
-                        case DrawMode.Wireframe:
-                            renderer.DrawWireframeShape(transform, shape);
-                        break;
-                    }
+                    case DrawMode.Fill:
+                        renderer.DrawFilledShape(transform, shape);
+                    break;
+                    case DrawMode.Wireframe:
+                        renderer.DrawWireframeShape(transform, shape);
+                    break;
                 }
             }
         };

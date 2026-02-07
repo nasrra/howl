@@ -23,10 +23,10 @@ public static class SpriteSystems
                 ref Sprite sprite = ref denseEntry.Value;
                 spritesComponents.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
-                if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformRef) == GenIndexResult.Success)
-                {
-                    renderer.DrawSprite(transformRef.Value, sprite);
-                }
+                if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformRef).Fail())
+                    continue;
+                
+                renderer.DrawSprite(transformRef.Value, sprite);
             }
         };
     }

@@ -19,7 +19,7 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
         textures = new();
     }  
 
-    public void LoadTexture(string texturePath, out GenIndex genIndex)
+    public GenIndexResult LoadTexture(string texturePath, out GenIndex genIndex)
     {
         textureIds.Allocate(out genIndex, out bool reusedFreeGenIndex);
         if(reusedFreeGenIndex == false)
@@ -31,11 +31,8 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
 
         LoadTextureFromDisc(texturePath, out T texture);
         
-        switch(textures.Allocate(genIndex, texture))
-        {
-            case GenIndexResult.StaleGenIndex:
-                throw new StaleGenIndexException(genIndex);
-        }
+        textures.Allocate(genIndex, texture).Ok(out GenIndexResult result);
+        return result;
     }
 
     public abstract void LoadTextureFromDisc(string texturePath, out T texture);
@@ -43,22 +40,23 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
     public GenIndexResult UnloadTexture(in GenIndex index)
     {
         // ensure to dispose of the monogame texture before deallocating it.
-
         GenIndexResult result;
 
-        textures.GetDenseRef(index, out Ref<T> reference);
+        if(textures.GetDenseRef(index, out Ref<T> reference).Fail(out result))
+            goto Fail;
+
         reference.Value.Dispose();
         
-        result = textures.Deallocate(index);
+        if(textures.Deallocate(index).Fail(out result))
+            goto Fail;
 
+        if(textureIds.Deallocate(index).Fail(out result))
+            goto Fail;
 
-        if(result != GenIndexResult.Success)
-        {
-            return result;
-        }
-
-        result = textureIds.Deallocate(index);
         return result;
+
+        Fail:
+            return result;
     }
 
     public GenIndexResult GetTextureReadonlyRef(in GenIndex index, out ReadOnlyRef<T> readOnlyRef)

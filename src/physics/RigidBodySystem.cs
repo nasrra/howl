@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Howl.ECS;
 using Howl.Generic;
@@ -39,15 +40,12 @@ public static class RigidBodySystem
             rigidbodies.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the rigid body has a transform component.
-            switch (transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
+                Debug.Assert(false, $"{result}");
+                continue;
             }
 
-            
             if(rigidbody.Mode == RigidBodyMode.Dynamic)
             {
                 // apply gravity.
@@ -93,12 +91,12 @@ public static class RigidBodySystem
 
         for(int i = 0; i < collisions.Length; i+=2) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
         {            
-            if(rigidbodies.GetDenseRef(collisions[i].Owner, out Ref<RigidBody> rigidbodyARef) != GenIndexResult.Success)
+            if(rigidbodies.GetDenseRef(collisions[i].Owner, out Ref<RigidBody> rigidbodyARef) != GenIndexResult.Ok)
             {
                 continue;
             }
 
-            if(rigidbodies.GetDenseRef(collisions[i].Other, out Ref<RigidBody> rigidbodyBRef) != GenIndexResult.Success)
+            if(rigidbodies.GetDenseRef(collisions[i].Other, out Ref<RigidBody> rigidbodyBRef) != GenIndexResult.Ok)
             {
                 continue;
             }

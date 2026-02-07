@@ -30,10 +30,10 @@ public static class Polygon16ShapeSystems
                 ref Polygon16Shape shape = ref denseEntry.Value;
                 shapeGenIndexList.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
                 
-                if (transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transform) == GenIndexResult.Success)
-                {
-                    renderer.DrawWireframeShape(transform, shape);
-                }
+                if(transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transform).Fail())
+                    continue;
+                
+                renderer.DrawWireframeShape(transform, shape);
             }
         };
     }

@@ -65,10 +65,10 @@ public static class TextSystems
             ref Text16 text = ref denseEntry.Value;
             textComponents.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
             
-            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef) == GenIndexResult.Success)
-            {
-                renderer.DrawText(transformReadOnlyRef.Value, text);
-            }
+            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+                continue;
+
+            renderer.DrawText(transformReadOnlyRef.Value, text);
         }
     }
 
@@ -84,10 +84,10 @@ public static class TextSystems
             ref Text4096 text = ref denseEntry.Value;
             textComponents.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
             
-            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef) == GenIndexResult.Success)
-            {
-                renderer.DrawText(transformReadOnlyRef.Value, text);
-            }
+            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+                continue;
+
+            renderer.DrawText(transformReadOnlyRef.Value, text);
         }
     }
 

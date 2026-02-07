@@ -64,7 +64,7 @@ public sealed class TextureManager : TextureManager<Texture2D>
     {
         GenIndexResult result = textures.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Texture2D> textureRef);
         
-        dimensions = result == GenIndexResult.Success
+        dimensions = result == GenIndexResult.Ok
         ? new(textureRef.Value.Width, textureRef.Value.Height)
         : default;
 

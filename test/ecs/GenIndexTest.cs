@@ -77,8 +77,8 @@ public class GenIndexTest
 
         // ensure that the sparse references correctly link to a dense index.
 
-        Assert.Equal(GenIndexResult.Success, components.GetSparseReadOnlyRef(in index0, out ReadOnlyRef<SparseEntry> sparse0));
-        Assert.Equal(GenIndexResult.Success, components.GetSparseReadOnlyRef(in index1, out ReadOnlyRef<SparseEntry> sparse1));
+        Assert.Equal(GenIndexResult.Ok, components.GetSparseReadOnlyRef(in index0, out ReadOnlyRef<SparseEntry> sparse0));
+        Assert.Equal(GenIndexResult.Ok, components.GetSparseReadOnlyRef(in index1, out ReadOnlyRef<SparseEntry> sparse1));
 
         Assert.Equal(0, sparse0.Value.DenseIndex);
         Assert.Equal(1, sparse1.Value.DenseIndex);
@@ -93,8 +93,8 @@ public class GenIndexTest
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
 
-        Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index0, out Ref<Component> c0)); 
-        Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index1, out Ref<Component> c1)); 
+        Assert.Equal(GenIndexResult.Ok, components.GetDenseRef(index0, out Ref<Component> c0)); 
+        Assert.Equal(GenIndexResult.Ok, components.GetDenseRef(index1, out Ref<Component> c1)); 
         Assert.Equal(GenIndexResult.DenseNotAllocated, components.GetDenseRef(index2, out Ref<Component> c2)); 
     }
 
@@ -109,13 +109,13 @@ public class GenIndexTest
         components.Allocate(index0, new Component());
         components.Allocate(index1, new Component());
         
-        Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index0, out Ref<Component> c0A));
+        Assert.Equal(GenIndexResult.Ok, components.GetDenseRef(index0, out Ref<Component> c0A));
         Assert.True(c0A.Valid);
         c0A.Value.X = c0Value;
         c0A.Value.Y = c0Value;
         c0A.Value.Z = c0Value;
 
-        Assert.Equal(GenIndexResult.Success, components.GetDenseRef(index1, out Ref<Component> c1A));
+        Assert.Equal(GenIndexResult.Ok, components.GetDenseRef(index1, out Ref<Component> c1A));
         Assert.True(c1A.Valid);
         c1A.Value.X = c1Value;
         c1A.Value.Y = c1Value;
@@ -162,9 +162,9 @@ public class GenIndexTest
         // Deallocate the first gen index's dense data.
 
         GenIndexResult successResult = components.Deallocate(index0);
-        Assert.Equal(GenIndexResult.Success, successResult);
+        Assert.Equal(GenIndexResult.Ok, successResult);
 
-        Assert.Throws<DenseNotAllocatedException>(() => components.Deallocate(index0));
+        Assert.Equal(GenIndexResult.DenseNotAllocated, components.Deallocate(index0));
 
         // ensure that the dense indexes are properly handled during deallocation.
         

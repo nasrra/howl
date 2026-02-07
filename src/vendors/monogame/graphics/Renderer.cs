@@ -486,7 +486,7 @@ public sealed class Renderer : IRenderer
     public GenIndexResult DrawSprite(in Howl.Math.Transform transform, in Sprite sprite)
     {   
         GenIndexResult result = textureManager.GetTextureReadonlyRef(sprite.Texture, out ReadOnlyRef<Texture2D> texture);
-        if (result != GenIndexResult.Success || texture.Valid == false)
+        if (result != GenIndexResult.Ok || texture.Valid == false)
         {
             return result;
         }
@@ -523,7 +523,7 @@ public sealed class Renderer : IRenderer
     {
         GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
 
-        if(result != GenIndexResult.Success)
+        if(result != GenIndexResult.Ok)
         {
             return result;
         }
@@ -560,7 +560,7 @@ public sealed class Renderer : IRenderer
     {
         GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
 
-        if(result != GenIndexResult.Success)
+        if(result != GenIndexResult.Ok)
         {
             return result;
         }

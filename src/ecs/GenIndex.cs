@@ -6,6 +6,11 @@ namespace Howl.ECS;
 public readonly struct GenIndex
 {
     /// <summary>
+    /// Constructs an invalid GenIndex.
+    /// </summary>
+    public static GenIndex Invalid = new GenIndex(-1,-1);
+
+    /// <summary>
     /// Gets the index.
     /// </summary>
     public readonly int Index;

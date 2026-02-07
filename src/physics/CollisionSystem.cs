@@ -145,20 +145,16 @@ public static class CollisionSystem
         ref CircleCollider colliderB = ref colliderRefB.Value;
 
         // make sure the circle has a transform component.
-        switch(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA))
+        if(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA).Fail(out var result1))
         {
-            case GenIndexResult.DenseNotAllocated:
-                throw new DenseNotAllocatedException(genIndexA);
-            case GenIndexResult.StaleGenIndex:
-                return;
+            Debug.Assert(false, $"{result1}");
+            return;
         }
 
-        switch(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB))
+        if(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB).Fail(out var result2))
         {
-            case GenIndexResult.DenseNotAllocated:
-                throw new DenseNotAllocatedException(genIndexB);
-            case GenIndexResult.StaleGenIndex:
-                return;
+            Debug.Assert(false, $"{result2}");
+            return;
         }
 
         Circle circleA = Circle.Transform(colliderA.Shape, transformRefA);
@@ -228,21 +224,8 @@ public static class CollisionSystem
         ref RectangleCollider colliderB = ref colliderRefB.Value;
 
         // make sure the circle has a transform component.
-        switch(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA))
-        {
-            case GenIndexResult.DenseNotAllocated:
-                throw new DenseNotAllocatedException(genIndexA);
-            case GenIndexResult.StaleGenIndex:
-                return;
-        }
-
-        switch(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB))
-        {
-            case GenIndexResult.DenseNotAllocated:
-                throw new DenseNotAllocatedException(genIndexB);
-            case GenIndexResult.StaleGenIndex:
-                return;
-        }
+        transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA).Ok();
+        transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB).Ok();
 
         PolygonRectangle rectangleA = PolygonRectangle.Transform(colliderA.Shape,transformRefA.Value);
         PolygonRectangle rectangleB = PolygonRectangle.Transform(colliderB.Shape,transformRefB.Value); 
@@ -345,21 +328,8 @@ public static class CollisionSystem
         ref CircleCollider circleCollider = ref colliderRefB.Value;
 
         // make sure the circle has a transform component.
-        switch(transforms.GetDenseRef(rectangleGenIndex, out Ref<Transform> transformRefA))
-        {
-            case GenIndexResult.DenseNotAllocated:
-                throw new DenseNotAllocatedException(rectangleGenIndex);
-            case GenIndexResult.StaleGenIndex:
-                return;
-        }
-
-        switch(transforms.GetDenseRef(circleGenIndex, out Ref<Transform> transformRefB))
-        {
-            case GenIndexResult.DenseNotAllocated:
-                throw new DenseNotAllocatedException(circleGenIndex);
-            case GenIndexResult.StaleGenIndex:
-                return;
-        }
+        transforms.GetDenseRef(rectangleGenIndex, out Ref<Transform> transformRefA).Ok();
+        transforms.GetDenseRef(circleGenIndex, out Ref<Transform> transformRefB).Ok();
 
         PolygonRectangle rectangle = PolygonRectangle.Transform(rectangleCollider.Shape,transformRefA.Value);
         Circle circle = Circle.Transform(circleCollider.Shape,transformRefB.Value); 
@@ -480,20 +450,15 @@ public static class CollisionSystem
         for(int i = 0; i < span.Length; i+=2) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
         {
             ref readonly Collision collision = ref span[i]; 
-            switch(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformRefA))
+            
+            if(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformRefA).Fail())
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(collision.Owner);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(collision.Owner);
+                continue;
             }
-
-            switch(transforms.GetDenseRef(collision.Other, out Ref<Transform> transformRefB))
+            
+            if(transforms.GetDenseRef(collision.Other, out Ref<Transform> transformRefB).Fail())
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(collision.Other);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(collision.Other);
+                continue;
             }
 
             if(collision.OwnerParameters.Mode == ColliderMode.Kinematic)
@@ -537,13 +502,11 @@ public static class CollisionSystem
             circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out GenIndexResult result))
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
-            } 
+                Debug.Assert(false, $"{result}");
+                return;
+            }
 
             bvh.InsertLeaf(
                 new Leaf(
@@ -563,13 +526,11 @@ public static class CollisionSystem
             circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
-            } 
+                Debug.Assert(false, $"{result}");
+                continue;
+            }
 
             bvh.InsertLeaf(
                 new Leaf(
@@ -613,13 +574,11 @@ public static class CollisionSystem
             colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
-            } 
+                Debug.Assert(false, $"{result}");
+                continue;
+            }
 
             Colour drawColour = state.GetColliderColour(collider.Parameters);
             renderer.DrawWireframeShape(transformRef.Value, new CircleShape(collider.Shape, drawColour, DrawMode.Wireframe));
@@ -640,13 +599,11 @@ public static class CollisionSystem
             colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
-            } 
+                Debug.Assert(false, $"{result}");
+                continue;
+            }
 
             ReadOnlySpan<float> verticesX = collider.Shape.GetVerticesXAsSpan();
             ReadOnlySpan<float> verticesY = collider.Shape.GetVerticesYAsSpan();
@@ -680,13 +637,11 @@ public static class CollisionSystem
             colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
-            } 
+                Debug.Assert(false, $"{result}");
+                continue;
+            }
 
             AABB aabb = collider.Shape.GetAABB();
 
@@ -715,13 +670,11 @@ public static class CollisionSystem
             colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
-            } 
+                Debug.Assert(false, $"{result}");
+                continue;
+            }
 
             AABB aabb = collider.Shape.GetAABB();
 

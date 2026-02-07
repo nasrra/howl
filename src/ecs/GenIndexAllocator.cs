@@ -94,7 +94,7 @@ public class GenIndexAllocator : IDisposable
     /// <list type="bullet">
     ///     <item>
     ///         <description>
-    ///             <see cref="GenIndexResult.Success"/> - Then GenIndex was successfully freed for reuse.
+    ///             <see cref="GenIndexResult.Ok"/> - Then GenIndex was successfully freed for reuse.
     ///         </description>
     ///     </item>
     /// </list>
@@ -103,7 +103,7 @@ public class GenIndexAllocator : IDisposable
     {
         if (entries.Count <= genIndex.Index || genIndex.Index < 0)
         {
-            throw new InvalidGenIndexException(genIndex);
+            return GenIndexResult.InvalidGenIndex;
         }
 
         // retrieve the entry.
@@ -113,13 +113,13 @@ public class GenIndexAllocator : IDisposable
         
         if(entry.generation != genIndex.Generation)
         {
-            throw new StaleGenIndexException(genIndex);
+            return GenIndexResult.StaleGenIndex;
         }
         
         entry.isActive = false;
         free.Add(genIndex.Index);
 
-        return GenIndexResult.Success;
+        return GenIndexResult.Ok;
     }
 
     // /// <summary>

@@ -11,7 +11,26 @@ public interface ITextureManager : IDisposable
     /// </summary>
     /// <param name="texturePath">The file path to the Texture asset; relative to AssetManager.AssetsFolder</param>
     /// <param name="genIndex">The GenIndex assigned to the texture that was loaded.</param>
-    public void LoadTexture(string texturePath, out GenIndex genIndex);
+    /// <returns>
+    ///     <list type="bullet">
+    ///         <item> 
+    ///             <description>
+    ///                 <see cref="GenIndexResult.DenseAlreadyAllocated"/>
+    ///             </description>
+    ///         </item>
+    ///         <item> 
+    ///             <description>
+    ///                 <see cref="GenIndexResult.StaleGenIndex"/>
+    ///             </description>
+    ///         </item>
+    ///         <item> 
+    ///             <description>
+    ///                 <see cref="GenIndexResult.Ok"/>
+    ///             </description>
+    ///         </item>
+    ///     </list>
+    /// </returns>
+    public GenIndexResult LoadTexture(string texturePath, out GenIndex genIndex);
 
     /// <summary>
     /// Unloads a Texture asset from memeory.
@@ -26,7 +45,7 @@ public interface ITextureManager : IDisposable
     ///         </item>
     ///         <item>
     ///             <description>
-    ///                 <see cref="GenIndexResult.Success"/>
+    ///                 <see cref="GenIndexResult.Ok"/>
     ///             </description>
     ///         </item>
     ///     </list>
@@ -52,7 +71,7 @@ public interface ITextureManager : IDisposable
     ///         </item>
     ///         <item>
     ///             <description>
-    ///                 <see cref="GenIndexResult.Success"/>
+    ///                 <see cref="GenIndexResult.Ok"/>
     ///             </description>
     ///         </item>
     ///     </list>

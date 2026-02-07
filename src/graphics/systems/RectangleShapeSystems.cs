@@ -30,20 +30,20 @@ public static class RectangleShapeSystems{
                 shapeGenIndexList.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
                 // only draw if there is a transform associated with the rectangle.
-                if(transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transformRef) == GenIndexResult.Success)
-                {
-                    ref Transform transform = ref transformRef.Value;
+                if(transformGenIndexList.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail())
+                    continue;
 
-                    switch (shape.DrawMode)
-                    {
-                        case DrawMode.Fill:
-                            renderer.DrawFilledShape(transform, shape);
-                        break;
-                        case DrawMode.Wireframe:
-                            renderer.DrawWireframeShape(transform, shape);
-                        break;
-                    }
-                }   
+                ref Transform transform = ref transformRef.Value;
+
+                switch (shape.DrawMode)
+                {
+                    case DrawMode.Fill:
+                        renderer.DrawFilledShape(transform, shape);
+                    break;
+                    case DrawMode.Wireframe:
+                        renderer.DrawWireframeShape(transform, shape);
+                    break;
+                }
             }
         };
     }

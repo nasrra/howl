@@ -9,7 +9,6 @@ namespace Howl.ECS;
 
 public sealed class GenIndexList<T> : IGenIndexList
 {
-
     List<SparseEntry> sparse;
     public IReadOnlyList<SparseEntry> Sparse => sparse;
     
@@ -38,11 +37,12 @@ public sealed class GenIndexList<T> : IGenIndexList
         return true;
     }
 
-    private GenIndexResult ValidateGenIndex(in GenIndex genIndex, out Ref<SparseEntry> sprarseEntryRef)
+    private GenIndexResult ValidateGenIndex(in GenIndex genIndex, out Ref<SparseEntry> sparseEntryRef)
     {
         if(sparse.Count <= genIndex.Index || genIndex.Index < 0)
         {
-            throw new InvalidGenIndexException(genIndex);
+            sparseEntryRef = new();
+            return GenIndexResult.InvalidGenIndex;
         }
 
         Span<SparseEntry> sparseSpan = CollectionsMarshal.AsSpan(sparse);
@@ -52,17 +52,18 @@ public sealed class GenIndexList<T> : IGenIndexList
         {            
             if(sparseEntry.generation < genIndex.Generation)
             {
-                throw new StaleDenseAllocationException(new(genIndex.Index, sparseEntry.generation), genIndex);
+                sparseEntryRef = new();
+                return GenIndexResult.StaleDenseAllocation;
             }
             else if(sparseEntry.generation > genIndex.Generation)
             {
-                sprarseEntryRef = new(ref sparseEntry, true);
+                sparseEntryRef = new(ref sparseEntry, true);
                 return GenIndexResult.StaleGenIndex;            
             }
         }
         
-        sprarseEntryRef = new(ref sparseEntry, true);
-        return GenIndexResult.Success;
+        sparseEntryRef = new(ref sparseEntry, true);
+        return GenIndexResult.Ok;
     }
 
     /// <summary>
@@ -74,28 +75,29 @@ public sealed class GenIndexList<T> : IGenIndexList
     ///     <list type="bullet">
     ///         <item> 
     ///             <description>
+    ///                 <see cref="GenIndexResult.DenseAlreadyAllocated"/>
+    ///             </description>
+    ///         </item>
+    ///         <item> 
+    ///             <description>
     ///                 <see cref="GenIndexResult.StaleGenIndex"/>
     ///             </description>
     ///         </item>
     ///         <item> 
     ///             <description>
-    ///                 <see cref="GenIndexResult.Success"/>
+    ///                 <see cref="GenIndexResult.Ok"/>
     ///             </description>
     ///         </item>
     ///     </list>
     /// </returns>
-    public GenIndexResult Allocate(in GenIndex genIndex, T value)
+    public GenIndexResult Allocate(in GenIndex genIndex, in T value)
     {
-        GenIndexResult result = ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef);
-    
-        if(result != GenIndexResult.Success)
-        {
+        if(ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef).Fail(out var result))
             return result;
-        }
-
+    
         if(sparseEntryRef.Value.HasDenseEntry() && sparseEntryRef.Value.generation == genIndex.Generation)
         {
-            throw new DuplicateDenseAllocationException(genIndex);
+            return GenIndexResult.DenseAlreadyAllocated;
         }
 
         // update the generation.
@@ -115,7 +117,7 @@ public sealed class GenIndexList<T> : IGenIndexList
         denseEntry.Value = value;
         denseEntry.sparseIndex = genIndex.Index;
         
-        return GenIndexResult.Success;            
+        return GenIndexResult.Ok;            
     }
 
     /// <summary>
@@ -124,6 +126,11 @@ public sealed class GenIndexList<T> : IGenIndexList
     /// <param name="genIndex">The GenIndex associated with the sparse entry; used to retrieve the dense data.</param>
     /// <returns>
     ///     <list type=="bullet">
+    ///         <item> 
+    ///             <description>
+    ///                 <see cref="GenIndexResult.DenseNotAllocated"/>
+    ///             </description>
+    ///         </item>
     ///         <item>
     ///             <description>
     ///                 <see cref="GenIndexResult.StaleGenIndex"/>
@@ -131,27 +138,22 @@ public sealed class GenIndexList<T> : IGenIndexList
     ///         </item>
     ///         <item>
     ///             <description>
-    ///                 <see cref="GenIndexResult.Success"/>
+    ///                 <see cref="GenIndexResult.Ok"/>
     ///             </description>
     ///         </item>
     ///     </list>
     /// </returns>
     public GenIndexResult Deallocate(in GenIndex genIndex)
     {
-        
-        GenIndexResult result = ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef);
-
-        if(result != GenIndexResult.Success)
-        {
+        if(ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef).Fail(out var result))
             return result;
-        }
 
         // get the entry that will be swapped with the data that is to be removed.
         ref SparseEntry sparseEntryToRemove = ref sparseEntryRef.Value;
 
         if (sparseEntryToRemove.HasDenseEntry() == false)
         {
-            throw new DenseNotAllocatedException(genIndex);
+            return GenIndexResult.DenseNotAllocated;
         }
 
         Span<DenseEntry<T>> denseSpan = CollectionsMarshal.AsSpan(dense);
@@ -172,7 +174,7 @@ public sealed class GenIndexList<T> : IGenIndexList
 
         dense.RemoveAt(denseIndexToRemove);
         
-        return GenIndexResult.Success;            
+        return GenIndexResult.Ok;            
     }
 
     /// <summary>
@@ -217,7 +219,7 @@ public sealed class GenIndexList<T> : IGenIndexList
     ///         </item>
     ///         <item>
     ///             <description>
-    ///                 <see cref="GenIndexResult.Success"/>
+    ///                 <see cref="GenIndexResult.Ok"/>
     ///             </description> 
     ///         </item>
     ///     </list>
@@ -226,12 +228,8 @@ public sealed class GenIndexList<T> : IGenIndexList
     {
         reference = default;
 
-        GenIndexResult result = ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef);
-
-        if(result != GenIndexResult.Success)
-        {
+        if(ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef).Fail(out var result))
             return result;
-        }
 
         ref SparseEntry sparseEntry = ref sparseEntryRef.Value;
 
@@ -245,7 +243,7 @@ public sealed class GenIndexList<T> : IGenIndexList
 
         reference = new(ref denseSpan[sparseEntry.DenseIndex].Value, true);
         
-        return GenIndexResult.Success;
+        return GenIndexResult.Ok;
     }
 
 
@@ -272,7 +270,7 @@ public sealed class GenIndexList<T> : IGenIndexList
     ///         </item>
     ///         <item>
     ///             <description>
-    ///                 <see cref="GenIndexResult.Success"/>
+    ///                 <see cref="GenIndexResult.Ok"/>
     ///             </description>    
     ///         </item>
     ///     </list>
@@ -281,12 +279,8 @@ public sealed class GenIndexList<T> : IGenIndexList
     {
         readonlyReference = default;
 
-        GenIndexResult result = ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef);
-
-        if(result != GenIndexResult.Success)
-        {
+        if(ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef).Fail(out var result))
             return result;
-        }
 
         ref SparseEntry sparseEntry = ref sparseEntryRef.Value;
 
@@ -300,7 +294,7 @@ public sealed class GenIndexList<T> : IGenIndexList
 
         readonlyReference = new(ref denseSpan[sparseEntry.DenseIndex].Value, true);
         
-        return GenIndexResult.Success;
+        return GenIndexResult.Ok;
     }
 
 
@@ -318,7 +312,7 @@ public sealed class GenIndexList<T> : IGenIndexList
     ///         </item>
     ///         <item>
     ///             <description>
-    ///                 <see cref="GenIndexResult.Success"/>
+    ///                 <see cref="GenIndexResult.Ok"/>
     ///             </description>    
     ///         </item>
     ///     </list>
@@ -327,13 +321,9 @@ public sealed class GenIndexList<T> : IGenIndexList
     {
         readonlyReference = default;
         
-        GenIndexResult result = ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef);
+        if(ValidateGenIndex(genIndex, out Ref<SparseEntry> sparseEntryRef).Fail(out var result))
+            return result;
         
-        if(result != GenIndexResult.Success)
-        {
-            return result;    
-        }
-
         ref SparseEntry sparseEntry = ref sparseEntryRef.Value;
 
         if(sparseEntry.generation != genIndex.Generation)
@@ -342,7 +332,7 @@ public sealed class GenIndexList<T> : IGenIndexList
         }
 
         readonlyReference = new(ref sparseEntry, true);
-        return GenIndexResult.Success;
+        return GenIndexResult.Ok;
     }
 
     /// <summary>
@@ -354,7 +344,7 @@ public sealed class GenIndexList<T> : IGenIndexList
     ///     <list type="bullet">
     ///         <item>
     ///             <description>
-    ///                 <see cref="GenIndexResult.Success"/>
+    ///                 <see cref="GenIndexResult.Ok"/>
     ///             </description>    
     ///         </item>
     ///     </list>
