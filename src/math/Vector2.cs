@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.CompilerServices;
 
 namespace Howl.Math;
@@ -179,6 +178,29 @@ public struct Vector2
     }
 
     /// <summary>
+    /// Checks if this vector is nearly equal to another vector.
+    /// </summary>
+    /// <param name="other">the other vector to check against.</param>
+    /// <returns>true, if both vectors are nearly equal.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool NearlyEqual(Vector2 other)
+    {
+        return NearlyEqual(this, other);
+    }
+
+    /// <summary>
+    /// Checks if two vectors are nearly equal to eachother.
+    /// </summary>
+    /// <param name="a">vector a.</param>
+    /// <param name="b">vector b.</param>
+    /// <returns>true, if both vectors are nearly equal.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool NearlyEqual(Vector2 a, Vector2 b)
+    {
+        return Math.NearlyEqual(a.X,b.X) && Math.NearlyEqual(a.Y, b.Y);
+    }
+
+    /// <summary>
     /// Gets the dot product of two vector.
     /// </summary>
     /// <param name="lhs">The left-hand side vector.</param>
@@ -230,7 +252,7 @@ public struct Vector2
     public static float Length(Vector2 vector)
     {        
         float lengthSquared = LengthSquared(vector);
-        return MathF.Sqrt(lengthSquared);
+        return System.MathF.Sqrt(lengthSquared);
     }
 
     /// <summary>
@@ -359,7 +381,7 @@ public struct Vector2
     {
         float dx = from.X - to.X;
         float dy = from.Y - to.Y;
-        return MathF.Sqrt(dx * dx + dy * dy);
+        return System.MathF.Sqrt(dx * dx + dy * dy);
     }
 
     /// <summary>
@@ -461,8 +483,8 @@ public struct Vector2
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 MinComponent(Vector2 a, Vector2 b)
     {
-        float x = MathF.Min(a.X, b.X);
-        float y = MathF.Min(a.Y, b.Y);
+        float x = Math.Min(a.X, b.X);
+        float y = Math.Min(a.Y, b.Y);
         return new (x,y);
     }
 
@@ -511,8 +533,8 @@ public struct Vector2
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 MaxComponent(Vector2 a, Vector2 b)
     { 
-        float x = MathF.Max(a.X, b.X);
-        float y = MathF.Max(a.Y, b.Y);
+        float x = Math.Max(a.X, b.X);
+        float y = Math.Max(a.Y, b.Y);
         return new(x,y);
     }
 
@@ -544,7 +566,7 @@ public struct Vector2
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public override int GetHashCode()
     {
-        return HashCode.Combine(X,Y);
+        return System.HashCode.Combine(X,Y);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

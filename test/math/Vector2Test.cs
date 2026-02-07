@@ -286,4 +286,36 @@ public class Vector2Test
         Assert.Equal(expected, Vector2.Max(a,b));
         Assert.Equal(expected, Vector2.Max(b,a));
     }
+
+    [Fact]
+    public void NearlyEquals_Test()
+    {
+        Vector2 a;
+        Vector2 b;
+
+        a = new Vector2(33.33333f,33.33333f);
+        b = new Vector2(0,0);
+
+        for(int i = 0; i < 3; i++)
+        {
+            b += new Vector2(11.11111f,11.11111f);
+        }
+
+        Assert.True(Vector2.NearlyEqual(a,b));
+
+        a = new Vector2(-99.99999f,-99.99999f);
+        b = new Vector2(0,0);
+
+        for(int i = 0; i < 9; i++)
+        {
+            b -= new Vector2(11.11111f,11.11111f);
+        }
+
+        // this should be false due to rounding errors with floating point accumulation.
+        Assert.False(Vector2.NearlyEqual(a,b));
+
+        a = new Vector2(99999.99999f, 99999.99999f);
+        b = new Vector2(99999.99998f, 99999.99998f);
+        Assert.True(Vector2.NearlyEqual(a,b));
+    }
 }

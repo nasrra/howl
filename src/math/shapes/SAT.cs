@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Howl.Math.Shapes;
@@ -449,7 +448,7 @@ public static class SAT
             Vector2 start = new Vector2(x[startIndex], y[startIndex]);
             int endIndex = (startIndex + 1) % PolygonRectangle.MaxVertices;
             Vector2 end = new Vector2(x[endIndex], y[endIndex]);
-            Util.ClosestPoint(start, end, circle.Origin, out Vector2 closestPoint, out float distSqrd);
+            Math.ClosestPoint(start, end, circle.Origin, out Vector2 closestPoint, out float distSqrd);
             if(distSqrd < minDistSqrd)
             {
                 minDistSqrd = distSqrd;

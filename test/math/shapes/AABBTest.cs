@@ -199,4 +199,36 @@ public class AABBTest
         lineSegmentEnd = new Vector2(-1,10);
         Assert.False(AABB.Intersect(aabb, lineSegmentStart, lineSegmentEnd));
     }
+
+    [Fact]
+    public void NearlyEquals_Test()
+    {
+        AABB a;
+        AABB b;
+
+        a = new AABB(33.33333f,33.33333f,33.33333f,33.33333f);
+        b = new AABB(0,0,0,0);
+
+        for(int i = 0; i < 3; i++)
+        {
+            b += new Vector2(11.11111f,11.11111f);
+        }
+
+        Assert.True(AABB.NearlyEqual(a,b));
+
+        a = new AABB(-99.99999f,-99.99999f,-99.99999f,-99.99999f);
+        b = new AABB(0,0,0,0);
+
+        for(int i = 0; i < 9; i++)
+        {
+            b -= new Vector2(11.11111f,11.11111f);
+        }
+
+        // this should be false due to rounding errors with floating point accumulation.
+        Assert.False(AABB.NearlyEqual(a,b));
+
+        a = new AABB(99999.99999f, 99999.99999f, 99999.99999f, 99999.99999f);
+        b = new AABB(99999.99998f, 99999.99998f, 99999.99998f, 99999.99998f);
+        Assert.True(AABB.NearlyEqual(a,b));
+    }
 }

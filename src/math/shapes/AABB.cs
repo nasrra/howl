@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using Howl.Math;
 
 namespace Howl.Math.Shapes;
 
@@ -121,9 +120,9 @@ public struct AABB
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     public static bool Intersect(in AABB aabb, Vector2 lineSegmentStart, Vector2 lineSegmentEnd)
     {
-        if(Intersect(aabb,Util.ClosestPoint(lineSegmentStart, lineSegmentEnd, aabb.Min)))
+        if(Intersect(aabb,Math.ClosestPoint(lineSegmentStart, lineSegmentEnd, aabb.Min)))
         {
-            if(Intersect(aabb,Util.ClosestPoint(lineSegmentStart, lineSegmentEnd, aabb.Max)))
+            if(Intersect(aabb,Math.ClosestPoint(lineSegmentStart, lineSegmentEnd, aabb.Max)))
             {
                 return true;
             }
@@ -198,6 +197,29 @@ public struct AABB
     public override bool Equals(object obj)
     {
         return obj is AABB other && this == other;
+    }
+
+    /// <summary>
+    /// Gets whether or not this AABB is equal to another.
+    /// </summary>
+    /// <param name="other">the other aabb.</param>
+    /// <returns>true, if this is nearly equal to the other; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool NearlyEqual(AABB other)
+    {
+        return NearlyEqual(this, other);
+    }
+
+    /// <summary>
+    /// Gets whether or not two AABB are nearly equal.
+    /// </summary>
+    /// <param name="a">aabb a.</param>
+    /// <param name="b">aabb b.</param>
+    /// <returns>true, if both are nearly equal; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool NearlyEqual(AABB a, AABB b)
+    {
+        return Vector2.NearlyEqual(a.Min, b.Min) && Vector2.NearlyEqual(a.Max, b.Max);
     }
 
     /// <summary>
