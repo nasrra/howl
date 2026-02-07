@@ -414,46 +414,252 @@ public static class SAT
     }
 
     /// <summary>
-    /// Finds the contact point between an intersecting rectangle and circle.
+    /// Finds the contact point between an intersecting polygon and circle.
     /// </summary>
-    /// <param name="rectangle">the rectangle.</param>
+    /// <param name="polygonXVertices">the x-values of the polygon's vertices </param>
+    /// <param name="polygonYVertices">the y-values of the polygon's vertices.</param>
     /// <param name="circle">the circle.</param>
     /// <param name="xContactPoint">the x-value of the calculated contact point vector.</param>
     /// <param name="yContactPoint">the y-value of the calculated contact point vector.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(in PolygonRectangle rectangle, in Circle circle, out float xContactPoint, out float yContactPoint)
+    public static void FindContactPoints(
+        ReadOnlySpan<float> polygonXVertices, 
+        ReadOnlySpan<float> polygonYVertices,
+        in Circle circle, 
+        out float xContactPoint, 
+        out float yContactPoint)        
     {
-        FindContactPoints(rectangle, circle, out Vector2 contactPoint);
+        FindContactPoints(polygonXVertices, polygonYVertices, circle, out Vector2 contactPoint);
         xContactPoint = contactPoint.X;
         yContactPoint = contactPoint.Y;
     }
 
     /// <summary>
-    /// Finds the contact point between an intersecting rectangle and circle.
+    /// Finds the contact point between an intersecting polygon and circle.
     /// </summary>
-    /// <param name="rectangle">the rectangle.</param>
+    /// <param name="polygonVerticesX">the x-values of the polygon's vertices.</param>
+    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
     /// <param name="circle">the circle.</param>
     /// <param name="contactPoint">the contact point.</param>
+    /// <exception cref="ArgumentException">throws if the two vertice spans do not have the same length.</exception>    
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(in PolygonRectangle rectangle, in Circle circle, out Vector2 contactPoint)
+    public static void FindContactPoints(
+        ReadOnlySpan<float> polygonVerticesX, 
+        ReadOnlySpan<float> polygonVerticesY, 
+        in Circle circle, 
+        out Vector2 contactPoint
+    )
     {
+        if(polygonVerticesX.Length != polygonVerticesY.Length)
+        {
+            throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' is not equal to polygonVerticesY length '{polygonVerticesY.Length}'");
+        }
+
         contactPoint = Vector2.MaxValue;
         float minDistSqrd = float.MaxValue;
-        ReadOnlySpan<float> x = rectangle.GetVerticesXAsReadOnlySpan();
-        ReadOnlySpan<float> y = rectangle.GetVerticesYAsReadOnlySpan();
+        int length = polygonVerticesX.Length;
 
         // find the closest point for each edge of the rectangle.
-        for(int startIndex = 0; startIndex < PolygonRectangle.MaxVertices; startIndex++)
+        for(int startIndex = 0; startIndex < length; startIndex++)
         {
-            Vector2 start = new Vector2(x[startIndex], y[startIndex]);
-            int endIndex = (startIndex + 1) % PolygonRectangle.MaxVertices;
-            Vector2 end = new Vector2(x[endIndex], y[endIndex]);
-            Math.ClosestPoint(start, end, circle.Origin, out Vector2 closestPoint, out float distSqrd);
+            Vector2 edgeStart = new Vector2(polygonVerticesX[startIndex], polygonVerticesY[startIndex]);
+            int endIndex = (startIndex + 1) % length;
+            Vector2 edgeEnd = new Vector2(polygonVerticesX[endIndex], polygonVerticesY[endIndex]);
+            Math.ClosestPoint(edgeStart, edgeEnd, circle.Origin, out Vector2 closestPoint, out float distSqrd);
             if(distSqrd < minDistSqrd)
             {
                 minDistSqrd = distSqrd;
                 contactPoint = closestPoint;
             }
         }
+    }
+
+    /// <summary>
+    /// Finds the contact points between two intersecting polygons.
+    /// </summary>
+    /// <remarks>
+    /// Note: ensure to check contact points amount before using contactPoint2.
+    /// </remarks>
+    /// <param name="polygonAVerticesX">the x-values of the polygon A's vertices.</param>
+    /// <param name="polygonAVerticesY">the y-values of the polygon A's vertices.</param>
+    /// <param name="polygonBVerticesX">the x-values of the polygon B's vertices.</param>
+    /// <param name="polygonBVerticesY">the y-values of the polygon B's vertices.</param>
+    /// <param name="epsilon">the threshold for equality in the case of two contact points being found.</param>
+    /// <param name="contactPoint1X">the x-value of contact point 1 vector.</param>
+    /// <param name="contactPoint1Y">the y-value of contact point 1 vector.</param>
+    /// <param name="contactPoint2X">the x-value of contact point 2 vector.</param>
+    /// <param name="contactPoint2Y">the y-value of contact point 2 vector.</param>
+    /// <param name="contactPointsAmount">the amount of contact points found; can be 1 or 2.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(
+        ReadOnlySpan<float> polygonAVerticesX, 
+        ReadOnlySpan<float> polygonAVerticesY, 
+        ReadOnlySpan<float> polygonBVerticesX, 
+        ReadOnlySpan<float> polygonBVerticesY, 
+        float epsilon,
+        out float contactPoint1X, 
+        out float contactPoint1Y, 
+        out float contactPoint2X, 
+        out float contactPoint2Y, 
+        out int contactPointsAmount
+    )
+    {
+        FindContactPoints(
+            polygonAVerticesX, 
+            polygonAVerticesY, 
+            polygonBVerticesX, 
+            polygonBVerticesY,
+            epsilon,
+            out Vector2 contactPoint1,
+            out Vector2 contactPoint2,
+            out contactPointsAmount 
+        );
+        
+        contactPoint1X = contactPoint1.X;
+        contactPoint1Y = contactPoint1.Y;
+
+        contactPoint2X = contactPoint2.X;
+        contactPoint2Y = contactPoint2.Y;
+    }
+
+    /// <summary>
+    /// Finds the contact points between two intersecting polygons.
+    /// </summary>
+    /// <remarks>
+    /// Note: ensure to check contact points amount before using contactPoint2.
+    /// </remarks>
+    /// <param name="polygonAVerticesX">the x-values of the polygon A's vertices.</param>
+    /// <param name="polygonAVerticesY">the y-values of the polygon A's vertices.</param>
+    /// <param name="polygonBVerticesX">the x-values of the polygon B's vertices.</param>
+    /// <param name="polygonBVerticesY">the y-values of the polygon B's vertices.</param>
+    /// <param name="epsilon">the threshold for equality in the case of two contact points being found.</param>
+    /// <param name="contactPoint1">the first contact point.</param>
+    /// <param name="contactPoint2">the second contact point.</param>
+    /// <param name="contactPointsAmount">the amount of contact points found; can be 1 or 2.</param>
+    /// <exception cref="ArgumentException">throws if polygon A or B vertices X and Y spans do not have matching lengths.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(
+        ReadOnlySpan<float> polygonAVerticesX, 
+        ReadOnlySpan<float> polygonAVerticesY, 
+        ReadOnlySpan<float> polygonBVerticesX, 
+        ReadOnlySpan<float> polygonBVerticesY,
+        float epsilon, 
+        out Vector2 contactPoint1, 
+        out Vector2 contactPoint2, 
+        out int contactPointsAmount
+    )
+    {
+        if(polygonAVerticesX.Length != polygonAVerticesY.Length)
+        {
+            throw new ArgumentException($"polygonAVerticesX length '{polygonAVerticesX.Length}' is not equal to polygonAVerticesY length '{polygonAVerticesY.Length}'");
+        }
+
+        if(polygonBVerticesX.Length != polygonBVerticesY.Length)
+        {
+            throw new ArgumentException($"polygonBVerticesX length '{polygonBVerticesX.Length}' is not equal to polygonBVerticesY length '{polygonBVerticesY.Length}'");
+        }
+
+        contactPoint1 = Vector2.Zero;
+        contactPoint2 = Vector2.Zero;
+        contactPointsAmount = 0;
+        float minDistSqrd = float.MaxValue;
+
+        // polygon a to b.
+        FindContactPointsOneWay(
+            polygonAVerticesX, 
+            polygonAVerticesY, 
+            polygonBVerticesX, 
+            polygonBVerticesY,
+            epsilon,
+            ref minDistSqrd,
+            ref contactPoint1,
+            ref contactPoint2,
+            ref contactPointsAmount
+        );
+
+        // polygon b to a.
+        FindContactPointsOneWay(
+            polygonBVerticesX, 
+            polygonBVerticesY,
+            polygonAVerticesX, 
+            polygonAVerticesY, 
+            epsilon,
+            ref minDistSqrd,
+            ref contactPoint1,
+            ref contactPoint2,
+            ref contactPointsAmount
+        );
+    }
+
+    /// <summary>
+    /// Finds the contact points between two intersecting polygons.
+    /// </summary>
+    /// <remarks>
+    /// Note: this function assumes polygon A and B vertices X and Y spans have matching lengths.
+    /// </remarks>
+    /// <param name="polygonAVerticesX">the x-values of the polygon A's vertices.</param>
+    /// <param name="polygonAVerticesY">the y-values of the polygon A's vertices.</param>
+    /// <param name="polygonBVerticesX">the x-values of the polygon B's vertices.</param>
+    /// <param name="polygonBVerticesY">the y-values of the polygon B's vertices.</param>
+    /// <param name="epsilon">the threshold for equality in the case of two contact points being found.</param>
+    /// <param name="contactPoint1">the first contact point.</param>
+    /// <param name="contactPoint2">the second contact point.</param>
+    /// <param name="contactPointsAmount">the amount of contact points found; can be 1 or 2.</param>
+    private static void FindContactPointsOneWay(
+        ReadOnlySpan<float> polygonAVerticesX, 
+        ReadOnlySpan<float> polygonAVerticesY, 
+        ReadOnlySpan<float> polygonBVerticesX, 
+        ReadOnlySpan<float> polygonBVerticesY,
+        float epsilon, 
+        ref float minDistSqrd,
+        ref Vector2 contactPoint1, 
+        ref Vector2 contactPoint2, 
+        ref int contactPointsAmount
+    )
+    {
+        int polygonAVerticesLength = polygonAVerticesX.Length;
+        int polygonBVerticesLength = polygonBVerticesX.Length;
+
+        for(int i = 0; i < polygonAVerticesLength; i++)
+        {
+            Vector2 point = new Vector2(polygonAVerticesX[i], polygonAVerticesY[i]);
+
+            for(int startIndex = 0; startIndex < polygonBVerticesLength; startIndex++)
+            {
+                // find the closest point on polygon b to the vertice on polygon a.
+                
+                Vector2 edgeStart = new Vector2(polygonBVerticesX[startIndex], polygonBVerticesY[startIndex]);
+                
+                int endIndex = (startIndex + 1) % polygonBVerticesLength;
+                
+                Vector2 edgeEnd = new Vector2(polygonBVerticesX[endIndex], polygonBVerticesY[endIndex]);
+                
+                Math.ClosestPoint(edgeStart, edgeEnd, point, out Vector2 closestPoint, out float distSqrd);
+
+                if(Math.NearlyEqual(distSqrd, minDistSqrd, epsilon))
+                {
+                    // note: there is a chance that two contact points can be in the same place.
+                    // this is caused by when two vertices - one from each polygon - are in contact.
+                    // without this 'if check', all the contact information will be wiped out 
+                    // when those two corners hit eachother.
+
+                    if(Vector2.NearlyEqual(closestPoint, contactPoint1, epsilon) == false)
+                    {
+                        // there are two contact points.
+                        contactPointsAmount = 2;
+                        contactPoint2 = closestPoint;                        
+                    }
+                }
+                else if(distSqrd < minDistSqrd)
+                {
+                    // a new absolute minimum contact point has been found.
+                    // meaning that there is only one contact point.
+
+                    minDistSqrd = distSqrd;
+                    contactPointsAmount = 1;
+                    contactPoint1 = closestPoint;
+                }
+            } 
+        } 
     }
 }

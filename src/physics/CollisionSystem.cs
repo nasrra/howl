@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Howl.DataStructures;
 using Howl.ECS;
@@ -11,6 +13,8 @@ namespace Howl.Physics;
 
 public static class CollisionSystem
 {
+    private const float PolygonContactPointEpsilon = 1e-5f;
+
     /// <summary>
     /// Registers all necessary components of this system.
     /// </summary>
@@ -190,7 +194,7 @@ public static class CollisionSystem
                     [yContactPoint],
                     normal,
                     depth
-                );            
+                );
             }
             else
             {                
@@ -259,17 +263,70 @@ public static class CollisionSystem
             out float depth
         ))
         {
-            RegisterCollision(
-                state,
-                genIndexA,
-                genIndexB,
-                colliderA.Parameters,
-                colliderB.Parameters,
-                [],
-                [],
-                normal,
-                depth
-            );
+
+            if(colliderA.Parameters.CalculateContactPoints || colliderB.Parameters.CalculateContactPoints)
+            {                
+                SAT.FindContactPoints(
+                    rectangleA.GetVerticesXAsReadOnlySpan(),
+                    rectangleA.GetVerticesYAsReadOnlySpan(), 
+                    rectangleB.GetVerticesXAsReadOnlySpan(),
+                    rectangleB.GetVerticesYAsReadOnlySpan(), 
+                    PolygonContactPointEpsilon,
+                    out float xContactPoint1, 
+                    out float yContactPoint1,
+                    out float xContactPoint2, 
+                    out float yContactPoint2,
+                    out int contactCount
+                );
+
+                // check if there are one or two contact points found.
+                switch (contactCount)
+                {
+                    case 1:
+                        RegisterCollision(
+                            state,
+                            genIndexA,
+                            genIndexB,
+                            colliderA.Parameters,
+                            colliderB.Parameters,
+                            [xContactPoint1],
+                            [yContactPoint1],
+                            normal,
+                            depth
+                        );
+                    break;
+                    case 2:
+                        RegisterCollision(
+                            state,
+                            genIndexA,
+                            genIndexB,
+                            colliderA.Parameters,
+                            colliderB.Parameters,
+                            [xContactPoint1, xContactPoint2],
+                            [yContactPoint1, yContactPoint2],
+                            normal,
+                            depth
+                        );
+                    break;
+                    default:
+                        throw new Exception();
+                }
+            }
+            else
+            {                
+                RegisterCollision(
+                    state,
+                    genIndexA,
+                    genIndexB,
+                    colliderA.Parameters,
+                    colliderB.Parameters,
+                    [],
+                    [],
+                    normal,
+                    depth
+                );
+            }
+
         }                
     }
 
@@ -325,7 +382,13 @@ public static class CollisionSystem
         {
             if(rectangleCollider.Parameters.CalculateContactPoints || circleCollider.Parameters.CalculateContactPoints)
             {
-                SAT.FindContactPoints(rectangle, circle, out float xContactPoint, out float yContactPoint);
+                SAT.FindContactPoints(
+                    rectangle.GetVerticesXAsReadOnlySpan(),
+                    rectangle.GetVerticesYAsReadOnlySpan(), 
+                    circle, 
+                    out float xContactPoint, 
+                    out float yContactPoint
+                );
                 RegisterCollision(
                     state,
                     rectangleGenIndex, 
@@ -436,14 +499,12 @@ public static class CollisionSystem
             if(collision.OwnerParameters.Mode == ColliderMode.Kinematic)
             {
                 // separate only collider B if A is Kinematic.
-                // Debug.WriteLine($"{collision.ColliderA}, {collision.ColliderB}");
                 Vector2 displacement = collision.Normal * collision.Depth * 0.5f;
                 transformRefB.Value.Position += displacement;
             }
             else if(collision.OtherParameters.Mode == ColliderMode.Kinematic)
             {
                 // separate only collider A if B is Kinematic.
-                // Debug.WriteLine($"{collision.ColliderA}, {collision.ColliderB}");
                 Vector2 displacement = collision.Normal * collision.Depth;                
                 transformRefA.Value.Position -= displacement;
             }
@@ -683,7 +744,8 @@ public static class CollisionSystem
             ref readonly Collision collision = ref span[i];
             ReadOnlySpan<float> x = collision.GetXContactPointsAsReadOnlySpan();
             ReadOnlySpan<float> y = collision.GetYContactPointsAsReadOnlySpan();
-            
+
+
             for(int j = 0; j < collision.ContactPointsCount; j++)
             {
                 renderer.DrawFilledShape(

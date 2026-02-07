@@ -4,6 +4,8 @@ using Math = Howl.Math.Math;
 
 public class MathTest
 {
+    private const float NearlyEqualEpsilon = 1e-6f;
+
     [Fact]
     public void Abs_Test()
     {
@@ -52,7 +54,7 @@ public class MathTest
             value2 += 11.11111f;
         }
 
-        Assert.True(Math.NearlyEqual(value1, value2));
+        Assert.True(Math.NearlyEqual(value1, value2, NearlyEqualEpsilon));
 
         value1 = -99.99999f;
         value2 = 0;
@@ -63,10 +65,10 @@ public class MathTest
         }
 
         // this should be false due to rounding errors with floating point accumulation.
-        Assert.False(Math.NearlyEqual(value1, value2));
+        Assert.False(Math.NearlyEqual(value1, value2, NearlyEqualEpsilon));
 
         value1 = 99999.9998f;
         value2 = 99999.9999f;
-        Assert.True(Math.NearlyEqual(value1, value2));
+        Assert.True(Math.NearlyEqual(value1, value2, NearlyEqualEpsilon));
     }
 }

@@ -5,10 +5,7 @@ namespace Howl.Test.Math;
 
 public class Vector2Test
 {
-    public Vector2Test()
-    {
-        
-    }
+    private const float NearlyEqualEpsilon = 1e-6f;
 
     [Fact]
     public void Vector2Constructor_Test()
@@ -301,7 +298,7 @@ public class Vector2Test
             b += new Vector2(11.11111f,11.11111f);
         }
 
-        Assert.True(Vector2.NearlyEqual(a,b));
+        Assert.True(Vector2.NearlyEqual(a,b,NearlyEqualEpsilon));
 
         a = new Vector2(-99.99999f,-99.99999f);
         b = new Vector2(0,0);
@@ -312,10 +309,10 @@ public class Vector2Test
         }
 
         // this should be false due to rounding errors with floating point accumulation.
-        Assert.False(Vector2.NearlyEqual(a,b));
+        Assert.False(Vector2.NearlyEqual(a,b,NearlyEqualEpsilon));
 
         a = new Vector2(99999.99999f, 99999.99999f);
         b = new Vector2(99999.99998f, 99999.99998f);
-        Assert.True(Vector2.NearlyEqual(a,b));
+        Assert.True(Vector2.NearlyEqual(a,b,NearlyEqualEpsilon));
     }
 }

@@ -5,6 +5,9 @@ namespace Howl.Test.Math.Shapes;
 
 public class AABBTest
 {
+
+    private const float NearlyEqualEpsilon = 1e-6f;
+    
     [Fact]
     public void FloatConstructor_Test()
     {
@@ -214,7 +217,7 @@ public class AABBTest
             b += new Vector2(11.11111f,11.11111f);
         }
 
-        Assert.True(AABB.NearlyEqual(a,b));
+        Assert.True(AABB.NearlyEqual(a,b,NearlyEqualEpsilon));
 
         a = new AABB(-99.99999f,-99.99999f,-99.99999f,-99.99999f);
         b = new AABB(0,0,0,0);
@@ -225,10 +228,10 @@ public class AABBTest
         }
 
         // this should be false due to rounding errors with floating point accumulation.
-        Assert.False(AABB.NearlyEqual(a,b));
+        Assert.False(AABB.NearlyEqual(a,b,NearlyEqualEpsilon));
 
         a = new AABB(99999.99999f, 99999.99999f, 99999.99999f, 99999.99999f);
         b = new AABB(99999.99998f, 99999.99998f, 99999.99998f, 99999.99998f);
-        Assert.True(AABB.NearlyEqual(a,b));
+        Assert.True(AABB.NearlyEqual(a,b,NearlyEqualEpsilon));
     }
 }

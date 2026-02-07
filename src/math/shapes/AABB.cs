@@ -203,23 +203,25 @@ public struct AABB
     /// Gets whether or not this AABB is equal to another.
     /// </summary>
     /// <param name="other">the other aabb.</param>
+    /// <param name="epsilon">the threshold for equality.</param>
     /// <returns>true, if this is nearly equal to the other; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public bool NearlyEqual(AABB other)
+    public bool NearlyEqual(AABB other, float epsilon)
     {
-        return NearlyEqual(this, other);
+        return NearlyEqual(this, other, epsilon);
     }
-
+    
     /// <summary>
     /// Gets whether or not two AABB are nearly equal.
     /// </summary>
     /// <param name="a">aabb a.</param>
     /// <param name="b">aabb b.</param>
+    /// <param name="epsilon">the threshold for equality.</param>
     /// <returns>true, if both are nearly equal; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool NearlyEqual(AABB a, AABB b)
+    public static bool NearlyEqual(AABB a, AABB b, float epsilon)
     {
-        return Vector2.NearlyEqual(a.Min, b.Min) && Vector2.NearlyEqual(a.Max, b.Max);
+        return Vector2.NearlyEqual(a.Min, b.Min, epsilon) && Vector2.NearlyEqual(a.Max, b.Max, epsilon);
     }
 
     /// <summary>

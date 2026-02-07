@@ -107,14 +107,15 @@ public static class Math
     /// <param name="epsilon">The threshold for equality.</param>
     /// <returns>true, if both values are equal; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool NearlyEqual(float a, float b, float epsilon = 1e-6f)
+    public static bool NearlyEqual(float a, float b, float epsilon)
     {
-        // Note: norm-based comparison enurses
-        // the epsilon comparison doesnt return false negatives
-        // at large floating point values.
-        
+        // // Note: norm-based comparison enurses
+        // // the epsilon comparison doesnt return false negatives
+        // // at large floating point values.        
         float diff = Abs(a-b);
-        float norm = Max(a,b);
-        return diff <= epsilon * Max(1f, norm);
+        // float norm = Max(Abs(a),Abs(b));
+        // return diff <= epsilon * Max(1f, norm);
+
+        return diff <= epsilon;
     }
 }

@@ -181,11 +181,12 @@ public struct Vector2
     /// Checks if this vector is nearly equal to another vector.
     /// </summary>
     /// <param name="other">the other vector to check against.</param>
+    /// <param name="epsilon">the threshold for equality.</param>
     /// <returns>true, if both vectors are nearly equal.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public bool NearlyEqual(Vector2 other)
+    public bool NearlyEqual(Vector2 other, float epsilon)
     {
-        return NearlyEqual(this, other);
+        return NearlyEqual(this, other, epsilon);
     }
 
     /// <summary>
@@ -193,11 +194,12 @@ public struct Vector2
     /// </summary>
     /// <param name="a">vector a.</param>
     /// <param name="b">vector b.</param>
+    /// <param name="epsilon">the threshold for equality.</param>
     /// <returns>true, if both vectors are nearly equal.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool NearlyEqual(Vector2 a, Vector2 b)
+    public static bool NearlyEqual(Vector2 a, Vector2 b, float epsilon)
     {
-        return Math.NearlyEqual(a.X,b.X) && Math.NearlyEqual(a.Y, b.Y);
+        return Math.NearlyEqual(a.X,b.X, epsilon) && Math.NearlyEqual(a.Y, b.Y, epsilon);
     }
 
     /// <summary>
