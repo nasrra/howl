@@ -511,7 +511,7 @@ public sealed class Renderer : IRenderer
                 sprite.ColourTint.ToMonoGame(), 
                 -transform.Rotation, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
                 sprite.Origin.ToMonogame(), 
-                sprite.Scale.ToMonogame(), 
+                (sprite.Scale * transform.Scale).ToMonogame(), 
                 SpriteEffects.None, 
                 sprite.LayerDepth
             );
