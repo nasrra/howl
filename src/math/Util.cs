@@ -21,6 +21,21 @@ public static class Util
     /// <param name="lineSegmentStart">the beginning of the line-segment.</param>
     /// <param name="lineSegmentEnd">the end of the line-segment.</param>
     /// <param name="queryPoint">the point to find the closest point towards.</param>
+    /// <param name="closestPoint">The closest point along the line segment towards the query point.</param>
+    /// <param name="distanceSquared">The distance squared from the closest point to the query point.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ClosestPoint(Vector2 lineSegmentStart, Vector2 lineSegmentEnd, Vector2 queryPoint, out Vector2 closestPoint, out float distanceSquared)
+    {
+        closestPoint = ClosestPoint(lineSegmentStart, lineSegmentEnd, queryPoint);
+        distanceSquared = Vector2.DistanceSquared(queryPoint, closestPoint);
+    }
+
+    /// <summary>
+    /// Gets the closest point along a line segment towards a given point. 
+    /// </summary>
+    /// <param name="lineSegmentStart">the beginning of the line-segment.</param>
+    /// <param name="lineSegmentEnd">the end of the line-segment.</param>
+    /// <param name="queryPoint">the point to find the closest point towards.</param>
     /// <returns>The closest point along the line segment towards the query point.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 ClosestPoint(Vector2 lineSegmentStart, Vector2 lineSegmentEnd, Vector2 queryPoint)

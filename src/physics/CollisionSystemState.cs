@@ -75,10 +75,14 @@ public sealed class CollisionSystemState : IDisposable
     public Colour BvhLeafAABBColour;
 
     /// <summary>
-    /// Gets and sets the debug draw colout for bvh-treee branch aabb's
+    /// Gets and sets the debug draw colour for bvh-treee branch aabb's
     /// </summary>
     public Colour BvhBranchAABBColour;
 
+    /// <summary>
+    /// Gets and sets the debug draw colour for contact-points;
+    /// </summary>
+    public Colour ContactPointColour;
 
     /// <summary>
     /// Gets and sets whether or not to draw collider wireframes.
@@ -94,6 +98,11 @@ public sealed class CollisionSystemState : IDisposable
     /// Gets and sets whether or not to draw bvh branches.
     /// </summary>
     public bool DrawBvhBranches;
+
+    /// <summary>
+    /// Gets and sets whether or not to draw contact points.
+    /// </summary>
+    public bool DrawContactPoints;
 
     /// <summary>
     /// Gets and sets whether or not this instance has been disposed.
@@ -120,10 +129,12 @@ public sealed class CollisionSystemState : IDisposable
         InactiveColliderColour          = Colour.Black;
         BvhLeafAABBColour               = Colour.Purple;
         BvhBranchAABBColour             = Colour.Yellow;
+        ContactPointColour              = Colour.Red;
 
         DrawColliderWireframes  = false;
         DrawAABBWireframes      = false;
         DrawBvhBranches         = false;
+        DrawContactPoints       = false;
 
         Bvh = new();
     }

@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Howl.Math.Shapes;
 
@@ -16,6 +18,7 @@ public static class SAT
     /// <param name="normal">The normal of the intersection in relation to the rhs-circle.</param>
     /// <param name="depth">The depth of the intersection in relation to the rhs-circle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect(
         Circle lhs,
         Circle rhs,
@@ -58,6 +61,7 @@ public static class SAT
     /// <param name="normal">The normal of the intersection in relation to the rhs-rectangle.</param>
     /// <param name="depth">The depth of the intersection in relation to the rhs-rectangle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect(PolygonRectangle lhs, PolygonRectangle rhs, out Vector2 normal, out float depth)
     {
 
@@ -119,6 +123,7 @@ public static class SAT
     /// <param name="depth">The depth of the intersection in relation to polygon B.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     /// <exception cref="ArgumentException">throw when polygonA or polygonB vertex spans do not share the same length.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static bool OneWayIntersect(        
         ReadOnlySpan<float> polygonVerticesXA, 
         ReadOnlySpan<float> polygonVerticesYA, 
@@ -186,6 +191,7 @@ public static class SAT
     /// <param name="normal">The normal of the intersection in relation to the circle.</param>
     /// <param name="depth">The depth of the intersection in relation to the circle.</param>
     /// <returns>true, if there was an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect(PolygonRectangle rectangle, Circle circle, out Vector2 normal, out float depth)
     {
         return Intersect(rectangle.GetVerticesXAsSpan(), rectangle.GetVerticesYAsSpan(), circle, out normal, out depth);
@@ -201,6 +207,7 @@ public static class SAT
     /// <param name="depth">The depth of the intersection in relation to the circle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect
     (
         ReadOnlySpan<float> polygonVerticesX,
@@ -311,6 +318,7 @@ public static class SAT
     /// <param name="min">the minimum edge-value of the polygon.</param>
     /// <param name="max">the maximum edge-value of the polygon.</param>
     /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void ProjectPolygon(
         ReadOnlySpan<float> verticesX, 
         ReadOnlySpan<float> verticesY,
@@ -353,6 +361,7 @@ public static class SAT
     /// <param name="axis">The axis to project onto.</param>
     /// <param name="min">The minimum-edge value of the circle.</param>
     /// <param name="max">The maximum-edge value of the circle.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void ProjectCircle(
         Circle circle,
         Vector2 axis,
@@ -375,4 +384,77 @@ public static class SAT
             max = temp;
         }
     }  
+
+    /// <summary>
+    /// Finds the contact point between two intersecting circles.
+    /// </summary>
+    /// <param name="a">circle a.</param>
+    /// <param name="b">circle b.</param>
+    /// <param name="xContactPoint">the x-value of the calculated contact point vector.</param>
+    /// <param name="yContactPoint">the y-value of the calculated contact point vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(in Circle a, in Circle b, out float xContactPoint, out float yContactPoint)
+    {
+        FindContactPoints(a,b,out Vector2 contactPoint);
+        xContactPoint = contactPoint.X;
+        yContactPoint = contactPoint.Y;
+    }
+
+    /// <summary>
+    /// Finds the contact point between two intersecting circles.
+    /// </summary>
+    /// <param name="a">circle a.</param>
+    /// <param name="b">circle b.</param>
+    /// <param name="contactPoint">The calculated contact point.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(in Circle a, in Circle b, out Vector2 contactPoint)
+    {
+        Vector2 distance = b.Origin - a.Origin;
+        Vector2 direction = distance.Normalise();
+        contactPoint = a.Origin + (direction * a.Radius);
+    }
+
+    /// <summary>
+    /// Finds the contact point between an intersecting rectangle and circle.
+    /// </summary>
+    /// <param name="rectangle">the rectangle.</param>
+    /// <param name="circle">the circle.</param>
+    /// <param name="xContactPoint">the x-value of the calculated contact point vector.</param>
+    /// <param name="yContactPoint">the y-value of the calculated contact point vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(in PolygonRectangle rectangle, in Circle circle, out float xContactPoint, out float yContactPoint)
+    {
+        FindContactPoints(rectangle, circle, out Vector2 contactPoint);
+        xContactPoint = contactPoint.X;
+        yContactPoint = contactPoint.Y;
+    }
+
+    /// <summary>
+    /// Finds the contact point between an intersecting rectangle and circle.
+    /// </summary>
+    /// <param name="rectangle">the rectangle.</param>
+    /// <param name="circle">the circle.</param>
+    /// <param name="contactPoint">the contact point.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(in PolygonRectangle rectangle, in Circle circle, out Vector2 contactPoint)
+    {
+        contactPoint = Vector2.MaxValue;
+        float minDistSqrd = float.MaxValue;
+        ReadOnlySpan<float> x = rectangle.GetVerticesXAsReadOnlySpan();
+        ReadOnlySpan<float> y = rectangle.GetVerticesYAsReadOnlySpan();
+
+        // find the closest point for each edge of the rectangle.
+        for(int startIndex = 0; startIndex < PolygonRectangle.MaxVertices; startIndex++)
+        {
+            Vector2 start = new Vector2(x[startIndex], y[startIndex]);
+            int endIndex = (startIndex + 1) % PolygonRectangle.MaxVertices;
+            Vector2 end = new Vector2(x[endIndex], y[endIndex]);
+            Util.ClosestPoint(start, end, circle.Origin, out Vector2 closestPoint, out float distSqrd);
+            if(distSqrd < minDistSqrd)
+            {
+                minDistSqrd = distSqrd;
+                contactPoint = closestPoint;
+            }
+        }
+    }
 }

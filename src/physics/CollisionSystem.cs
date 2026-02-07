@@ -61,6 +61,11 @@ public static class CollisionSystem
         {
             DebugDrawBvhBranches(state, renderer, state.Bvh);
         }
+
+        if (state.DrawContactPoints)
+        {
+            DebugDrawContactPoints(renderer, state);
+        }
     }
 
     public static void FindCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
@@ -171,15 +176,37 @@ public static class CollisionSystem
             out float depth
         ))
         {
-            RegisterCollision(
-                state,
-                genIndexA,
-                genIndexB,
-                colliderA.Parameters,
-                colliderB.Parameters,
-                normal,
-                depth
-            );
+            if(colliderA.Parameters.CalculateContactPoints || colliderB.Parameters.CalculateContactPoints)
+            {
+                // submit the collision with contact points if one of the colliders needs them.
+                SAT.FindContactPoints(circleA, circleB, out float xContactPoint, out float yContactPoint);
+                RegisterCollision(
+                    state,
+                    genIndexA,
+                    genIndexB,
+                    colliderA.Parameters,
+                    colliderB.Parameters,
+                    [xContactPoint],
+                    [yContactPoint],
+                    normal,
+                    depth
+                );            
+            }
+            else
+            {                
+                // submit the collision without any contact points if none of the colliders needs them.
+                RegisterCollision(
+                    state,
+                    genIndexA,
+                    genIndexB,
+                    colliderA.Parameters,
+                    colliderB.Parameters,
+                    [],
+                    [],
+                    normal,
+                    depth
+                );
+            }
         }                
     }
 
@@ -238,6 +265,8 @@ public static class CollisionSystem
                 genIndexB,
                 colliderA.Parameters,
                 colliderB.Parameters,
+                [],
+                [],
                 normal,
                 depth
             );
@@ -294,15 +323,35 @@ public static class CollisionSystem
             out float depth
         ))
         {
-            RegisterCollision(
-                state,
-                rectangleGenIndex, 
-                circleGenIndex, 
-                rectangleCollider.Parameters,
-                circleCollider.Parameters,
-                normal,
-                depth
-            );
+            if(rectangleCollider.Parameters.CalculateContactPoints || circleCollider.Parameters.CalculateContactPoints)
+            {
+                SAT.FindContactPoints(rectangle, circle, out float xContactPoint, out float yContactPoint);
+                RegisterCollision(
+                    state,
+                    rectangleGenIndex, 
+                    circleGenIndex, 
+                    rectangleCollider.Parameters,
+                    circleCollider.Parameters,
+                    [xContactPoint],
+                    [yContactPoint],
+                    normal,
+                    depth
+                );
+            }
+            else
+            {                
+                RegisterCollision(
+                    state,
+                    rectangleGenIndex, 
+                    circleGenIndex, 
+                    rectangleCollider.Parameters,
+                    circleCollider.Parameters,
+                    [],
+                    [],
+                    normal,
+                    depth
+                );
+            }
         }                
     }
 
@@ -314,6 +363,8 @@ public static class CollisionSystem
     /// <param name="genIndexB">The gen index of collider b.</param>
     /// <param name="parametersA">The parameters of collider a.</param>
     /// <param name="parametersB">The parameters of collider b.</param>
+    /// <param name="xContactPoints">the x-values of the calculated contact points.</param>
+    /// <param name="yContactPoints">the y-values of the calculated contact points.</param>
     /// <param name="normal">The normal of the collision.</param>
     /// <param name="depth">The depth of the collision.</param>
     private static void RegisterCollision(
@@ -322,34 +373,40 @@ public static class CollisionSystem
         in GenIndex genIndexB,
         in ColliderParameters parametersA,
         in ColliderParameters parametersB,
+        ReadOnlySpan<float> xContactPoints,
+        ReadOnlySpan<float> yContactPoints,
         in Vector2 normal,
         in float depth
     )
     {        
-            // Add the sibling collisions to the collisions manifold for later resolution.
-            // NOTE: this is done so that the collision manifold can correctly binary search
-            // for collisions outside of the collision system.
-            state.CollisionManifold.AddCollision(
-                new Collision(
-                    genIndexA, 
-                    genIndexB,
-                    parametersA,
-                    parametersB, 
-                    normal, 
-                    depth
-                )
-            );
+        // Add the sibling collisions to the collisions manifold for later resolution.
+        // NOTE: this is done so that the collision manifold can correctly binary search
+        // for collisions outside of the collision system.
+        state.CollisionManifold.AddCollision(
+            new Collision(
+                genIndexA, 
+                genIndexB,
+                parametersA,
+                parametersB, 
+                xContactPoints,
+                yContactPoints,
+                normal, 
+                depth
+            )
+        );
 
-            state.CollisionManifold.AddCollision(
-                new Collision(
-                    genIndexB,
-                    genIndexA, 
-                    parametersB,
-                    parametersA, 
-                    normal, 
-                    depth
-                )
-            );
+        state.CollisionManifold.AddCollision(
+            new Collision(
+                genIndexB,
+                genIndexA, 
+                parametersB,
+                parametersA, 
+                xContactPoints,
+                yContactPoints,
+                normal, 
+                depth
+            )
+        );
     }
 
     public static void ResolveCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
@@ -398,6 +455,88 @@ public static class CollisionSystem
                 transformRefB.Value.Position += displacement;    
             }
 
+        }
+    }
+
+    public static void ReconstructBvhTree(ComponentRegistry componentRegistry, BoundingVolumeHierarchy bvh)
+    {   
+        // clear the previous bvh data.
+        bvh.Clear();
+
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
+        GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
+        GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>();
+        
+        // add circle colliders.
+        Span<DenseEntry<CircleCollider>> circleDenseEntries = circleColliders.GetDenseAsSpan();
+        for(int i = 0; i < circleDenseEntries.Length; i++)
+        {
+            ref DenseEntry<CircleCollider> denseEntry = ref circleDenseEntries[i];
+            ref CircleCollider collider = ref denseEntry.Value;
+            circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+
+            // ensure the collider has a transform component.
+            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            {
+                case GenIndexResult.DenseNotAllocated:
+                    throw new DenseNotAllocatedException(genIndex);
+                case GenIndexResult.StaleGenIndex:
+                    throw new StaleGenIndexException(genIndex);
+            } 
+
+            bvh.InsertLeaf(
+                new Leaf(
+                    Circle.Transform(collider.Shape, transformRef).GetAABB(),
+                    genIndex, 
+                    (byte)ColliderType.Circle
+                )
+            );
+        }
+
+        // Add rectangle colliders.
+        Span<DenseEntry<RectangleCollider>> rectangleDenseEntries = rectangleColliders.GetDenseAsSpan();
+        for(int i = 0; i < rectangleDenseEntries.Length; i++)
+        {
+            ref DenseEntry<RectangleCollider> denseEntry = ref rectangleDenseEntries[i];
+            ref RectangleCollider collider = ref denseEntry.Value;
+            circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+
+            // ensure the collider has a transform component.
+            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
+            {
+                case GenIndexResult.DenseNotAllocated:
+                    throw new DenseNotAllocatedException(genIndex);
+                case GenIndexResult.StaleGenIndex:
+                    throw new StaleGenIndexException(genIndex);
+            } 
+
+            bvh.InsertLeaf(
+                new Leaf(
+                    PolygonRectangle.Transform(collider.Shape, transformRef).GetAABB(),
+                    genIndex, 
+                    (byte)ColliderType.Rectangle
+                )
+            );
+        }
+
+        // construct the bvh with the new data.
+        bvh.Construct();
+    }
+
+    private static void DebugDrawBvhBranches(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
+    {
+        ReadOnlySpan<Branch> branch = bvh.GetBranches();
+
+        for(int i = 0; i < branch.Length; i++)
+        {
+            renderer.DrawWireframeShape(
+                new Transform(Vector2.Zero, Vector2.One, 0),
+                new RectangleShape(
+                    new Rectangle(branch[i].AABB.Min, branch[i].AABB.Max), 
+                    state.BvhBranchAABBColour,
+                    DrawMode.Wireframe
+                )
+            );
         }
     }
 
@@ -536,85 +675,31 @@ public static class CollisionSystem
         }
     }
 
-    public static void ReconstructBvhTree(ComponentRegistry componentRegistry, BoundingVolumeHierarchy bvh)
-    {   
-        // clear the previous bvh data.
-        bvh.Clear();
-
-        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
-        GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>();
-        
-        // add circle colliders.
-        Span<DenseEntry<CircleCollider>> circleDenseEntries = circleColliders.GetDenseAsSpan();
-        for(int i = 0; i < circleDenseEntries.Length; i++)
-        {
-            ref DenseEntry<CircleCollider> denseEntry = ref circleDenseEntries[i];
-            ref CircleCollider collider = ref denseEntry.Value;
-            circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
-
-            // ensure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
-            {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
-            } 
-
-            bvh.InsertLeaf(
-                new Leaf(
-                    Circle.Transform(collider.Shape, transformRef).GetAABB(),
-                    genIndex, 
-                    (byte)ColliderType.Circle
-                )
-            );
-        }
-
-        // Add rectangle colliders.
-        Span<DenseEntry<RectangleCollider>> rectangleDenseEntries = rectangleColliders.GetDenseAsSpan();
-        for(int i = 0; i < rectangleDenseEntries.Length; i++)
-        {
-            ref DenseEntry<RectangleCollider> denseEntry = ref rectangleDenseEntries[i];
-            ref RectangleCollider collider = ref denseEntry.Value;
-            circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
-
-            // ensure the collider has a transform component.
-            switch(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef))
-            {
-                case GenIndexResult.DenseNotAllocated:
-                    throw new DenseNotAllocatedException(genIndex);
-                case GenIndexResult.StaleGenIndex:
-                    throw new StaleGenIndexException(genIndex);
-            } 
-
-            bvh.InsertLeaf(
-                new Leaf(
-                    PolygonRectangle.Transform(collider.Shape, transformRef).GetAABB(),
-                    genIndex, 
-                    (byte)ColliderType.Rectangle
-                )
-            );
-        }
-
-        // construct the bvh with the new data.
-        bvh.Construct();
-    }
-
-    private static void DebugDrawBvhBranches(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
+    private static void DebugDrawContactPoints(IRenderer renderer, CollisionSystemState state)
     {
-        ReadOnlySpan<Branch> branch = bvh.GetBranches();
-
-        for(int i = 0; i < branch.Length; i++)
+        ReadOnlySpan<Collision> span = state.CollisionManifold.GetCollisionsAsReadOnlySpan();
+        for(int i = 0; i < span.Length; i++)
         {
-            renderer.DrawWireframeShape(
-                new Transform(Vector2.Zero, Vector2.One, 0),
-                new RectangleShape(
-                    new Rectangle(branch[i].AABB.Min, branch[i].AABB.Max), 
-                    state.BvhBranchAABBColour,
-                    DrawMode.Wireframe
-                )
-            );
+            ref readonly Collision collision = ref span[i];
+            ReadOnlySpan<float> x = collision.GetXContactPointsAsReadOnlySpan();
+            ReadOnlySpan<float> y = collision.GetYContactPointsAsReadOnlySpan();
+            
+            for(int j = 0; j < collision.ContactPointsCount; j++)
+            {
+                renderer.DrawFilledShape(
+                    new Transform(
+                        new Vector2(x[j], y[j]),
+                        Vector2.One, 
+                        0
+                    ),
+                    new RectangleShape(
+                        new Rectangle(-0.5f,0.5f, 1f, 1f), 
+                        state.ContactPointColour,
+                        DrawMode.Fill
+                    )
+                );                
+            }
+            
         }
     }
 }

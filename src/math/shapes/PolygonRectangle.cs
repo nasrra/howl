@@ -99,6 +99,20 @@ public unsafe struct PolygonRectangle
     }
 
     /// <summary>
+    /// Gets the x-value of vertices in a readonly span. 
+    /// </summary>
+    /// <returns>the readonly span.</returns>
+    public ReadOnlySpan<float> GetVerticesXAsReadOnlySpan()
+    {
+        Span<float> span;
+        fixed(float* ptr = VerticesX)
+        {
+            span = new Span<float>(ptr, MaxVertices);
+        }
+        return span;
+    }
+
+    /// <summary>
     /// Gets y-value of the vertices in a span.
     /// </summary>
     /// <returns>The span</returns>
@@ -111,6 +125,21 @@ public unsafe struct PolygonRectangle
         }
         return span;
     }
+
+    /// <summary>
+    /// Gets the y-value of the vertices in a readonly span.
+    /// </summary>
+    /// <returns>the readonly span.</returns>
+    public ReadOnlySpan<float> GetVerticesYAsReadOnlySpan()
+    {
+        Span<float> span;
+        fixed(float* ptr = VerticesY)
+        {
+            span = new Span<float>(ptr, MaxVertices);
+        }
+        return span;
+    }
+
 
     /// <summary>
     /// Constructs a new rectangle by transform the vertices of the specified rectangle.
