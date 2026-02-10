@@ -125,7 +125,7 @@ public sealed class GenIndexList<T> : IGenIndexList
     /// </summary>
     /// <param name="genIndex">The GenIndex associated with the sparse entry; used to retrieve the dense data.</param>
     /// <returns>
-    ///     <list type=="bullet">
+    ///     <list type="bullet">
     ///         <item> 
     ///             <description>
     ///                 <see cref="GenIndexResult.DenseNotAllocated"/>
@@ -389,16 +389,16 @@ public sealed class GenIndexList<T> : IGenIndexList
 
     public void PrintAll()
     {
-        Debug.WriteLine("[GenIndexList]");
-        Debug.WriteLine("$\tSparse");
+        System.Diagnostics.Debug.WriteLine("[GenIndexList]");
+        System.Diagnostics.Debug.WriteLine("$\tSparse");
         for(int i = 0; i < sparse.Count; i++)
         {
-            Debug.WriteLine($"\t\t{sparse[i]}");
+            System.Diagnostics.Debug.WriteLine($"\t\t{sparse[i]}");
         }
-        Debug.WriteLine("$\tDense");
+        System.Diagnostics.Debug.WriteLine("$\tDense");
         for(int i = 0; i < dense.Count; i++)
         {
-            Debug.WriteLine($"\t\t{dense[i]}");
+            System.Diagnostics.Debug.WriteLine($"\t\t{dense[i]}");
         }
     }
 

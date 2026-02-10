@@ -150,11 +150,11 @@ public class GenIndexAllocator : IDisposable
 
     public void PrintAll()
     {
-        Debug.WriteLine("[Generational Index Allocator]");
+        System.Diagnostics.Debug.WriteLine("[Generational Index Allocator]");
         Span<AllocatorEntry> span = CollectionsMarshal.AsSpan(entries);
         for(int i = 0; i < span.Length; i++)
         {
-            Debug.WriteLine(span[i]);
+            System.Diagnostics.Debug.WriteLine(span[i]);
         }
     }
 

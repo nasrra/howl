@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Howl.Math;
@@ -117,5 +118,40 @@ public static class Math
         // return diff <= epsilon * Max(1f, norm);
 
         return diff <= epsilon;
+    }
+
+    /// <summary>
+    /// Clamps a value between a min and max
+    /// </summary>
+    /// <remarks>
+    /// Note: Min and max are both invlusive.
+    /// </remarks>
+    /// <param name="value">the value to clamp.</param>
+    /// <param name="min">the min value.</param>
+    /// <param name="max">the max value.</param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float Clamp(float value, float min, float max)
+    {
+        if(min > max)
+        {
+            ThrowMinMaxException(min, max);
+        }
+
+        if(value <= min)
+        {
+            return min;
+        }
+        else if(value >= max)
+        {
+            return max;
+        }
+
+        return value;
+    }
+
+    private static void ThrowMinMaxException<T>(T min, T max)
+    {
+        throw new ArgumentException($"cannot Clamp when min '{min}' is greater than max '{max}'");
     }
 }

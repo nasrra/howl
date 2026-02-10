@@ -11,24 +11,19 @@ public abstract class HowlApp : IDisposable
     public static HowlApp Instance {get; private set;}
 
     /// <summary>
-    /// Gets the renderer used by this HowlApp.
-    /// </summary>
-    public IRenderer Renderer {get; private set;}
-
-    /// <summary>
     /// Gets the InputManager used by this HowlApp.
     /// </summary>
     public IInputManager InputManager {get; private set;}
 
     /// <summary>
-    /// Gets the ComponentRegistry used for gameplay.
+    /// Gets the renderer state.
     /// </summary>
-    public ComponentRegistry WorldComponentRegistry {get; private set;}
+    public IRendererState RendererState {get; private set;}
 
     /// <summary>
-    /// Gets the ComponentRegistry used for Gui.
+    /// Gets the ComponentRegistry used for gameplay.
     /// </summary>
-    public ComponentRegistry GuiComponentRegistry {get; private set;}
+    public ComponentRegistry ComponentRegistry {get; private set;}
 
     /// <summary>
     /// Gets the SystemRegistry used by this HowlApp.
@@ -58,17 +53,12 @@ public abstract class HowlApp : IDisposable
     private Vendors.MonoGame.MonoGameApp monoGameApp;
     private HowlAppBackend backend;
 
+    private DrawSystem drawSystem;
+
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
-    public HowlApp(
-        HowlAppBackend howlAppBackend, 
-        Resolution resolution, 
-        Math.Vector2 worldCameraPosition,
-        Math.Vector2 guiCameraPosition,
-        float worldCameraZoomVirtualResolution,
-        float guiCameraZoomVirtualResolution
-    )
+    public HowlApp(HowlAppBackend howlAppBackend, Resolution resolution)
     {
         if (Instance == null)
         {
@@ -85,8 +75,7 @@ public abstract class HowlApp : IDisposable
         }
 
         GenIndexAllocator = new();
-        WorldComponentRegistry = new(GenIndexAllocator);
-        GuiComponentRegistry = new(GenIndexAllocator);
+        ComponentRegistry = new(GenIndexAllocator);
         SystemRegistry = new();
 
         // instantiate debug stop watches.
@@ -95,13 +84,7 @@ public abstract class HowlApp : IDisposable
         DrawStepStopwatch           = new();
 
         backend = howlAppBackend;
-        InitialiseBackend(
-            resolution, 
-            worldCameraPosition,
-            guiCameraPosition, 
-            worldCameraZoomVirtualResolution,
-            guiCameraZoomVirtualResolution);
-
+        InitialiseBackend(resolution);
         Initialise();
     }
 
@@ -109,24 +92,12 @@ public abstract class HowlApp : IDisposable
     /// Initialises the backend used for the App.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    private void InitialiseBackend(
-        Resolution resolution, 
-        Math.Vector2 worldCameraPosition, 
-        Math.Vector2 guiCameraPosition, 
-        float worldCameraZoomVirtualResolution, 
-        float guiCameraZoomVirtualResolution
-    )
+    private void InitialiseBackend(Resolution resolution)
     {
         switch (backend)
         {
             case HowlAppBackend.MonoGame:
-                InitialiseMonoGameBackend(
-                    resolution, 
-                    worldCameraPosition,
-                    guiCameraPosition, 
-                    worldCameraZoomVirtualResolution,
-                    guiCameraZoomVirtualResolution
-                );
+                InitialiseMonoGameBackend(resolution);
             break;
             default:
                 throw new InvalidOperationException($"HowlApp cannot be initialised with a backend of {backend}");
@@ -178,6 +149,7 @@ public abstract class HowlApp : IDisposable
     public virtual void Draw(float deltaTime)
     {   
         SystemRegistry.Draw(deltaTime);
+        drawSystem(deltaTime);
     }
 
     /// <summary>
@@ -191,11 +163,11 @@ public abstract class HowlApp : IDisposable
 
     private const float FixedDt = 1f / 60f;
     private float fixedUpdateTime = 0;
+    
     /// <summary>
     /// Update tick for the HowlApp.
     /// </summary>
     /// <param name="deltaTime"></param>
-
     public virtual void Update(float deltaTime)
     {
         UpdateStepStopwatch.Restart();
@@ -228,30 +200,6 @@ public abstract class HowlApp : IDisposable
     }
 
     /// <summary>
-    /// Sets the application window to be windowed.
-    /// </summary>
-    public void Windowed()
-    {
-        Renderer.Windowed();
-    }
-
-    /// <summary>
-    /// Sets the application window to be fullscreen.
-    /// </summary>
-    public void Fullscreen()
-    {
-        Renderer.Fullscreen();
-    }
-
-    /// <summary>
-    /// Sets the application window to be borderless fullscreen.
-    /// </summary>
-    public void BorderlessFullscreen()
-    {
-        Renderer.BorderlessFullscreen();
-    }
-
-    /// <summary>
     /// Sets the target frame rate.
     /// </summary>
     /// <param name="targetFrameRate">The specified target frame rate.</param>
@@ -274,24 +222,12 @@ public abstract class HowlApp : IDisposable
     /// 
 
 
-    private void InitialiseMonoGameBackend(
-        Resolution resolution, 
-        Math.Vector2 worldCameraPosition, 
-        Math.Vector2 guiCameraPosition, 
-        float worldCameraZoomVirtualResolution,
-        float guiCameraZoomVirtualResolution)
-    {
+    private void InitialiseMonoGameBackend(Resolution resolution){
         monoGameApp = new(this);
         InputManager = new Vendors.MonoGame.Input.InputManager();
-        Renderer = new Vendors.MonoGame.Graphics.Renderer(
-            monoGameApp, 
-            resolution, 
-            worldCameraPosition, 
-            guiCameraPosition, 
-            worldCameraZoomVirtualResolution, 
-            guiCameraZoomVirtualResolution
-        );
-
+        var rendererState = new Vendors.MonoGame.Graphics.RendererState(monoGameApp, resolution);
+        RendererState = rendererState;
+        drawSystem = Vendors.MonoGame.Graphics.RendererSystem.DrawSystem(ComponentRegistry, rendererState);
     }
 
     private void RunMonoGameBackend()
@@ -353,8 +289,7 @@ public abstract class HowlApp : IDisposable
 
         if (disposing)
         {
-            Renderer?.Dispose();
-            WorldComponentRegistry?.Dispose();
+            ComponentRegistry?.Dispose();
             Instance = null;
             UpdateStepStopwatch = null;
             FixedUpdateStepStopwatch = null;

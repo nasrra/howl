@@ -31,44 +31,42 @@ public static class CollisionSystem
     /// Creates a new DrawSystem instance.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="renderer"></param>
     /// <param name="state"></param>
     /// <returns></returns>
     /// <exception cref="ObjectDisposedException"></exception>
-    public static DrawSystem DrawSystem(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
+    public static DrawSystem DrawSystem(ComponentRegistry componentRegistry, CollisionSystemState state)
     => deltaTime =>
     {
-        DrawStep(componentRegistry, renderer, state, deltaTime);
+        DrawStep(componentRegistry, state, deltaTime);
     };
 
     /// <summary>
     /// Draw step for this Collision System.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="renderer"></param>
     /// <param name="state"></param>
-    public static void DrawStep(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state, float deltaTime)
+    public static void DrawStep(ComponentRegistry componentRegistry, CollisionSystemState state, float deltaTime)
     {        
         if (state.DrawColliderWireframes)
         {            
-            DebugDrawCircleColliders(componentRegistry, renderer, state);
-            DebugDrawRectangleColliders(componentRegistry, renderer, state);            
+            DebugDrawCircleColliders(componentRegistry, state);
+            DebugDrawRectangleColliders(componentRegistry, state);            
         }
 
         if (state.DrawAABBWireframes)
         {
-            DebugDrawCircleAABBs(componentRegistry, renderer, state);
-            DebugDrawRectangleAABBs(componentRegistry, renderer, state);
+            DebugDrawCircleAABBs(componentRegistry, state);
+            DebugDrawRectangleAABBs(componentRegistry, state);
         }
 
         if (state.DrawBvhBranches)
         {
-            DebugDrawBvhBranches(state, renderer, state.Bvh);
+            DebugDrawBvhBranches(componentRegistry, state, state.Bvh);
         }
 
         if (state.DrawContactPoints)
         {
-            DebugDrawContactPoints(renderer, state);
+            DebugDrawContactPoints(componentRegistry, state);
         }
     }
 
@@ -147,13 +145,13 @@ public static class CollisionSystem
         // make sure the circle has a transform component.
         if(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA).Fail(out var result1))
         {
-            Debug.Assert(false, $"{result1}");
+            System.Diagnostics.Debug.Assert(false, $"{result1}");
             return;
         }
 
         if(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB).Fail(out var result2))
         {
-            Debug.Assert(false, $"{result2}");
+            System.Diagnostics.Debug.Assert(false, $"{result2}");
             return;
         }
 
@@ -504,7 +502,7 @@ public static class CollisionSystem
             // ensure the collider has a transform component.
             if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out GenIndexResult result))
             {
-                Debug.Assert(false, $"{result}");
+                System.Diagnostics.Debug.Assert(false, $"{result}");
                 return;
             }
 
@@ -528,7 +526,7 @@ public static class CollisionSystem
             // ensure the collider has a transform component.
             if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                Debug.Assert(false, $"{result}");
+                System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
             }
 
@@ -545,13 +543,14 @@ public static class CollisionSystem
         bvh.Construct();
     }
 
-    private static void DebugDrawBvhBranches(CollisionSystemState state, IRenderer renderer, BoundingVolumeHierarchy bvh)
+    private static void DebugDrawBvhBranches(ComponentRegistry componentRegistry, CollisionSystemState state, BoundingVolumeHierarchy bvh)
     {
         ReadOnlySpan<Branch> branch = bvh.GetBranches();
 
         for(int i = 0; i < branch.Length; i++)
         {
-            renderer.DrawWireframeShape(
+            Debug.Draw.Wireframe(
+                componentRegistry,
                 new Transform(Vector2.Zero, Vector2.One, 0),
                 new RectangleShape(
                     new Rectangle(branch[i].AABB.Min, branch[i].AABB.Max), 
@@ -562,7 +561,7 @@ public static class CollisionSystem
         }
     }
 
-    private static void DebugDrawCircleColliders(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
+    private static void DebugDrawCircleColliders(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<CircleCollider> colliders = componentRegistry.Get<CircleCollider>();
@@ -576,16 +575,21 @@ public static class CollisionSystem
             // ensure the collider has a transform component.
             if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                Debug.Assert(false, $"{result}");
+                System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
             }
 
             Colour drawColour = state.GetColliderColour(collider.Parameters);
-            renderer.DrawWireframeShape(transformRef.Value, new CircleShape(collider.Shape, drawColour, DrawMode.Wireframe));
+
+            Debug.Draw.Wireframe(
+                componentRegistry,
+                transformRef.Value,
+                new CircleShape(collider.Shape, drawColour, DrawMode.Wireframe)
+            );
         }
     }
 
-    private static void DebugDrawRectangleColliders(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
+    private static void DebugDrawRectangleColliders(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
@@ -601,7 +605,7 @@ public static class CollisionSystem
             // ensure the collider has a transform component.
             if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                Debug.Assert(false, $"{result}");
+                System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
             }
 
@@ -614,7 +618,8 @@ public static class CollisionSystem
                 vertices[j].Y = verticesY[j];
             }
 
-            renderer.DrawWireframeShape(
+            Debug.Draw.Wireframe(
+                componentRegistry,
                 transformRef.Value, 
                 new Polygon4Shape(
                     new Polygon4(vertices), 
@@ -625,7 +630,7 @@ public static class CollisionSystem
         }
     }
 
-    private static void DebugDrawCircleAABBs(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
+    private static void DebugDrawCircleAABBs(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<CircleCollider> colliders = componentRegistry.Get<CircleCollider>();
@@ -639,13 +644,14 @@ public static class CollisionSystem
             // ensure the collider has a transform component.
             if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                Debug.Assert(false, $"{result}");
+                System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
             }
 
             AABB aabb = collider.Shape.GetAABB();
 
-            renderer.DrawWireframeShape(
+            Debug.Draw.Wireframe(
+                componentRegistry,
                 transformRef.Value, 
                 new RectangleShape(
                     new Rectangle(aabb.Min, aabb.Max), 
@@ -656,7 +662,7 @@ public static class CollisionSystem
         }
     }
 
-    private static void DebugDrawRectangleAABBs(ComponentRegistry componentRegistry, IRenderer renderer, CollisionSystemState state)
+    private static void DebugDrawRectangleAABBs(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
@@ -672,13 +678,14 @@ public static class CollisionSystem
             // ensure the collider has a transform component.
             if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                Debug.Assert(false, $"{result}");
+                System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
             }
 
             AABB aabb = collider.Shape.GetAABB();
 
-            renderer.DrawWireframeShape(
+            Debug.Draw.Wireframe(
+                componentRegistry,
                 transformRef.Value,
                 new RectangleShape(
                     new Rectangle(aabb.Min, aabb.Max), 
@@ -689,7 +696,7 @@ public static class CollisionSystem
         }
     }
 
-    private static void DebugDrawContactPoints(IRenderer renderer, CollisionSystemState state)
+    private static void DebugDrawContactPoints(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         ReadOnlySpan<Collision> span = state.CollisionManifold.GetCollisionsAsReadOnlySpan();
         for(int i = 0; i < span.Length; i++)
@@ -701,7 +708,8 @@ public static class CollisionSystem
 
             for(int j = 0; j < collision.ContactPointsCount; j++)
             {
-                renderer.DrawFilledShape(
+                Debug.Draw.Filled(
+                    componentRegistry,
                     new Transform(
                         new Vector2(x[j], y[j]),
                         Vector2.One, 
@@ -712,9 +720,8 @@ public static class CollisionSystem
                         state.ContactPointColour,
                         DrawMode.Fill
                     )
-                );                
-            }
-            
+                );
+            }            
         }
     }
 }

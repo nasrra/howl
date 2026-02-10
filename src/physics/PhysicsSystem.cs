@@ -95,10 +95,10 @@ public static class PhysicsSystem
     /// <param name="render"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public static DrawSystem DrawSystem(ComponentRegistry componentRegistry, IRenderer render, PhysicsSystemState state)
+    public static DrawSystem DrawSystem(ComponentRegistry componentRegistry, PhysicsSystemState state)
     => deltaTime =>
     {
-        DrawStep(componentRegistry, render, state, deltaTime);
+        DrawStep(componentRegistry, state, deltaTime);
     };
 
     /// <summary>
@@ -108,9 +108,9 @@ public static class PhysicsSystem
     /// <param name="renderer"></param>
     /// <param name="state"></param>
     /// <param name="deltaTime"></param>
-    public static void DrawStep(ComponentRegistry componentRegistry, IRenderer renderer, PhysicsSystemState state, float deltaTime)
+    public static void DrawStep(ComponentRegistry componentRegistry, PhysicsSystemState state, float deltaTime)
     {
         state.ThrowIfDisposed();
-        CollisionSystem.DrawStep(componentRegistry, renderer, state.CollisionSystemState, deltaTime);
+        CollisionSystem.DrawStep(componentRegistry, state.CollisionSystemState, deltaTime);
     }
 }

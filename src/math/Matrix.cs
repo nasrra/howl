@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Howl.Math;
 
@@ -147,6 +148,7 @@ public struct Matrix
     /// </summary>
     /// <param name="radians">Angle in radians.</param>
     /// <returns>The rotation matrix around the y-axis as an output parameter.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Matrix CreateRotationY(float radians)
     {
         Matrix result = Identity;
@@ -158,36 +160,36 @@ public struct Matrix
         result.M33 = num;
         return result;
     }
-
-    // /// <summary>
-    // /// Creates a new viewing matrix.
-    // /// </summary>
-    // /// <param name="cameraPosition">Position of the camera.</param>
-    // /// <param name="cameraTarget">Lookup vector of the camera.</param>
-    // /// <param name="cameraUpVector">The direction of the upper edge of the camera.</param>
-    // /// <returns>The resultant matrix.</returns>
-    // public static Matrix CreateLookAt(Vector3 cameraPosition, Vector3 cameraTarget, Vector3 cameraUpVector)
-    // {
-    //     Vector3 vector = Vector3.Normalise(cameraPosition - cameraTarget);
-    //     Vector3 vector2 = Vector3.Normalise(Vector3.Cross(cameraUpVector, vector));
-    //     Vector3 value = Vector3.Cross(vector, vector2);
-    //     return new(
-    //         vector2.X,
-    //         value.X,
-    //         vector.X,
-    //         0f,
-    //         vector2.Y,
-    //         value.Y,
-    //         vector.Y,
-    //         0f,
-    //         vector2.Z,
-    //         value.Z,
-    //         vector.Z,
-    //         0f,
-    //         0f - Vector3.Dot(vector2, cameraPosition),
-    //         0f - Vector3.Dot(value, cameraPosition),
-    //         0f - Vector3.Dot(vector, cameraPosition),
-    //         1f
-    //     );
-    // }
+    
+    /// <summary>
+    /// Contstructs a new <see cref="Matrix"/> for customized orthographics view.
+    /// </summary>
+    /// <param name="left">the lower x-value at the near plane.</param>
+    /// <param name="right">the upper x-value at the near pane.</param>
+    /// <param name="bottom">the lower y-value at the near plane.</param>
+    /// <param name="top">the upper y-value at the near plane. </param>
+    /// <param name="zNearPlane">the depth of the near plane.</param>
+    /// <param name="zFarPlane">the depth of the far plane.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Matrix CreateOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane)
+    {
+        Matrix matrix;
+        matrix.M11 = (float)(2.0 / ((double)right - (double)left));
+        matrix.M12 = 0f;
+        matrix.M13 = 0f;
+        matrix.M14 = 0f;
+        matrix.M21 = 0f;
+        matrix.M22 = (float)(2.0 / ((double)top - (double)bottom));
+        matrix.M23 = 0f;
+        matrix.M24 = 0f;
+        matrix.M31 = 0f;
+        matrix.M32 = 0f;
+        matrix.M33 = (float)(1.0 / ((double)zNearPlane - (double)zFarPlane));
+        matrix.M34 = 0f;
+        matrix.M41 = (float)(((double)left + (double)right) / ((double)left - (double)right));
+        matrix.M42 = (float)(((double)top + (double)bottom) / ((double)bottom - (double)top));
+        matrix.M43 = (float)((double)zNearPlane / ((double)zNearPlane - (double)zFarPlane));
+        matrix.M44 = 1f;
+        return matrix;
+    }
 }

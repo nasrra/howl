@@ -42,7 +42,7 @@ public static class RigidBodySystem
             // ensure the rigid body has a transform component.
             if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
-                Debug.Assert(false, $"{result}");
+                System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
             }
 

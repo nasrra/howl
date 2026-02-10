@@ -71,4 +71,13 @@ public class MathTest
         value2 = 99999.9999f;
         Assert.True(Math.NearlyEqual(value1, value2, NearlyEqualEpsilon));
     }
+
+    [Fact]
+    public void Clamp_Test()
+    {
+        Assert.Equal(1.0f, Math.Clamp(0.1f, 1.0f, 2.0f));
+        Assert.Equal(2.0f, Math.Clamp(2.2f, 1.0f, 2.0f));
+        Assert.Equal(1.5f, Math.Clamp(1.5f, 1.0f, 2.0f));
+        Assert.Throws<ArgumentException>(() => Math.Clamp(1.5f, 2.0f, 1.0f));
+    }
 }
