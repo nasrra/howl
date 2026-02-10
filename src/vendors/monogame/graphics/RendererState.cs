@@ -4,6 +4,7 @@ using System.Text;
 using Howl.ECS;
 using Howl.Graphics;
 using Howl.Graphics.Text;
+using Howl.Input;
 using Howl.Math;
 using Howl.Math.Shapes;
 using Howl.Vendors.MonoGame.Text;
@@ -304,6 +305,30 @@ public sealed class RendererState : IRendererState
     public void AllocateNewRenderTarget(IRendererState state, Vector2Int resolution, out GenIndex genIndex)
     {
         renderTargets.AllocateNew(new RenderTarget2D(MonoGameApp.GraphicsDevice, resolution.X, resolution.Y), out genIndex);
+    }
+
+    public Vector2 GetMouseWorldPosition(IMouse mouse)
+    {
+        ref readonly Camera camera = ref CameraSystem.MainCamera;
+        Vector2Int renderTargetPosition = mouse.GetPositionRelative(destinationRectangle, OutputResolution);
+        
+        // offset by half the output resolution as the world camera (0,0) is at the center of the screen.
+        Vector2 offset = new Vector2(outputResolution.X*0.5f, outputResolution.Y*0.5f);
+        
+        return new Vector2( 
+            ((renderTargetPosition.X - offset.X)/camera.Zoom) + camera.Position.X,
+            ((renderTargetPosition.Y - offset.Y)/camera.Zoom) - camera.Position.Y
+        ).InvertY(); // invert y as world space in monogame is Y+ is down; where as howl engine is y+ is up.
+    }
+
+    public Vector2 GetMouseGuiPosition(IMouse mouse)
+    {
+        ref readonly Camera camera = ref CameraSystem.GuiCamera;
+        Vector2Int renderTargetPosition = mouse.GetPositionRelative(destinationRectangle, new Vector2Int(finalRenderTarget.Width, finalRenderTarget.Height));        
+        return new Vector2( 
+            (renderTargetPosition.X + camera.Position.X)/camera.Zoom,
+            (renderTargetPosition.Y + camera.Position.Y)/camera.Zoom
+        );
     }
 
     public GenIndexResult DeallocateRenderTarget(GenIndex genIndex)

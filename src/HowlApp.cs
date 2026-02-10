@@ -116,9 +116,20 @@ public unsafe sealed class HowlApp : IDisposable
         }   
     }
 
+    /// <summary>
+    /// Runs this application.
+    /// </summary>
     public Action Run {get; private set;}
+    
+    /// <summary>
+    /// Shutsdown this application.
+    /// </summary>
     public Action Shutdown {get; private set;}
 
+    /// <summary>
+    /// Ticks this application forward by a set amount of time.
+    /// </summary>
+    /// <param name="deltaTime">the specified amount of time to tick forwards by.</param>
     public void Tick(float deltaTime)
     {
         UpdateStepStopwatch.Restart();
@@ -145,12 +156,19 @@ public unsafe sealed class HowlApp : IDisposable
         }
     }
 
+    /// <summary>
+    /// Renders this applicaiton using the rendering backend.
+    /// </summary>
+    /// <param name="deltaTime"></param>
     public void Render(float deltaTime)
     {
         Draw(deltaTime);
         RendererDraw(ComponentRegistry, RendererState);
     }
 
+    /// <summary>
+    /// Disposes this instance.
+    /// </summary>
     public void Dispose()
     {
         Dispose(true);        

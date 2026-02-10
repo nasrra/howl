@@ -1,4 +1,5 @@
 using Howl.Math;
+using Howl.Math.Shapes;
 
 namespace Howl.Input;
 
@@ -87,4 +88,13 @@ public interface IMouse
     /// <param name="mouseButton">The specified mouse button to check.</param>
     /// <returns>true, if the mouse button has just been released; otherwise false.</returns>
     public bool IsButtonJustReleased(MouseButton mouseButton);
+
+
+    /// <summary>
+    /// Gets the mouse back buffer position relative to a destination target.
+    /// </summary>
+    /// <param name="destinationRectangle">the destination target's rectangle.</param>
+    /// <param name="destinationResolution">the destination targets resolution.</param>
+    /// <returns>The mouse postion on the destination target.</returns>
+    public Vector2Int GetPositionRelative(Rectangle destinationRectangle, Vector2Int destinationResolution);
 }

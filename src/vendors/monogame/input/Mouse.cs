@@ -2,6 +2,7 @@ using Howl.Math;
 using Howl.Input;
 using Microsoft.Xna.Framework.Input;
 using System;
+using Howl.Math.Shapes;
 
 namespace Howl.Vendors.MonoGame.Input;
 
@@ -159,5 +160,25 @@ public class Mouse : IMouse
             default:
                 throw new InvalidOperationException($"{mouseButton} is not a valid mouse input for Monogame Mouse.");
         }
+    }
+
+    public Vector2Int GetPositionRelative(Rectangle destinationRectangle, Vector2Int destinationResolution)
+    {
+        Vector2Int position = BackBufferPosition;
+        
+        // get the distance from the destination rect to the mouse position. 
+        float x = position.X - destinationRectangle.X;
+        float y = position.Y - destinationRectangle.Y;
+
+        // normalise the value between zero and one, to find
+        // how far into the destination rect the mouse is. 
+        x /= destinationRectangle.Width;
+        y /= destinationRectangle.Height;
+
+        // bring into the destination resolution coordinate space.
+        x *= destinationResolution.X;
+        y *= destinationResolution.Y; // negative here as howl renders in y+ = up coordinate space; not y+ is down.
+
+        return new Vector2Int((int)x, (int)y);
     }
 }

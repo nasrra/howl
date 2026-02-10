@@ -72,6 +72,21 @@ public struct Transform
     /// <param name="position">The positional x and y-coordinate values.</param>
     /// <param name="scale">The horizontal (x) and vertical (y) scaling values.</param>
     /// <param name="rotation">The rotation - in radians.</param>
+    public Transform(Vector2Int position, Vector2 scale, float rotation)
+    {
+        Position = new Vector2(position.X, position.Y);
+        Scale = scale;
+        this.rotation = rotation;
+        Sin = MathF.Sin(rotation);
+        Cos = MathF.Cos(rotation);
+    }   
+
+    /// <summary>
+    /// Constructs a Transform.
+    /// </summary>
+    /// <param name="position">The positional x and y-coordinate values.</param>
+    /// <param name="scale">The horizontal (x) and vertical (y) scaling values.</param>
+    /// <param name="rotation">The rotation - in radians.</param>
     public Transform(Vector2 position, float scale, float rotation)
     {
         Position = position;

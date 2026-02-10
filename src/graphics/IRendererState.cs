@@ -4,6 +4,7 @@ using System.Text;
 using Howl.ECS;
 using Howl.Graphics;
 using Howl.Graphics.Text;
+using Howl.Input;
 using Howl.Math;
 using Howl.Math.Shapes;
 
@@ -117,4 +118,19 @@ public interface IRendererState : IDisposable
     ///     </list>
     /// </returns>
     public GenIndexResult DeallocateRenderTarget(GenIndex genIndex);
+
+    /// <summary>
+    /// Gets the mouse position relative to the main camera.
+    /// </summary>
+    /// <param name="mouse">the mouse to project onto the main camera.</param>
+    /// <returns>the projected position.</returns>
+    public Vector2 GetMouseWorldPosition(IMouse mouse);
+
+
+    /// <summary>
+    /// Gets the mouse position relative to the gui camera.
+    /// </summary>
+    /// <param name="mouse">the mouse to project onto the gui camera.</param>
+    /// <returns>the projected position.</returns>
+    public Vector2 GetMouseGuiPosition(IMouse mouse);
 }

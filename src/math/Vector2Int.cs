@@ -58,6 +58,18 @@ public struct Vector2Int
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2Int operator * (Vector2Int vector, int value)
+    {
+        return new Vector2Int(vector.X * value, vector.Y * value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2Int operator * (int value, Vector2Int vector)
+    {
+        return new Vector2Int(vector.X * value, vector.Y * value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public override bool Equals(object obj)
     {
         return obj is Vector2Int other && other == this;

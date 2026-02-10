@@ -151,12 +151,13 @@ public struct Camera
         // Compute half-width and half-height in world units based on virtual resolution
         float halfHeight = zoomVirtualHeight * 0.5f / zoom;
         float halfWidth = halfHeight * outputResolutionAspectRatio; // keep aspect ratio correct
-        extents = new(halfWidth*2, halfHeight*2);
+        float height = halfHeight * 2;
+        float width = halfWidth * 2;
+        extents = new(width, height);
 
         switch (CoordinateSpace)
         {
             case CoordinateSpace.Cartesian:
-                extents = new(halfWidth*2, halfHeight*2);
                 projectionMatrix = Matrix.CreateOrthographicOffCenter(
                     -halfWidth,  halfWidth,
                     halfHeight, -halfHeight,
@@ -165,9 +166,6 @@ public struct Camera
                 );
                 break;
             case CoordinateSpace.Rasterized:
-                float height = halfHeight * 2;
-                float width = halfWidth * 2;
-                extents = new(width, height);
                 projectionMatrix = Matrix.CreateOrthographicOffCenter(
                     0,  width,
                     height, 0,
