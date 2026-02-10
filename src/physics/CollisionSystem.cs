@@ -552,11 +552,8 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 new Transform(Vector2.Zero, Vector2.One, 0),
-                new RectangleShape(
-                    new Rectangle(branch[i].AABB.Min, branch[i].AABB.Max), 
-                    state.BvhBranchAABBColour,
-                    DrawMode.Wireframe
-                )
+                new Rectangle(branch[i].AABB.Min, branch[i].AABB.Max), 
+                state.BvhBranchAABBColour
             );
         }
     }
@@ -584,7 +581,8 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 transformRef.Value,
-                new CircleShape(collider.Shape, drawColour, DrawMode.Wireframe)
+                collider.Shape, 
+                drawColour
             );
         }
     }
@@ -621,11 +619,8 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 transformRef.Value, 
-                new Polygon4Shape(
-                    new Polygon4(vertices), 
-                    state.GetColliderColour(collider.Parameters), 
-                    Vector2.Zero // note that origin is zero, as polygon rectangle does not have an origin field at all.
-                )
+                new Polygon4(vertices), 
+                state.GetColliderColour(collider.Parameters) 
             );
         }
     }
@@ -653,11 +648,8 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 transformRef.Value, 
-                new RectangleShape(
-                    new Rectangle(aabb.Min, aabb.Max), 
-                    state.AABBColour, 
-                    DrawMode.Wireframe
-                )
+                new Rectangle(aabb.Min, aabb.Max), 
+                state.AABBColour 
             );
         }
     }
@@ -687,11 +679,8 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 transformRef.Value,
-                new RectangleShape(
-                    new Rectangle(aabb.Min, aabb.Max), 
-                    state.AABBColour,
-                    DrawMode.Wireframe
-                )
+                new Rectangle(aabb.Min, aabb.Max), 
+                state.AABBColour
             );
         }
     }
@@ -715,11 +704,8 @@ public static class CollisionSystem
                         Vector2.One, 
                         0
                     ),
-                    new RectangleShape(
-                        new Rectangle(-0.5f,0.5f, 1f, 1f), 
-                        state.ContactPointColour,
-                        DrawMode.Fill
-                    )
+                    new Rectangle(-0.5f,0.5f, 1f, 1f), 
+                    state.ContactPointColour
                 );
             }            
         }

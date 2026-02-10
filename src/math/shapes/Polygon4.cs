@@ -52,4 +52,19 @@ public unsafe struct Polygon4
             }
         }
     }
+
+    /// <summary>
+    /// Gets a stored vertex.
+    /// </summary>
+    /// <param name="vertexId">The id of the vertex.</param>
+    /// <returns></returns>
+    public unsafe Vector2 GetVertex(int vertexId)
+    {   
+        if(vertexId >= VerticesCount || vertexId < 0)
+        {
+            throw new ArgumentException($"Cannot get index '{vertexId}' from Polygon16 with a vertices count of '{VerticesCount}'");
+        }
+
+        return new Vector2(XVertices[vertexId], YVertices[vertexId]);
+    }
 }

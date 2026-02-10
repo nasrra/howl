@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics;
+using Howl.Math.Shapes;
+using Howl.Math;
 
 namespace Howl.Debug;
 
@@ -60,9 +62,9 @@ public static class Draw
     /// <param name="scaleThickness">Scale the thickness by the camera zoom.</param>
     public static void Line(
         ComponentRegistry componentRegistry,
-        Howl.Math.Vector2 a, 
-        Howl.Math.Vector2 b, 
-        Howl.Graphics.Colour colour, 
+        Vector2 a, 
+        Vector2 b, 
+        Colour colour, 
         float thickness = DefaultWireframeThickness, 
         bool scaleThickness = true
     )
@@ -83,9 +85,9 @@ public static class Draw
     public static void Line(
         ComponentRegistry componentRegistry,
         GenIndex cameraId,
-        Howl.Math.Vector2 a, 
-        Howl.Math.Vector2 b, 
-        Howl.Graphics.Colour colour, 
+        Vector2 a, 
+        Vector2 b, 
+        Colour colour, 
         float thickness = DefaultWireframeThickness, 
         bool scaleThickness = true
     )
@@ -108,14 +110,17 @@ public static class Draw
     /// <param name="scaleThickness">Scale the thickness by the camera zoom.</param>
     public static void Line(
         in Camera camera, 
-        Howl.Math.Vector2 a, 
-        Howl.Math.Vector2 b, 
-        Howl.Graphics.Colour colour, 
+        Vector2 a, 
+        Vector2 b, 
+        Colour colour, 
         float thickness = DefaultWireframeThickness, 
         bool scaleThickness = true
     )
     {
-        thickness /= camera.Zoom;
+        if (scaleThickness)
+        {
+            thickness /= camera.Zoom;
+        }
 
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
@@ -127,11 +132,11 @@ public static class Draw
 
         // note that we apply the half thickness to the direction so that the line segment
         // corners are offseted by the thickness amount.
-        Howl.Math.Vector2 direction = (b - a).Normalise() * halfThickness;
-        Howl.Math.Vector2 oppositeDirection = -direction;   
+        Vector2 direction = (b - a).Normalise() * halfThickness;
+        Vector2 oppositeDirection = -direction;   
         
-        Howl.Math.Vector2 normal = new(-direction.Y, direction.X);
-        Howl.Math.Vector2 oppositeNormal = -normal;
+        Vector2 normal = new(-direction.Y, direction.X);
+        Vector2 oppositeNormal = -normal;
 
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
@@ -149,17 +154,17 @@ public static class Draw
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
-        Howl.Math.Vector3 corner1 = -cameraPosition;
-        Howl.Math.Vector3 corner2 = -cameraPosition;
-        Howl.Math.Vector3 corner3 = -cameraPosition;
-        Howl.Math.Vector3 corner4 = -cameraPosition;
+        Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+        Vector3 corner1 = -cameraPosition;
+        Vector3 corner2 = -cameraPosition;
+        Vector3 corner3 = -cameraPosition;
+        Vector3 corner4 = -cameraPosition;
 
         // apply the line world coordinates.
-        corner1 += new Howl.Math.Vector3(a + normal + oppositeDirection, 0); 
-        corner2 += new Howl.Math.Vector3(b + normal + direction, 0); 
-        corner3 += new Howl.Math.Vector3(b + oppositeNormal + direction, 0);
-        corner4 += new Howl.Math.Vector3(a + oppositeNormal + oppositeDirection, 0); 
+        corner1 += new Vector3(a + normal + oppositeDirection, 0); 
+        corner2 += new Vector3(b + normal + direction, 0); 
+        corner3 += new Vector3(b + oppositeNormal + direction, 0);
+        corner4 += new Vector3(a + oppositeNormal + oppositeDirection, 0); 
 
         PrimitiveVertices.Add(new(corner1, colour));
         PrimitiveVertices.Add(new(corner2, colour));
@@ -180,57 +185,63 @@ public static class Draw
 
 
     /// <summary>
-    /// Draws a wireframe shape to the main camera render target.
+    /// Draws a wireframe shape in relation to the main camera.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         ComponentRegistry componentRegistry,
-        in Math.Transform transform,
-        in Howl.Graphics.RectangleShape rectangle, 
+        in Transform transform,
+        in Rectangle rectangle,
+        in Colour colour, 
         float thickness = DefaultWireframeThickness
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, rectangle, thickness);
+        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, rectangle, colour, thickness);
     }
 
     /// <summary>
-    /// Draws a wireframe shape to the currently bound render target.
+    /// Draws a wireframe shape.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera.</param> 
+    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         ComponentRegistry componentRegistry,
         GenIndex cameraId,
-        in Math.Transform transform,
-        in Howl.Graphics.RectangleShape rectangle, 
+        in Transform transform,
+        in Rectangle rectangle,
+        in Colour colour,
         float thickness = DefaultWireframeThickness
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
         if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
         {
-            Wireframe(camera, transform, rectangle, thickness);
+            Wireframe(camera, transform, rectangle, colour, thickness);
         }
     }
 
     /// <summary>
-    /// Draws a wireframe shape to the currently bound render target.
+    /// Draws a wireframe shape.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     /// <exception cref="OverflowException">throws when too many primitive vertices are pushed to the monogame app.</exception>
     public static void Wireframe(
         in Camera camera,
-        in Howl.Math.Transform transform, 
-        in Howl.Graphics.RectangleShape rectangle, 
+        in Transform transform, 
+        in Rectangle rectangle,
+        in Colour colour, 
         float thickness = DefaultWireframeThickness
     )
     {
@@ -242,50 +253,54 @@ public static class Draw
         // (Note):
         // Dont reverse y-coordinates because draw line already does that.
 
-        Howl.Math.Vector2 topLeft       = rectangle.Shape.TopLeft.Transform(transform);
-        Howl.Math.Vector2 topRight      = rectangle.Shape.TopRight.Transform(transform);
-        Howl.Math.Vector2 bottomLeft    = rectangle.Shape.BottomLeft.Transform(transform);
-        Howl.Math.Vector2 bottomRight   = rectangle.Shape.BottomRight.Transform(transform); 
+        Vector2 topLeft       = rectangle.TopLeft.Transform(transform);
+        Vector2 topRight      = rectangle.TopRight.Transform(transform);
+        Vector2 bottomLeft    = rectangle.BottomLeft.Transform(transform);
+        Vector2 bottomRight   = rectangle.BottomRight.Transform(transform); 
 
-        Line(camera, topLeft, topRight, rectangle.Colour, thickness);
-        Line(camera, topRight, bottomRight, rectangle.Colour, thickness);
-        Line(camera, bottomRight, bottomLeft, rectangle.Colour, thickness);
-        Line(camera, bottomLeft, topLeft, rectangle.Colour, thickness);
+        Line(camera, topLeft, topRight, colour, thickness);
+        Line(camera, topRight, bottomRight, colour, thickness);
+        Line(camera, bottomRight, bottomLeft, colour, thickness);
+        Line(camera, bottomLeft, topLeft, colour, thickness);
     }
-    
+
     /// <summary>
-    /// Draws a filled shape to the main camera render target.
+    /// Draws a filled shape in relation to the main camera.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
+    /// <param name="colour">the colour used to draw the filled area.</param>
     public static void Filled(
         ComponentRegistry componentRegistry,
-        in Math.Transform transform,
-        in Howl.Graphics.RectangleShape rectangle
+        in Transform transform,
+        in Rectangle rectangle,
+        in Colour colour
     )
     {
-        Filled(componentRegistry, CameraSystem.MainCameraId, transform, rectangle);
+        Filled(componentRegistry, CameraSystem.MainCameraId, transform, rectangle, colour);
     }
 
     /// <summary>
-    /// Draws a filled shape to the currently bound render target.
+    /// Draws a filled shape.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera.</param> 
+    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
+    /// <param name="colour">the colour used to draw the filled area.</param>
     public static void Filled(
         ComponentRegistry componentRegistry,
         GenIndex cameraId,
-        in Math.Transform transform,
-        in Howl.Graphics.RectangleShape rectangle
+        in Transform transform,
+        in Rectangle rectangle,
+        in Colour colour
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
         if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
         {
-            Filled(camera, transform, rectangle);
+            Filled(camera, transform, rectangle, colour);
         }
     }
 
@@ -295,10 +310,13 @@ public static class Draw
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
+    /// <param name="colour">the colour used to draw the filled area.</param>
     public static void Filled(
         in Camera camera,
-        in Howl.Math.Transform transform, 
-        in Howl.Graphics.RectangleShape rectangle)
+        in Transform transform, 
+        in Rectangle rectangle,
+        in Colour colour
+    )
     {
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
@@ -315,10 +333,10 @@ public static class Draw
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Howl.Math.Vector3 topLeft       = new(rectangle.Shape.TopLeft.Transform(transform),0);
-        Howl.Math.Vector3 topRight      = new(rectangle.Shape.TopRight.Transform(transform),0);
-        Howl.Math.Vector3 bottomLeft    = new(rectangle.Shape.BottomLeft.Transform(transform),0);
-        Howl.Math.Vector3 bottomRight   = new(rectangle.Shape.BottomRight.Transform(transform),0);
+        Vector3 topLeft       = new(rectangle.TopLeft.Transform(transform),0);
+        Vector3 topRight      = new(rectangle.TopRight.Transform(transform),0);
+        Vector3 bottomLeft    = new(rectangle.BottomLeft.Transform(transform),0);
+        Vector3 bottomRight   = new(rectangle.BottomRight.Transform(transform),0);
 
         // (Note):
         // reverse y-coordinates because monogame
@@ -328,19 +346,19 @@ public static class Draw
         bottomLeft.Y *= -1;
         bottomRight.Y *= -1;
 
-        Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+        Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
 
         // apply the rectangles world coordinates.
 
-        Howl.Math.Vector3 a = -cameraPosition + topLeft;
-        Howl.Math.Vector3 b = -cameraPosition + topRight;
-        Howl.Math.Vector3 c = -cameraPosition + bottomRight;
-        Howl.Math.Vector3 d = -cameraPosition + bottomLeft;
+        Vector3 a = -cameraPosition + topLeft;
+        Vector3 b = -cameraPosition + topRight;
+        Vector3 c = -cameraPosition + bottomRight;
+        Vector3 d = -cameraPosition + bottomLeft;
         
-        PrimitiveVertices.Add(new(a, rectangle.Colour));
-        PrimitiveVertices.Add(new(b, rectangle.Colour));
-        PrimitiveVertices.Add(new(c, rectangle.Colour));
-        PrimitiveVertices.Add(new(d, rectangle.Colour));        
+        PrimitiveVertices.Add(new(a, colour));
+        PrimitiveVertices.Add(new(b, colour));
+        PrimitiveVertices.Add(new(c, colour));
+        PrimitiveVertices.Add(new(d, colour));        
     }
 
 
@@ -356,54 +374,63 @@ public static class Draw
 
 
     /// <summary>
-    /// Draws a filled shape to the main camera render target.
+    /// Draws a filled shape in relation to the main camera.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
+    /// <param name="colour">the colour used to draw the filled area.</param>
+    /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     public static void Filled(
         ComponentRegistry componentRegistry,
-        in Math.Transform transform,
-        in Howl.Graphics.CircleShape circle 
+        in Transform transform,
+        in Circle circle,
+        in Colour colour,
+        int verticeCount = DefaultCirclePointAmount
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, circle);
+        Filled(componentRegistry, CameraSystem.MainCameraId, transform, circle, colour, verticeCount);
     }
 
     /// <summary>
-    /// Draws a filled shape to the currently bound render target.
+    /// Draws a filled shape.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera.</param> 
+    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates..</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
+    /// <param name="colour">the colour used to draw the filled area.</param>
+    /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     public static void Filled(
         ComponentRegistry componentRegistry,
         GenIndex cameraId,
-        in Math.Transform transform,
-        in Howl.Graphics.CircleShape circle 
+        in Transform transform,
+        in Circle circle,
+        in Colour colour,
+        int verticeCount = DefaultCirclePointAmount
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
         if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
         {
-            Wireframe(camera, transform, circle);
+            Filled(camera, transform, circle, colour, verticeCount);
         }
     }
 
     /// <summary>
-    /// Draws a filled shape to the currently bound render target.
+    /// Draws a filled shape.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
+    /// <param name="colour">the colour used to draw the filled area.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <exception cref="ArgumentException"></exception>
     public static void Filled(
         in Camera camera,
-        in Howl.Math.Transform transform, 
-        in CircleShape circle, 
+        in Transform transform, 
+        in Circle circle,
+        in Colour colour, 
         int verticeCount = DefaultCirclePointAmount
     )
     {
@@ -429,13 +456,13 @@ public static class Draw
             float rotation = (float)System.Math.Tau / verticeCount;            
             float sin = MathF.Sin(rotation);
             float cos = MathF.Cos(rotation);
-            Howl.Math.Vector2 start = new(0f, circle.Shape.Radius);
-            Howl.Math.Vector2 position = new(circle.Shape.X, circle.Shape.Y);
-            Howl.Math.Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+            Vector2 start = new(0f, circle.Radius);
+            Vector2 position = new(circle.X, circle.Y);
+            Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
 
             for(int i = 0; i < verticeCount; i++)
             {
-                Howl.Math.Vector3 vertice = new Howl.Math.Vector3((start + position).Transform(transform),0);
+                Vector3 vertice = new Vector3((start + position).Transform(transform),0);
                 
                 vertice.Y *= -1;
 
@@ -446,7 +473,7 @@ public static class Draw
                     sin * start.X  + cos * start.Y
                 );
 
-                PrimitiveVertices.Add(new(vertice,circle.Colour));
+                PrimitiveVertices.Add(new(vertice,colour));
             }
 
         }
@@ -457,38 +484,42 @@ public static class Draw
     }
 
     /// <summary>
-    /// Draws a wireframe shape to the main camera render target.
+    /// Draws a wireframe shape in relation to the main camera.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         ComponentRegistry componentRegistry,
-        in Math.Transform transform,
-        in Howl.Graphics.CircleShape circle,
+        in Transform transform,
+        in Circle circle,
+        in Colour colour,
         int verticeCount = DefaultCirclePointAmount,
         float thickness = DefaultWireframeThickness
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, circle, verticeCount, thickness);
+        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, circle, colour, verticeCount, thickness);
     }
 
     /// <summary>
-    /// Draws a wireframe shape to the currently bound render target.
+    /// Draws a wireframe shape.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera.</param> 
+    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         ComponentRegistry componentRegistry,
         GenIndex cameraId,
-        in Math.Transform transform,
-        in Howl.Graphics.CircleShape circle,
+        in Transform transform,
+        in Circle circle,
+        in Colour colour,
         int verticeCount = DefaultCirclePointAmount,
         float thickness = DefaultWireframeThickness
     )
@@ -496,23 +527,25 @@ public static class Draw
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
         if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
         {
-            Wireframe(camera, transform, circle, verticeCount, thickness);
+            Wireframe(camera, transform, circle, colour, verticeCount, thickness);
         }
     }
 
     /// <summary>
-    /// Draws a wireframe shape to the currently bound render target.
+    /// Draws a wireframe shape.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     /// <exception cref="ArgumentException"></exception>
     public static void Wireframe(
         in Camera camera,
-        in Howl.Math.Transform transform, 
-        in CircleShape circle,  
+        in Transform transform, 
+        in Circle circle,
+        in Colour colour,
         int verticeCount = DefaultCirclePointAmount,
         float thickness = DefaultWireframeThickness
     )   
@@ -522,12 +555,12 @@ public static class Draw
             float rotation = (float)System.Math.Tau / verticeCount;            
             float sin = MathF.Sin(rotation);
             float cos = MathF.Cos(rotation);
-            Howl.Math.Vector2 start = new(0f, circle.Shape.Radius);
-            Howl.Math.Vector2 position = new(circle.Shape.X, circle.Shape.Y);
+            Vector2 start = new(0f, circle.Radius);
+            Vector2 position = new(circle.X, circle.Y);
 
             for(int i = 0; i < verticeCount; i++)
             {
-                Howl.Math.Vector2 end = new(
+                Vector2 end = new(
                     cos * start.X  - sin * start.Y,
                     sin * start.X  + cos * start.Y
                 );
@@ -536,7 +569,7 @@ public static class Draw
                     camera,
                     (start + position).Transform(transform), 
                     (end + position).Transform(transform), 
-                    circle.Colour, 
+                    colour, 
                     thickness
                 );
 
@@ -562,67 +595,71 @@ public static class Draw
 
 
     /// <summary>
-    /// Draws a wireframe shape to the main camera render target.
+    /// Draws a wireframe shape in relation to the main camera.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="shape">the polygon data.</param>
+    /// <param name="polygon">the polygon data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         ComponentRegistry componentRegistry,
-        in Math.Transform transform,
-        in Polygon16Shape polygon,
+        in Transform transform,
+        in Polygon16 polygon,
+        in Colour colour,
         float thickness = DefaultWireframeThickness
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, polygon, thickness);
+        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, polygon, colour, thickness);
     }
 
     /// <summary>
-    /// Draws a wireframe shape to the currently bound render target.
+    /// Draws a wireframe shape.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera.</param> 
+    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="shape">the polygon data.</param>
+    /// <param name="polygon">the polygon data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         ComponentRegistry componentRegistry,
         GenIndex cameraId,
-        in Math.Transform transform,
-        in Polygon16Shape polygon,
+        in Transform transform,
+        in Polygon16 polygon,
+        in Colour colour,
         float thickness = DefaultWireframeThickness
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
         if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
         {
-            Wireframe(camera, transform, polygon, thickness);
+            Wireframe(camera, transform, polygon, colour, thickness);
         }
     }
 
     /// <summary>
-    /// Draws a wireframe shape to the currently bound render target.
+    /// Draws a wireframe shape.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="shape">the polygon data.</param>
+    /// <param name="polygon">the polygon data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         in Camera camera,
-        in Howl.Math.Transform transform, 
-        in Polygon16Shape shape, 
+        in Transform transform, 
+        in Polygon16 polygon,
+        in Colour colour, 
         float thickness = DefaultWireframeThickness
     )
     {
-        Howl.Math.Vector2 start = shape.GetVertex(0).Transform(transform); 
-        for(int i = 1; i <= shape.Polygon.VerticesCount; i++)
+        Vector2 start = polygon.GetVertex(0).Transform(transform); 
+        for(int i = 1; i <= polygon.VerticesCount; i++)
         {
-            int index = i % shape.Polygon.VerticesCount;
-            Howl.Math.Vector2 end = shape.GetVertex(index).Transform(transform); 
-            Line(camera, start, end, shape.Colour, thickness);
+            int index = i % polygon.VerticesCount;
+            Vector2 end = polygon.GetVertex(index).Transform(transform); 
+            Line(camera, start, end, colour, thickness);
             start = end;
         }
     }
@@ -640,68 +677,71 @@ public static class Draw
 
 
     /// <summary>
-    /// Draws a wireframe shape to the main camera render target.
+    /// Draws a wireframe shape in relation to the main camera.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="shape">the polygon data.</param>
+    /// <param name="polygon">the polygon data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         ComponentRegistry componentRegistry,
-        in Math.Transform transform,
-        in Polygon4Shape polygon,
+        in Transform transform,
+        in Polygon4 polygon,
+        in Colour colour,
         float thickness = DefaultWireframeThickness
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, polygon, thickness);
+        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, polygon, colour, thickness);
     }
 
-
     /// <summary>
-    /// Draws a wireframe shape to the currently bound render target.
+    /// Draws a wireframe shape.
     /// </summary>
     /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera.</param> 
+    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="shape">the polygon data.</param>
+    /// <param name="polygon">the polygon data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         ComponentRegistry componentRegistry,
         GenIndex cameraId,
-        in Math.Transform transform,
-        in Polygon4Shape polygon,
+        in Transform transform,
+        in Polygon4 polygon,
+        in Colour colour,
         float thickness = DefaultWireframeThickness
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
         if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
         {
-            Wireframe(camera, transform, polygon, thickness);
+            Wireframe(camera, transform, polygon, colour, thickness);
         }
     }
 
     /// <summary>
-    /// Draws a wireframe shape to the currently bound render target.
+    /// Draws a wireframe shape.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
-    /// <param name="shape">the polygon data.</param>
+    /// <param name="polygon">the polygon data.</param>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     public static void Wireframe(
         in Camera camera,
-        in Howl.Math.Transform transform, 
-        in Polygon4Shape shape, 
+        in Transform transform, 
+        in Polygon4 polygon,
+        in Colour colour, 
         float thickness = DefaultWireframeThickness
     )
     {
-        Howl.Math.Vector2 start = shape.GetVertex(0).Transform(transform); 
-        for(int i = 1; i <= shape.Polygon.VerticesCount; i++)
+        Vector2 start = polygon.GetVertex(0).Transform(transform); 
+        for(int i = 1; i <= polygon.VerticesCount; i++)
         {
-            int index = i % shape.Polygon.VerticesCount;
-            Howl.Math.Vector2 end = shape.GetVertex(index).Transform(transform); 
-            Line(camera, start, end, shape.Colour, thickness);
+            int index = i % polygon.VerticesCount;
+            Vector2 end = polygon.GetVertex(index).Transform(transform); 
+            Line(camera, start, end, colour, thickness);
             start = end;
         }
     }
