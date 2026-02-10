@@ -26,11 +26,10 @@ public unsafe struct Text16 : IText
     public fixed char Characters[MaxLength];
 
     /// <summary>
-    /// Constructs a Text.
+    /// 
     /// </summary>
-    /// <param name="colour">The draw colour.</param>
-    /// <param name="offset">The offset - in pixels - when drawing.</param>
-    /// <param name="characters">The span of characters that will render when drawing (max length of 16.)</param>
+    /// <param name="textParameters">The text parameters used when drawing.</param>
+    /// <param name="characters">the chracters to draw.</param>
     public Text16(TextParameters textParameters, ReadOnlySpan<char> characters)
     {
         TextParameters = textParameters;

@@ -32,6 +32,11 @@ public struct Sprite
     public GenIndex Texture; 
 
     /// <summary>
+    /// Gets and sets the world space to draw in. 
+    /// </summary>
+    public WorldSpace WorldSpace;
+
+    /// <summary>
     /// Gets and sets the layer depth.
     /// </summary>
     public float LayerDepth;
@@ -44,13 +49,15 @@ public struct Sprite
     /// <param name="origin">The origin - in pixels - relative to the source rectangle.</param>
     /// <param name="scale">The scale.</param>
     /// <param name="texture">The texture used when drawing.</param>
+    /// <param name="worldSpace">The world space this sprite will be drawn in.</param>
     /// <param name="layerDepth">The layer depth.</param>
     public Sprite(
         Rectangle sourceRectangle, 
         Colour colourTint, 
         Vector2 origin, 
         Vector2 scale, 
-        GenIndex texture, 
+        GenIndex texture,
+        WorldSpace worldSpace,
         float layerDepth
     )
     {
@@ -59,6 +66,7 @@ public struct Sprite
         Origin = origin;
         Scale = scale;
         Texture = texture;
+        WorldSpace = worldSpace;
         LayerDepth = layerDepth;
     }
 }

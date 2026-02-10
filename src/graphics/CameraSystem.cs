@@ -8,11 +8,6 @@ namespace Howl.Graphics;
 
 public static class CameraSystem
 {
-    /// <summary>
-    /// Gets and sets the main camera scene id.
-    /// </summary>
-    private static GenIndex mainCameraSceneId;
-
     // /// <summary>
     // /// Gets the main camera scene id.
     // /// </summary>
@@ -27,6 +22,16 @@ public static class CameraSystem
     /// Gets the main camera id.
     /// </summary>
     public static GenIndex MainCameraId => mainCameraId;
+
+    /// <summary>
+    /// Gets and sets the gui camera id.
+    /// </summary>
+    private static GenIndex guiCameraId;
+
+    /// <summary>
+    /// Gets the gui camera id.
+    /// </summary>
+    public static GenIndex GuiCameraId => guiCameraId;
 
     /// <summary>
     /// Registers all necessary components for this system into the specified component registry. 
@@ -74,7 +79,15 @@ public static class CameraSystem
     /// <param name="cameraId"></param>
     public static void SetMainCamera(GenIndex cameraId)
     {
-        // mainCameraSceneId = sceneId;
         mainCameraId = cameraId;
+    }
+
+    /// <summary>
+    /// Sets a camera to the gui camera.
+    /// </summary>
+    /// <param name="cameraId"></param>
+    public static void SetGuiCamera(GenIndex cameraId)
+    {
+        guiCameraId = cameraId;
     }
 }

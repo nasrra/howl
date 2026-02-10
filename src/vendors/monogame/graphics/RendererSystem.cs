@@ -14,6 +14,19 @@ namespace Howl.Vendors.MonoGame.Graphics;
 
 public static class RendererSystem
 {    
+
+    /// <summary>
+    /// Registers all necessary components for this system in a component registry.
+    /// </summary>
+    /// <param name="componentRegistry">the specified component registry.</param>
+    public static void RegisterComponents(ComponentRegistry componentRegistry)
+    {
+        componentRegistry.RegisterComponent<Sprite>();
+        componentRegistry.RegisterComponent<Text16>();
+        componentRegistry.RegisterComponent<Text4096>();
+        componentRegistry.RegisterComponent<Transform>();
+    }
+
     /// <summary>
     /// Creates a new draw system for this MonoGame renderer.
     /// </summary>
@@ -25,16 +38,30 @@ public static class RendererSystem
         return deltaTime =>
         {
             GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>();
+
+            // get the main camera.
             if(cameraComponents.GetDenseRef(CameraSystem.MainCameraId, out Ref<Camera> mainCamera).Fail())
             {
                 System.Diagnostics.Debug.Assert(false);
+                return;
+            }
+            
+            // get the ui camera.
+            if(cameraComponents.GetDenseRef(CameraSystem.GuiCameraId, out Ref<Camera> guiCamera).Fail())
+            {
+                System.Diagnostics.Debug.Assert(false);
+                return;
             }
 
-            // draw the main camera to the final render target.
             state.MonoGameApp.GraphicsDevice.SetRenderTarget(state.FinalRenderTarget);                    
             state.MonoGameApp.GraphicsDevice.Clear(mainCamera.Value.ClearColour.ToMonoGame());
-            DrawSprites(componentRegistry, state, ref mainCamera.Value);            
+            
+            DrawSprites(componentRegistry, state, ref mainCamera.Value, WorldSpace.World);
+            DrawTexts(componentRegistry, state, ref mainCamera.Value, WorldSpace.World);
             DrawPrimitives(state);
+            DrawSprites(componentRegistry, state, ref guiCamera.Value, WorldSpace.Gui);
+            DrawTexts(componentRegistry, state, ref guiCamera.Value, WorldSpace.Gui);
+            
             state.MonoGameApp.GraphicsDevice.SetRenderTarget(null);
 
             // draw the infal render target to the back buffer.
@@ -59,7 +86,8 @@ public static class RendererSystem
     /// <param name="componentRegistry">The componenst registry where the sprites are stored.</param>
     /// <param name="state">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
-    private static void DrawSprites(ComponentRegistry componentRegistry, RendererState state, ref Camera camera)
+    /// <param name="worldSpace">filters sprites; drawing sprites that are within the specified world space.</param>
+    private static void DrawSprites(ComponentRegistry componentRegistry, RendererState state, ref Camera camera, WorldSpace worldSpace)
     {
         GenIndexList<Transform> transformComponents = componentRegistry.Get<Transform>();
         GenIndexList<Sprite> spritesComponents = componentRegistry.Get<Sprite>();
@@ -78,8 +106,13 @@ public static class RendererSystem
         // draw sprites in relation to it.
         for(int i = 0; i < spriteDenseEntries.Length; i++)
         {
+
             ref DenseEntry<Sprite> spriteDenseEntry = ref spriteDenseEntries[i];
             ref Sprite sprite = ref spriteDenseEntry.Value;
+            
+            if(sprite.WorldSpace != worldSpace)
+                continue;
+            
             spritesComponents.GetGenIndex(spriteDenseEntry.sparseIndex, out GenIndex genIndex);
 
             if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformRef).Fail())
@@ -89,6 +122,52 @@ public static class RendererSystem
         }
 
         state.SpriteBatch.End();
+    }
+
+    /// <summary>
+    /// Draws a sprite to the currently bound render target.
+    /// </summary>
+    /// <param name="state">The renderer state containing drawing context.</param>
+    /// <param name="camera">The camera to use for transforming coordinates.</param>
+    /// <param name="transform">The transformation to apply to the sprite.</param>
+    /// <param name="sprite">The sprite to draw.</param>
+    /// <returns><see cref="GenIndexResult"/></returns>
+    public static GenIndexResult DrawSprite(
+        RendererState state, 
+        ref Camera camera, 
+        ref Transform transform, 
+        ref Sprite sprite
+    )
+    {   
+        TextureManager textureManager = (TextureManager)state.TextureManager;
+        GenIndexResult result = textureManager.GetTextureReadonlyRef(sprite.Texture, out ReadOnlyRef<Texture2D> texture);
+        if (result != GenIndexResult.Ok || texture.Valid == false)
+        {
+            return result;
+        }
+        else
+        {
+            // translate by the cameras position.
+            // (Note):
+            // reverse y-coordinates because monogame
+            // sprite batch is y+ = down, Howl is y+ = up.
+            Howl.Math.Vector2 position = transform.Position;
+            position.Y *= -1;
+            position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
+            
+            state.SpriteBatch.Draw(
+                texture.Value, 
+                new(position.X, position.Y), 
+                sprite.SourceRectangle.ToMonoGame(), 
+                sprite.ColourTint.ToMonoGame(), 
+                -transform.Rotation, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
+                sprite.Origin.ToMonogame(), 
+                (sprite.Scale * transform.Scale).ToMonogame(), 
+                SpriteEffects.None, 
+                sprite.LayerDepth
+            );
+            return result;
+        }
     }
 
     /// <summary>
@@ -197,53 +276,62 @@ public static class RendererSystem
     }
 
     /// <summary>
-    /// Draws a sprite to the currently bound render target.
+    /// Draws all texts to the currently bound render target.
     /// </summary>
-    /// <param name="state">The renderer state containing drawing context.</param>
-    /// <param name="camera">The camera to use for transforming coordinates.</param>
-    /// <param name="transform">The transformation to apply to the sprite.</param>
-    /// <param name="sprite">The sprite to draw.</param>
-    /// <returns><see cref="GenIndexResult"/></returns>
-    public static GenIndexResult DrawSprite(
-        RendererState state, 
-        ref Camera camera, 
-        ref Howl.Math.Transform transform, 
-        ref Sprite sprite
-    )
-    {   
-        TextureManager textureManager = (TextureManager)state.TextureManager;
-        GenIndexResult result = textureManager.GetTextureReadonlyRef(sprite.Texture, out ReadOnlyRef<Texture2D> texture);
-        if (result != GenIndexResult.Ok || texture.Valid == false)
-        {
-            return result;
-        }
-        else
-        {
-            // translate by the cameras position.
-            // (Note):
-            // reverse y-coordinates because monogame
-            // sprite batch is y+ = down, Howl is y+ = up.
-            Howl.Math.Vector2 position = transform.Position;
-            position.Y *= -1;
-            position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
-            
-            // reverse y-coordinates because monogame
-            // sprite batch is y+ = down, Howl is y+ = up.
-            // position.Y *= -1;
+    /// <param name="componentRegistry">The componenst registry where the sprites are stored.</param>
+    /// <param name="state">The state of the renderer.</param>
+    /// <param name="camera">The camera to draw in relation to.</param>
+    /// <param name="worldSpace">filters sprites; drawing sprites that are within the specified world space.</param>
+    public static void DrawTexts(ComponentRegistry componentRegistry, RendererState state, ref Camera camera, WorldSpace worldSpace)
+    {
+        GenIndexList<Transform> transformComponents = componentRegistry.Get<Transform>();            
+        
+        // draw text 16.
+        GenIndexList<Text16> text16Components = componentRegistry.Get<Text16>();
+        Span<DenseEntry<Text16>> text16DenseEntries = text16Components.GetDenseAsSpan();
 
-            state.SpriteBatch.Draw(
-                texture.Value, 
-                new(position.X, position.Y), 
-                sprite.SourceRectangle.ToMonoGame(), 
-                sprite.ColourTint.ToMonoGame(), 
-                -transform.Rotation, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
-                sprite.Origin.ToMonogame(), 
-                (sprite.Scale * transform.Scale).ToMonogame(), 
-                SpriteEffects.None, 
-                sprite.LayerDepth
-            );
-            return result;
+        state.SpriteBatch.Begin(
+            blendState: BlendState.AlphaBlend, 
+            samplerState: SamplerState.PointClamp, 
+            rasterizerState: RasterizerState.CullNone, 
+            effect: state.EffectManager.DefaultSpriteEffect
+        );
+
+        for(int i = 0; i < text16DenseEntries.Length; i++)
+        {
+            ref DenseEntry<Text16> denseEntry = ref text16DenseEntries[i];
+            ref Text16 text = ref denseEntry.Value;
+            text16Components.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            
+            if(text.TextParameters.WorldSpace != worldSpace)
+                continue;
+
+            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+            {
+                System.Diagnostics.Debug.Assert(false);
+                continue;
+            }
+
+            DrawText(state, ref camera, ref transformReadOnlyRef.Value, ref text);
         }
+
+        // draw text 4096
+        GenIndexList<Text4096> text4096Components = componentRegistry.Get<Text4096>();
+        Span<DenseEntry<Text4096>> text4096DenseEntries = text4096Components.GetDenseAsSpan();
+        
+        for(int i = 0; i < text4096DenseEntries.Length; i++)
+        {
+            ref DenseEntry<Text4096> denseEntry = ref text4096DenseEntries[i];
+            ref Text4096 text = ref denseEntry.Value;
+            text16Components.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            
+            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+                continue;
+
+            DrawText(state, ref camera, ref transformReadOnlyRef.Value, ref text);
+        }
+
+        state.SpriteBatch.End();
     }
 
     /// <summary>
@@ -257,7 +345,7 @@ public static class RendererSystem
     public static unsafe GenIndexResult DrawText(
         RendererState state, 
         ref Camera camera, 
-        ref Howl.Math.Transform transform, 
+        ref Transform transform, 
         ref Text16 text
     )
     {
@@ -304,7 +392,7 @@ public static class RendererSystem
     public static unsafe GenIndexResult DrawText(
         RendererState state, 
         ref Camera camera, 
-        ref Howl.Math.Transform transform, 
+        ref Transform transform, 
         ref Text4096 text
     )
     {
