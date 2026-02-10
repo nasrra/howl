@@ -1,7 +1,5 @@
 using System;
 using Howl.ECS;
-using Howl.Generic;
-using Howl.Math;
 
 
 namespace Howl.Graphics;
@@ -48,12 +46,9 @@ public static class CameraSystem
     /// <param name="componentRegistry">the component registry containing the cameras to update.</param>
     /// <param name="state">the renderer state.</param>
     /// <returns>the new update system instance.</returns>
-    public static UpdateSystem UpdateSystem(ComponentRegistry componentRegistry, IRendererState state)
+    public static void Update(ComponentRegistry componentRegistry, IRendererState state)
     {
-        return deltaTime =>
-        {
-            UpdateProjectionMatrices(componentRegistry, state);  
-        };
+        UpdateProjectionMatrices(componentRegistry, state);  
     }
 
     /// <summary>

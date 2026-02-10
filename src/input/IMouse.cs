@@ -5,9 +5,9 @@ namespace Howl.Input;
 public interface IMouse
 {
     /// <summary>
-    /// Gets or Sets the current position of the mouse cursor in screen-space.
+    /// Gets and sets the current position of the mouse cursor; relative the window back buffer.
     /// </summary>
-    public Vector2Int Position {get; set;}
+    public Vector2Int BackBufferPosition {get; set;}
 
     /// <summary>
     /// Gets or Sets the current x-coordinate position of the mouse cursor in screen-space.
@@ -20,9 +20,9 @@ public interface IMouse
     public int Y{get; set;}
 
     /// <summary>
-    /// Gets the difference in the mouse cursor position between the previous and current frame.
+    /// Gets the difference in the mouse cursor position between the previous and current frame; relative to the window back buffer.
     /// </summary>
-    public Vector2Int PositionDelta {get;}
+    public Vector2Int BackBufferPositionDelta {get;}
 
     /// <summary>
     /// Gets the difference in the mouse cursor x-position between the previous and current frame.
@@ -35,10 +35,10 @@ public interface IMouse
     public int YDelta {get;}
 
     /// <summary>
-    /// Sets the current position of the mouse cursor in screen-space and updates the CurrentState with the new position.
+    /// Sets the current position - relative to the back buffer - of the mouse cursor in screen-space and updates the CurrentState with the new position.
     /// </summary>
     /// <param name="position">The position to set the mouse; in screen-space.</param>
-    public void SetPosition(Vector2Int position);
+    public void SetBackBufferPosition(Vector2Int position);
 
     /// <summary>
     /// Gets whether the mouse has been moved between the previous and current frame.

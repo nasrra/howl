@@ -41,6 +41,11 @@ public interface IRendererState : IDisposable
     public float OutputResolutionAspectRatio => (float)OutputResolution.X / OutputResolution.Y;
 
     /// <summary>
+    /// Gets the renderer backend.
+    /// </summary>
+    public RendererBackend RendererBackend {get;}
+
+    /// <summary>
     /// Gets whether or not this instance is disposed.
     /// </summary>
     public bool IsDisposed{get;}
@@ -74,6 +79,11 @@ public interface IRendererState : IDisposable
     /// Sets the application window to be borderless fullscreen.
     /// </summary>
     public void BorderlessFullscreen();
+
+    /// <summary>
+    /// Sets the target frame rate of the application.
+    /// </summary>
+    public void SetTargetFrameRate(TargetFrameRate targetFrameRate);
 
     /// <summary>
     /// Allocates a new render target.

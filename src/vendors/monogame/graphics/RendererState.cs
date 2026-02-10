@@ -80,14 +80,17 @@ public sealed class RendererState : IRendererState
     /// <summary>
     /// Gets and sets the output resolution for the final render target
     /// </summary>
-    private Howl.Math.Vector2Int outputResolution;
-    public Howl.Math.Vector2Int OutputResolution => outputResolution;
+    private Vector2Int outputResolution;
+    public Vector2Int OutputResolution => outputResolution;
 
+    public RendererBackend RendererBackend => RendererBackend.MonoGame;
+    
     /// <summary>
     /// Gets and sets whether or not this instance is disposed.
     /// </summary>
     private bool disposed = false;
     public bool IsDisposed => disposed;
+
 
     /// <summary>
     /// Creates a new MonoGame renderer state instance.
@@ -216,6 +219,33 @@ public sealed class RendererState : IRendererState
         MonoGameApp.GraphicsDeviceManager.ToggleFullScreen();
     }
     
+    public void SetTargetFrameRate(TargetFrameRate targetFrameRate)
+    {
+        switch (targetFrameRate)
+        {
+            case TargetFrameRate.D60:
+                MonoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(16);
+            break;
+            case TargetFrameRate.D90:
+                MonoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(11);
+            break;
+            case TargetFrameRate.D120:
+                MonoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(8);
+            break;
+            case TargetFrameRate.D144:
+                MonoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(7);
+            break;
+            case TargetFrameRate.D165:
+                MonoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(6f);
+            break;
+            case TargetFrameRate.D240:
+                MonoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(4);
+            break;
+            case TargetFrameRate.D360:
+                MonoGameApp.TargetElapsedTime = TimeSpan.FromMilliseconds(3);
+            break;
+        }
+    }
 
 
     /// 

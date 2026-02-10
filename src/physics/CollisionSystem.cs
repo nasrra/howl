@@ -28,24 +28,11 @@ public static class CollisionSystem
     }
 
     /// <summary>
-    /// Creates a new DrawSystem instance.
-    /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="state"></param>
-    /// <returns></returns>
-    /// <exception cref="ObjectDisposedException"></exception>
-    public static DrawSystem DrawSystem(ComponentRegistry componentRegistry, CollisionSystemState state)
-    => deltaTime =>
-    {
-        DrawStep(componentRegistry, state, deltaTime);
-    };
-
-    /// <summary>
     /// Draw step for this Collision System.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
-    public static void DrawStep(ComponentRegistry componentRegistry, CollisionSystemState state, float deltaTime)
+    public static void Draw(ComponentRegistry componentRegistry, CollisionSystemState state, float deltaTime)
     {        
         if (state.DrawColliderWireframes)
         {            

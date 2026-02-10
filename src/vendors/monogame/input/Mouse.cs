@@ -27,25 +27,25 @@ public class Mouse : IMouse
         previousState = new MouseState();
     }
 
-    public Vector2Int Position
+    public Vector2Int BackBufferPosition
     {
         get => new (currentState.Position.X, currentState.Position.Y);
-        set => SetPosition(value);
+        set => SetBackBufferPosition(value);
     } 
 
     public int X
     {
         get => currentState.X;
-        set => SetPosition(new(value, currentState.Y));
+        set => SetBackBufferPosition(new(value, currentState.Y));
     }
 
     public int Y
     {
         get => currentState.Y;
-        set => SetPosition(new(currentState.Y, value));
+        set => SetBackBufferPosition(new(currentState.Y, value));
     }
 
-    public Vector2Int PositionDelta
+    public Vector2Int BackBufferPositionDelta
     {
         get{
             Microsoft.Xna.Framework.Point point = currentState.Position - previousState.Position;
@@ -57,7 +57,7 @@ public class Mouse : IMouse
 
     public int YDelta => currentState.Y - previousState.Y;
 
-    public bool WasMoved => PositionDelta != Vector2Int.Zero;
+    public bool WasMoved => BackBufferPositionDelta != Vector2Int.Zero;
 
     public int ScrollWheel => currentState.ScrollWheelValue;
 
@@ -69,7 +69,7 @@ public class Mouse : IMouse
         currentState = Microsoft.Xna.Framework.Input.Mouse.GetState();
     }
 
-    public void SetPosition(Vector2Int position)
+    public void SetBackBufferPosition(Vector2Int position)
     {
         Microsoft.Xna.Framework.Input.Mouse.SetPosition(position.X,position.Y);
         currentState = new MouseState(

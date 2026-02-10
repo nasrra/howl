@@ -33,51 +33,49 @@ public static class RendererSystem
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public static DrawSystem DrawSystem(ComponentRegistry componentRegistry, RendererState state)
+    public static void Draw(ComponentRegistry componentRegistry, IRendererState rendererState)
     {
-        return deltaTime =>
+        RendererState state = (RendererState)rendererState;
+        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>();
+
+        // get the main camera.
+        if(cameraComponents.GetDenseRef(CameraSystem.MainCameraId, out Ref<Camera> mainCamera).Fail())
         {
-            GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>();
+            System.Diagnostics.Debug.Assert(false);
+            return;
+        }
+        
+        // get the ui camera.
+        if(cameraComponents.GetDenseRef(CameraSystem.GuiCameraId, out Ref<Camera> guiCamera).Fail())
+        {
+            System.Diagnostics.Debug.Assert(false);
+            return;
+        }
 
-            // get the main camera.
-            if(cameraComponents.GetDenseRef(CameraSystem.MainCameraId, out Ref<Camera> mainCamera).Fail())
-            {
-                System.Diagnostics.Debug.Assert(false);
-                return;
-            }
-            
-            // get the ui camera.
-            if(cameraComponents.GetDenseRef(CameraSystem.GuiCameraId, out Ref<Camera> guiCamera).Fail())
-            {
-                System.Diagnostics.Debug.Assert(false);
-                return;
-            }
+        state.MonoGameApp.GraphicsDevice.SetRenderTarget(state.FinalRenderTarget);                    
+        state.MonoGameApp.GraphicsDevice.Clear(mainCamera.Value.ClearColour.ToMonoGame());
+        
+        DrawSprites(componentRegistry, state, ref mainCamera.Value, WorldSpace.World);
+        DrawTexts(componentRegistry, state, ref mainCamera.Value, WorldSpace.World);
+        DrawPrimitives(state);
+        DrawSprites(componentRegistry, state, ref guiCamera.Value, WorldSpace.Gui);
+        DrawTexts(componentRegistry, state, ref guiCamera.Value, WorldSpace.Gui);
+        
+        state.MonoGameApp.GraphicsDevice.SetRenderTarget(null);
 
-            state.MonoGameApp.GraphicsDevice.SetRenderTarget(state.FinalRenderTarget);                    
-            state.MonoGameApp.GraphicsDevice.Clear(mainCamera.Value.ClearColour.ToMonoGame());
-            
-            DrawSprites(componentRegistry, state, ref mainCamera.Value, WorldSpace.World);
-            DrawTexts(componentRegistry, state, ref mainCamera.Value, WorldSpace.World);
-            DrawPrimitives(state);
-            DrawSprites(componentRegistry, state, ref guiCamera.Value, WorldSpace.Gui);
-            DrawTexts(componentRegistry, state, ref guiCamera.Value, WorldSpace.Gui);
-            
-            state.MonoGameApp.GraphicsDevice.SetRenderTarget(null);
-
-            // draw the infal render target to the back buffer.
-            state.MonoGameApp.GraphicsDevice.SetRenderTarget(null);            
-            state.MonoGameApp.GraphicsDevice.Clear(Color.Black);
-            state.SpriteBatch.Begin(
-                blendState: BlendState.AlphaBlend, 
-                samplerState: SamplerState.PointClamp
-            );
-            state.SpriteBatch.Draw(
-                state.FinalRenderTarget,
-                state.DestinationRectangle.ToMonoGame(), // this will probably need to be changed for calc dest rectangle.
-                Color.White
-            );
-            state.SpriteBatch.End();
-        };
+        // draw the infal render target to the back buffer.
+        state.MonoGameApp.GraphicsDevice.SetRenderTarget(null);            
+        state.MonoGameApp.GraphicsDevice.Clear(Color.Black);
+        state.SpriteBatch.Begin(
+            blendState: BlendState.AlphaBlend, 
+            samplerState: SamplerState.PointClamp
+        );
+        state.SpriteBatch.Draw(
+            state.FinalRenderTarget,
+            state.DestinationRectangle.ToMonoGame(), // this will probably need to be changed for calc dest rectangle.
+            Color.White
+        );
+        state.SpriteBatch.End();
     }
 
     /// <summary>

@@ -46,7 +46,7 @@ public class MonoGameApp : Game
     {
         ValidateDependencies();
         float deltaTime = GameTimeToDeltaTime(gameTime);
-        howlApp.Update(deltaTime);
+        howlApp.Tick(deltaTime);
         base.Update(gameTime);
     }
 
@@ -56,12 +56,9 @@ public class MonoGameApp : Game
         // and should stay at the bottom.
 
         base.Draw(gameTime);
-
         ValidateDependencies();
         float deltaTime = GameTimeToDeltaTime(gameTime);
-        
-        howlApp.Draw(deltaTime); 
-        howlApp.DrawGui(deltaTime);
+        howlApp.Render(deltaTime); 
     }
 
     protected float GameTimeToDeltaTime(GameTime gameTime)

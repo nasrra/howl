@@ -19,24 +19,12 @@ public static class PhysicsSystem
     }
 
     /// <summary>
-    /// Creates a new FixedUpdateSystem instance.
-    /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="state"></param>
-    /// <returns></returns>
-    public static FixedUpdateSystem FixedUpdateSystem(ComponentRegistry componentRegistry, PhysicsSystemState state, int subSteps)
-    => deltaTime =>
-    {
-        FixedUpdateStep(componentRegistry, state, deltaTime, subSteps);
-    };
-
-    /// <summary>
     /// FixedUpdate step for the Physics System.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
     /// <param name="deltaTime"></param>
-    public static void FixedUpdateStep(ComponentRegistry componentRegistry, PhysicsSystemState state, float deltaTime, int subSteps)
+    public static void FixedUpdate(ComponentRegistry componentRegistry, PhysicsSystemState state, float deltaTime, int subSteps)
     {
         state.FixedUpdateStepStopwatch.Restart();
 
@@ -89,28 +77,15 @@ public static class PhysicsSystem
     }
 
     /// <summary>
-    /// Creates a new DrawSystem instance.
-    /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="render"></param>
-    /// <param name="state"></param>
-    /// <returns></returns>
-    public static DrawSystem DrawSystem(ComponentRegistry componentRegistry, PhysicsSystemState state)
-    => deltaTime =>
-    {
-        DrawStep(componentRegistry, state, deltaTime);
-    };
-
-    /// <summary>
     /// Draw step for the Physics System.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="renderer"></param>
     /// <param name="state"></param>
     /// <param name="deltaTime"></param>
-    public static void DrawStep(ComponentRegistry componentRegistry, PhysicsSystemState state, float deltaTime)
+    public static void Draw(ComponentRegistry componentRegistry, PhysicsSystemState state, float deltaTime)
     {
         state.ThrowIfDisposed();
-        CollisionSystem.DrawStep(componentRegistry, state.CollisionSystemState, deltaTime);
+        CollisionSystem.Draw(componentRegistry, state.CollisionSystemState, deltaTime);
     }
 }
