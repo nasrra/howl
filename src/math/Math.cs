@@ -5,6 +5,8 @@ namespace Howl.Math;
 
 public static class Math
 {
+    public const float Pi = 3.1415926535897932384626433f;
+
     /// <summary>
     /// Converts degrees to radians.
     /// </summary>

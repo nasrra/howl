@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Howl.DataStructures;
 using Howl.ECS;
 using Howl.Generic;
@@ -212,8 +209,8 @@ public static class CollisionSystem
         transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA).Ok();
         transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB).Ok();
 
-        PolygonRectangle rectangleA = PolygonRectangle.Transform(colliderA.Shape,transformRefA.Value);
-        PolygonRectangle rectangleB = PolygonRectangle.Transform(colliderB.Shape,transformRefB.Value); 
+        PolygonRectangle rectangleA = PolygonRectangle.Transform(new PolygonRectangle(colliderA.Shape),transformRefA.Value);
+        PolygonRectangle rectangleB = PolygonRectangle.Transform(new PolygonRectangle(colliderB.Shape),transformRefB.Value); 
 
         // Broad Phase:
         if(AABB.Intersect(rectangleA.GetAABB(), rectangleB.GetAABB()) == false)
@@ -316,7 +313,7 @@ public static class CollisionSystem
         transforms.GetDenseRef(rectangleGenIndex, out Ref<Transform> transformRefA).Ok();
         transforms.GetDenseRef(circleGenIndex, out Ref<Transform> transformRefB).Ok();
 
-        PolygonRectangle rectangle = PolygonRectangle.Transform(rectangleCollider.Shape,transformRefA.Value);
+        PolygonRectangle rectangle = PolygonRectangle.Transform(new PolygonRectangle(rectangleCollider.Shape),transformRefA.Value);
         Circle circle = Circle.Transform(circleCollider.Shape,transformRefB.Value); 
 
         // Broad Phase:
@@ -519,7 +516,7 @@ public static class CollisionSystem
 
             bvh.InsertLeaf(
                 new Leaf(
-                    PolygonRectangle.Transform(collider.Shape, transformRef).GetAABB(),
+                    PolygonRectangle.Transform(new PolygonRectangle(collider.Shape), transformRef).GetAABB(),
                     genIndex, 
                     (byte)ColliderType.Rectangle
                 )
@@ -585,6 +582,7 @@ public static class CollisionSystem
         {
             ref DenseEntry<RectangleCollider> denseEntry = ref denseEntries[i];
             ref RectangleCollider collider = ref denseEntry.Value;
+            PolygonRectangle shape = new PolygonRectangle(collider.Shape);
             colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
@@ -594,8 +592,8 @@ public static class CollisionSystem
                 continue;
             }
 
-            ReadOnlySpan<float> verticesX = collider.Shape.GetVerticesXAsSpan();
-            ReadOnlySpan<float> verticesY = collider.Shape.GetVerticesYAsSpan();
+            ReadOnlySpan<float> verticesX = shape.GetVerticesXAsSpan();
+            ReadOnlySpan<float> verticesY = shape.GetVerticesYAsSpan();
 
             for(int j = 0; j < PolygonRectangle.MaxVertices; j++)
             {

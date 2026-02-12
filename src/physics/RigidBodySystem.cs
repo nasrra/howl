@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Math;
+using Howl.Math.Shapes;
 
 namespace Howl.Physics;
 
@@ -26,12 +27,15 @@ public static class RigidBodySystem
     /// <param name="deltaTime"></param>
     /// <exception cref="DenseNotAllocatedException"></exception>
     /// <exception cref="StaleGenIndexException"></exception>
-    public static void MovementStep(ComponentRegistry componentRegistry, RigidbodySystemState state, float deltaTime)
+    public static void MovementStep(ComponentRegistry componentRegistry, RigidBodySystemState state, float deltaTime)
     {        
         GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
         Span<DenseEntry<RigidBody>> denseEntries = rigidbodies.GetDenseAsSpan();
 
-        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>(); 
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
+
+        GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
+        GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>();
 
         for(int i = 0; i < denseEntries.Length; i++)
         {
@@ -40,9 +44,25 @@ public static class RigidBodySystem
             rigidbodies.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the rigid body has a transform component.
-            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
+            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail())
             {
-                System.Diagnostics.Debug.Assert(false, $"{result}");
+                System.Diagnostics.Debug.Assert(false);
+                continue;
+            }
+
+            ref Transform transform = ref transformRef.Value;
+
+            if(circleColliders.GetDenseRef(genIndex, out Ref<CircleCollider> circleCollider).Ok())
+            {
+                rigidbody.SetShape(circleCollider.Value.Shape.Scale(transform.Scale));
+            }
+            else if(rectangleColliders.GetDenseRef(genIndex, out Ref<RectangleCollider> rectangleCollider).Ok())
+            {
+                rigidbody.SetShape(rectangleCollider.Value.Shape.Scale(transform.Scale));   
+            }
+            else
+            {
+                System.Diagnostics.Debug.Assert(false, "rigidbody must have a collider!");
                 continue;
             }
 

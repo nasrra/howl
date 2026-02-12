@@ -14,7 +14,7 @@ public sealed class PhysicsSystemState : IDisposable
     /// <summary>
     /// Gets and sets the RigidbodySystemState.
     /// </summary>
-    public RigidbodySystemState RigidbodySystemState;
+    public RigidBodySystemState RigidbodySystemState;
 
     /// <summary>
     /// Gets and sets the debug stopwatch for timing a physics system fixed-update substep.
@@ -36,7 +36,7 @@ public sealed class PhysicsSystemState : IDisposable
     /// </summary>
     public bool IsDisposed => disposed;
 
-    public PhysicsSystemState(CollisionSystemState collisionSystemState, RigidbodySystemState rigidbodySystemState)
+    public PhysicsSystemState(CollisionSystemState collisionSystemState, RigidBodySystemState rigidbodySystemState)
     {
         if (collisionSystemState == null)
         {

@@ -17,7 +17,7 @@ public class Text4096Test
         GenIndex fontGenIndex = new(0,1);
 
         Text4096 text = new(
-            new TextParameters(colour, offset, fontGenIndex), 
+            new TextParameters(colour, offset, fontGenIndex, WorldSpace.World), 
             Text
         );
 
@@ -25,6 +25,7 @@ public class Text4096Test
         Assert.Equal(colour, text.TextParameters.Colour);
         Assert.Equal(offset, text.TextParameters.Offset);
         Assert.Equal(fontGenIndex, text.TextParameters.FontGenIndex);
+        Assert.Equal(WorldSpace.World, text.TextParameters.WorldSpace);
 
         // Verify characters.
         Assert.Equal(4096, text.Length);
@@ -37,7 +38,7 @@ public class Text4096Test
     public void SetCharacters_Test()
     {
         Text4096 text = new Text4096(
-            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0)),
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
             ""
         );
 

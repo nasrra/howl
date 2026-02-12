@@ -1,5 +1,3 @@
-
-
 using System;
 using System.Runtime.CompilerServices;
 
@@ -41,32 +39,32 @@ public struct Rectangle
     /// <summary>
     /// Gets the y-coordinate of the top edge of this rectangle.
     /// </summary>
-    public float Bottom => Y;
+    public float Bottom => Y-Height;
 
     /// <summary>
     /// Gets the y-coordinate of the top edge of this rectangle.
     /// </summary>
-    public float Top => Y + Height;
+    public float Top => Y;
 
     /// <summary>
     /// Gets the top-left corner of this rectangle.
     /// </summary>
-    public Vector2 TopLeft => new(X,Y);
+    public Vector2 TopLeft => new(Left,Top);
 
     /// <summary>
     /// Gets the top-right corner of this rectangle.
     /// </summary>
-    public Vector2 TopRight => new(X+Width,Y);
+    public Vector2 TopRight => new(Right,Top);
 
     /// <summary>
     /// Gets the bottom-left corner of this rectangle. 
     /// </summary>
-    public Vector2 BottomLeft => new(X, Y-Height);
+    public Vector2 BottomLeft => new(Left, Bottom);
 
     /// <summary>
     /// Gets the bottom-right corner of this rectangle.
     /// </summary>
-    public Vector2 BottomRight => new(X+Width, Y-Height);
+    public Vector2 BottomRight => new(Right, Bottom);
 
     /// <summary>
     /// Constructs a Rectangle.
@@ -115,6 +113,71 @@ public struct Rectangle
         );
     }
     
+    /// <summary>
+    /// Constructs and gets the AABB of this shape.
+    /// </summary>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public AABB GetAABB()
+    {
+        return new AABB(BottomLeft, TopRight);
+    }
+
+
+    /// <summary>
+    /// Constructs a rectangle that has this rectangle's width and height scaled by a vector.
+    /// </summary>
+    /// <param name="scale">the vector to scale by </param>
+    /// <returns>the resultant rectangle.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Rectangle Scale(Vector2 scale)
+    {
+        return Scale(this, scale);
+    }
+
+    /// <summary>
+    /// Constructs a rectangle that has a rectangle's width and height scaled by a vector.
+    /// </summary>
+    /// <param name="rectangle">the rectangle to scale.</param>
+    /// <param name="scale">the vector to scale by.</param>
+    /// <returns>the resultant rectangle.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Rectangle Scale(in Rectangle rectangle, Vector2 scale)
+    {
+        return new Rectangle(
+            rectangle.X, 
+            rectangle.Y, 
+            rectangle.Width * scale.X, 
+            rectangle.Height * scale.Y
+        );
+    }
+
+    /// <summary>
+    /// Constructs a rectangle that has this rectangle's width and height scaled by a value.
+    /// </summary>
+    /// <param name="scale">the value to scale by </param>
+    /// <returns>the resultant rectangle.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public Rectangle Scale(float scale)
+    {
+        return Scale(this, scale);
+    }
+
+    /// <summary>
+    /// Constructs a rectangle that has a rectangle's width and height scaled by a value.
+    /// </summary>
+    /// <param name="scale">the value to scale by </param>
+    /// <returns>the resultant rectangle.</returns>
+    public static Rectangle Scale(in Rectangle rectangle, float scale)
+    {
+        return new Rectangle(
+            rectangle.X,
+            rectangle.Y, 
+            rectangle.Width * scale,
+            rectangle.Height * scale
+        );
+    }
+
     /// <summary>
     /// Subtracts the left-hand side rectangle to the right-hand side.
     /// </summary>

@@ -29,7 +29,7 @@ public static class PhysicsSystem
         state.FixedUpdateStepStopwatch.Restart();
 
         CollisionSystemState collisionSystemState = state.CollisionSystemState;
-        RigidbodySystemState rigidbodySystemState = state.RigidbodySystemState;
+        RigidBodySystemState rigidbodySystemState = state.RigidbodySystemState;
         
         deltaTime /= (float)subSteps;
 

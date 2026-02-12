@@ -3,7 +3,7 @@ using Howl.Math;
 
 namespace Howl.Physics;
 
-public sealed class RigidbodySystemState : IDisposable
+public sealed class RigidBodySystemState : IDisposable
 {
     private bool disposed;
     public bool IsDisposed => disposed;
@@ -26,7 +26,7 @@ public sealed class RigidbodySystemState : IDisposable
     {
         if (disposed)
         {
-            throw new ObjectDisposedException($"{nameof(RigidbodySystemState)}");
+            throw new ObjectDisposedException($"{nameof(RigidBodySystemState)}");
         }
     }
 
@@ -52,7 +52,7 @@ public sealed class RigidbodySystemState : IDisposable
         disposed = true;
     }
 
-    ~RigidbodySystemState()
+    ~RigidBodySystemState()
     {
         Dispose(false);
     }

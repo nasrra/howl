@@ -164,6 +164,9 @@ public struct Matrix
     /// <summary>
     /// Contstructs a new <see cref="Matrix"/> for customized orthographics view.
     /// </summary>
+    /// <remarks>
+    /// Note: this orthographic projection is specific to directX/MonoGame.
+    /// </remarks>
     /// <param name="left">the lower x-value at the near plane.</param>
     /// <param name="right">the upper x-value at the near pane.</param>
     /// <param name="bottom">the lower y-value at the near plane.</param>

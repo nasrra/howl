@@ -20,6 +20,15 @@ public unsafe struct PolygonRectangle
     /// </summary>
     public fixed float VerticesY[MaxVertices];
 
+
+    /// <summary>
+    /// Constructs a PolygonRectangle.
+    /// </summary>
+    /// <param name="rectangle">The rectangle to construct from.</param>
+    public PolygonRectangle(in Rectangle rectangle)
+    : this(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height)
+    {}
+
     /// <summary>
     /// Constructs a PolygonRectangle.
     /// </summary>
