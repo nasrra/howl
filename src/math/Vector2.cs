@@ -418,7 +418,7 @@ public struct Vector2
     /// <param name="rhs">The right-hand side vector.</param>
     /// <returns>The cross product.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public float Cross(Vector2 lhs, Vector2 rhs)
+    public static float Cross(Vector2 lhs, Vector2 rhs)
     {
         return lhs.X * rhs.Y - lhs.Y * rhs.X;    
     }   

@@ -11,19 +11,19 @@ public struct Circle
     public float Radius;
 
     /// <summary>
-    /// The x-positional origin value.
+    /// The x-positional center value.
     /// </summary>
     public float X;
 
     /// <summary>
-    /// The y-positional origin value.
+    /// The y-positional center value.
     /// </summary>
     public float Y;
 
     /// <summary>
-    /// Gets the X and Y origin values as a vector.
+    /// Gets the center position.
     /// </summary>
-    public Vector2 Origin => new Vector2(X,Y);
+    public readonly Vector2 Center => new Vector2(X,Y);
 
     /// <summary>
     /// Constructs a Circle.

@@ -75,7 +75,6 @@ public static class GenIndexResultExtensions
             case GenIndexResult.DenseAlreadyAllocated:
             case GenIndexResult.InvalidGenIndex:
             case GenIndexResult.StaleDenseAllocation:
-                Debug.Assert(false, $"Unexpected GenIndexResult: {result}");
                 return !flag;
 
 

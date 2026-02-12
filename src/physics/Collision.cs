@@ -41,6 +41,22 @@ public unsafe struct Collision
     public readonly Vector2 Normal;
 
     /// <summary>
+    /// Gets the center of the owner's collider shape.
+    /// </summary>
+    /// <remarks>
+    /// Note: the shape must not be transformed in any way, it must be the untransformed shape directly from a collider.
+    /// </remarks>
+    public readonly Vector2 OwnerColliderShapeCenter;
+
+    /// <summary>
+    /// Gets the center of the other's collider shape.
+    /// </summary>
+    /// <remarks>
+    /// Note: the shape must not be transformed in any way, it must be the untransformed shape directly from a collider.
+    /// </remarks>
+    public readonly Vector2 OtherColliderShapeCenter;
+
+    /// <summary>
     /// Gets and sets the x-positional value for the contact points.
     /// </summary>
     private fixed float xContactPoints[MaxContactPoints];
@@ -74,6 +90,8 @@ public unsafe struct Collision
     /// <param name="otherParameters">the other's parameters.</param>
     /// <param name="xContactPoints">the x-positional value for the contact points.</param>
     /// <param name="yContactPoints">the y-positional value for the contact points.</param>
+    /// <param name="ownerColliderShapeCenter">the center of the owner's collider shape</param>
+    /// <param name="otherColliderShapeCenter">the center of the other's collider shape</param>
     /// <param name="normal">the normal of the collision.</param>
     /// <param name="depth">the depth of the collision.</param>
     public Collision(
@@ -83,7 +101,9 @@ public unsafe struct Collision
         ColliderParameters otherParameters, 
         ReadOnlySpan<float> xContactPoints,
         ReadOnlySpan<float> yContactPoints,
-        Vector2 normal, 
+        Vector2 ownerColliderShapeCenter,
+        Vector2 otherColliderShapeCenter,
+        Vector2 normal,
         float depth)
     {
         Owner = owner;
@@ -93,6 +113,8 @@ public unsafe struct Collision
         Normal = normal;
         Depth = depth;
         SetContactPoints(xContactPoints, yContactPoints);
+        OwnerColliderShapeCenter = ownerColliderShapeCenter;
+        OtherColliderShapeCenter = otherColliderShapeCenter;
     }
 
     private void SetContactPoints(ReadOnlySpan<float> xContactPoints, ReadOnlySpan<float> yContactPoints)

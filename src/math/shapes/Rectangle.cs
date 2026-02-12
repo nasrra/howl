@@ -29,42 +29,47 @@ public struct Rectangle
     /// <summary>
     /// Gets the x-coordinate of the left edge of this rectangle.
     /// </summary>
-    public float Left => X;
+    public readonly float Left => X;
 
     /// <summary>
     /// Gets the x-coordinate of the right edge of this rectangle.
     /// </summary>
-    public float Right => X + Width;
+    public readonly float Right => X + Width;
 
     /// <summary>
     /// Gets the y-coordinate of the top edge of this rectangle.
     /// </summary>
-    public float Bottom => Y-Height;
+    public readonly float Bottom => Y-Height;
 
     /// <summary>
     /// Gets the y-coordinate of the top edge of this rectangle.
     /// </summary>
-    public float Top => Y;
+    public readonly float Top => Y;
 
     /// <summary>
     /// Gets the top-left corner of this rectangle.
     /// </summary>
-    public Vector2 TopLeft => new(Left,Top);
+    public readonly Vector2 TopLeft => new(Left,Top);
 
     /// <summary>
     /// Gets the top-right corner of this rectangle.
     /// </summary>
-    public Vector2 TopRight => new(Right,Top);
+    public readonly Vector2 TopRight => new(Right,Top);
 
     /// <summary>
     /// Gets the bottom-left corner of this rectangle. 
     /// </summary>
-    public Vector2 BottomLeft => new(Left, Bottom);
+    public readonly Vector2 BottomLeft => new(Left, Bottom);
 
     /// <summary>
     /// Gets the bottom-right corner of this rectangle.
     /// </summary>
-    public Vector2 BottomRight => new(Right, Bottom);
+    public readonly Vector2 BottomRight => new(Right, Bottom);
+
+    /// <summary>
+    /// Gets the center position.
+    /// </summary>
+    public readonly Vector2 Center => new Vector2(Left + (Width * 0.5f), Top - (Height * 0.5f));
 
     /// <summary>
     /// Constructs a Rectangle.

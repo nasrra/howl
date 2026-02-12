@@ -97,7 +97,7 @@ public static class RendererSystem
         state.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointClamp, 
-            rasterizerState: RasterizerState.CullNone, 
+            rasterizerState: RasterizerState.CullNone,
             effect: state.EffectManager.DefaultSpriteEffect
         );   
 
@@ -116,7 +116,11 @@ public static class RendererSystem
             if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformRef).Fail())
                 continue;
             
-            DrawSprite(state, ref camera, ref transformRef.Value, ref sprite).Ok();
+            if(DrawSprite(state, ref camera, ref transformRef.Value, ref sprite).Fail())
+            {
+                System.Diagnostics.Debug.Assert(false);
+                continue;    
+            }
         }
 
         state.SpriteBatch.End();
@@ -152,7 +156,8 @@ public static class RendererSystem
             Howl.Math.Vector2 position = transform.Position;
             position.Y *= -1;
             position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
-            
+state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
+
             state.SpriteBatch.Draw(
                 texture.Value, 
                 new(position.X, position.Y), 

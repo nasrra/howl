@@ -39,14 +39,14 @@ public struct RigidBody
     public readonly Vector2 LinearVelocity => linearVelocity;
 
     /// <summary>
-    /// Gets and sets the rotational vecloty this body is currently travelling in.
+    /// Gets and sets the angular velocity - in radians - this body is currently travelling in.
     /// </summary>
-    private float rotationalVelocity;
+    private float angularVelocity;
     
     /// <summary>
-    /// Gets the rotational vecloty this body is currently travelling in.
+    /// Gets the angular velocity - in radians - this body is currently travelling in.
     /// </summary>
-    public readonly float RotationalVelocity => rotationalVelocity;
+    public readonly float AngularVelocity => angularVelocity;
 
     /// <summary>
     /// Gets and sets the density.
@@ -67,6 +67,16 @@ public struct RigidBody
     /// Gets the mass.
     /// </summary>
     public readonly float Mass => mass;
+
+    /// <summary>
+    /// Gets and sets the inverse mass.
+    /// </summary>
+    private float inverseMass;
+
+    /// <summary>
+    /// Gets the inverse mass.
+    /// </summary>
+    public readonly float InverseMass => inverseMass;
 
     /// <summary>
     /// Gets and sets the restitution.
@@ -105,9 +115,24 @@ public struct RigidBody
     public readonly float RotationalInertia => rotationalInertia;
 
     /// <summary>
+    /// Gets and sets the inverse rotational inertia.
+    /// </summary>
+    public float inverseRotationalInertia;
+
+    /// <summary>
+    /// Gets the inverse rotational intertia.
+    /// </summary>
+    public readonly float InverseRotationalInertia => inverseRotationalInertia; 
+
+    /// <summary>
     /// Gets and sets the behvaiour of this body.
     /// </summary>
     public RigidBodyMode Mode;
+
+    /// <summary>
+    /// Gets and sets whether or not this rigidbody uses rotational physics.
+    /// </summary>
+    public bool RotationalPhysics;
 
     /// <summary>
     /// Constructs a rigidbody.
@@ -115,11 +140,13 @@ public struct RigidBody
     /// <param name="restitution">the restitution ('bounciness').</param>
     /// <param name="density">the density.</param>
     /// <param name="rigidBodyMode">the behaviour to exhibit within the physics system and in relation to other bodies.</param>
-    public RigidBody(float restitution, float density, RigidBodyMode rigidBodyMode)
+    /// <param name="roationalPhysics">whether or not this rigidbody uses rotational physics.</param>
+    public RigidBody(float restitution, float density, RigidBodyMode rigidBodyMode, bool roationalPhysics)
     {
         SetRestitution(restitution);
         SetDensity(density);
         Mode = rigidBodyMode;
+        RotationalPhysics = roationalPhysics;
     }
     
     /// <summary>
@@ -148,9 +175,11 @@ public struct RigidBody
 
         // recalculate mass.
         mass = area * density;
+        inverseMass = 1f / mass;
 
         //  calculate inertia.
         rotationalInertia = RectangleInertiaConst * mass * (rectangle.Width * rectangle.Width + rectangle.Height * rectangle.Height);
+        inverseRotationalInertia = 1f / rotationalInertia;
     }
 
     /// <summary>
@@ -163,6 +192,8 @@ public struct RigidBody
         SetShape(in circle, Density);
     }
 
+    bool set = false;
+
     /// <summary>
     /// Sets the shape of this rigidbody.
     /// </summary>
@@ -170,6 +201,12 @@ public struct RigidBody
     /// <param name="density">The density to set to.</param>
     public void SetShape(in Circle circle, float density)
     {
+        if (set)
+        {
+            return;
+        }
+        set = true;
+
         float radiusSqrd = circle.Radius * circle.Radius;
 
         // calculate and set the area.
@@ -181,9 +218,11 @@ public struct RigidBody
 
         // recalculate mass.
         mass = area * density;
+        inverseMass = 1f/mass;
 
         //  calculate inertia.
         rotationalInertia = CircleInertiaConst * mass * radiusSqrd;        
+        inverseRotationalInertia = 1f/rotationalInertia;
     }
 
     private void SetDensity(float density)
@@ -216,14 +255,19 @@ public struct RigidBody
         this.restitution = restitution;
     }
 
-    public void AddForce(Vector2 force)
+    public void AddLinearForce(Vector2 force)
     {
         this.force += force;    
     }
 
-    public void ImpulseForce(Vector2 force)
+    public void ImpulseLinearForce(Vector2 force)
     {
         linearVelocity += force;
+    }
+
+    public void ImpulseAngularForce(float force)
+    {
+        angularVelocity += force;
     }
 
     public void ClearForces()
@@ -238,6 +282,6 @@ public struct RigidBody
 
     public void ClearRotationalVelocity()
     {
-        rotationalVelocity = 0;
+        angularVelocity = 0;
     }
 }

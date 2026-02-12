@@ -69,16 +69,16 @@ public static class RigidBodySystem
             if(rigidbody.Mode == RigidBodyMode.Dynamic)
             {
                 // apply gravity.
-                rigidbody.ImpulseForce(state.GravityDirection * state.Gravity * deltaTime);
+                rigidbody.ImpulseLinearForce(state.GravityDirection * state.Gravity * deltaTime);
             }
 
 
             // force = mass * acceleration.
             // acceleration = force / mass.
 
-            rigidbody.ImpulseForce(rigidbody.Force / rigidbody.Mass * deltaTime);
+            rigidbody.ImpulseLinearForce(rigidbody.Force / rigidbody.Mass * deltaTime);
             transformRef.Value.Position += rigidbody.LinearVelocity * deltaTime;
-            transformRef.Value.Rotation += rigidbody.RotationalVelocity * deltaTime;
+            transformRef.Value.Rotation += rigidbody.AngularVelocity * deltaTime;
         } 
     }
 
@@ -99,54 +99,183 @@ public static class RigidBodySystem
     }
 
     /// <summary>
-    /// The collision resolution step for this rigibody system.
+    /// The collision resolution step.
     /// </summary>
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
     /// <param name="deltaTime"></param>
     public static void ResolveCollisionsStep(ComponentRegistry componentRegistry, CollisionSystemState state, float deltaTime)
     {        
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
         ReadOnlySpan<Collision> collisions = state.CollisionManifold.GetCollisionsAsReadOnlySpan();
 
         for(int i = 0; i < collisions.Length; i+=2) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
         {            
-            if(rigidbodies.GetDenseRef(collisions[i].Owner, out Ref<RigidBody> rigidbodyARef) != GenIndexResult.Ok)
+            // get the two rigidbodies.
+            if(rigidbodies.GetDenseRef(collisions[i].Owner, out Ref<RigidBody> rigidbodyARef).Fail()
+            || rigidbodies.GetDenseRef(collisions[i].Other, out Ref<RigidBody> rigidbodyBRef).Fail())
             {
+                System.Diagnostics.Debug.Assert(false);
                 continue;
             }
 
-            if(rigidbodies.GetDenseRef(collisions[i].Other, out Ref<RigidBody> rigidbodyBRef) != GenIndexResult.Ok)
-            {
-                continue;
-            }
-
+            ref readonly Collision collision = ref collisions[i];
             ref RigidBody rigidbodyA = ref rigidbodyARef.Value;
             ref RigidBody rigidbodyB = ref rigidbodyBRef.Value;
 
-            Vector2 relativeVelocity = rigidbodyB.LinearVelocity - rigidbodyA.LinearVelocity;
+            if(rigidbodyA.RotationalPhysics == true || rigidbodyB.RotationalPhysics == true)
+            {
+                ResolveCollisionRotational(transforms, in collision, ref rigidbodyA, ref rigidbodyB);
+            }
+            else
+            {
+                ResolveCollisionBasic(in collision, ref rigidbodyA, ref rigidbodyB);                
+            }
+        }
+    }
 
-            float relative = Vector2.Dot(relativeVelocity, collisions[i].Normal);
 
-            if(relative > 0)
+    /// <summary>
+    /// Resolves a collision between two rigidbodies.
+    /// </summary>
+    /// <param name="collision">the collision data.</param>
+    /// <param name="rigidBodyA">the rigidbody of the collision data's owner.</param>
+    /// <param name="rigidBodyB">the rigidbody of the collision data's other.</param>
+    private static void ResolveCollisionBasic(ref readonly Collision collision, ref RigidBody rigidBodyA, ref RigidBody rigidBodyB)
+    {
+        Vector2 relativeVelocity = rigidBodyB.LinearVelocity - rigidBodyA.LinearVelocity;
+
+        // the magnitude of the relative velocity relative to the normal
+        float magnitude = Vector2.Dot(relativeVelocity, collision.Normal);
+
+        if(magnitude > 0)
+        {
+            return;
+        }
+
+        float restitution = MathF.Min(rigidBodyA.Restitution, rigidBodyB.Restitution);
+
+        // magnitude of the impulse
+        float impulseMagnitude = -(1f + restitution) * magnitude;
+        impulseMagnitude /= rigidBodyA.InverseMass + rigidBodyB.InverseMass;
+
+        if(rigidBodyA.Mode == RigidBodyMode.Dynamic)
+        {
+            rigidBodyA.ImpulseLinearForce(-(impulseMagnitude / rigidBodyA.Mass * collision.Normal));            
+        }
+
+        if(rigidBodyB.Mode == RigidBodyMode.Dynamic)
+        {
+            rigidBodyB.ImpulseLinearForce(impulseMagnitude / rigidBodyB.Mass * collision.Normal);
+        }
+    } 
+
+    /// <summary>
+    /// Resolves a collision between two rigidbodies with rotational physics.
+    /// </summary>
+    /// <param name="transforms">the transform components in the rigidbodies component registry.</param>
+    /// <param name="collision">the collision data.</param>
+    /// <param name="rigidBodyA">the rigidbody of the 'owner' in the collision data.</param>
+    /// <param name="rigidBodyB">the rigidbody of the 'other' in the collision data.</param>
+    public static void ResolveCollisionRotational(
+        GenIndexList<Transform> transforms,
+        ref readonly Collision collision,
+        ref RigidBody rigidBodyA,
+        ref RigidBody rigidBodyB
+    )
+    {
+
+        // ensure they both have transform components.
+        if(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformARef).Fail()
+        || transforms.GetDenseRef(collision.Other, out Ref<Transform> transformBRef).Fail())
+        {
+            System.Diagnostics.Debug.Assert(false);
+            return;
+        }
+        ref Transform transformA = ref transformARef.Value;
+        ref Transform transformB = ref transformBRef.Value;                
+
+        float restitution = MathF.Min(rigidBodyA.Restitution, rigidBodyB.Restitution);
+
+        ReadOnlySpan<float> contactPointX = collision.GetXContactPointsAsReadOnlySpan();
+        ReadOnlySpan<float> contactPointY = collision.GetYContactPointsAsReadOnlySpan();
+
+        Span<Vector2> impulse = stackalloc Vector2[collision.ContactPointsCount];
+        Span<Vector2> distA   = stackalloc Vector2[collision.ContactPointsCount];
+        Span<Vector2> distB   = stackalloc Vector2[collision.ContactPointsCount];
+        
+        for(int j = 0; j < collision.ContactPointsCount; j++)
+        {
+            Vector2 contactPoint = new Vector2(contactPointX[j], contactPointY[j]);
+            
+            // get the angular velocity to travel in.
+            distA[j] = contactPoint - collision.OwnerColliderShapeCenter.Transform(transformA);
+            distB[j] = contactPoint - collision.OtherColliderShapeCenter.Transform(transformB);
+            Vector2 perpendicularA = new Vector2(-distA[j].Y, distA[j].X);
+            Vector2 perpendicularB = new Vector2(-distB[j].Y, distB[j].X);
+            Vector2 angularLinearVelocityA = perpendicularA * rigidBodyA.AngularVelocity; 
+            Vector2 angularLinearVelocityB = perpendicularB * rigidBodyB.AngularVelocity; 
+
+            Vector2 relativeVelocity = 
+            (rigidBodyB.LinearVelocity + angularLinearVelocityB) - 
+            (rigidBodyA.LinearVelocity + angularLinearVelocityA);
+            
+            // the magnitude of the relative velocity relative to the normal
+            float magnitude = Vector2.Dot(relativeVelocity, collision.Normal);
+
+            if(magnitude > 0)
             {
                 continue;
             }
 
-            float e = MathF.Min(rigidbodyA.Restitution, rigidbodyB.Restitution);
+            // calculate the denominator.
+            float perpADotNormal = perpendicularA.Dot(collision.Normal);
+            float perpBDotNormal = perpendicularB.Dot(collision.Normal);
+            float denominator = rigidBodyA.InverseMass + rigidBodyB.InverseMass + 
+                (perpADotNormal * perpADotNormal) * rigidBodyA.InverseRotationalInertia +
+                (perpBDotNormal * perpBDotNormal) * rigidBodyB.InverseRotationalInertia;
 
-            float j = -(1f + e) * relative;
-            j /= (1f/rigidbodyA.Mass) + (1f/rigidbodyB.Mass);
+            // magnitude of the impulse
+            float impulseMagnitude = -(1f + restitution) * magnitude;
+            impulseMagnitude /= denominator;
 
-            if(rigidbodyA.Mode == RigidBodyMode.Dynamic)
+            // divide by the contact point count to ensure that impulse is evenly spread 
+            // across all contact points.
+            impulseMagnitude /= (float)collision.ContactPointsCount;
+
+            impulse[j] = impulseMagnitude * collision.Normal;
+        }
+
+        for(int j = 0; j < collision.ContactPointsCount; j++)
+        {                
+            // cross producting the dist and impulse gives a value indicating
+            // how much angular velocity - in radians - is needed to be applied based on the impulse direction.
+            // this is because cross producting two directions that are parallel to eachother, results in zero.
+            // which means that there should be no rotation if the collision is head on.
+            // but if the closer the two directions come to being perpendicular to one another,
+            // the larger the angular impulse will be, causing the body to rotate.
+            if(rigidBodyA.Mode == RigidBodyMode.Dynamic)
             {
-                rigidbodyA.ImpulseForce(-(j / rigidbodyA.Mass * collisions[i].Normal));            
-            }
+                // always apply linear force, even if there is no rotational force to apply.
+                rigidBodyA.ImpulseLinearForce(-impulse[j] * rigidBodyA.InverseMass);                
 
-            if(rigidbodyB.Mode == RigidBodyMode.Dynamic)
-            {
-                rigidbodyB.ImpulseForce(j / rigidbodyB.Mass * collisions[i].Normal);
+                if(rigidBodyA.RotationalPhysics)
+                {
+                    rigidBodyA.ImpulseAngularForce(-Vector2.Cross(distA[j], impulse[j]) * rigidBodyA.InverseRotationalInertia);                
+                }
             }
+            if(rigidBodyB.Mode == RigidBodyMode.Dynamic)
+            {
+                // always apply linear force, even if there is no rotational force to apply.
+                rigidBodyB.ImpulseLinearForce(impulse[j] * rigidBodyB.InverseMass);
+                
+                if(rigidBodyB.RotationalPhysics)
+                {
+                    rigidBodyB.ImpulseAngularForce(Vector2.Cross(distB[j], impulse[j]) * rigidBodyB.InverseRotationalInertia);                
+                }                
+            }
+        
         }
     }
 }

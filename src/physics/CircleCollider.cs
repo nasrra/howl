@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Howl.Math;
 using Howl.Math.Shapes;
 
