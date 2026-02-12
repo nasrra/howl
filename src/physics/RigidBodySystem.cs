@@ -109,6 +109,7 @@ public static class RigidBodySystem
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
         ReadOnlySpan<Collision> collisions = state.CollisionManifold.GetCollisionsAsReadOnlySpan();
+        Span<float> collisionImpulseMagnitudes = stackalloc float[Collision.MaxContactPoints];
 
         for(int i = 0; i < collisions.Length; i+=2) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
         {            
@@ -124,9 +125,16 @@ public static class RigidBodySystem
             ref RigidBody rigidbodyA = ref rigidbodyARef.Value;
             ref RigidBody rigidbodyB = ref rigidbodyBRef.Value;
 
-            if(rigidbodyA.RotationalPhysics == true || rigidbodyB.RotationalPhysics == true)
+            // friction and rotational resolution are tightly coupled with eachother.
+            // do not remove them from eachother.
+            if(rigidbodyA.PhysicsMaterial.UseFriction == true || rigidbodyB.PhysicsMaterial.UseFriction == true
+            || rigidbodyA.RotationalPhysics == true || rigidbodyB.RotationalPhysics == true)
             {
-                ResolveCollisionRotational(transforms, in collision, ref rigidbodyA, ref rigidbodyB);
+                // note: order matters here, do collision resolution
+                //  first do that the impulse magnitudes span is
+                // filled with the correct data to perform friction resolution.
+                ResolveCollisionRotational(collisionImpulseMagnitudes, transforms, in collision, ref rigidbodyA, ref rigidbodyB);
+                ResolveFriction(collisionImpulseMagnitudes, transforms, in collision, ref rigidbodyA, ref rigidbodyB);
             }
             else
             {
@@ -172,20 +180,26 @@ public static class RigidBodySystem
     } 
 
     /// <summary>
-    /// Resolves a collision between two rigidbodies with rotational physics.
+    /// Resolves a collision between two rigidbodies with rotational physics and friction.
     /// </summary>
+    /// <remarks>
+    /// Note: impulseMagnitudes will be written to dring this function call.
+    /// This function also assumes that impulseMagnitudes length will be
+    /// able to contain a Collision's max number of contact points.
+    /// </remarks>
+    /// <param name="impulseMagnitudes">a span that will store the impulse magnitudes this function generates.</param>
     /// <param name="transforms">the transform components in the rigidbodies component registry.</param>
     /// <param name="collision">the collision data.</param>
     /// <param name="rigidBodyA">the rigidbody of the 'owner' in the collision data.</param>
     /// <param name="rigidBodyB">the rigidbody of the 'other' in the collision data.</param>
-    public static void ResolveCollisionRotational(
+    private static void ResolveCollisionRotational(
+        Span<float> impulseMagnitudes,
         GenIndexList<Transform> transforms,
         ref readonly Collision collision,
         ref RigidBody rigidBodyA,
         ref RigidBody rigidBodyB
     )
     {
-
         // ensure they both have transform components.
         if(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformARef).Fail()
         || transforms.GetDenseRef(collision.Other, out Ref<Transform> transformBRef).Fail())
@@ -243,6 +257,9 @@ public static class RigidBodySystem
             // divide by the contact point count to ensure that impulse is evenly spread 
             // across all contact points.
             impulseMagnitude /= (float)collision.ContactPointsCount;
+            
+            // save the impulse magnitude for later friction resolution.
+            impulseMagnitudes[j] = impulseMagnitude;
 
             impulse[j] = impulseMagnitude * collision.Normal;
         }
@@ -274,8 +291,153 @@ public static class RigidBodySystem
                 {
                     rigidBodyB.ImpulseAngularForce(Vector2.Cross(distB[j], impulse[j]) * rigidBodyB.InverseRotationalInertia);                
                 }                
-            }
-        
+            }   
         }
+    }
+
+    /// <summary>
+    /// Resolves and applies friction between two colliding bodies.
+    /// </summary>
+    /// <remarks>
+    /// Note: this function should be called after resolve collisions rotational.
+    /// This is so that the collisionResolutionImpulseMagnitudes span will be populated
+    /// with relevate data relating to two bodies after collision resolution.
+    /// </remarks>
+    /// <param name="collisionResolutionImpulseMagnitudes">the impulses applied to the two bodies during a collision resolution step.</param>
+    /// <param name="transforms">the transform components in the rigidbodies component registry.</param>
+    /// <param name="collision">the collision data.</param>
+    /// <param name="rigidBodyA">the rigidbody of the 'owner' in the collision data.</param>
+    /// <param name="rigidBodyB">the rigidbody of the 'other' in the collision data.</param>
+    private static void ResolveFriction(
+        Span<float> collisionResolutionImpulseMagnitudes,
+        GenIndexList<Transform> transforms,
+        ref readonly Collision collision,
+        ref RigidBody rigidBodyA,
+        ref RigidBody rigidBodyB
+    )
+    {
+        // ensure they both have transform components.
+        if(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformARef).Fail()
+        || transforms.GetDenseRef(collision.Other, out Ref<Transform> transformBRef).Fail())
+        {
+            System.Diagnostics.Debug.Assert(false);
+            return;
+        }
+        ref Transform transformA = ref transformARef.Value;
+        ref Transform transformB = ref transformBRef.Value;                
+
+        Span<Vector2> impulse = stackalloc Vector2[collision.ContactPointsCount];
+        Span<Vector2> distA   = stackalloc Vector2[collision.ContactPointsCount];
+        Span<Vector2> distB   = stackalloc Vector2[collision.ContactPointsCount];
+
+        ReadOnlySpan<float> contactPointX = collision.GetXContactPointsAsReadOnlySpan();
+        ReadOnlySpan<float> contactPointY = collision.GetYContactPointsAsReadOnlySpan();
+
+        // get an approximation of the friction values.
+        // this is faster than the actual physics way.
+        float staticFriction = 0;
+        float kineticFriction = 0;
+        if(rigidBodyA.PhysicsMaterial.UseFriction && rigidBodyB.PhysicsMaterial.UseFriction)
+        {
+            staticFriction = (rigidBodyA.PhysicsMaterial.StaticFriction + rigidBodyB.PhysicsMaterial.StaticFriction) * 0.5f;
+            kineticFriction = (rigidBodyA.PhysicsMaterial.KineticFriction + rigidBodyB.PhysicsMaterial.StaticFriction) * 0.5f;
+        }
+        else if (rigidBodyA.PhysicsMaterial.UseFriction)
+        {
+            staticFriction = rigidBodyA.PhysicsMaterial.StaticFriction;
+            kineticFriction = rigidBodyA.PhysicsMaterial.KineticFriction;           
+        }
+        else if (rigidBodyB.PhysicsMaterial.UseFriction)
+        {
+            staticFriction = rigidBodyB.PhysicsMaterial.StaticFriction;
+            kineticFriction = rigidBodyB.PhysicsMaterial.KineticFriction;            
+        }
+        
+        for(int j = 0; j < collision.ContactPointsCount; j++)
+        {
+            Vector2 contactPoint = new Vector2(contactPointX[j], contactPointY[j]);
+            
+            // get the angular velocity to travel in.
+            distA[j] = contactPoint - collision.OwnerColliderShapeCenter.Transform(transformA);
+            distB[j] = contactPoint - collision.OtherColliderShapeCenter.Transform(transformB);
+            Vector2 perpendicularA = new Vector2(-distA[j].Y, distA[j].X);
+            Vector2 perpendicularB = new Vector2(-distB[j].Y, distB[j].X);
+            Vector2 angularLinearVelocityA = perpendicularA * rigidBodyA.AngularVelocity; 
+            Vector2 angularLinearVelocityB = perpendicularB * rigidBodyB.AngularVelocity; 
+
+            Vector2 relativeVelocity = 
+            (rigidBodyB.LinearVelocity + angularLinearVelocityB) - 
+            (rigidBodyA.LinearVelocity + angularLinearVelocityA);
+
+            // this is the direction the body is travelling in along the contact point surface.
+            Vector2 tangent = relativeVelocity - Vector2.Dot(relativeVelocity, collision.Normal) * collision.Normal;
+
+            if(Vector2.NearlyEqual(tangent, Vector2.Zero, 1e-8f))
+            {
+                continue;
+            }
+            tangent = tangent.Normalise();
+
+            // calculate the denominator.
+            float perpADotTangent = perpendicularA.Dot(tangent);
+            float perpBDotTangent = perpendicularB.Dot(tangent);
+            float denominator = rigidBodyA.InverseMass + rigidBodyB.InverseMass + 
+                (perpADotTangent * perpADotTangent) * rigidBodyA.InverseRotationalInertia +
+                (perpBDotTangent * perpBDotTangent) * rigidBodyB.InverseRotationalInertia;
+
+            // magnitude of the impulse.
+            // note: a uniary operate is applied to the dot product so that the friction 
+            // impulse is applied in the opposite direction this body is traveling.
+            float impulseMagnitude = -Vector2.Dot(relativeVelocity, tangent);
+            impulseMagnitude /= denominator;
+
+            // divide by the contact point count to ensure that impulse is evenly spread 
+            // across all contact points.
+            impulseMagnitude /= (float)collision.ContactPointsCount;
+
+            float collisionImpulseMagnitude = collisionResolutionImpulseMagnitudes[j];
+
+            // Coulomb's law states that fricction is proportional to how hard
+            // to objects are being pressed together.
+            if(Math.Math.Abs(impulseMagnitude) <= collisionImpulseMagnitude * staticFriction)
+            {
+                impulse[j] = impulseMagnitude * tangent;
+            }
+            else
+            {
+                impulse[j] = -collisionImpulseMagnitude * tangent * kineticFriction; 
+            }
+        }
+
+
+        for(int j = 0; j < collision.ContactPointsCount; j++)
+        {                
+            // cross producting the dist and impulse gives a value indicating
+            // how much angular velocity - in radians - is needed to be applied based on the impulse direction.
+            // this is because cross producting two directions that are parallel to eachother, results in zero.
+            // which means that there should be no rotation if the collision is head on.
+            // but if the closer the two directions come to being perpendicular to one another,
+            // the larger the angular impulse will be, causing the body to rotate.
+            if(rigidBodyA.Mode == RigidBodyMode.Dynamic && rigidBodyA.PhysicsMaterial.UseFriction)
+            {
+                // always apply linear force, even if there is no rotational force to apply.
+                rigidBodyA.ImpulseLinearForce(-impulse[j] * rigidBodyA.InverseMass);                
+
+                if(rigidBodyA.RotationalPhysics)
+                {
+                    rigidBodyA.ImpulseAngularForce(-Vector2.Cross(distA[j], impulse[j]) * rigidBodyA.InverseRotationalInertia);                
+                }
+            }
+            if(rigidBodyB.Mode == RigidBodyMode.Dynamic && rigidBodyB.PhysicsMaterial.UseFriction)
+            {
+                // always apply linear force, even if there is no rotational force to apply.
+                rigidBodyB.ImpulseLinearForce(impulse[j] * rigidBodyB.InverseMass);
+                
+                if(rigidBodyB.RotationalPhysics)
+                {
+                    rigidBodyB.ImpulseAngularForce(Vector2.Cross(distB[j], impulse[j]) * rigidBodyB.InverseRotationalInertia);                
+                }                
+            }   
+        }        
     }
 }

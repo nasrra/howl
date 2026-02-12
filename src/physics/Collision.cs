@@ -13,7 +13,7 @@ public unsafe struct Collision
     /// <remarks>
     /// Note: A 2d collision can have two contact points when two edges are perfectly perpendicular to eachother.
     /// </remarks>
-    private const int MaxContactPoints = 2;
+    public const int MaxContactPoints = 2;
 
     /// <summary>
     /// Gets the owning collider of this collision.

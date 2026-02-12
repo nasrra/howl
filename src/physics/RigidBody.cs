@@ -18,6 +18,9 @@ public struct RigidBody
     public const float MinRestitution = 0f;
     public const float MaxRestitution = 1f;
 
+    public const float MinFriction = 0f;
+    public const float MaxFriction = 1f;
+
     /// <summary>
     /// Gets and sets the force to be applied to this body on the next physics system tick.
     /// </summary>
@@ -37,6 +40,11 @@ public struct RigidBody
     /// Gets and sets the linear velocity this body is currently travelling in.
     /// </summary>
     public readonly Vector2 LinearVelocity => linearVelocity;
+
+    /// <summary>
+    /// Gets and sets the physics material.
+    /// </summary>
+    public PhysicsMaterial PhysicsMaterial;
 
     /// <summary>
     /// Gets and sets the angular velocity - in radians - this body is currently travelling in.
@@ -125,6 +133,16 @@ public struct RigidBody
     public readonly float InverseRotationalInertia => inverseRotationalInertia; 
 
     /// <summary>
+    /// Gets and sets the friction value.
+    /// </summary>
+    private float friction;
+
+    /// <summary>
+    /// Gets the friction value;
+    /// </summary>
+    public readonly float Friction => friction;
+
+    /// <summary>
     /// Gets and sets the behvaiour of this body.
     /// </summary>
     public RigidBodyMode Mode;
@@ -137,12 +155,14 @@ public struct RigidBody
     /// <summary>
     /// Constructs a rigidbody.
     /// </summary>
+    /// <param name="physicsMaterial">The physics material for collision resolution between bodies.</param>
     /// <param name="restitution">the restitution ('bounciness').</param>
-    /// <param name="density">the density.</param>
+    /// <param name="density">the density of this body.</param>
     /// <param name="rigidBodyMode">the behaviour to exhibit within the physics system and in relation to other bodies.</param>
     /// <param name="roationalPhysics">whether or not this rigidbody uses rotational physics.</param>
-    public RigidBody(float restitution, float density, RigidBodyMode rigidBodyMode, bool roationalPhysics)
+    public RigidBody(PhysicsMaterial physicsMaterial, float restitution, float density, RigidBodyMode rigidBodyMode, bool roationalPhysics)
     {
+        PhysicsMaterial = physicsMaterial;
         SetRestitution(restitution);
         SetDensity(density);
         Mode = rigidBodyMode;
@@ -192,8 +212,6 @@ public struct RigidBody
         SetShape(in circle, Density);
     }
 
-    bool set = false;
-
     /// <summary>
     /// Sets the shape of this rigidbody.
     /// </summary>
@@ -201,12 +219,6 @@ public struct RigidBody
     /// <param name="density">The density to set to.</param>
     public void SetShape(in Circle circle, float density)
     {
-        if (set)
-        {
-            return;
-        }
-        set = true;
-
         float radiusSqrd = circle.Radius * circle.Radius;
 
         // calculate and set the area.
@@ -225,62 +237,119 @@ public struct RigidBody
         inverseRotationalInertia = 1f/rotationalInertia;
     }
 
+    /// <summary>
+    /// Sets the friction value of this body.
+    /// </summary>
+    /// <remarks>
+    /// Note: this function will clamp the passed argument to be between the min and max friction values.
+    /// </remarks>
+    /// <param name="friction">the friction value to set to.</param>
+    public void SetFriction(float friction)
+    {
+        this.friction = Math.Math.Clamp(friction, MinFriction, MaxFriction);
+#if DEBUG
+        if(Friction != friction)
+            System.Diagnostics.Debug.Assert(false, $"Friction '{friction}' is not between the friction range of '{MinFriction}' and '{MaxFriction}'");
+#endif
+    }
+
+    /// <summary>
+    /// Sets the density of this body.
+    /// </summary>
+    /// <remarks>
+    /// Note: this function will clamp the passed argument to be between the min and max density values.
+    /// </remarks>
+    /// <param name="density">the density value to set to.</param>
     private void SetDensity(float density)
     {
-        if(density < MinDensity || density > MaxDensity)
-        {
-            throw new ArgumentException($"Cannot set density to '{density}'; Min density is '{MinDensity}' and Max density is '{MaxDensity}'");
-        }
-        this.density = density;
-        
-        // recaculate mass.
-        mass = area * density;
+        this.density = Math.Math.Clamp(density, MinDensity, MaxDensity);
+        mass = area * density; // recaculate mass.            
+#if DEBUG
+        if(Density != density)
+            System.Diagnostics.Debug.Assert(false, $"Density '{density}' is not between the density range of '{MinDensity}' and '{MaxDensity}'");
+#endif
     }
 
+    /// <summary>
+    /// Sets the area of this body.
+    /// </summary>
+    /// <remarks>
+    /// Note: this function will clamp the passed argument to be between the min and max body-size values.
+    /// </remarks>
+    /// <param name="area">the area value to set to.</param>
     private void SetArea(float area)
     {
-        if(area < MinBodySize || area > MaxBodySize)
-        {
-            throw new ArgumentException($"Cannot set area to '{area}'; Max body size is '{MaxBodySize}' and Min body size is '{MinBodySize}'");
-        }
-        this.area = area;        
+        this.area = Math.Math.Clamp(area, MinBodySize, MaxBodySize);
+        mass = area * density; // recaculate mass.
+#if DEBUG
+        if(Area != area)
+            System.Diagnostics.Debug.Assert(false, $"Area '{area}' is not within the body-size range of '{MinBodySize}' and '{MaxBodySize}'.");
+#endif
     }
 
+    /// <summary>
+    /// Sets the restitution - 'bounce' - of this body.
+    /// </summary>
+    /// <remarks>
+    /// Note: this function will clamp the passed argument to be between the min and max restitution values. 
+    /// </remarks>
+    /// <param name="restitution">the restitution value to set to.</param>
     public void SetRestitution(float restitution)
     {
-        if(restitution < MinRestitution || restitution > MaxRestitution)
-        {
-            throw new ArgumentException($"Cannot set restitution to '{restitution}'; Max restitution is '{MaxRestitution}' and Min restitution is '{MinRestitution}'");
-        }
-        this.restitution = restitution;
+        this.restitution = Math.Math.Clamp(restitution, MinRestitution, MaxRestitution);
+#if DEBUG
+        if(Restitution != restitution)
+            System.Diagnostics.Debug.Assert(false, $"Restitution '{restitution}' is not within the range of '{MinRestitution}' and '{MaxRestitution}'");
+#endif
     }
 
+    /// <summary>
+    /// Adds a physics tick-applied force to linear velocity. 
+    /// </summary>
+    /// <param name="force"></param>
     public void AddLinearForce(Vector2 force)
     {
         this.force += force;    
     }
 
+    /// <summary>
+    /// Impulses linear velocity by a force.
+    /// </summary>
+    /// <param name="force">the amount of force to impulse by.</param>
     public void ImpulseLinearForce(Vector2 force)
     {
         linearVelocity += force;
     }
 
+    /// <summary>
+    /// Impulses angular velocity by a force.
+    /// </summary>
+    /// <param name="force">the amount of force to impulse by.</param>
     public void ImpulseAngularForce(float force)
     {
         angularVelocity += force;
     }
 
+    /// <summary>
+    /// Clears all physics tick-applied forces to linear velocity. 
+    /// </summary>
     public void ClearForces()
     {
         force = Vector2.Zero;
     }
 
+    /// <summary>
+    /// Sets the linear velocity to zero.
+    /// </summary>
     public void ClearLinearVelocity()
     {
         linearVelocity = Vector2.Zero;
     }
 
-    public void ClearRotationalVelocity()
+    /// <summary>
+    /// Sets the angular velocity to zero.
+    /// </summary>
+    public void ClearAngularVelocity()
     {
         angularVelocity = 0;
     }
