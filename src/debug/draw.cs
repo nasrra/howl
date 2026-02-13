@@ -5,6 +5,7 @@ using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math.Shapes;
 using Howl.Math;
+using static Howl.ECS.GenIndexListProc;
 
 namespace Howl.Debug;
 
@@ -93,7 +94,7 @@ public static class Draw
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
+        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
         {
             Line(camera, a, b, colour, thickness, scaleThickness);
         }
@@ -222,7 +223,7 @@ public static class Draw
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
+        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
         {
             Wireframe(camera, transform, rectangle, colour, thickness);
         }
@@ -298,7 +299,7 @@ public static class Draw
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
+        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
         {
             Filled(camera, transform, rectangle, colour);
         }
@@ -411,7 +412,7 @@ public static class Draw
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
+        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
         {
             Filled(camera, transform, circle, colour, verticeCount);
         }
@@ -525,7 +526,7 @@ public static class Draw
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
+        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
         {
             Wireframe(camera, transform, circle, colour, verticeCount, thickness);
         }
@@ -632,7 +633,7 @@ public static class Draw
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
+        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
         {
             Wireframe(camera, transform, polygon, colour, thickness);
         }
@@ -714,7 +715,7 @@ public static class Draw
     )
     {
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(cameraComponents.GetDenseRef(cameraId, out Ref<Camera> camera).Ok())
+        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
         {
             Wireframe(camera, transform, polygon, colour, thickness);
         }

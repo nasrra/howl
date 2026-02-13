@@ -5,6 +5,7 @@ using Howl.ECS;
 using Howl.Generic;
 using Howl.Math;
 using Howl.Math.Shapes;
+using static Howl.ECS.GenIndexListProc;
 
 namespace Howl.Physics;
 
@@ -30,7 +31,7 @@ public static class RigidBodySystem
     public static void MovementStep(ComponentRegistry componentRegistry, RigidBodySystemState state, float deltaTime)
     {        
         GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
-        Span<DenseEntry<RigidBody>> denseEntries = rigidbodies.GetDenseAsSpan();
+        Span<DenseEntry<RigidBody>> denseEntries = GetDenseAsSpan(rigidbodies);
 
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
 
@@ -41,10 +42,10 @@ public static class RigidBodySystem
         {
             ref DenseEntry<RigidBody> denseEntry = ref denseEntries[i];
             ref RigidBody rigidbody = ref denseEntry.Value;
-            rigidbodies.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(rigidbodies, denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the rigid body has a transform component.
-            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail())
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail())
             {
                 System.Diagnostics.Debug.Assert(false);
                 continue;
@@ -52,11 +53,11 @@ public static class RigidBodySystem
 
             ref Transform transform = ref transformRef.Value;
 
-            if(circleColliders.GetDenseRef(genIndex, out Ref<CircleCollider> circleCollider).Ok())
+            if(GetDenseRef(circleColliders, genIndex, out Ref<CircleCollider> circleCollider).Ok())
             {
                 rigidbody.SetShape(circleCollider.Value.Shape.Scale(transform.Scale));
             }
-            else if(rectangleColliders.GetDenseRef(genIndex, out Ref<RectangleCollider> rectangleCollider).Ok())
+            else if(GetDenseRef(rectangleColliders, genIndex, out Ref<RectangleCollider> rectangleCollider).Ok())
             {
                 rigidbody.SetShape(rectangleCollider.Value.Shape.Scale(transform.Scale));   
             }
@@ -89,7 +90,7 @@ public static class RigidBodySystem
     public static void ClearForces(ComponentRegistry componentRegistry)
     {
         GenIndexList<RigidBody> rigidbodies = componentRegistry.Get<RigidBody>();
-        Span<DenseEntry<RigidBody>> denseEntries = rigidbodies.GetDenseAsSpan();
+        Span<DenseEntry<RigidBody>> denseEntries = GetDenseAsSpan(rigidbodies);
         for(int i = 0; i < denseEntries.Length; i++)
         {
             ref DenseEntry<RigidBody> denseEntry = ref denseEntries[i];
@@ -114,8 +115,8 @@ public static class RigidBodySystem
         for(int i = 0; i < collisions.Length; i+=2) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
         {            
             // get the two rigidbodies.
-            if(rigidbodies.GetDenseRef(collisions[i].Owner, out Ref<RigidBody> rigidbodyARef).Fail()
-            || rigidbodies.GetDenseRef(collisions[i].Other, out Ref<RigidBody> rigidbodyBRef).Fail())
+            if(GetDenseRef(rigidbodies, collisions[i].Owner, out Ref<RigidBody> rigidbodyARef).Fail()
+            || GetDenseRef(rigidbodies, collisions[i].Other, out Ref<RigidBody> rigidbodyBRef).Fail())
             {
                 System.Diagnostics.Debug.Assert(false);
                 continue;
@@ -201,8 +202,8 @@ public static class RigidBodySystem
     )
     {
         // ensure they both have transform components.
-        if(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformARef).Fail()
-        || transforms.GetDenseRef(collision.Other, out Ref<Transform> transformBRef).Fail())
+        if(GetDenseRef(transforms, collision.Owner, out Ref<Transform> transformARef).Fail()
+        || GetDenseRef(transforms, collision.Other, out Ref<Transform> transformBRef).Fail())
         {
             System.Diagnostics.Debug.Assert(false);
             return;
@@ -317,8 +318,8 @@ public static class RigidBodySystem
     )
     {
         // ensure they both have transform components.
-        if(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformARef).Fail()
-        || transforms.GetDenseRef(collision.Other, out Ref<Transform> transformBRef).Fail())
+        if(GetDenseRef(transforms, collision.Owner, out Ref<Transform> transformARef).Fail()
+        || GetDenseRef(transforms, collision.Other, out Ref<Transform> transformBRef).Fail())
         {
             System.Diagnostics.Debug.Assert(false);
             return;

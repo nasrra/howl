@@ -62,10 +62,10 @@ public sealed class DisposableClassComponentCollection<T> : IDisposable where T 
         {
             // resize the sparse entries to match the texture ids so every 
             // id has a possible entry point into the data storage.
-            data.ResizeSparseEntries(indices.Entries.Count);
+            GenIndexListProc.ResizeSparseEntries(data, indices.Entries.Count);
         }
 
-        data.Allocate(genIndex, value).Ok(out GenIndexResult result);
+        GenIndexListProc.Allocate(data, genIndex, value).Ok(out GenIndexResult result);
         return result;
     }
 
@@ -97,7 +97,7 @@ public sealed class DisposableClassComponentCollection<T> : IDisposable where T 
         GenIndexResult result;
     
         // ensure to dispose of the data before deallocation. 
-        if(data.GetDenseRef(genIndex, out Ref<T> reference).Fail(out result))
+        if(GenIndexListProc.GetDenseRef(data, genIndex, out Ref<T> reference).Fail(out result))
         {
             goto Fail;
         }
@@ -106,10 +106,10 @@ public sealed class DisposableClassComponentCollection<T> : IDisposable where T 
             reference.Value.Dispose();
         }
         
-        if(data.Deallocate(genIndex).Fail(out result))
+        if(GenIndexListProc.Deallocate(data, genIndex).Fail(out result))
             goto Fail;
 
-        if(data.Deallocate(genIndex).Fail(out result))
+        if(GenIndexListProc.Deallocate(data, genIndex).Fail(out result))
             goto Fail;
 
         return result;
@@ -148,7 +148,7 @@ public sealed class DisposableClassComponentCollection<T> : IDisposable where T 
     /// </returns>
     public GenIndexResult GetDenseRef(in GenIndex genIndex, out Ref<T> reference)
     {
-        data.GetDenseRef(genIndex, out reference).Ok(out var result);
+        GenIndexListProc.GetDenseRef(data, genIndex, out reference).Ok(out var result);
         return result;
     }
 
@@ -175,7 +175,7 @@ public sealed class DisposableClassComponentCollection<T> : IDisposable where T 
             indices = null;
 
             // dispose all dense entries.
-            Span<DenseEntry<T>> denseEntries = data.GetDenseAsSpan();
+            Span<DenseEntry<T>> denseEntries = GenIndexListProc.GetDenseAsSpan(data);
             for(int i = 0; i < denseEntries.Length; i++)
             {
                 denseEntries[i].Value.Dispose();

@@ -26,12 +26,12 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
         {
             // resize the sparse entries to match the texture ids so every texture id has a possible entry point
             // into the textures storage.
-            textures.ResizeSparseEntries(textureIds.Entries.Count);
+            GenIndexListProc.ResizeSparseEntries(textures, textureIds.Entries.Count);
         }
 
         LoadTextureFromDisc(texturePath, out T texture);
         
-        textures.Allocate(genIndex, texture).Ok(out GenIndexResult result);
+        GenIndexListProc.Allocate(textures, genIndex, texture).Ok(out GenIndexResult result);
         return result;
     }
 
@@ -42,12 +42,12 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
         // ensure to dispose of the monogame texture before deallocating it.
         GenIndexResult result;
 
-        if(textures.GetDenseRef(index, out Ref<T> reference).Fail(out result))
+        if(GenIndexListProc.GetDenseRef(textures, index, out Ref<T> reference).Fail(out result))
             goto Fail;
 
         reference.Value.Dispose();
         
-        if(textures.Deallocate(index).Fail(out result))
+        if(GenIndexListProc.Deallocate(textures, index).Fail(out result))
             goto Fail;
 
         if(textureIds.Deallocate(index).Fail(out result))
@@ -61,7 +61,7 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
 
     public GenIndexResult GetTextureReadonlyRef(in GenIndex index, out ReadOnlyRef<T> readOnlyRef)
     {
-        return textures.GetDenseReadOnlyRef(index, out readOnlyRef);
+        return GenIndexListProc.GetDenseReadOnlyRef(textures, index, out readOnlyRef);
     }
 
     public abstract GenIndexResult GetTextureDimensions(in GenIndex genIndex, out Vector2 dimensions);
@@ -86,7 +86,7 @@ public abstract class TextureManager<T> : ITextureManager where T : IDisposable
 
         if (disposing)
         {
-            Span<DenseEntry<T>> span = textures.GetDenseAsSpan();
+            Span<DenseEntry<T>> span = GenIndexListProc.GetDenseAsSpan(textures);
 
             for(int i= 0; i < span.Length; i++)
             {

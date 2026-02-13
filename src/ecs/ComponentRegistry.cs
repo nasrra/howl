@@ -63,11 +63,11 @@ public class ComponentRegistry : IDisposable
             // heap alocate a new GenIndexList of components
             // if one hasnt already been made.
 
-            IGenIndexList list = new GenIndexList<T>();
+            GenIndexList<T> list = new GenIndexList<T>();
 
             // make sure to resize sparse so its up to date with the allocators entries;
             // so that it doesnt have a sparse count of 0.
-            list.ResizeSparseEntries(genIndexAllocator.Entries.Count);
+            GenIndexListProc.ResizeSparseEntries(list, genIndexAllocator.Entries.Count);
             
             span[id] = list;
         }
@@ -101,7 +101,7 @@ public class ComponentRegistry : IDisposable
 
         for(int i = 0; i < span.Length; i++)
         {
-            if (span[i]?.ResizeSparseEntries(count) == false)
+            if (span[i] != null && GenIndexListProc.ResizeSparseEntries(span[i].Sparse, count) == false)
             {
                 return false;
             }

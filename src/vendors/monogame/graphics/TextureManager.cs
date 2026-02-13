@@ -6,6 +6,7 @@ using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math;
 using Microsoft.Xna.Framework.Graphics;
+using static Howl.ECS.GenIndexListProc;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
@@ -62,7 +63,7 @@ public sealed class TextureManager : TextureManager<Texture2D>
 
     public override GenIndexResult GetTextureDimensions(in GenIndex genIndex, out Vector2 dimensions)
     {
-        GenIndexResult result = textures.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Texture2D> textureRef);
+        GenIndexResult result = GetDenseReadOnlyRef(textures, genIndex, out ReadOnlyRef<Texture2D> textureRef);
         
         dimensions = result == GenIndexResult.Ok
         ? new(textureRef.Value.Width, textureRef.Value.Height)

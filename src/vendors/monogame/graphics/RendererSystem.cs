@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Howl.Vendors.MonoGame.Text;
 using Howl.Math;
 using Microsoft.Xna.Framework;
+using static Howl.ECS.GenIndexListProc;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
@@ -40,14 +41,14 @@ public static class RendererSystem
         GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>();
 
         // get the main camera.
-        if(cameraComponents.GetDenseRef(CameraSystem.MainCameraId, out Ref<Camera> mainCamera).Fail())
+        if(GetDenseRef(cameraComponents, CameraSystem.MainCameraId, out Ref<Camera> mainCamera).Fail())
         {
             System.Diagnostics.Debug.Assert(false);
             return;
         }
         
         // get the ui camera.
-        if(cameraComponents.GetDenseRef(CameraSystem.GuiCameraId, out Ref<Camera> guiCamera).Fail())
+        if(GetDenseRef(cameraComponents, CameraSystem.GuiCameraId, out Ref<Camera> guiCamera).Fail())
         {
             System.Diagnostics.Debug.Assert(false);
             return;
@@ -90,7 +91,7 @@ public static class RendererSystem
     {
         GenIndexList<Transform> transformComponents = componentRegistry.Get<Transform>();
         GenIndexList<Sprite> spritesComponents = componentRegistry.Get<Sprite>();
-        Span<DenseEntry<Sprite>> spriteDenseEntries = spritesComponents.GetDenseAsSpan();
+        Span<DenseEntry<Sprite>> spriteDenseEntries = GetDenseAsSpan(spritesComponents);
 
         // update effects to use the new projection matrix.        
         state.EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
@@ -112,9 +113,9 @@ public static class RendererSystem
             if(sprite.WorldSpace != worldSpace)
                 continue;
             
-            spritesComponents.GetGenIndex(spriteDenseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(spritesComponents, spriteDenseEntry.sparseIndex, out GenIndex genIndex);
 
-            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformRef).Fail())
+            if(GetDenseReadOnlyRef(transformComponents, genIndex, out ReadOnlyRef<Transform> transformRef).Fail())
                 continue;
             
             if(DrawSprite(state, ref camera, ref transformRef.Value, ref sprite).Fail())
@@ -292,7 +293,7 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
         
         // draw text 16.
         GenIndexList<Text16> text16Components = componentRegistry.Get<Text16>();
-        Span<DenseEntry<Text16>> text16DenseEntries = text16Components.GetDenseAsSpan();
+        Span<DenseEntry<Text16>> text16DenseEntries = GetDenseAsSpan(text16Components);
 
         state.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
@@ -305,12 +306,12 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
         {
             ref DenseEntry<Text16> denseEntry = ref text16DenseEntries[i];
             ref Text16 text = ref denseEntry.Value;
-            text16Components.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(text16Components, denseEntry.sparseIndex, out GenIndex genIndex);
             
             if(text.TextParameters.WorldSpace != worldSpace)
                 continue;
 
-            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+            if(GetDenseReadOnlyRef(transformComponents, genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
             {
                 System.Diagnostics.Debug.Assert(false);
                 continue;
@@ -321,18 +322,18 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
 
         // draw text 32.
         GenIndexList<Text32> text32Components = componentRegistry.Get<Text32>();
-        Span<DenseEntry<Text32>> text32DenseEntries = text32Components.GetDenseAsSpan();
+        Span<DenseEntry<Text32>> text32DenseEntries = GetDenseAsSpan(text32Components);
 
         for(int i = 0; i < text32DenseEntries.Length; i++)
         {
             ref DenseEntry<Text32> denseEntry = ref text32DenseEntries[i];
             ref Text32 text = ref denseEntry.Value;
-            text32Components.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(text32Components, denseEntry.sparseIndex, out GenIndex genIndex);
             
             if(text.TextParameters.WorldSpace != worldSpace)
                 continue;
 
-            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+            if(GetDenseReadOnlyRef(transformComponents, genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
             {
                 System.Diagnostics.Debug.Assert(false);
                 continue;
@@ -343,15 +344,15 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
 
         // draw text 4096
         GenIndexList<Text4096> text4096Components = componentRegistry.Get<Text4096>();
-        Span<DenseEntry<Text4096>> text4096DenseEntries = text4096Components.GetDenseAsSpan();
+        Span<DenseEntry<Text4096>> text4096DenseEntries = GetDenseAsSpan(text4096Components);
         
         for(int i = 0; i < text4096DenseEntries.Length; i++)
         {
             ref DenseEntry<Text4096> denseEntry = ref text4096DenseEntries[i];
             ref Text4096 text = ref denseEntry.Value;
-            text16Components.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(text16Components, denseEntry.sparseIndex, out GenIndex genIndex);
             
-            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+            if(GetDenseReadOnlyRef(transformComponents, genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
                 continue;
 
             DrawText(state, ref camera, ref transformReadOnlyRef.Value, text.AsSpanUsed(), ref text.TextParameters);

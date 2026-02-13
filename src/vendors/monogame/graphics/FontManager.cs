@@ -3,6 +3,7 @@ using Howl.ECS;
 using Howl.Generic;
 using Howl.Graphics.Text;
 using Microsoft.Xna.Framework.Graphics;
+using static Howl.ECS.GenIndexListProc;
 
 namespace Howl.Vendors.MonoGame.Text;
 
@@ -39,17 +40,17 @@ public class FontManager : IFontManager
 
         if (reusedFreeIndex == false)
         {
-            spriteFonts.ResizeSparseEntries(spriteFontIds.Entries.Count);
+            ResizeSparseEntries(spriteFonts, spriteFontIds.Entries.Count);
         }
 
         SpriteFont spriteFont = monoGameApp.Content.Load<SpriteFont>(AssetManagement.AssetManager.FontFolder+fontFilePath);
 
-        spriteFonts.Allocate(genIndex, spriteFont);
+        Allocate(spriteFonts, genIndex, spriteFont);
     }
 
     public GenIndexResult GetFontReadOnlyRef(in GenIndex genIndex, out ReadOnlyRef<SpriteFont> readOnlyRef)
     {
-        return spriteFonts.GetDenseReadOnlyRef(genIndex, out readOnlyRef);
+        return GetDenseReadOnlyRef(spriteFonts, genIndex, out readOnlyRef);
     }
 
     public void Dispose()

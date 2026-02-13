@@ -5,6 +5,7 @@ using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math;
 using Howl.Math.Shapes;
+using static Howl.ECS.GenIndexListProc;
 
 namespace Howl.Physics;
 
@@ -121,19 +122,19 @@ public static class CollisionSystem
         in GenIndex genIndexB
     )
     {
-        circleColliders.GetDenseRef(genIndexA, out Ref<CircleCollider> colliderRefA);
-        circleColliders.GetDenseRef(genIndexB, out Ref<CircleCollider> colliderRefB);
+        GetDenseRef(circleColliders, genIndexA, out Ref<CircleCollider> colliderRefA);
+        GetDenseRef(circleColliders, genIndexB, out Ref<CircleCollider> colliderRefB);
         ref CircleCollider colliderA = ref colliderRefA.Value;
         ref CircleCollider colliderB = ref colliderRefB.Value;
 
         // make sure the circle has a transform component.
-        if(transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA).Fail(out var result1))
+        if(GetDenseRef(transforms, genIndexA, out Ref<Transform> transformRefA).Fail(out var result1))
         {
             System.Diagnostics.Debug.Assert(false, $"{result1}");
             return;
         }
 
-        if(transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB).Fail(out var result2))
+        if(GetDenseRef(transforms, genIndexB, out Ref<Transform> transformRefB).Fail(out var result2))
         {
             System.Diagnostics.Debug.Assert(false, $"{result2}");
             return;
@@ -184,14 +185,14 @@ public static class CollisionSystem
         in GenIndex genIndexB
     )
     {
-        rectangleColliders.GetDenseRef(genIndexA, out Ref<RectangleCollider> colliderRefA);
-        rectangleColliders.GetDenseRef(genIndexB, out Ref<RectangleCollider> colliderRefB);
+        GetDenseRef(rectangleColliders, genIndexA, out Ref<RectangleCollider> colliderRefA);
+        GetDenseRef(rectangleColliders, genIndexB, out Ref<RectangleCollider> colliderRefB);
         ref RectangleCollider colliderA = ref colliderRefA.Value;
         ref RectangleCollider colliderB = ref colliderRefB.Value;
 
         // make sure the circle has a transform component.
-        transforms.GetDenseRef(genIndexA, out Ref<Transform> transformRefA).Ok();
-        transforms.GetDenseRef(genIndexB, out Ref<Transform> transformRefB).Ok();
+        GetDenseRef(transforms, genIndexA, out Ref<Transform> transformRefA).Ok();
+        GetDenseRef(transforms, genIndexB, out Ref<Transform> transformRefB).Ok();
 
         PolygonRectangle rectangleA = PolygonRectangle.Transform(new PolygonRectangle(colliderA.Shape),transformRefA.Value);
         PolygonRectangle rectangleB = PolygonRectangle.Transform(new PolygonRectangle(colliderB.Shape),transformRefB.Value); 
@@ -274,18 +275,18 @@ public static class CollisionSystem
         in GenIndex circleGenIndex
     )
     {
-        rectangleColliders.GetDenseRef(rectangleGenIndex, out Ref<RectangleCollider> colliderRefA);
-        circleColliders.GetDenseRef(circleGenIndex, out Ref<CircleCollider> colliderRefB);
+        GetDenseRef(rectangleColliders, rectangleGenIndex, out Ref<RectangleCollider> colliderRefA);
+        GetDenseRef(circleColliders, circleGenIndex, out Ref<CircleCollider> colliderRefB);
         ref RectangleCollider rectangleCollider = ref colliderRefA.Value;
         ref CircleCollider circleCollider = ref colliderRefB.Value;
 
         // make sure the circle has a transform component.
-        if(transforms.GetDenseRef(rectangleGenIndex, out Ref<Transform> transformRefA).Fail())
+        if(GetDenseRef(transforms, rectangleGenIndex, out Ref<Transform> transformRefA).Fail())
         {
             System.Diagnostics.Debug.Assert(false);
             return;            
         }
-        if(transforms.GetDenseRef(circleGenIndex, out Ref<Transform> transformRefB).Fail())
+        if(GetDenseRef(transforms, circleGenIndex, out Ref<Transform> transformRefB).Fail())
         {
             System.Diagnostics.Debug.Assert(false);
             return;
@@ -404,12 +405,12 @@ public static class CollisionSystem
         {
             ref readonly Collision collision = ref span[i]; 
             
-            if(transforms.GetDenseRef(collision.Owner, out Ref<Transform> transformRefA).Fail())
+            if(GetDenseRef(transforms, collision.Owner, out Ref<Transform> transformRefA).Fail())
             {
                 continue;
             }
             
-            if(transforms.GetDenseRef(collision.Other, out Ref<Transform> transformRefB).Fail())
+            if(GetDenseRef(transforms, collision.Other, out Ref<Transform> transformRefB).Fail())
             {
                 continue;
             }
@@ -447,15 +448,15 @@ public static class CollisionSystem
         GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>();
         
         // add circle colliders.
-        Span<DenseEntry<CircleCollider>> circleDenseEntries = circleColliders.GetDenseAsSpan();
+        Span<DenseEntry<CircleCollider>> circleDenseEntries = GetDenseAsSpan(circleColliders);
         for(int i = 0; i < circleDenseEntries.Length; i++)
         {
             ref DenseEntry<CircleCollider> denseEntry = ref circleDenseEntries[i];
             ref CircleCollider collider = ref denseEntry.Value;
-            circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(circleColliders, denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out GenIndexResult result))
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail(out GenIndexResult result))
             {
                 System.Diagnostics.Debug.Assert(false, $"{result}");
                 return;
@@ -471,15 +472,15 @@ public static class CollisionSystem
         }
 
         // Add rectangle colliders.
-        Span<DenseEntry<RectangleCollider>> rectangleDenseEntries = rectangleColliders.GetDenseAsSpan();
+        Span<DenseEntry<RectangleCollider>> rectangleDenseEntries = GetDenseAsSpan(rectangleColliders);
         for(int i = 0; i < rectangleDenseEntries.Length; i++)
         {
             ref DenseEntry<RectangleCollider> denseEntry = ref rectangleDenseEntries[i];
             ref RectangleCollider collider = ref denseEntry.Value;
-            circleColliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(circleColliders, denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
                 System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
@@ -517,15 +518,15 @@ public static class CollisionSystem
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<CircleCollider> colliders = componentRegistry.Get<CircleCollider>();
-        Span<DenseEntry<CircleCollider>> denseEntries = colliders.GetDenseAsSpan();
+        Span<DenseEntry<CircleCollider>> denseEntries = GetDenseAsSpan(colliders);
         for(int i = 0; i < denseEntries.Length; i++)
         {
             ref DenseEntry<CircleCollider> denseEntry = ref denseEntries[i];
             ref CircleCollider collider = ref denseEntry.Value;
-            colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(colliders, denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
                 System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
@@ -546,7 +547,7 @@ public static class CollisionSystem
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
-        Span<DenseEntry<RectangleCollider>> denseEntries = colliders.GetDenseAsSpan();
+        Span<DenseEntry<RectangleCollider>> denseEntries = GetDenseAsSpan(colliders);
         Span<Vector2> vertices = stackalloc Vector2[PolygonRectangle.MaxVertices];
         
         for(int i = 0; i < denseEntries.Length; i++)
@@ -554,10 +555,10 @@ public static class CollisionSystem
             ref DenseEntry<RectangleCollider> denseEntry = ref denseEntries[i];
             ref RectangleCollider collider = ref denseEntry.Value;
             PolygonRectangle shape = new PolygonRectangle(collider.Shape);
-            colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(colliders, denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
                 System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
@@ -585,15 +586,15 @@ public static class CollisionSystem
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<CircleCollider> colliders = componentRegistry.Get<CircleCollider>();
-        Span<DenseEntry<CircleCollider>> denseEntries = colliders.GetDenseAsSpan();
+        Span<DenseEntry<CircleCollider>> denseEntries = GetDenseAsSpan(colliders);
         for(int i = 0; i < denseEntries.Length; i++)
         {
             ref DenseEntry<CircleCollider> denseEntry = ref denseEntries[i];
             ref CircleCollider collider = ref denseEntry.Value;
-            colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(colliders, denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
                 System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;
@@ -615,17 +616,17 @@ public static class CollisionSystem
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
-        Span<DenseEntry<RectangleCollider>> denseEntries = colliders.GetDenseAsSpan();
+        Span<DenseEntry<RectangleCollider>> denseEntries = GetDenseAsSpan(colliders);
         Span<Vector2> vertices = stackalloc Vector2[PolygonRectangle.MaxVertices];
         
         for(int i = 0; i < denseEntries.Length; i++)
         {
             ref DenseEntry<RectangleCollider> denseEntry = ref denseEntries[i];
             ref RectangleCollider collider = ref denseEntry.Value;
-            colliders.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            GetGenIndex(colliders, denseEntry.sparseIndex, out GenIndex genIndex);
 
             // ensure the collider has a transform component.
-            if(transforms.GetDenseRef(genIndex, out Ref<Transform> transformRef).Fail(out var result))
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail(out var result))
             {
                 System.Diagnostics.Debug.Assert(false, $"{result}");
                 continue;

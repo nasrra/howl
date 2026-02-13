@@ -2,7 +2,7 @@ using System;
 using Howl.ECS;
 using Howl.Generic;
 using Howl.Math;
-
+using static Howl.ECS.GenIndexListProc;
 
 namespace Howl.Graphics;
 
@@ -81,7 +81,7 @@ public static class CameraSystem
     /// <param name="componentRegistry">The component registry that stores the camera.</param>
     private static void UpdateMainCamera(ComponentRegistry componentRegistry)
     {
-        if(componentRegistry.Get<Camera>().GetDenseRef(mainCameraId, out Ref<Camera> camera).Fail())
+        if(GetDenseRef(componentRegistry.Get<Camera>(), mainCameraId, out Ref<Camera> camera).Fail())
         {
             // there must always be a main camera.
             System.Diagnostics.Debug.Assert(false);
@@ -98,7 +98,7 @@ public static class CameraSystem
     /// <param name="componentRegistry">The component registry that stores the camera.</param>
     private static void UpdateGuiCamera(ComponentRegistry componentRegistry)
     {
-        if(componentRegistry.Get<Camera>().GetDenseRef(guiCameraId, out Ref<Camera> camera).Fail())
+        if(GetDenseRef(componentRegistry.Get<Camera>(), guiCameraId, out Ref<Camera> camera).Fail())
         {
             // there must always be a gui camera.
             System.Diagnostics.Debug.Assert(false);
@@ -118,7 +118,7 @@ public static class CameraSystem
     private static void UpdateProjectionMatrices(ComponentRegistry componentRegistry, IRendererState state)
     {
         GenIndexList<Camera> cameras = componentRegistry.Get<Camera>();
-        Span<DenseEntry<Camera>> denseEntries = cameras.GetDenseAsSpan();
+        Span<DenseEntry<Camera>> denseEntries = GetDenseAsSpan(cameras);
         for(int i = 0; i < denseEntries.Length; i++)
         {
             ref DenseEntry<Camera> denseEntry = ref denseEntries[i];
