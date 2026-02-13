@@ -3,19 +3,18 @@ using System;
 
 namespace Howl.Graphics.Text;
 
-public unsafe struct Text4096
+public unsafe struct Text32
 {
+    public const int MaxCharacters = 32;
     public const int MinCharacters = 0;
-    public const int MaxCharacters = 4096;
-
+    
     /// <summary>
     /// Gets and sets the TextParameters.
     /// </summary>
     public TextParameters TextParameters;
-
-
+    
     /// <summary>
-    /// Gets and sets the current length of the stored characters/text.
+    /// Gets the current length of the stored characters/text.
     /// </summary>
     public int Length;
 
@@ -25,12 +24,11 @@ public unsafe struct Text4096
     public fixed char Characters[MaxCharacters];
 
     /// <summary>
-    /// Constructs a Text.
+    /// 
     /// </summary>
-    /// <param name="colour">The draw colour.</param>
-    /// <param name="offset">The offset - in pixels - when drawing.</param>
-    /// <param name="characters">The span of characters that will render when drawing (max length of 16.)</param>
-    public Text4096(TextParameters textParameters, ReadOnlySpan<char> characters)
+    /// <param name="textParameters">The text parameters used when drawing.</param>
+    /// <param name="characters">the chracters to draw.</param>
+    public Text32(TextParameters textParameters, ReadOnlySpan<char> characters)
     {
         TextParameters = textParameters;
         TextProc.SetCharacters(ref this, characters);

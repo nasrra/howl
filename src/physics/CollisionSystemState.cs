@@ -15,24 +15,29 @@ public sealed class CollisionSystemState : IDisposable
     public BoundingVolumeHierarchy Bvh;
 
     /// <summary>
-    /// Gets and sets the debug stopwatch for timing a collision system intersect step.
+    /// Gets the debug stopwatch for timing a collision system intersect step.
     /// </summary>
-    public Stopwatch IntersectStepStopwatch;
+    public readonly Stopwatch IntersectionStopwatch;
 
     /// <summary>
-    /// Gets and sets the debug stopwatch for timing a collision system resolution step.
+    /// Gets the debug stopwatch for timing a collision system resolution step.
     /// </summary>
-    public Stopwatch ResolutionStepStopwatch;
+    public readonly Stopwatch ResolutionStopwatch;
 
     /// <summary>
-    /// Gets and sets the collision manifold.
+    /// Gets the debug stop watch for timing a bvh reconstruction step.
     /// </summary>
-    private CollisionManifold collisionManifold;
+    public readonly Stopwatch BvhReconstructionStopwatch;
+
+    /// <summary>
+    /// Gets the debug stopwatch for timing a collision manifold sort step.
+    /// </summary>
+    public readonly Stopwatch CollisionManifoldSortStopwatch;
 
     /// <summary>
     /// Gets the collision manifold.
     /// </summary>
-    public CollisionManifold CollisionManifold => collisionManifold;
+    public readonly CollisionManifold CollisionManifold;
 
     /// <summary>
     /// Gets and sets the debug draw colour for the solid-colliders.
@@ -116,9 +121,11 @@ public sealed class CollisionSystemState : IDisposable
 
     public CollisionSystemState()
     {
-        IntersectStepStopwatch  = new Stopwatch();
-        ResolutionStepStopwatch = new Stopwatch();
-        collisionManifold       = new();
+        IntersectionStopwatch           = new Stopwatch();
+        ResolutionStopwatch             = new Stopwatch();
+        BvhReconstructionStopwatch      = new Stopwatch();
+        CollisionManifoldSortStopwatch  = new Stopwatch();
+        CollisionManifold               = new();
         
         SolidColliderColour             = Colour.Green;
         KinematicColliderColour         = Colour.Orange;
@@ -167,10 +174,7 @@ public sealed class CollisionSystemState : IDisposable
 
         if (disposing)
         {
-            IntersectStepStopwatch = null;
-            ResolutionStepStopwatch = null;
-            collisionManifold.Clear();
-            collisionManifold = null;
+            CollisionManifold.Clear();
             Bvh.Dispose();
         }
 

@@ -1,11 +1,29 @@
 using System;
+using System.Diagnostics;
 using Howl.Math;
 
 namespace Howl.Physics;
 
 public sealed class RigidBodySystemState : IDisposable
 {
+    /// <summary>
+    /// Gets the debug stopwatch for timing a collision resolution step.
+    /// </summary>
+    public readonly Stopwatch CollisionResolutionStepStopwatch;
+
+    /// <summary>
+    /// Gets the debug stop watch for timing a movement step.
+    /// </summary>
+    public readonly Stopwatch MovementStepStopwatch;
+
+    /// <summary>
+    /// Gets and sets whether or not this instance is disposed.
+    /// </summary>
     private bool disposed;
+
+    /// <summary>
+    /// Gets whether or not this instance is disposed.
+    /// </summary>
     public bool IsDisposed => disposed;
 
     /// <summary>
@@ -17,6 +35,15 @@ public sealed class RigidBodySystemState : IDisposable
     /// Gets and sets the direction of gravity.
     /// </summary>
     public Vector2 GravityDirection = Vector2.Down;
+
+    /// <summary>
+    /// Creates a new rigid body system state instance.
+    /// </summary>
+    public RigidBodySystemState()
+    {
+        CollisionResolutionStepStopwatch = new Stopwatch();
+        MovementStepStopwatch = new Stopwatch();
+    }
 
     /// <summary>
     /// Throws an exception if this instance is disposed.

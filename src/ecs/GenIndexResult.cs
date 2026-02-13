@@ -2,7 +2,10 @@ namespace Howl.ECS;
 
 public enum GenIndexResult : byte
 {
-    Ok,    
+    /// <summary>
+    /// Returned when a gen index process has completed successfully.
+    /// </summary>
+    Ok,
 
     /// <summary>
     /// Returned when the querying GenIndex has no associated dense entry allocated.

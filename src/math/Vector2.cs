@@ -274,7 +274,13 @@ public struct Vector2
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float InverseLength(Vector2 vector)
     {        
-        return 1f / Length(vector);
+        float lengthSquared = LengthSquared(vector);
+
+        // avoid divide by zero, causing Nan's.
+        if (lengthSquared <= 0f)
+            return 0f;
+
+        return 1f / System.MathF.Sqrt(lengthSquared);
     }
 
     /// <summary>
@@ -401,7 +407,7 @@ public struct Vector2
     /// Gets the distance squared between two vectors.
     /// </summary>
     /// <param name="from">The vector to start at.</param>
-    /// <param name="to">Teh vector to end at.</param>
+    /// <param name="to">The vector to end at.</param>
     /// <returns>The distance squared.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float DistanceSquared(Vector2 from, Vector2 to)

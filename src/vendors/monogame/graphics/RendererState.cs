@@ -146,7 +146,7 @@ public sealed class RendererState : IRendererState
         textureManager = new TextureManager(monoGameApp);
         
         fontManager = new(monoGameApp);
-        stringBuilder = new(Text4096.MaxLength);
+        stringBuilder = new(Text4096.MaxCharacters);
 
         renderTargets = new();        
 

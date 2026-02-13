@@ -23,6 +23,7 @@ public static class RendererSystem
     {
         componentRegistry.RegisterComponent<Sprite>();
         componentRegistry.RegisterComponent<Text16>();
+        componentRegistry.RegisterComponent<Text32>();
         componentRegistry.RegisterComponent<Text4096>();
         componentRegistry.RegisterComponent<Transform>();
     }
@@ -315,7 +316,29 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
                 continue;
             }
 
-            DrawText(state, ref camera, ref transformReadOnlyRef.Value, ref text);
+            DrawText(state, ref camera, ref transformReadOnlyRef.Value, text.AsSpanUsed(), ref text.TextParameters);
+        }
+
+        // draw text 32.
+        GenIndexList<Text32> text32Components = componentRegistry.Get<Text32>();
+        Span<DenseEntry<Text32>> text32DenseEntries = text32Components.GetDenseAsSpan();
+
+        for(int i = 0; i < text32DenseEntries.Length; i++)
+        {
+            ref DenseEntry<Text32> denseEntry = ref text32DenseEntries[i];
+            ref Text32 text = ref denseEntry.Value;
+            text32Components.GetGenIndex(denseEntry.sparseIndex, out GenIndex genIndex);
+            
+            if(text.TextParameters.WorldSpace != worldSpace)
+                continue;
+
+            if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+            {
+                System.Diagnostics.Debug.Assert(false);
+                continue;
+            }
+
+            DrawText(state, ref camera, ref transformReadOnlyRef.Value, text.AsSpanUsed(), ref text.TextParameters);
         }
 
         // draw text 4096
@@ -331,29 +354,31 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
             if(transformComponents.GetDenseReadOnlyRef(genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
                 continue;
 
-            DrawText(state, ref camera, ref transformReadOnlyRef.Value, ref text);
+            DrawText(state, ref camera, ref transformReadOnlyRef.Value, text.AsSpanUsed(), ref text.TextParameters);
         }
 
         state.SpriteBatch.End();
     }
 
     /// <summary>
-    /// Draws a text to the currently bound render target.
+    /// Draws text to the currently bound render target.
     /// </summary>
     /// <param name="state">The renderer state containing drawing context.</param>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">The transformation to apply to the text.</param>
-    /// <param name="text">The text to draw.</param>
+    /// <param name="characters">The span of characters to draw.</param>
+    /// <param name="textParameters">The text parameters.</param>
     /// <returns><see cref="GenIndexResult"/></returns>
-    public static unsafe GenIndexResult DrawText(
+    public static GenIndexResult DrawText(
         RendererState state, 
         ref Camera camera, 
-        ref Transform transform, 
-        ref Text16 text
+        ref Transform transform,
+        ReadOnlySpan<char> characters,
+        ref TextParameters textParameters 
     )
     {
         FontManager fontManager = (FontManager)state.FontManager;
-        GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
+        GenIndexResult result = fontManager.GetFontReadOnlyRef(textParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
 
         if(result != GenIndexResult.Ok)
         {
@@ -363,66 +388,15 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
         Howl.Math.Vector2 position = transform.Position.InvertY() - camera.Position.InvertY();
 
         state.StringBuilder.Clear();
-        fixed (char* characters = text.Characters)
-        {
-            state.StringBuilder.Append(new ReadOnlySpan<char>(characters, text.Length));
-        }
+        state.StringBuilder.Append(characters);
 
         state.SpriteBatch.DrawString(
             font.Value, 
             state.StringBuilder, 
             position.ToMonogame(), 
-            text.TextParameters.Colour.ToMonoGame(), 
+            textParameters.Colour.ToMonoGame(), 
             -transform.Rotation, 
-            text.TextParameters.Offset.ToMonogame(), 
-            MathF.Max(transform.Scale.X, transform.Scale.Y), 
-            SpriteEffects.None, 
-            0
-        );
-
-        return result;
-    }
-
-
-    /// <summary>
-    /// Draws a text to the currently bound render target.
-    /// </summary>
-    /// <param name="state">The renderer state containing drawing context.</param>
-    /// <param name="camera">The camera to use for transforming coordinates.</param>
-    /// <param name="transform">The transformation to apply to the text.</param>
-    /// <param name="text">The text to draw.</param>
-    /// <returns><see cref="GenIndexResult"/></returns>
-    public static unsafe GenIndexResult DrawText(
-        RendererState state, 
-        ref Camera camera, 
-        ref Transform transform, 
-        ref Text4096 text
-    )
-    {
-        FontManager fontManager = (FontManager)state.FontManager;
-
-        GenIndexResult result = fontManager.GetFontReadOnlyRef(text.TextParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
-
-        if(result != GenIndexResult.Ok)
-        {
-            return result;
-        }
-
-        Howl.Math.Vector2 position = transform.Position.InvertY() - camera.Position.InvertY();
-
-        state.StringBuilder.Clear();
-        fixed (char* characters = text.Characters)
-        {
-            state.StringBuilder.Append(new ReadOnlySpan<char>(characters, text.Length));
-        }
-
-        state.SpriteBatch.DrawString(
-            font.Value, 
-            state.StringBuilder, 
-            position.ToMonogame(), 
-            text.TextParameters.Colour.ToMonoGame(), 
-            -transform.Rotation, 
-            text.TextParameters.Offset.ToMonogame(), 
+            textParameters.Offset.ToMonogame(), 
             MathF.Max(transform.Scale.X, transform.Scale.Y), 
             SpriteEffects.None, 
             0

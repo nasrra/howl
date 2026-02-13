@@ -10,13 +10,13 @@ public class RigidBodyTest
     {
         RigidBody rigidBody;
         
-        rigidBody = new RigidBody(0, 1, RigidBodyMode.Kinematic, false);
+        rigidBody = new RigidBody(new PhysicsMaterial(), 0, 1, RigidBodyMode.Kinematic, false);
         Assert.Equal(0, rigidBody.Restitution);
         Assert.Equal(1, rigidBody.Density);
         Assert.Equal(RigidBodyMode.Kinematic, rigidBody.Mode);
         Assert.False(rigidBody.RotationalPhysics);
     
-        rigidBody = new RigidBody(1, 20, RigidBodyMode.Dynamic, true);
+        rigidBody = new RigidBody(new PhysicsMaterial(), 1, 20, RigidBodyMode.Dynamic, true);
         Assert.Equal(1, rigidBody.Restitution);
         Assert.Equal(20, rigidBody.Density);
         Assert.Equal(RigidBodyMode.Dynamic, rigidBody.Mode);
@@ -28,7 +28,7 @@ public class RigidBodyTest
     {
         RigidBody rigidBody;
 
-        rigidBody = new RigidBody(1,12,RigidBodyMode.Dynamic, false);
+        rigidBody = new RigidBody(new PhysicsMaterial(), 1,12,RigidBodyMode.Dynamic, false);
         Assert.Equal(0, rigidBody.Area);
         Assert.Equal(12, rigidBody.Density);
         Assert.Equal(1, rigidBody.Restitution);
@@ -45,7 +45,7 @@ public class RigidBodyTest
         Assert.Equal(1200f, rigidBody.Mass);
         Assert.Equal(0.00083f, rigidBody.InverseMass, precision: 5);
 
-        rigidBody = new RigidBody(0.1f,3,RigidBodyMode.Dynamic, true);
+        rigidBody = new RigidBody(new PhysicsMaterial(), 0.1f,3,RigidBodyMode.Dynamic, true);
         Assert.Equal(0, rigidBody.Area);
         Assert.Equal(3, rigidBody.Density);
         Assert.Equal(0.1f, rigidBody.Restitution);
@@ -62,7 +62,7 @@ public class RigidBodyTest
         Assert.Equal(600f, rigidBody.Mass);
         Assert.Equal(0.00167f, rigidBody.InverseMass, precision: 5);
 
-        rigidBody = new RigidBody(0.1f,16.75f,RigidBodyMode.Dynamic, false);
+        rigidBody = new RigidBody(new PhysicsMaterial(), 0.1f,16.75f,RigidBodyMode.Dynamic, false);
         Assert.Equal(0, rigidBody.Area);
         Assert.Equal(16.75f, rigidBody.Density);
         Assert.Equal(0.1f, rigidBody.Restitution);
@@ -85,7 +85,7 @@ public class RigidBodyTest
     {
         RigidBody rigidBody;
 
-        rigidBody = new RigidBody(1,12,RigidBodyMode.Dynamic, true);
+        rigidBody = new RigidBody(new PhysicsMaterial(), 1,12,RigidBodyMode.Dynamic, true);
         Assert.Equal(0, rigidBody.Area);
         Assert.Equal(12, rigidBody.Density);
         Assert.Equal(1, rigidBody.Restitution);
@@ -102,7 +102,7 @@ public class RigidBodyTest
         Assert.Equal(3769.911, rigidBody.Mass, precision: 3);
         Assert.Equal(0.000265f, rigidBody.InverseMass, precision: 6);
 
-        rigidBody = new RigidBody(0.1f,3,RigidBodyMode.Dynamic, true);
+        rigidBody = new RigidBody(new PhysicsMaterial(), 0.1f,3,RigidBodyMode.Dynamic, true);
         Assert.Equal(0, rigidBody.Area);
         Assert.Equal(3, rigidBody.Density);
         Assert.Equal(0.1f, rigidBody.Restitution);
@@ -119,7 +119,7 @@ public class RigidBodyTest
         Assert.Equal(3769.911, rigidBody.Mass, precision: 3);
         Assert.Equal(0.000265, rigidBody.InverseMass, precision: 6);
 
-        rigidBody = new RigidBody(0.1f,16.75f,RigidBodyMode.Dynamic, true);
+        rigidBody = new RigidBody(new PhysicsMaterial(), 0.1f,16.75f,RigidBodyMode.Dynamic, true);
         Assert.Equal(0, rigidBody.Area);
         Assert.Equal(16.75f, rigidBody.Density);
         Assert.Equal(0.1f, rigidBody.Restitution);

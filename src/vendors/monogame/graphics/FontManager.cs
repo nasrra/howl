@@ -78,6 +78,11 @@ public class FontManager : IFontManager
         disposed = true;
     }
 
+    public GenIndexResult IsFontLoaded(GenIndex genIndex)
+    {
+        return GetFontReadOnlyRef(in genIndex, out ReadOnlyRef<SpriteFont> readOnlyRef);
+    }
+
     ~FontManager()
     {
         Dispose(false);           

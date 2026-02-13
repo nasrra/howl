@@ -280,8 +280,18 @@ public static class CollisionSystem
         ref CircleCollider circleCollider = ref colliderRefB.Value;
 
         // make sure the circle has a transform component.
-        transforms.GetDenseRef(rectangleGenIndex, out Ref<Transform> transformRefA).Ok();
-        transforms.GetDenseRef(circleGenIndex, out Ref<Transform> transformRefB).Ok();
+        if(transforms.GetDenseRef(rectangleGenIndex, out Ref<Transform> transformRefA).Fail())
+        {
+            System.Diagnostics.Debug.Assert(false);
+            return;            
+        }
+        if(transforms.GetDenseRef(circleGenIndex, out Ref<Transform> transformRefB).Fail())
+        {
+            System.Diagnostics.Debug.Assert(false);
+            return;
+        }
+
+        ref Transform t = ref transformRefB.Value;
 
         PolygonRectangle rectangle = PolygonRectangle.Transform(new PolygonRectangle(rectangleCollider.Shape),transformRefA.Value);
         Circle circle = Circle.Transform(circleCollider.Shape,transformRefB.Value); 

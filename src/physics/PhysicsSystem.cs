@@ -37,34 +37,43 @@ public static class PhysicsSystem
         {   
             state.FixedUpdateSubStepStopwatch.Restart();
 
-                RigidBodySystem.MovementStep(componentRegistry, state.RigidbodySystemState, deltaTime);
-                
                 if(collisionSystemState.CollisionManifold.Collisions.Count > 0)
                 {
                     collisionSystemState.CollisionManifold.Clear();
                 }
                 
-                collisionSystemState.IntersectStepStopwatch.Restart();            
-                    // reconstruct the bvh.
-                    CollisionSystem.ReconstructBvhTree(componentRegistry, collisionSystemState.Bvh);
-                    CollisionSystem.FindCollisions(componentRegistry, collisionSystemState);
-                collisionSystemState.IntersectStepStopwatch.Stop();
+                rigidbodySystemState.MovementStepStopwatch.Restart();
+                    RigidBodySystem.MovementStep(componentRegistry, state.RigidbodySystemState, deltaTime);
+                rigidbodySystemState.MovementStepStopwatch.Stop();
 
-                collisionSystemState.ResolutionStepStopwatch.Restart();
-                    // NOTE: ordering matters here, make sure to resolve 
-                    // collisions before sorting the collision manifold.
-                    CollisionSystem.ResolveCollisions(componentRegistry, collisionSystemState);
-                collisionSystemState.ResolutionStepStopwatch.Stop();            
+                // reconstruct the bvh.
+                collisionSystemState.BvhReconstructionStopwatch.Restart();
+                    CollisionSystem.ReconstructBvhTree(componentRegistry, collisionSystemState.Bvh);
+                collisionSystemState.BvhReconstructionStopwatch.Stop();
+
+                collisionSystemState.IntersectionStopwatch.Restart();            
+                    CollisionSystem.FindCollisions(componentRegistry, collisionSystemState);
+                collisionSystemState.IntersectionStopwatch.Stop();
 
                 // NOTE: ordering matters here, make sure to resolve 
                 // collisions before sorting the collision manifold.
-                RigidBodySystem.ResolveCollisionsStep(componentRegistry, state.CollisionSystemState, deltaTime);
+                collisionSystemState.ResolutionStopwatch.Restart();
+                    CollisionSystem.ResolveCollisions(componentRegistry, collisionSystemState);
+                collisionSystemState.ResolutionStopwatch.Stop();            
+
+                // NOTE: ordering matters here, make sure to resolve 
+                // collisions before sorting the collision manifold.
+                rigidbodySystemState.CollisionResolutionStepStopwatch.Restart();
+                    RigidBodySystem.ResolveCollisionsStep(componentRegistry, state.CollisionSystemState, deltaTime);
+                rigidbodySystemState.CollisionResolutionStepStopwatch.Stop();
                 
                 // sort the collision manifold after resolution step.
                 // this is to ensure that binary searching for collisions
                 // using a GenIndex work outside of this function.
-                collisionSystemState.CollisionManifold.Sort();            
-
+                collisionSystemState.CollisionManifoldSortStopwatch.Restart();
+                    collisionSystemState.CollisionManifold.Sort();            
+                collisionSystemState.CollisionManifoldSortStopwatch.Stop();
+            
             state.FixedUpdateSubStepStopwatch.Stop();
         }
 

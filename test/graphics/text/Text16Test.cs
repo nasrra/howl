@@ -2,6 +2,7 @@ using Howl.ECS;
 using Howl.Graphics.Text;
 using Howl.Graphics;
 using Howl.Math;
+using System.Text;
 
 namespace Howl.Test.Graphics.Text;
 
@@ -33,23 +34,71 @@ public class Text16Test
     }
 
     [Fact]
-    public void SetCharacters_Test()
+    public unsafe void SetCharacters_Test()
+    {
+        Text16 text = new Text16(
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
+            ""
+        );
+        Span<char> characters = stackalloc char[Text16.MaxCharacters];
+
+        TextProc.SetCharacters(ref text, "foo");
+        Assert.Equal(3, text.Length);
+        Assert.Equal("foo", new string(text.Characters, 0, text.Length));
+        TextProc.SetCharacters(ref text, "lorem ipsum");
+        Assert.Equal(11, text.Length);
+        Assert.Equal("lorem ipsum", new string(text.Characters, 0, text.Length));
+
+        // set characters to floats.
+        TextProc.SetCharacters(ref text, 1234567f);
+        Assert.Equal(7, text.Length);
+        Assert.Equal("1234567", new string(text.Characters, 0, text.Length));
+        TextProc.SetCharacters(ref text, 99.99f);
+        Assert.Equal(5, text.Length);
+        Assert.Equal("99.99", new string(text.Characters, 0, text.Length));
+    }
+
+    [Fact]
+    public unsafe void AppendCharacters_Test()
     {
         Text16 text = new Text16(
             new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
             ""
         );
 
-        Span<char> characters = stackalloc char[Text16.MaxLength];
-        float num = 123456789.12f;
-        num.TryFormat(characters, out int charsWritten, "0.00");
+        // append strings.
+        TextProc.AppendCharacters(ref text, "Tools");
+        Assert.Equal(5, text.Length);
+        Assert.Equal("Tools", new string(text.Characters, 0, text.Length));
+        TextProc.AppendCharacters(ref text, " are cool.");        
+        Assert.Equal(15, text.Length);
+        Assert.Equal("Tools are cool.", new string(text.Characters, 0, text.Length));
+    
+        TextProc.ClearCharacters(ref text);
 
-        // set the full span regardless of length.
-        text.SetCharacters(characters);
-        Assert.Equal(Text16.MaxLength, text.Length);
+        // append floats
+        TextProc.AppendCharacters(ref text, 123.123f);
+        Assert.Equal(7, text.Length);
+        Assert.Equal("123.123", new string(text.Characters, 0, text.Length));
+        TextProc.AppendCharacters(ref text, 456.456f);        
+        Assert.Equal(14, text.Length);
+        Assert.Equal("123.123456.456", new string(text.Characters, 0, text.Length));
+    }
 
-        // set the span with a specefied length of the valid characters written to it.
-        text.SetCharacters(characters, charsWritten);
-        Assert.Equal(charsWritten, text.Length);
+    [Fact]
+    public void AsSpanUsed_Test()
+    {
+        Text16 text = new Text16(
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
+            ""
+        );
+        TextProc.AppendCharacters(ref text, "Tools");
+
+        StringBuilder stringBuilder = new();
+        stringBuilder.Append(text.AsSpanUsed());
+
+        Assert.Equal(5, text.AsSpanUsed().Length);
+        Assert.Equal(Text16.MaxCharacters, text.AsSpan().Length);
+        Assert.Equal("Tools", stringBuilder.ToString());
     }
 }
