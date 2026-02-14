@@ -177,7 +177,7 @@ public unsafe struct PolygonRectangle
     /// <param name="polygonRectangle">The polygon rectangle.</param>
     /// <returns>The centroid-vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 GetCentroid(in PolygonRectangle polygonRectangle)
+    public static Vector2 Centroid(in PolygonRectangle polygonRectangle)
     {
         return ShapeUtils.GetCentroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle));
     }

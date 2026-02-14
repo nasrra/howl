@@ -17,7 +17,7 @@ public sealed class CollisionSystemState : IDisposable
     /// <summary>
     /// Gets the debug stopwatch for timing a collision system intersect step.
     /// </summary>
-    public readonly Stopwatch FindPossibleCollisionsStopwatch;
+    public readonly Stopwatch ProcessNearColliderPairsStopwatch;
 
     /// <summary>
     /// Gets the debug stopwatch for timing a collision system resolution step.
@@ -35,20 +35,34 @@ public sealed class CollisionSystemState : IDisposable
     public readonly Stopwatch CollisionManifoldSortStopwatch;
 
     /// <summary>
-    /// Gets the debug stopwatch for timing a 
+    /// Gets the debug stopwatch for finding near collider pairs in a bvh. 
     /// </summary>
-    public readonly Stopwatch FindCollisionsStopwatch;
+    public readonly Stopwatch FindNearColliderPairsStopwatch;
+
+    /// <summary>
+    /// Gets the debug stopwatch for syncing sollider transformed shapes to their associated transforms.
+    /// </summary>
+    public readonly Stopwatch SyncCollidersToTransformsStopwatch;
 
     /// <summary>
     /// Gets the collision manifold.
     /// </summary>
     public readonly CollisionManifold CollisionManifold;
 
-    public List<PossibleIntersection> PossibleCircleToCircleIntersections;
+    /// <summary>
+    /// Gets and sets the collider pairs for near circle colliders.
+    /// </summary>
+    public List<ColliderPair> NearCircleColliders;
 
-    public List<PossibleIntersection> PossibleRectangleToRectangleIntersections;
+    /// <summary>
+    /// Gets and sets the collider pairs for near rectangle colliders.
+    /// </summary>
+    public List<ColliderPair> NearRectangleColliders;
 
-    public List<PossibleIntersection> PossibleRectangleToCircleIntersections;
+    /// <summary>
+    /// Gets and sets the collider pairs for near rectangle and circle colliders.
+    /// </summary>
+    public List<ColliderPair> NearRectangleToCircleColliders;
 
     /// <summary>
     /// Gets and sets the debug draw colour for the solid-colliders.
@@ -132,16 +146,17 @@ public sealed class CollisionSystemState : IDisposable
 
     public CollisionSystemState()
     {
-        FindPossibleCollisionsStopwatch = new Stopwatch();
-        FindCollisionsStopwatch         = new Stopwatch();
+        ProcessNearColliderPairsStopwatch = new Stopwatch();
+        FindNearColliderPairsStopwatch         = new Stopwatch();
         ResolutionStopwatch             = new Stopwatch();
         BvhReconstructionStopwatch      = new Stopwatch();
         CollisionManifoldSortStopwatch  = new Stopwatch();
+        SyncCollidersToTransformsStopwatch = new Stopwatch();
         CollisionManifold               = new();
         
-        PossibleCircleToCircleIntersections = new();
-        PossibleRectangleToRectangleIntersections = new();
-        PossibleRectangleToCircleIntersections = new();
+        NearCircleColliders = new();
+        NearRectangleColliders = new();
+        NearRectangleToCircleColliders = new();
 
         SolidColliderColour             = Colour.Green;
         KinematicColliderColour         = Colour.Orange;

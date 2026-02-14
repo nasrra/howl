@@ -7,9 +7,14 @@ namespace Howl.Physics;
 public struct CircleCollider
 {
     /// <summary>
-    /// Gets and sets the shape.
+    /// Gets and sets the base shape.
     /// </summary>
-    public Circle Shape;
+    public Circle BaseShape;
+
+    /// <summary>
+    /// Gets and sets the transformed shape.
+    /// </summary>
+    public Circle TransformedShape;
 
     /// <summary>
     /// Gets and sets collider parameters.
@@ -23,7 +28,8 @@ public struct CircleCollider
     /// <param name="parameters">the collider parameters.</param>
     public CircleCollider(Circle shape, ColliderParameters parameters)
     {
-        Shape = shape;
+        BaseShape = shape;
+        TransformedShape = shape;
         Parameters = parameters;
     }
 }

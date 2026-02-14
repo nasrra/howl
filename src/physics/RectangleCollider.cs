@@ -5,13 +5,15 @@ namespace Howl.Physics;
 
 public struct RectangleCollider
 {
-    public Rectangle Shape;
+    public Rectangle BaseShape;
+    public PolygonRectangle TransformedShape;
+    
     public ColliderParameters Parameters;
 
     public RectangleCollider(Rectangle shape, ColliderParameters parameters)
     {
-        Shape = shape;
-        
+        BaseShape = shape;
+        TransformedShape = new PolygonRectangle(shape);
         Parameters = parameters;
     }
 }

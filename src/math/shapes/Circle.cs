@@ -21,11 +21,6 @@ public struct Circle
     public float Y;
 
     /// <summary>
-    /// Gets the center position.
-    /// </summary>
-    public readonly Vector2 Center => new Vector2(X,Y);
-
-    /// <summary>
     /// Constructs a Circle.
     /// </summary>
     /// <param name="x">The x-coordinate position.</param>
@@ -96,4 +91,13 @@ public struct Circle
             circle.Y + circle.Radius
         );
     }
+
+    /// <summary>
+    /// Gets the center position.
+    /// </summary>
+    public static Vector2 Center(in Circle circle)
+    {
+        return new Vector2(circle.X,circle.Y);    
+    }
+    
 }

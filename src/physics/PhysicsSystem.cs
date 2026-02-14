@@ -46,27 +46,35 @@ public static class PhysicsSystem
                     RigidBodySystem.MovementStep(componentRegistry, state.RigidbodySystemState, deltaTime);
                 rigidbodySystemState.MovementStepStopwatch.Stop();
 
+                collisionSystemState.SyncCollidersToTransformsStopwatch.Restart();
+                    CollisionSystem.SyncCollidersToTransforms(componentRegistry);
+                collisionSystemState.SyncCollidersToTransformsStopwatch.Stop();
+
                 // reconstruct the bvh.
                 collisionSystemState.BvhReconstructionStopwatch.Restart();
                     CollisionSystem.ReconstructBvhTree(componentRegistry, collisionSystemState.Bvh);
                 collisionSystemState.BvhReconstructionStopwatch.Stop();
 
-                collisionSystemState.FindPossibleCollisionsStopwatch.Restart();            
-                    CollisionSystem.FindPossibleCollisions(collisionSystemState);
-                collisionSystemState.FindPossibleCollisionsStopwatch.Stop();
+                collisionSystemState.ProcessNearColliderPairsStopwatch.Restart();            
+                    CollisionSystem.FindNearColliderPairs(collisionSystemState);
+                collisionSystemState.ProcessNearColliderPairsStopwatch.Stop();
 
-                collisionSystemState.FindCollisionsStopwatch.Restart();            
-                    CollisionSystem.FindCollisions(componentRegistry, collisionSystemState);
-                collisionSystemState.FindCollisionsStopwatch.Stop();
+                collisionSystemState.FindNearColliderPairsStopwatch.Restart();            
+                    CollisionSystem.ProcessNearColliderPairs(componentRegistry, collisionSystemState);
+                collisionSystemState.FindNearColliderPairsStopwatch.Stop();
 
                 // NOTE: ordering matters here, make sure to resolve 
                 // collisions before sorting the collision manifold.
+                // Also make sure that this is above rigidbody collision resolution.
+                // this function also moves the transforms of the colliders.
                 collisionSystemState.ResolutionStopwatch.Restart();
                     CollisionSystem.ResolveCollisions(componentRegistry, collisionSystemState);
                 collisionSystemState.ResolutionStopwatch.Stop();            
 
                 // NOTE: ordering matters here, make sure to resolve 
                 // collisions before sorting the collision manifold.
+                // Also make sure that this is below collision resolution.
+                // this function also moves the transforms of the colliders.
                 rigidbodySystemState.CollisionResolutionStepStopwatch.Restart();
                     RigidBodySystem.ResolveCollisionsStep(componentRegistry, state.CollisionSystemState, deltaTime);
                 rigidbodySystemState.CollisionResolutionStepStopwatch.Stop();

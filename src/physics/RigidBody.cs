@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Howl.Math;
 using Howl.Math.Shapes;
+using static Howl.Math.Shapes.PolygonRectangle;
 
 namespace Howl.Physics;
 
@@ -199,6 +200,42 @@ public struct RigidBody
 
         //  calculate inertia.
         rotationalInertia = RectangleInertiaConst * mass * (rectangle.Width * rectangle.Width + rectangle.Height * rectangle.Height);
+        inverseRotationalInertia = 1f / rotationalInertia;
+    }
+
+    /// <summary>
+    /// Sets the shape of this rigidbody.
+    /// </summary>
+    /// <param name="rectangle">The rectangle shape to set this rigidbody with.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public void SetShape(in PolygonRectangle rectangle)
+    {
+        SetShape(in rectangle, density);
+    }
+
+    /// <summary>
+    /// Sets the shape of this rigidbody.
+    /// </summary>
+    /// <param name="rectangle">The rectangle shape to set this rigidbody with.</param>
+    /// <param name="density">The density to set to.</param>
+    public void SetShape(in PolygonRectangle rectangle, float density)
+    {
+        float width = Width(rectangle);
+        float height = Height(rectangle);
+
+        // calculate and set the area.
+        SetArea(width * height);
+
+        // only set density if it is different.
+        if(Math.Math.NearlyEqual(Density, density, 1e-5f) == false)
+            SetDensity(density);
+
+        // recalculate mass.
+        mass = area * density;
+        inverseMass = 1f / mass;
+
+        //  calculate inertia.
+        rotationalInertia = RectangleInertiaConst * mass * (width * width + height * height);
         inverseRotationalInertia = 1f / rotationalInertia;
     }
 

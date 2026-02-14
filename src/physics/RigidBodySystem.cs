@@ -46,22 +46,13 @@ public static class RigidBodySystem
             ref RigidBody rigidbody = ref denseEntry.Value;
             GetGenIndex(rigidbodies, denseEntry.sparseIndex, out GenIndex genIndex);
 
-            // ensure the rigid body has a transform component.
-            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail())
-            {
-                System.Diagnostics.Debug.Assert(false);
-                continue;
-            }
-
-            ref Transform transform = ref transformRef.Value;
-
             if(GetDenseRef(circleColliders, genIndex, out Ref<CircleCollider> circleCollider).Ok())
             {
-                rigidbody.SetShape(Scale(circleCollider.Value.Shape, transform.Scale));
+                rigidbody.SetShape(circleCollider.Value.TransformedShape);
             }
             else if(GetDenseRef(rectangleColliders, genIndex, out Ref<RectangleCollider> rectangleCollider).Ok())
             {
-                rigidbody.SetShape(Scale(rectangleCollider.Value.Shape, transform.Scale));   
+                rigidbody.SetShape(rectangleCollider.Value.TransformedShape);   
             }
             else
             {
@@ -78,8 +69,14 @@ public static class RigidBodySystem
 
             // force = mass * acceleration.
             // acceleration = force / mass.
-
             rigidbody.ImpulseLinearForce(rigidbody.Force / rigidbody.Mass * deltaTime);
+
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail())
+            {
+                System.Diagnostics.Debug.Assert(false, "all rigidbodies must have a transform component.");
+                continue;
+            }
+
             transformRef.Value.Position += rigidbody.LinearVelocity * deltaTime;
             transformRef.Value.Rotation += rigidbody.AngularVelocity * deltaTime;
         } 
@@ -136,8 +133,8 @@ public static class RigidBodySystem
                 // note: order matters here, do collision resolution
                 //  first do that the impulse magnitudes span is
                 // filled with the correct data to perform friction resolution.
-                ResolveCollisionRotational(collisionImpulseMagnitudes, transforms, in collision, ref rigidbodyA, ref rigidbodyB);
-                ResolveFriction(collisionImpulseMagnitudes, transforms, in collision, ref rigidbodyA, ref rigidbodyB);
+                ResolveCollisionRotational(collisionImpulseMagnitudes, in collision, ref rigidbodyA, ref rigidbodyB);
+                ResolveFriction(collisionImpulseMagnitudes, in collision, ref rigidbodyA, ref rigidbodyB);
             }
             else
             {
@@ -197,22 +194,11 @@ public static class RigidBodySystem
     /// <param name="rigidBodyB">the rigidbody of the 'other' in the collision data.</param>
     private static void ResolveCollisionRotational(
         Span<float> impulseMagnitudes,
-        GenIndexList<Transform> transforms,
         ref readonly Collision collision,
         ref RigidBody rigidBodyA,
         ref RigidBody rigidBodyB
     )
-    {
-        // ensure they both have transform components.
-        if(GetDenseRef(transforms, collision.Owner, out Ref<Transform> transformARef).Fail()
-        || GetDenseRef(transforms, collision.Other, out Ref<Transform> transformBRef).Fail())
-        {
-            System.Diagnostics.Debug.Assert(false);
-            return;
-        }
-        ref Transform transformA = ref transformARef.Value;
-        ref Transform transformB = ref transformBRef.Value;                
-
+    {             
         float restitution = MathF.Min(rigidBodyA.Restitution, rigidBodyB.Restitution);
 
         ReadOnlySpan<float> contactPointX = collision.GetXContactPointsAsReadOnlySpan();
@@ -227,8 +213,8 @@ public static class RigidBodySystem
             Vector2 contactPoint = new Vector2(contactPointX[j], contactPointY[j]);
             
             // get the angular velocity to travel in.
-            distA[j] = contactPoint - collision.OwnerColliderShapeCenter.Transform(transformA);
-            distB[j] = contactPoint - collision.OtherColliderShapeCenter.Transform(transformB);
+            distA[j] = contactPoint - collision.OwnerColliderShapeCenter;
+            distB[j] = contactPoint - collision.OtherColliderShapeCenter;
             Vector2 perpendicularA = new Vector2(-distA[j].Y, distA[j].X);
             Vector2 perpendicularB = new Vector2(-distB[j].Y, distB[j].X);
             Vector2 angularLinearVelocityA = perpendicularA * rigidBodyA.AngularVelocity; 
@@ -307,28 +293,16 @@ public static class RigidBodySystem
     /// with relevate data relating to two bodies after collision resolution.
     /// </remarks>
     /// <param name="collisionResolutionImpulseMagnitudes">the impulses applied to the two bodies during a collision resolution step.</param>
-    /// <param name="transforms">the transform components in the rigidbodies component registry.</param>
     /// <param name="collision">the collision data.</param>
     /// <param name="rigidBodyA">the rigidbody of the 'owner' in the collision data.</param>
     /// <param name="rigidBodyB">the rigidbody of the 'other' in the collision data.</param>
     private static void ResolveFriction(
         Span<float> collisionResolutionImpulseMagnitudes,
-        GenIndexList<Transform> transforms,
         ref readonly Collision collision,
         ref RigidBody rigidBodyA,
         ref RigidBody rigidBodyB
     )
     {
-        // ensure they both have transform components.
-        if(GetDenseRef(transforms, collision.Owner, out Ref<Transform> transformARef).Fail()
-        || GetDenseRef(transforms, collision.Other, out Ref<Transform> transformBRef).Fail())
-        {
-            System.Diagnostics.Debug.Assert(false);
-            return;
-        }
-        ref Transform transformA = ref transformARef.Value;
-        ref Transform transformB = ref transformBRef.Value;                
-
         Span<Vector2> impulse = stackalloc Vector2[collision.ContactPointsCount];
         Span<Vector2> distA   = stackalloc Vector2[collision.ContactPointsCount];
         Span<Vector2> distB   = stackalloc Vector2[collision.ContactPointsCount];
@@ -361,8 +335,8 @@ public static class RigidBodySystem
             Vector2 contactPoint = new Vector2(contactPointX[j], contactPointY[j]);
             
             // get the angular velocity to travel in.
-            distA[j] = contactPoint - collision.OwnerColliderShapeCenter.Transform(transformA);
-            distB[j] = contactPoint - collision.OtherColliderShapeCenter.Transform(transformB);
+            distA[j] = contactPoint - collision.OwnerColliderShapeCenter;
+            distB[j] = contactPoint - collision.OtherColliderShapeCenter;
             Vector2 perpendicularA = new Vector2(-distA[j].Y, distA[j].X);
             Vector2 perpendicularB = new Vector2(-distB[j].Y, distB[j].X);
             Vector2 angularLinearVelocityA = perpendicularA * rigidBodyA.AngularVelocity; 

@@ -31,7 +31,7 @@ public static class SAT
         normal = Vector2.Zero;
         depth = 0f;
 
-        float distanceSqrd = lhs.Center.DistanceSquared(rhs.Center);
+        float distanceSqrd = Center(lhs).DistanceSquared(Center(rhs));
 
         float radiusSum = lhs.Radius + rhs.Radius;
         float radiusSumSq = radiusSum * radiusSum;
@@ -49,7 +49,7 @@ public static class SAT
         }
 
         float distance = MathF.Sqrt(distanceSqrd);
-        normal = (rhs.Center - lhs.Center).Normalise();
+        normal = (Center(rhs) - Center(lhs)).Normalise();
         depth = radiusSum - distance;
 
         return true;
@@ -105,7 +105,7 @@ public static class SAT
         // this is so that the resolution code will always push A out of B
         // and not push the two into each other when a smaller depth is found when 
         // looping through rect B.
-        if ((GetCentroid(rhs) - GetCentroid(lhs)).Dot(normal) < 0)
+        if ((Centroid(rhs) - Centroid(lhs)).Dot(normal) < 0)
         {
             normal = -normal;
         }
@@ -152,15 +152,18 @@ public static class SAT
             int vAIndex = i;
             int vBIndex = (i+1)%polygonVerticesXA.Length;
 
-            Vector2 va = new Vector2(polygonVerticesXA[vAIndex], polygonVerticesYA[vAIndex]);
-            Vector2 vb = new Vector2(polygonVerticesXA[vBIndex], polygonVerticesYA[vBIndex]);
+            float xA = polygonVerticesXA[vAIndex];
+            float xB = polygonVerticesXA[vBIndex];
+            float yA = polygonVerticesYA[vAIndex];
+            float yB = polygonVerticesYA[vBIndex];
 
-            Vector2 edge = vb - va;
+            float edgeX = xB - xA; 
+            float edgeY = yB - yA;
 
             // the normal of the edge.
             // note: this only works as vertices are assumed to be in clockwise winding order.
             // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
-            Vector2 axis = new Vector2(-edge.Y, edge.X).Normalise(); 
+            Vector2 axis = new Vector2(-edgeY, edgeX).Normalise(); 
         
             // project all vertices onto the current edge to find the min and max values
             // of the two rectangles along the edge.
@@ -239,15 +242,18 @@ public static class SAT
             int vAIndex = i;
             int vBIndex = (i+1)%polygonVerticesX.Length;
 
-            Vector2 va = new Vector2(polygonVerticesX[vAIndex], polygonVerticesY[vAIndex]);
-            Vector2 vb = new Vector2(polygonVerticesX[vBIndex], polygonVerticesY[vBIndex]);
+            float xA = polygonVerticesX[vAIndex];
+            float xB = polygonVerticesX[vBIndex];
+            float yA = polygonVerticesY[vAIndex];
+            float yB = polygonVerticesY[vBIndex];
 
-            Vector2 edge = vb - va;
+            float edgeX = xB - xA; 
+            float edgeY = yB - yA; 
 
             // the normal of the edge.
             // note: this only works as vertices are assumed to be in clockwise winding order.
             // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
-            axis = new Vector2(-edge.Y, edge.X).Normalise(); 
+            axis = new Vector2(-edgeY, edgeX).Normalise(); 
         
             // project all vertices onto the current edge to find the min and max values
             // of the two rectangles along the edge.
@@ -269,10 +275,10 @@ public static class SAT
             }
         }
 
-        int closestPointIndex = ShapeUtils.FindClosestVertexOnPolygon(circle.Center, polygonVerticesX, polygonVerticesY);
+        int closestPointIndex = ShapeUtils.FindClosestVertexOnPolygon(Center(circle), polygonVerticesX, polygonVerticesY);
         Vector2 closestPoint = new Vector2(polygonVerticesX[closestPointIndex], polygonVerticesY[closestPointIndex]);
         
-        axis = (closestPoint - circle.Center).Normalise();
+        axis = (closestPoint - Center(circle)).Normalise();
 
         // project all vertices onto the current edge to find the min and max values
         // of the two rectangles along the edge.
@@ -294,7 +300,7 @@ public static class SAT
         }
 
         Vector2 polygonCentroid = ShapeUtils.GetCentroid(polygonVerticesX, polygonVerticesY);
-        Vector2 circleCentroid = circle.Center;
+        Vector2 circleCentroid = Center(circle);
 
         // when a new smaller   
         // depth is found but in relation to rect B, not A.
@@ -373,8 +379,8 @@ public static class SAT
     {
         Vector2 directionAndRadius = axis * circle.Radius;
         
-        Vector2 vertex1 = circle.Center + directionAndRadius;
-        Vector2 vertex2 = circle.Center - directionAndRadius;
+        Vector2 vertex1 = Center(circle) + directionAndRadius;
+        Vector2 vertex2 = Center(circle) - directionAndRadius;
         
         min = vertex1.Dot(axis);
         max = vertex2.Dot(axis);
@@ -411,9 +417,9 @@ public static class SAT
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FindContactPoints(in Circle a, in Circle b, out Vector2 contactPoint)
     {
-        Vector2 distance = b.Center - a.Center;
+        Vector2 distance = Center(b) - Center(a);
         Vector2 direction = distance.Normalise();
-        contactPoint = a.Center + (direction * a.Radius);
+        contactPoint = Center(a) + (direction * a.Radius);
     }
 
     /// <summary>
@@ -468,7 +474,7 @@ public static class SAT
             Vector2 edgeStart = new Vector2(polygonVerticesX[startIndex], polygonVerticesY[startIndex]);
             int endIndex = (startIndex + 1) % length;
             Vector2 edgeEnd = new Vector2(polygonVerticesX[endIndex], polygonVerticesY[endIndex]);
-            Math.ClosestPoint(edgeStart, edgeEnd, circle.Center, out Vector2 closestPoint, out float distSqrd);
+            Math.ClosestPoint(edgeStart, edgeEnd, Center(circle), out Vector2 closestPoint, out float distSqrd);
             if(distSqrd < minDistSqrd)
             {
                 minDistSqrd = distSqrd;
