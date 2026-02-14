@@ -51,9 +51,13 @@ public static class PhysicsSystem
                     CollisionSystem.ReconstructBvhTree(componentRegistry, collisionSystemState.Bvh);
                 collisionSystemState.BvhReconstructionStopwatch.Stop();
 
-                collisionSystemState.IntersectionStopwatch.Restart();            
+                collisionSystemState.FindPossibleCollisionsStopwatch.Restart();            
+                    CollisionSystem.FindPossibleCollisions(collisionSystemState);
+                collisionSystemState.FindPossibleCollisionsStopwatch.Stop();
+
+                collisionSystemState.FindCollisionsStopwatch.Restart();            
                     CollisionSystem.FindCollisions(componentRegistry, collisionSystemState);
-                collisionSystemState.IntersectionStopwatch.Stop();
+                collisionSystemState.FindCollisionsStopwatch.Stop();
 
                 // NOTE: ordering matters here, make sure to resolve 
                 // collisions before sorting the collision manifold.

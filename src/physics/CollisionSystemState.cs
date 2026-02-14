@@ -17,7 +17,7 @@ public sealed class CollisionSystemState : IDisposable
     /// <summary>
     /// Gets the debug stopwatch for timing a collision system intersect step.
     /// </summary>
-    public readonly Stopwatch IntersectionStopwatch;
+    public readonly Stopwatch FindPossibleCollisionsStopwatch;
 
     /// <summary>
     /// Gets the debug stopwatch for timing a collision system resolution step.
@@ -35,9 +35,20 @@ public sealed class CollisionSystemState : IDisposable
     public readonly Stopwatch CollisionManifoldSortStopwatch;
 
     /// <summary>
+    /// Gets the debug stopwatch for timing a 
+    /// </summary>
+    public readonly Stopwatch FindCollisionsStopwatch;
+
+    /// <summary>
     /// Gets the collision manifold.
     /// </summary>
     public readonly CollisionManifold CollisionManifold;
+
+    public List<PossibleIntersection> PossibleCircleToCircleIntersections;
+
+    public List<PossibleIntersection> PossibleRectangleToRectangleIntersections;
+
+    public List<PossibleIntersection> PossibleRectangleToCircleIntersections;
 
     /// <summary>
     /// Gets and sets the debug draw colour for the solid-colliders.
@@ -121,12 +132,17 @@ public sealed class CollisionSystemState : IDisposable
 
     public CollisionSystemState()
     {
-        IntersectionStopwatch           = new Stopwatch();
+        FindPossibleCollisionsStopwatch = new Stopwatch();
+        FindCollisionsStopwatch         = new Stopwatch();
         ResolutionStopwatch             = new Stopwatch();
         BvhReconstructionStopwatch      = new Stopwatch();
         CollisionManifoldSortStopwatch  = new Stopwatch();
         CollisionManifold               = new();
         
+        PossibleCircleToCircleIntersections = new();
+        PossibleRectangleToRectangleIntersections = new();
+        PossibleRectangleToCircleIntersections = new();
+
         SolidColliderColour             = Colour.Green;
         KinematicColliderColour         = Colour.Orange;
         TriggerColliderColour           = Colour.LightBlue;

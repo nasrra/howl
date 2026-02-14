@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Howl.DataStructures;
 using Howl.ECS;
 using Howl.Generic;
@@ -55,13 +56,12 @@ public static class CollisionSystem
         }
     }
 
-    public static void FindCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
+    public static void FindPossibleCollisions(CollisionSystemState state)
     {
-        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
-        GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>(); 
-
         ReadOnlySpan<SpatialPair> spatialPairs = state.Bvh.GetSpatialPairs();
+        state.PossibleCircleToCircleIntersections.Clear();
+        state.PossibleRectangleToCircleIntersections.Clear();
+        state.PossibleRectangleToRectangleIntersections.Clear();
 
         for(int i = 0; i < spatialPairs.Length; i++)
         {
@@ -78,10 +78,20 @@ public static class CollisionSystem
                     switch (otherType)
                     {
                         case ColliderType.Circle:
-                            CircleToCircleIntersect(state, transforms, circleColliders, owner.GenIndex, other.GenIndex);
+                            state.PossibleCircleToCircleIntersections.Add(
+                                new PossibleIntersection(
+                                    owner.GenIndex, 
+                                    other.GenIndex
+                                )
+                            );
                         break;
                         case ColliderType.Rectangle:
-                            RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, other.GenIndex, owner.GenIndex);
+                            state.PossibleRectangleToCircleIntersections.Add(
+                                new PossibleIntersection(
+                                    other.GenIndex, 
+                                    owner.GenIndex
+                                )
+                            );
                         break;
                     }
                 break;
@@ -89,17 +99,75 @@ public static class CollisionSystem
                     switch (otherType)
                     {
                         case ColliderType.Rectangle:
-                            RectangleToRectangleIntersect(state, transforms, rectangleColliders, owner.GenIndex, other.GenIndex);
+                            state.PossibleRectangleToRectangleIntersections.Add(
+                                new PossibleIntersection(
+                                    owner.GenIndex, 
+                                    other.GenIndex
+                                )
+                            );
                         break;
                         case ColliderType.Circle:
-                            RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, owner.GenIndex, other.GenIndex);
+                            state.PossibleRectangleToCircleIntersections.Add(
+                                new PossibleIntersection(
+                                    owner.GenIndex,
+                                    other.GenIndex
+                                )
+                            );
                         break;
                     }
                 break;
             }
+
         }
     }
-    
+
+    public static void FindCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
+    {        
+        HandlePossibleCircleToCircleIntersections(componentRegistry, state);
+        HandlePossibleRectangleToRectangleIntersections(componentRegistry, state);
+        HandlePossibleRectangleToCircleIntersections(componentRegistry, state);
+    }
+
+    public static void HandlePossibleCircleToCircleIntersections(ComponentRegistry componentRegistry, CollisionSystemState state)
+    {        
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
+        GenIndexList<CircleCollider> colliders = componentRegistry.Get<CircleCollider>();
+
+        ReadOnlySpan<PossibleIntersection> span = CollectionsMarshal.AsSpan(state.PossibleCircleToCircleIntersections);
+        for(int i = 0; i < span.Length; i++)
+        {
+            ref readonly PossibleIntersection possible = ref span[i]; 
+            CircleToCircleIntersect(state, transforms, colliders, possible.ColliderA, possible.ColliderB);
+        }
+    }
+
+    public static void HandlePossibleRectangleToRectangleIntersections(ComponentRegistry componentRegistry, CollisionSystemState state)
+    {        
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
+        GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
+        
+        ReadOnlySpan<PossibleIntersection> span = CollectionsMarshal.AsSpan(state.PossibleRectangleToRectangleIntersections);
+        for(int i = 0; i < span.Length; i++)
+        {
+            ref readonly PossibleIntersection possible = ref span[i]; 
+            RectangleToRectangleIntersect(state, transforms, colliders, possible.ColliderA, possible.ColliderB);
+        }
+    }
+
+    public static void HandlePossibleRectangleToCircleIntersections(ComponentRegistry componentRegistry, CollisionSystemState state)
+    {        
+        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
+        GenIndexList<RectangleCollider> rectangles = componentRegistry.Get<RectangleCollider>();
+        GenIndexList<CircleCollider> circles = componentRegistry.Get<CircleCollider>();
+
+        ReadOnlySpan<PossibleIntersection> span = CollectionsMarshal.AsSpan(state.PossibleRectangleToCircleIntersections);
+        for(int i = 0; i < span.Length; i++)
+        {
+            ref readonly PossibleIntersection possible = ref span[i]; 
+            RectangleToCircleIntersect(state, transforms, rectangles, circles, possible.ColliderA, possible.ColliderB);
+        }
+    }
+
     private static void CircleToCircleIntersect(
         CollisionSystemState state, 
         GenIndexList<Transform> transforms,
