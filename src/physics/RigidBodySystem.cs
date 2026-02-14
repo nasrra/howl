@@ -8,6 +8,7 @@ using Howl.Math.Shapes;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.Rectangle;
+using static Howl.Physics.RigidBody;
 
 namespace Howl.Physics;
 
@@ -48,11 +49,11 @@ public static class RigidBodySystem
 
             if(GetDenseRef(circleColliders, genIndex, out Ref<CircleCollider> circleCollider).Ok())
             {
-                rigidbody.SetShape(circleCollider.Value.TransformedShape);
+                SetShape(ref rigidbody, circleCollider.Value.TransformedShape);
             }
             else if(GetDenseRef(rectangleColliders, genIndex, out Ref<RectangleCollider> rectangleCollider).Ok())
             {
-                rigidbody.SetShape(rectangleCollider.Value.TransformedShape);   
+                SetShape(ref rigidbody, rectangleCollider.Value.TransformedShape);   
             }
             else
             {
@@ -63,13 +64,14 @@ public static class RigidBodySystem
             if(rigidbody.Mode == RigidBodyMode.Dynamic)
             {
                 // apply gravity.
-                rigidbody.ImpulseLinearForce(state.GravityDirection * state.Gravity * deltaTime);
+                ImpulseLinearForce(ref rigidbody, state.GravityDirection * state.Gravity * deltaTime);
             }
 
 
             // force = mass * acceleration.
             // acceleration = force / mass.
-            rigidbody.ImpulseLinearForce(rigidbody.Force / rigidbody.Mass * deltaTime);
+            Vector2 force = new Vector2(rigidbody.ForceX, rigidbody.ForceY);
+            ImpulseLinearForce(ref rigidbody, force / rigidbody.Mass * deltaTime);
 
             if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Fail())
             {
@@ -77,7 +79,7 @@ public static class RigidBodySystem
                 continue;
             }
 
-            transformRef.Value.Position += rigidbody.LinearVelocity * deltaTime;
+            transformRef.Value.Position += new Vector2(rigidbody.LinearVelocityX, rigidbody.LinearVelocityY) * deltaTime;
             transformRef.Value.Rotation += rigidbody.AngularVelocity * deltaTime;
         } 
     }
@@ -94,7 +96,7 @@ public static class RigidBodySystem
         {
             ref DenseEntry<RigidBody> denseEntry = ref denseEntries[i];
             ref RigidBody rigidbody = ref denseEntry.Value;
-            rigidbody.ClearForces();
+            RigidBody.ClearForces(ref rigidbody);
         }        
     }
 
@@ -152,7 +154,9 @@ public static class RigidBodySystem
     /// <param name="rigidBodyB">the rigidbody of the collision data's other.</param>
     private static void ResolveCollisionBasic(ref readonly Collision collision, ref RigidBody rigidBodyA, ref RigidBody rigidBodyB)
     {
-        Vector2 relativeVelocity = rigidBodyB.LinearVelocity - rigidBodyA.LinearVelocity;
+        Vector2 linearVelocityA = new Vector2(rigidBodyA.LinearVelocityX, rigidBodyA.LinearVelocityY);
+        Vector2 linearVelocityB = new Vector2(rigidBodyB.LinearVelocityX, rigidBodyB.LinearVelocityY);
+        Vector2 relativeVelocity = linearVelocityA - linearVelocityB;
 
         // the magnitude of the relative velocity relative to the normal
         float magnitude = Vector2.Dot(relativeVelocity, collision.Normal);
@@ -170,12 +174,12 @@ public static class RigidBodySystem
 
         if(rigidBodyA.Mode == RigidBodyMode.Dynamic)
         {
-            rigidBodyA.ImpulseLinearForce(-(impulseMagnitude / rigidBodyA.Mass * collision.Normal));            
+            ImpulseLinearForce(ref rigidBodyA, -(impulseMagnitude / rigidBodyA.Mass * collision.Normal));            
         }
 
         if(rigidBodyB.Mode == RigidBodyMode.Dynamic)
         {
-            rigidBodyB.ImpulseLinearForce(impulseMagnitude / rigidBodyB.Mass * collision.Normal);
+            ImpulseLinearForce(ref rigidBodyB, impulseMagnitude / rigidBodyB.Mass * collision.Normal);
         }
     } 
 
@@ -220,9 +224,12 @@ public static class RigidBodySystem
             Vector2 angularLinearVelocityA = perpendicularA * rigidBodyA.AngularVelocity; 
             Vector2 angularLinearVelocityB = perpendicularB * rigidBodyB.AngularVelocity; 
 
+            Vector2 linearVelcoityA = new Vector2(rigidBodyA.LinearVelocityX, rigidBodyA.LinearVelocityY);
+            Vector2 linearVelcoityB = new Vector2(rigidBodyB.LinearVelocityX, rigidBodyB.LinearVelocityY);
+
             Vector2 relativeVelocity = 
-            (rigidBodyB.LinearVelocity + angularLinearVelocityB) - 
-            (rigidBodyA.LinearVelocity + angularLinearVelocityA);
+            (linearVelcoityB + angularLinearVelocityB) - 
+            (linearVelcoityA + angularLinearVelocityA);
             
             // the magnitude of the relative velocity relative to the normal
             float magnitude = Vector2.Dot(relativeVelocity, collision.Normal);
@@ -264,21 +271,21 @@ public static class RigidBodySystem
             if(rigidBodyA.Mode == RigidBodyMode.Dynamic)
             {
                 // always apply linear force, even if there is no rotational force to apply.
-                rigidBodyA.ImpulseLinearForce(-impulse[j] * rigidBodyA.InverseMass);                
+                ImpulseLinearForce(ref rigidBodyA, -impulse[j] * rigidBodyA.InverseMass);                
 
                 if(rigidBodyA.RotationalPhysics)
                 {
-                    rigidBodyA.ImpulseAngularForce(-Vector2.Cross(distA[j], impulse[j]) * rigidBodyA.InverseRotationalInertia);                
+                    ImpulseAngularForce(ref rigidBodyA, -Vector2.Cross(distA[j], impulse[j]) * rigidBodyA.InverseRotationalInertia);                
                 }
             }
             if(rigidBodyB.Mode == RigidBodyMode.Dynamic)
             {
                 // always apply linear force, even if there is no rotational force to apply.
-                rigidBodyB.ImpulseLinearForce(impulse[j] * rigidBodyB.InverseMass);
+                ImpulseLinearForce(ref rigidBodyB, impulse[j] * rigidBodyB.InverseMass);
                 
                 if(rigidBodyB.RotationalPhysics)
                 {
-                    rigidBodyB.ImpulseAngularForce(Vector2.Cross(distB[j], impulse[j]) * rigidBodyB.InverseRotationalInertia);                
+                    ImpulseAngularForce(ref rigidBodyB, Vector2.Cross(distB[j], impulse[j]) * rigidBodyB.InverseRotationalInertia);                
                 }                
             }   
         }
@@ -342,9 +349,12 @@ public static class RigidBodySystem
             Vector2 angularLinearVelocityA = perpendicularA * rigidBodyA.AngularVelocity; 
             Vector2 angularLinearVelocityB = perpendicularB * rigidBodyB.AngularVelocity; 
 
+            Vector2 linearVelcoityA = new Vector2(rigidBodyA.LinearVelocityX, rigidBodyA.LinearVelocityY);
+            Vector2 linearVelcoityB = new Vector2(rigidBodyB.LinearVelocityX, rigidBodyB.LinearVelocityY);
+
             Vector2 relativeVelocity = 
-            (rigidBodyB.LinearVelocity + angularLinearVelocityB) - 
-            (rigidBodyA.LinearVelocity + angularLinearVelocityA);
+            (linearVelcoityB + angularLinearVelocityB) - 
+            (linearVelcoityA + angularLinearVelocityA);
 
             // this is the direction the body is travelling in along the contact point surface.
             Vector2 tangent = relativeVelocity - Vector2.Dot(relativeVelocity, collision.Normal) * collision.Normal;
@@ -398,21 +408,21 @@ public static class RigidBodySystem
             if(rigidBodyA.Mode == RigidBodyMode.Dynamic && rigidBodyA.PhysicsMaterial.UseFriction)
             {
                 // always apply linear force, even if there is no rotational force to apply.
-                rigidBodyA.ImpulseLinearForce(-impulse[j] * rigidBodyA.InverseMass);                
+                ImpulseLinearForce(ref rigidBodyA, -impulse[j] * rigidBodyA.InverseMass);                
 
                 if(rigidBodyA.RotationalPhysics)
                 {
-                    rigidBodyA.ImpulseAngularForce(-Vector2.Cross(distA[j], impulse[j]) * rigidBodyA.InverseRotationalInertia);                
+                    ImpulseAngularForce(ref rigidBodyA, -Vector2.Cross(distA[j], impulse[j]) * rigidBodyA.InverseRotationalInertia);                
                 }
             }
             if(rigidBodyB.Mode == RigidBodyMode.Dynamic && rigidBodyB.PhysicsMaterial.UseFriction)
             {
                 // always apply linear force, even if there is no rotational force to apply.
-                rigidBodyB.ImpulseLinearForce(impulse[j] * rigidBodyB.InverseMass);
+                ImpulseLinearForce(ref rigidBodyB, impulse[j] * rigidBodyB.InverseMass);
                 
                 if(rigidBodyB.RotationalPhysics)
                 {
-                    rigidBodyB.ImpulseAngularForce(Vector2.Cross(distB[j], impulse[j]) * rigidBodyB.InverseRotationalInertia);                
+                    ImpulseAngularForce(ref rigidBodyB, Vector2.Cross(distB[j], impulse[j]) * rigidBodyB.InverseRotationalInertia);                
                 }                
             }   
         }        

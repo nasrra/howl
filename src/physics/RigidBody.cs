@@ -23,69 +23,44 @@ public struct RigidBody
     public const float MaxFriction = 1f;
 
     /// <summary>
-    /// Gets and sets the force to be applied to this body on the next physics system tick.
+    /// Gets and sets the x-component of the force to be applied to this body on the next physics system tick.
     /// </summary>
-    private Vector2 force;
+    public float ForceX;
 
     /// <summary>
-    /// Gets the force to be applied to this body on the next physics system tick.
+    /// Gets and sets the y-component of the force to be applied to this body on the next physics system tick.
     /// </summary>
-    public readonly Vector2 Force => force;
+    public float ForceY;
 
     /// <summary>
-    /// Gets and sets the linear velocity this body is currently travelling in.
+    /// Gets and sets the x-compoennt of the linear velocity this body is currently travelling in.
     /// </summary>
-    private Vector2 linearVelocity;
-    
-    /// <summary>
-    /// Gets and sets the linear velocity this body is currently travelling in.
-    /// </summary>
-    public readonly Vector2 LinearVelocity => linearVelocity;
+    public float LinearVelocityX;
 
     /// <summary>
-    /// Gets and sets the physics material.
+    /// Gets and sets the y-compoennt of the linear velocity this body is currently travelling in.
     /// </summary>
-    public PhysicsMaterial PhysicsMaterial;
+    public float LinearVelocityY;
 
     /// <summary>
     /// Gets and sets the angular velocity - in radians - this body is currently travelling in.
     /// </summary>
-    private float angularVelocity;
+    public float AngularVelocity;
     
-    /// <summary>
-    /// Gets the angular velocity - in radians - this body is currently travelling in.
-    /// </summary>
-    public readonly float AngularVelocity => angularVelocity;
-
     /// <summary>
     /// Gets and sets the density.
     /// </summary>
-    private float density;
-
-    /// <summary>
-    /// Gets the density.
-    /// </summary>
-    public readonly float Density => density;
+    public float Density;
 
     /// <summary>
     /// Gets and sets the mass.
     /// </summary>
-    private float mass;
-
-    /// <summary>
-    /// Gets the mass.
-    /// </summary>
-    public readonly float Mass => mass;
+    public float Mass;
 
     /// <summary>
     /// Gets and sets the inverse mass.
     /// </summary>
-    private float inverseMass;
-
-    /// <summary>
-    /// Gets the inverse mass.
-    /// </summary>
-    public readonly float InverseMass => inverseMass;
+    public float InverseMass;
 
     /// <summary>
     /// Gets and sets the restitution.
@@ -93,60 +68,37 @@ public struct RigidBody
     /// <remarks>
     /// Note: restitution is how 'bouncy' a body is.
     /// </remarks>
-    private float restitution;
-
-    /// <summary>
-    /// Gets the restitution.
-    /// </summary>
-    /// <remarks>
-    /// Note: restitution is how 'bouncy' a body is.
-    /// </remarks>
-    public readonly float Restitution => restitution;
+    public float Restitution;
 
     /// <summary>
     /// Gets and sets the area.
     /// </summary>
-    private float area;
-
-    /// <summary>
-    /// Gets the area.
-    /// </summary>
-    public readonly float Area => area;
+    public float Area;
 
     /// <summary>
     /// Gets and sets the rotational inertia.
     /// </summary>
-    private float rotationalInertia;
-
-    /// <summary>
-    /// Gets the rotational inertia.
-    /// </summary>
-    public readonly float RotationalInertia => rotationalInertia;
+    public float RotationalInertia;
 
     /// <summary>
     /// Gets and sets the inverse rotational inertia.
     /// </summary>
-    public float inverseRotationalInertia;
-
-    /// <summary>
-    /// Gets the inverse rotational intertia.
-    /// </summary>
-    public readonly float InverseRotationalInertia => inverseRotationalInertia; 
+    public float InverseRotationalInertia;
 
     /// <summary>
     /// Gets and sets the friction value.
     /// </summary>
-    private float friction;
-
-    /// <summary>
-    /// Gets the friction value;
-    /// </summary>
-    public readonly float Friction => friction;
+    public float Friction;
 
     /// <summary>
     /// Gets and sets the behvaiour of this body.
     /// </summary>
     public RigidBodyMode Mode;
+
+    /// <summary>
+    /// Gets and sets the physics material.
+    /// </summary>
+    public PhysicsMaterial PhysicsMaterial;
 
     /// <summary>
     /// Gets and sets whether or not this rigidbody uses rotational physics.
@@ -164,230 +116,276 @@ public struct RigidBody
     public RigidBody(PhysicsMaterial physicsMaterial, float restitution, float density, RigidBodyMode rigidBodyMode, bool roationalPhysics)
     {
         PhysicsMaterial = physicsMaterial;
-        SetRestitution(restitution);
-        SetDensity(density);
+        SetRestitution(ref this, restitution);
+        SetDensity(ref this, density);
         Mode = rigidBodyMode;
         RotationalPhysics = roationalPhysics;
     }
     
     /// <summary>
-    /// Sets the shape of this rigidbody.
+    /// Sets the shape of a rigidbody.
     /// </summary>
-    /// <param name="rectangle">The rectangle shape to set this rigidbody with.</param>
+    /// <param name="rigidBody">The rigidbody.</param>
+    /// <param name="rectangle">The rectangle shape to set the rigidbody with.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public void SetShape(in Rectangle rectangle)
+    public static void SetShape(ref RigidBody rigidBody, in Rectangle rectangle)
     {
-        SetShape(in rectangle, density);
+        SetShape(ref rigidBody, in rectangle, rigidBody.Density);
     }
 
     /// <summary>
-    /// Sets the shape of this rigidbody.
+    /// Sets the shape of a rigidbody.
     /// </summary>
+    /// <param name="rigidBody">the rigidbody.</param>
     /// <param name="rectangle">The rectangle shape to set this rigidbody with.</param>
     /// <param name="density">The density to set to.</param>
-    public void SetShape(in Rectangle rectangle, float density)
+    public static void SetShape(ref RigidBody rigidBody, in Rectangle rectangle, float density)
     {
         // calculate and set the area.
-        SetArea(rectangle.Width * rectangle.Height);
+        SetArea(ref rigidBody, rectangle.Width * rectangle.Height);
 
         // only set density if it is different.
-        if(Math.Math.NearlyEqual(Density, density, 1e-5f) == false)
-            SetDensity(density);
+        if(Math.Math.NearlyEqual(rigidBody.Density, density, 1e-5f) == false)
+            SetDensity(ref rigidBody, density);
 
         // recalculate mass.
-        mass = area * density;
-        inverseMass = 1f / mass;
+        rigidBody.Mass = rigidBody.Area * density;
+        rigidBody.InverseMass = 1f / rigidBody.Mass;
 
         //  calculate inertia.
-        rotationalInertia = RectangleInertiaConst * mass * (rectangle.Width * rectangle.Width + rectangle.Height * rectangle.Height);
-        inverseRotationalInertia = 1f / rotationalInertia;
+        rigidBody.RotationalInertia = RectangleInertiaConst * rigidBody.Mass * (rectangle.Width * rectangle.Width + rectangle.Height * rectangle.Height);
+        rigidBody.InverseRotationalInertia = 1f / rigidBody.RotationalInertia;
     }
 
     /// <summary>
-    /// Sets the shape of this rigidbody.
+    /// Sets the shape of a rigidbody.
     /// </summary>
+    /// <param name="rigidBody">the rigid body.</param>
     /// <param name="rectangle">The rectangle shape to set this rigidbody with.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public void SetShape(in PolygonRectangle rectangle)
+    public static void SetShape(ref RigidBody rigidBody, in PolygonRectangle rectangle)
     {
-        SetShape(in rectangle, density);
+        SetShape(ref rigidBody, in rectangle, rigidBody.Density);
     }
 
     /// <summary>
-    /// Sets the shape of this rigidbody.
+    /// Sets the shape of a rigidbody.
     /// </summary>
-    /// <param name="rectangle">The rectangle shape to set this rigidbody with.</param>
-    /// <param name="density">The density to set to.</param>
-    public void SetShape(in PolygonRectangle rectangle, float density)
+    /// <param name="rigidBody">the rigidbody.</param>
+    /// <param name="rectangle">the rectangle shape to set this rigidbody with.</param>
+    /// <param name="density">the density to set to.</param>
+    public static void SetShape(ref RigidBody rigidBody, in PolygonRectangle rectangle, float density)
     {
         float width = Width(rectangle);
         float height = Height(rectangle);
 
         // calculate and set the area.
-        SetArea(width * height);
+        SetArea(ref rigidBody, width * height);
 
         // only set density if it is different.
-        if(Math.Math.NearlyEqual(Density, density, 1e-5f) == false)
-            SetDensity(density);
+        if(Math.Math.NearlyEqual(rigidBody.Density, density, 1e-5f) == false)
+            SetDensity(ref rigidBody, density);
 
         // recalculate mass.
-        mass = area * density;
-        inverseMass = 1f / mass;
+        rigidBody.Mass = rigidBody.Area * density;
+        rigidBody.InverseMass = 1f / rigidBody.Mass;
 
         //  calculate inertia.
-        rotationalInertia = RectangleInertiaConst * mass * (width * width + height * height);
-        inverseRotationalInertia = 1f / rotationalInertia;
+        rigidBody.RotationalInertia = RectangleInertiaConst * rigidBody.Mass * (width * width + height * height);
+        rigidBody.InverseRotationalInertia = 1f / rigidBody.RotationalInertia;
     }
 
     /// <summary>
-    /// Sets the shape of this rigidbody.
+    /// Sets the shape of a rigidbody.
     /// </summary>
+    /// <param name="rigidBody">the rigidbody.</param>
     /// <param name="circle">The circle shape to set this rigidbody with.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public void SetShape(in Circle circle)
+    public static void SetShape(ref RigidBody rigidBody, in Circle circle)
     {
-        SetShape(in circle, Density);
+        SetShape(ref rigidBody, in circle, rigidBody.Density);
     }
 
     /// <summary>
-    /// Sets the shape of this rigidbody.
+    /// Sets the shape of a rigidbody.
     /// </summary>
+    /// <param name="rigidBody">the rigid body.</param>
     /// <param name="circle">The circle shape to set this rigidbody with.</param>
     /// <param name="density">The density to set to.</param>
-    public void SetShape(in Circle circle, float density)
+    public static void SetShape(ref RigidBody rigidBody, in Circle circle, float density)
     {
         float radiusSqrd = circle.Radius * circle.Radius;
 
         // calculate and set the area.
-        SetArea(Math.Math.Pi * radiusSqrd);
+        SetArea(ref rigidBody, Math.Math.Pi * radiusSqrd);
 
         // only set density if it is different.
-        if(Math.Math.NearlyEqual(Density, density, 1e-5f) == false)
-            SetDensity(density);
+        if(Math.Math.NearlyEqual(rigidBody.Density, density, 1e-5f) == false)
+            SetDensity(ref rigidBody, density);
 
         // recalculate mass.
-        mass = area * density;
-        inverseMass = 1f/mass;
+        rigidBody.Mass = rigidBody.Area * density;
+        rigidBody.InverseMass = 1f / rigidBody.Mass;
 
         //  calculate inertia.
-        rotationalInertia = CircleInertiaConst * mass * radiusSqrd;        
-        inverseRotationalInertia = 1f/rotationalInertia;
+        rigidBody.RotationalInertia = CircleInertiaConst * rigidBody.Mass * radiusSqrd;        
+        rigidBody.InverseRotationalInertia = 1f / rigidBody.RotationalInertia;
     }
 
     /// <summary>
-    /// Sets the friction value of this body.
+    /// Sets the friction value of a rigidbody body.
     /// </summary>
     /// <remarks>
     /// Note: this function will clamp the passed argument to be between the min and max friction values.
     /// </remarks>
+    /// <param name="rigidBody">the rigidbody.</param>
     /// <param name="friction">the friction value to set to.</param>
-    public void SetFriction(float friction)
+    public static void SetFriction(ref RigidBody rigidBody, float friction)
     {
-        this.friction = Math.Math.Clamp(friction, MinFriction, MaxFriction);
+        rigidBody.Friction = Math.Math.Clamp(friction, MinFriction, MaxFriction);
 #if DEBUG
-        if(Friction != friction)
+        if(rigidBody.Friction != friction)
             System.Diagnostics.Debug.Assert(false, $"Friction '{friction}' is not between the friction range of '{MinFriction}' and '{MaxFriction}'");
 #endif
     }
 
     /// <summary>
-    /// Sets the density of this body.
+    /// Sets the density of a rigidbody.
     /// </summary>
     /// <remarks>
     /// Note: this function will clamp the passed argument to be between the min and max density values.
     /// </remarks>
+    /// <param name="rigidBody">the rigid body.</param>
     /// <param name="density">the density value to set to.</param>
-    private void SetDensity(float density)
+    private static void SetDensity(ref RigidBody rigidBody, float density)
     {
-        this.density = Math.Math.Clamp(density, MinDensity, MaxDensity);
-        mass = area * density; // recaculate mass.            
+        rigidBody.Density = Math.Math.Clamp(density, MinDensity, MaxDensity);
+        rigidBody.Mass = rigidBody.Area * density; // recaculate mass.            
 #if DEBUG
-        if(Density != density)
+        if(rigidBody.Density != density)
             System.Diagnostics.Debug.Assert(false, $"Density '{density}' is not between the density range of '{MinDensity}' and '{MaxDensity}'");
 #endif
     }
 
     /// <summary>
-    /// Sets the area of this body.
+    /// Sets the area of a rigid body.
     /// </summary>
     /// <remarks>
     /// Note: this function will clamp the passed argument to be between the min and max body-size values.
     /// </remarks>
+    /// <param name="rigidBody">the rigidbody.</param>
     /// <param name="area">the area value to set to.</param>
-    private void SetArea(float area)
+    private static void SetArea(ref RigidBody rigidBody, float area)
     {
-        this.area = Math.Math.Clamp(area, MinBodySize, MaxBodySize);
-        mass = area * density; // recaculate mass.
+        rigidBody.Area = Math.Math.Clamp(area, MinBodySize, MaxBodySize);
+        rigidBody.Mass = area * rigidBody.Density; // recaculate mass.
 #if DEBUG
-        if(Area != area)
+        if(rigidBody.Area != area)
             System.Diagnostics.Debug.Assert(false, $"Area '{area}' is not within the body-size range of '{MinBodySize}' and '{MaxBodySize}'.");
 #endif
     }
 
     /// <summary>
-    /// Sets the restitution - 'bounce' - of this body.
+    /// Sets the restitution - 'bounce' - of a rigid body.
     /// </summary>
     /// <remarks>
     /// Note: this function will clamp the passed argument to be between the min and max restitution values. 
     /// </remarks>
+    /// <param name="rigidBody">the rigidbody.</param>
     /// <param name="restitution">the restitution value to set to.</param>
-    public void SetRestitution(float restitution)
+    public static void SetRestitution(ref RigidBody rigidBody, float restitution)
     {
-        this.restitution = Math.Math.Clamp(restitution, MinRestitution, MaxRestitution);
+        rigidBody.Restitution = Math.Math.Clamp(restitution, MinRestitution, MaxRestitution);
 #if DEBUG
-        if(Restitution != restitution)
+        if(rigidBody.Restitution != restitution)
             System.Diagnostics.Debug.Assert(false, $"Restitution '{restitution}' is not within the range of '{MinRestitution}' and '{MaxRestitution}'");
 #endif
     }
 
     /// <summary>
-    /// Adds a physics tick-applied force to linear velocity. 
+    /// Adds a physics tick-applied force to a rigidbody's linear velocity. 
     /// </summary>
-    /// <param name="force"></param>
-    public void AddLinearForce(Vector2 force)
+    /// <param name="rigidBody">the rigid body.</param>
+    /// <param name="force">the force vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void AddLinearForce(ref RigidBody rigidBody, Vector2 force)
     {
-        this.force += force;    
+        AddLinearForce(ref rigidBody, force.X, force.Y);
     }
 
     /// <summary>
-    /// Impulses linear velocity by a force.
+    /// Adds a physics tick-applied force to a rigidbody's linear velocity. 
     /// </summary>
+    /// <param name="rigidBody">the rigid body.</param>
+    /// <param name="forceX">the x-component of the force vector.</param>
+    /// <param name="forceY">the y-component of the force vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void AddLinearForce(ref RigidBody rigidBody, float forceX, float forceY)
+    {
+        rigidBody.ForceX += forceX;
+        rigidBody.ForceY += forceY;        
+    }
+
+
+    /// <summary>
+    /// Impulses a rigidbody's linear velocity by a force.
+    /// </summary>
+    /// <param name="rigidBody">the rigid body.</param>
     /// <param name="force">the amount of force to impulse by.</param>
-    public void ImpulseLinearForce(Vector2 force)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ImpulseLinearForce(ref RigidBody rigidBody, Vector2 force)
     {
-        linearVelocity += force;
+        ImpulseLinearForce(ref rigidBody, force.X, force.Y);
     }
 
     /// <summary>
-    /// Impulses angular velocity by a force.
+    /// Impulses a rigidbody's linear velocity by a force.
     /// </summary>
+    /// <param name="rigidBody">the rigid body.</param>
+    /// <param name="forceX">the x-component of the amount of force to impulse by.</param>
+    /// <param name="forceY">the y-component of the amount of force to impulse by.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ImpulseLinearForce(ref RigidBody rigidBody, float forceX, float forceY)
+    {
+        rigidBody.LinearVelocityX += forceX;
+        rigidBody.LinearVelocityY += forceY;
+    }
+
+    /// <summary>
+    /// Impulses a rigidbody's angular velocity by a force.
+    /// </summary>
+    /// <param name="rigidBody">the rigid body.</param>
     /// <param name="force">the amount of force to impulse by.</param>
-    public void ImpulseAngularForce(float force)
+    public static void ImpulseAngularForce(ref RigidBody rigidBody, float force)
     {
-        angularVelocity += force;
+        rigidBody.AngularVelocity += force;
     }
 
     /// <summary>
-    /// Clears all physics tick-applied forces to linear velocity. 
+    /// Clears a rigidbody's physics tick-applied forces to linear velocity. 
     /// </summary>
-    public void ClearForces()
+    /// <param name="rigidBody">the rigidbody.</param>
+    public static void ClearForces(ref RigidBody rigidBody)
     {
-        force = Vector2.Zero;
+        rigidBody.ForceX = 0;
+        rigidBody.ForceY = 0;
     }
 
     /// <summary>
-    /// Sets the linear velocity to zero.
+    /// Sets a rigidbody's linear velocity to zero.
     /// </summary>
-    public void ClearLinearVelocity()
+    /// <param name="rigidBody">the rigid body.</param>
+    public void ClearLinearVelocity(ref RigidBody rigidBody)
     {
-        linearVelocity = Vector2.Zero;
+        rigidBody.LinearVelocityX = 0;
+        rigidBody.LinearVelocityY = 0;
     }
 
     /// <summary>
-    /// Sets the angular velocity to zero.
+    /// Sets a rigidbody's angular velocity to zero.
     /// </summary>
-    public void ClearAngularVelocity()
+    public void ClearAngularVelocity(ref RigidBody rigidBody)
     {
-        angularVelocity = 0;
+        rigidBody.AngularVelocity = 0;
     }
 }

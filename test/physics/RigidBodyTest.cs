@@ -1,5 +1,6 @@
 using Howl.Math.Shapes;
 using Howl.Physics;
+using static Howl.Physics.RigidBody;
 
 namespace Howl.Test.Physics;
 
@@ -36,7 +37,7 @@ public class RigidBodyTest
         Assert.Equal(0f, rigidBody.InverseRotationalInertia);
         Assert.Equal(0, rigidBody.Mass);
         Assert.Equal(0, rigidBody.InverseMass, precision: 5);
-        rigidBody.SetShape(new Rectangle(0,0,10,10));
+        SetShape(ref rigidBody, new Rectangle(0,0,10,10));
         Assert.Equal(100, rigidBody.Area);
         Assert.Equal(12, rigidBody.Density);
         Assert.Equal(1, rigidBody.Restitution);
@@ -53,7 +54,7 @@ public class RigidBodyTest
         Assert.Equal(0f, rigidBody.InverseRotationalInertia);
         Assert.Equal(0, rigidBody.Mass);
         Assert.Equal(0, rigidBody.InverseMass, precision: 5);
-        rigidBody.SetShape(new Rectangle(12,33,20,10));
+        SetShape(ref rigidBody, new Rectangle(12,33,20,10));
         Assert.Equal(200, rigidBody.Area);
         Assert.Equal(3, rigidBody.Density);
         Assert.Equal(0.1f, rigidBody.Restitution, precision: 2);
@@ -70,7 +71,7 @@ public class RigidBodyTest
         Assert.Equal(0f, rigidBody.InverseRotationalInertia);
         Assert.Equal(0, rigidBody.Mass);
         Assert.Equal(0, rigidBody.InverseMass, precision: 5);
-        rigidBody.SetShape(new Rectangle(12,33,20,10), 3);
+        SetShape(ref rigidBody, new Rectangle(12,33,20,10), 3);
         Assert.Equal(200, rigidBody.Area);
         Assert.Equal(3, rigidBody.Density);
         Assert.Equal(0.1f, rigidBody.Restitution, precision: 2);
@@ -93,7 +94,7 @@ public class RigidBodyTest
         Assert.Equal(0f, rigidBody.InverseRotationalInertia);
         Assert.Equal(0, rigidBody.Mass);
         Assert.Equal(0, rigidBody.InverseMass, precision: 5);        
-        rigidBody.SetShape(new Circle(0,0,10));
+        SetShape(ref rigidBody, new Circle(0,0,10));
         Assert.Equal(314.159f, rigidBody.Area, precision: 3);
         Assert.Equal(12, rigidBody.Density);
         Assert.Equal(1, rigidBody.Restitution);
@@ -110,7 +111,7 @@ public class RigidBodyTest
         Assert.Equal(0f, rigidBody.InverseRotationalInertia);
         Assert.Equal(0, rigidBody.Mass);
         Assert.Equal(0, rigidBody.InverseMass, precision: 5);
-        rigidBody.SetShape(new Circle(0,0,20));
+        SetShape(ref rigidBody, new Circle(0,0,20));
         Assert.Equal(1256.637f, rigidBody.Area, precision: 3);
         Assert.Equal(3, rigidBody.Density);
         Assert.Equal(0.1f, rigidBody.Restitution, precision: 2);
@@ -127,7 +128,7 @@ public class RigidBodyTest
         Assert.Equal(0f, rigidBody.InverseRotationalInertia);
         Assert.Equal(0, rigidBody.Mass);
         Assert.Equal(0, rigidBody.InverseMass, precision: 5);
-        rigidBody.SetShape(new Circle(0,0,20), 3);
+        SetShape(ref rigidBody, new Circle(0,0,20), 3);
         Assert.Equal(1256.637f, rigidBody.Area, precision: 3);
         Assert.Equal(3, rigidBody.Density);
         Assert.Equal(0.1f, rigidBody.Restitution, precision: 2);
