@@ -68,7 +68,7 @@ fi
 
 # check if the test exists in the map
 if [[ -n "${TEST_MAP[$TEST_NAME]}" ]]; then
-    dotnet test "$PROJECT_PATH" --filter "FullyQualifiedName~${TEST_MAP[$TEST_NAME]}"
+    dotnet test "$PROJECT_PATH" -c Debug --filter "FullyQualifiedName~${TEST_MAP[$TEST_NAME]}"
 else
     echo "Unknown test: $TEST_NAME"
     echo "Please run the script with no test name to see available tests."

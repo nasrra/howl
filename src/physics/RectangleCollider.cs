@@ -11,6 +11,7 @@ public struct RectangleCollider
     public RectangleCollider(Rectangle shape, ColliderParameters parameters)
     {
         Shape = shape;
+        
         Parameters = parameters;
     }
 }

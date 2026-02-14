@@ -1,5 +1,6 @@
 using Howl.Math;
 using Howl.Math.Shapes;
+using static Howl.Math.Shapes.Rectangle;
 
 namespace Howl.Test.Math.Shapes;
 
@@ -24,15 +25,15 @@ public class RectangleTest
         Assert.Equal(width, rect.Width);
         Assert.Equal(height, rect.Height);
 
-        Assert.Equal(new Vector2(left,top), rect.TopLeft);
-        Assert.Equal(new Vector2(left, bottom), rect.BottomLeft);
-        Assert.Equal(new Vector2(right, top), rect.TopRight);
-        Assert.Equal(new Vector2(right, bottom), rect.BottomRight);
+        Assert.Equal(new Vector2(left,top), TopLeft(rect));
+        Assert.Equal(new Vector2(left, bottom), BottomLeft(rect));
+        Assert.Equal(new Vector2(right, top), TopRight(rect));
+        Assert.Equal(new Vector2(right, bottom), BottomRight(rect));
 
-        Assert.Equal(top, rect.Top);
-        Assert.Equal(bottom, rect.Bottom);
-        Assert.Equal(left, rect.Left);
-        Assert.Equal(right, rect.Right);
+        Assert.Equal(top, Top(rect));
+        Assert.Equal(bottom, Bottom(rect));
+        Assert.Equal(left, Left(rect));
+        Assert.Equal(right, Right(rect));
     }
 
     [Fact]
@@ -108,7 +109,7 @@ public class RectangleTest
     public void GetAABB_Test()
     {
         Rectangle rectangle = new Rectangle(-12,-12,12,32);
-        AABB aabb = rectangle.GetAABB();
+        AABB aabb = GetAABB(rectangle);
         Assert.Equal(new Vector2(-12, -44), aabb.Min);
         Assert.Equal(new Vector2(0, -12), aabb.Max);
     }
@@ -119,28 +120,28 @@ public class RectangleTest
         Rectangle rectangle;
         
         rectangle = new Rectangle(-12,33,5,6);
-        rectangle = Rectangle.Scale(rectangle, new Vector2(2,4));
+        rectangle = Scale(rectangle, new Vector2(2,4));
         Assert.Equal(-12, rectangle.X);
         Assert.Equal(33, rectangle.Y);
         Assert.Equal(10, rectangle.Width, precision: 1);
         Assert.Equal(24, rectangle.Height, precision: 1);
 
         rectangle = new Rectangle(-33,-45, 10, 12);
-        rectangle = Rectangle.Scale(rectangle, 2);
+        rectangle = Scale(rectangle, 2);
         Assert.Equal(-33, rectangle.X);
         Assert.Equal(-45, rectangle.Y);
         Assert.Equal(20, rectangle.Width, precision: 1);
         Assert.Equal(24, rectangle.Height, precision: 1);
 
         rectangle = new Rectangle(-12,33,5,6);
-        rectangle = rectangle.Scale(new Vector2(2,4));
+        rectangle = Scale(rectangle, new Vector2(2,4));
         Assert.Equal(-12, rectangle.X);
         Assert.Equal(33, rectangle.Y);
         Assert.Equal(10, rectangle.Width, precision: 1);
         Assert.Equal(24, rectangle.Height, precision: 1);
 
         rectangle = new Rectangle(-33,-45, 10, 12);
-        rectangle = rectangle.Scale(2);
+        rectangle = Scale(rectangle, 2);
         Assert.Equal(-33, rectangle.X);
         Assert.Equal(-45, rectangle.Y);
         Assert.Equal(20, rectangle.Width, precision: 1);

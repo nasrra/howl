@@ -1,5 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
+using static Howl.Math.Shapes.Rectangle;
+using static Howl.Math.Shapes.Circle;
+using static Howl.Math.Shapes.PolygonRectangle;
 
 namespace Howl.Math.Shapes;
 
@@ -71,7 +74,7 @@ public static class SAT
         depth = float.MaxValue;
 
 
-        if (OneWayIntersect(lhs.GetVerticesXAsSpan(), lhs.GetVerticesYAsSpan(), rhs.GetVerticesXAsSpan(), rhs.GetVerticesYAsSpan(), out foundNormal, out foundDepth))
+        if (OneWayIntersect(VerticesXAsSpan(lhs), VerticesYAsSpan(lhs), VerticesXAsSpan(rhs), VerticesYAsSpan(rhs), out foundNormal, out foundDepth))
         {            
             if(depth > foundDepth)
             {
@@ -84,7 +87,7 @@ public static class SAT
             return false;
         }
 
-        if (OneWayIntersect(rhs.GetVerticesXAsSpan(), rhs.GetVerticesYAsSpan(), lhs.GetVerticesXAsSpan(), lhs.GetVerticesYAsSpan(), out foundNormal, out foundDepth))
+        if (OneWayIntersect(VerticesXAsSpan(rhs), VerticesYAsSpan(rhs), VerticesXAsSpan(lhs), VerticesYAsSpan(lhs), out foundNormal, out foundDepth))
         {            
             if(depth > foundDepth)
             {
@@ -102,7 +105,7 @@ public static class SAT
         // this is so that the resolution code will always push A out of B
         // and not push the two into each other when a smaller depth is found when 
         // looping through rect B.
-        if ((rhs.GetCentroid() - lhs.GetCentroid()).Dot(normal) < 0)
+        if ((GetCentroid(rhs) - GetCentroid(lhs)).Dot(normal) < 0)
         {
             normal = -normal;
         }
@@ -193,7 +196,7 @@ public static class SAT
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect(PolygonRectangle rectangle, Circle circle, out Vector2 normal, out float depth)
     {
-        return Intersect(rectangle.GetVerticesXAsSpan(), rectangle.GetVerticesYAsSpan(), circle, out normal, out depth);
+        return Intersect(VerticesXAsSpan(rectangle), VerticesYAsSpan(rectangle), circle, out normal, out depth);
     }
 
     /// <summary>

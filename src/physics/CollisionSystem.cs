@@ -7,6 +7,9 @@ using Howl.Graphics;
 using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.ECS.GenIndexListProc;
+using static Howl.Math.Shapes.Circle;
+using static Howl.Math.Shapes.PolygonRectangle;
+using static Howl.Math.Shapes.Rectangle;
 
 namespace Howl.Physics;
 
@@ -194,11 +197,11 @@ public static class CollisionSystem
             return;
         }
 
-        Circle circleA = Circle.Transform(colliderA.Shape, transformRefA);
-        Circle circleB = Circle.Transform(colliderB.Shape, transformRefB);
+        Circle circleA = Transform(colliderA.Shape, transformRefA);
+        Circle circleB = Transform(colliderB.Shape, transformRefB);
 
         // Broad Phase:
-        if(AABB.Intersect(circleA.GetAABB(), circleB.GetAABB()) == false)
+        if(AABB.Intersect(GetAABB(circleA), GetAABB(circleB)) == false)
         {
             return;    
         }
@@ -252,7 +255,7 @@ public static class CollisionSystem
         PolygonRectangle rectangleB = PolygonRectangle.Transform(new PolygonRectangle(colliderB.Shape),transformRefB.Value); 
 
         // Broad Phase:
-        if(AABB.Intersect(rectangleA.GetAABB(), rectangleB.GetAABB()) == false)
+        if(AABB.Intersect(GetAABB(rectangleA), GetAABB(rectangleB)) == false)
         {
             return;    
         }
@@ -269,10 +272,10 @@ public static class CollisionSystem
         {
 
             SAT.FindContactPoints(
-                rectangleA.GetVerticesXAsReadOnlySpan(),
-                rectangleA.GetVerticesYAsReadOnlySpan(), 
-                rectangleB.GetVerticesXAsReadOnlySpan(),
-                rectangleB.GetVerticesYAsReadOnlySpan(), 
+                VerticesXAsReadOnlySpan(rectangleA),
+                VerticesYAsReadOnlySpan(rectangleA), 
+                VerticesXAsReadOnlySpan(rectangleB),
+                VerticesYAsReadOnlySpan(rectangleB), 
                 PolygonContactPointEpsilon,
                 out float xContactPoint1, 
                 out float yContactPoint1,
@@ -293,8 +296,8 @@ public static class CollisionSystem
                         colliderB.Parameters,
                         [xContactPoint1],
                         [yContactPoint1],
-                        colliderA.Shape.Center,
-                        colliderB.Shape.Center,
+                        Center(colliderA.Shape),
+                        Center(colliderB.Shape),
                         normal,
                         depth
                     );
@@ -308,8 +311,8 @@ public static class CollisionSystem
                         colliderB.Parameters,
                         [xContactPoint1, xContactPoint2],
                         [yContactPoint1, yContactPoint2],
-                        colliderA.Shape.Center,
-                        colliderB.Shape.Center,
+                        Center(colliderA.Shape),
+                        Center(colliderB.Shape),
                         normal,
                         depth
                     );
@@ -352,7 +355,7 @@ public static class CollisionSystem
         Circle circle = Circle.Transform(circleCollider.Shape,transformRefB.Value); 
 
         // Broad Phase:
-        if(AABB.Intersect(rectangle.GetAABB(), circle.GetAABB()) == false)
+        if(AABB.Intersect(GetAABB(rectangle), GetAABB(circle)) == false)
         {
             return;    
         }
@@ -368,8 +371,8 @@ public static class CollisionSystem
         ))
         {
             SAT.FindContactPoints(
-                rectangle.GetVerticesXAsReadOnlySpan(),
-                rectangle.GetVerticesYAsReadOnlySpan(), 
+                VerticesXAsReadOnlySpan(rectangle),
+                VerticesYAsReadOnlySpan(rectangle), 
                 circle, 
                 out float xContactPoint, 
                 out float yContactPoint
@@ -382,7 +385,7 @@ public static class CollisionSystem
                 circleCollider.Parameters,
                 [xContactPoint],
                 [yContactPoint],
-                rectangleCollider.Shape.Center,
+                Center(rectangleCollider.Shape),
                 circleCollider.Shape.Center,
                 normal,
                 depth
@@ -518,7 +521,7 @@ public static class CollisionSystem
 
             bvh.InsertLeaf(
                 new Leaf(
-                    Circle.Transform(collider.Shape, transformRef).GetAABB(),
+                    GetAABB(Transform(collider.Shape, transformRef)),
                     genIndex, 
                     (byte)ColliderType.Circle
                 )
@@ -542,7 +545,7 @@ public static class CollisionSystem
 
             bvh.InsertLeaf(
                 new Leaf(
-                    PolygonRectangle.Transform(new PolygonRectangle(collider.Shape), transformRef).GetAABB(),
+                    GetAABB(Transform(new PolygonRectangle(collider.Shape), transformRef)),
                     genIndex, 
                     (byte)ColliderType.Rectangle
                 )
@@ -618,8 +621,8 @@ public static class CollisionSystem
                 continue;
             }
 
-            ReadOnlySpan<float> verticesX = shape.GetVerticesXAsSpan();
-            ReadOnlySpan<float> verticesY = shape.GetVerticesYAsSpan();
+            ReadOnlySpan<float> verticesX = VerticesXAsSpan(shape);
+            ReadOnlySpan<float> verticesY = VerticesYAsSpan(shape);
 
             for(int j = 0; j < PolygonRectangle.MaxVertices; j++)
             {
@@ -655,7 +658,7 @@ public static class CollisionSystem
             }
         
             ref Transform transform = ref transformRef.Value;
-            AABB aabb = collider.Shape.GetAABB();
+            AABB aabb = GetAABB(collider.Shape);
 
             Debug.Draw.Wireframe(
                 componentRegistry,
@@ -691,11 +694,11 @@ public static class CollisionSystem
             // convert and transform polygon rectangle to get the rotated and scaled AABB.
             PolygonRectangle polygonRectangle = new PolygonRectangle(collider.Shape);
             polygonRectangle = PolygonRectangle.Transform(polygonRectangle, transform);
-            AABB aabb = polygonRectangle.GetAABB();
+            AABB aabb = GetAABB(polygonRectangle);
 
             Debug.Draw.Wireframe(
                 componentRegistry,
-                Transform.Identity, // no rotation for AABB's 
+                Math.Transform.Identity, // no rotation for AABB's 
                 new Rectangle(aabb.Min, aabb.Max), 
                 state.AABBColour
             );

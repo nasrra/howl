@@ -6,6 +6,7 @@ using Howl.Graphics;
 using Howl.Math.Shapes;
 using Howl.Math;
 using static Howl.ECS.GenIndexListProc;
+using static Howl.Math.Shapes.Rectangle;
 
 namespace Howl.Debug;
 
@@ -254,10 +255,10 @@ public static class Draw
         // (Note):
         // Dont reverse y-coordinates because draw line already does that.
 
-        Vector2 topLeft       = rectangle.TopLeft.Transform(transform);
-        Vector2 topRight      = rectangle.TopRight.Transform(transform);
-        Vector2 bottomLeft    = rectangle.BottomLeft.Transform(transform);
-        Vector2 bottomRight   = rectangle.BottomRight.Transform(transform); 
+        Vector2 topLeft       = TopLeft(rectangle).Transform(transform);
+        Vector2 topRight      = TopRight(rectangle).Transform(transform);
+        Vector2 bottomLeft    = BottomLeft(rectangle).Transform(transform);
+        Vector2 bottomRight   = BottomRight(rectangle).Transform(transform); 
 
         Line(camera, topLeft, topRight, colour, thickness);
         Line(camera, topRight, bottomRight, colour, thickness);
@@ -334,10 +335,10 @@ public static class Draw
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Vector3 topLeft       = new(rectangle.TopLeft.Transform(transform),0);
-        Vector3 topRight      = new(rectangle.TopRight.Transform(transform),0);
-        Vector3 bottomLeft    = new(rectangle.BottomLeft.Transform(transform),0);
-        Vector3 bottomRight   = new(rectangle.BottomRight.Transform(transform),0);
+        Vector3 topLeft       = new(TopLeft(rectangle).Transform(transform),0);
+        Vector3 topRight      = new(TopRight(rectangle).Transform(transform),0);
+        Vector3 bottomLeft    = new(BottomLeft(rectangle).Transform(transform),0);
+        Vector3 bottomRight   = new(BottomRight(rectangle).Transform(transform),0);
 
         // (Note):
         // reverse y-coordinates because monogame

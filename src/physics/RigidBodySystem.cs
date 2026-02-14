@@ -6,6 +6,8 @@ using Howl.Generic;
 using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.ECS.GenIndexListProc;
+using static Howl.Math.Shapes.Circle;
+using static Howl.Math.Shapes.Rectangle;
 
 namespace Howl.Physics;
 
@@ -55,11 +57,11 @@ public static class RigidBodySystem
 
             if(GetDenseRef(circleColliders, genIndex, out Ref<CircleCollider> circleCollider).Ok())
             {
-                rigidbody.SetShape(circleCollider.Value.Shape.Scale(transform.Scale));
+                rigidbody.SetShape(Scale(circleCollider.Value.Shape, transform.Scale));
             }
             else if(GetDenseRef(rectangleColliders, genIndex, out Ref<RectangleCollider> rectangleCollider).Ok())
             {
-                rigidbody.SetShape(rectangleCollider.Value.Shape.Scale(transform.Scale));   
+                rigidbody.SetShape(Scale(rectangleCollider.Value.Shape, transform.Scale));   
             }
             else
             {

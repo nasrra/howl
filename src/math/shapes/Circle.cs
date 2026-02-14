@@ -37,7 +37,7 @@ public struct Circle
         Y = y;
         Radius = radius;
     }
-
+    
     /// <summary>
     /// Constructs a Circle by transforming an existing circle.
     /// </summary>
@@ -51,23 +51,10 @@ public struct Circle
     public static Circle Transform(Circle circle, Transform transform)
     {
         Vector2 origin = Vector2.Transform(circle.X, circle.Y, transform);
-        float radius = circle.Radius * MathF.Max(transform.Scale.X, transform.Scale.Y); 
+        float radius = circle.Radius * Math.Max(transform.Scale.X, transform.Scale.Y); 
         return new Circle(origin.X, origin.Y, radius);
     }
 
-    /// <summary>
-    /// Constructs a circle based on this circle, with the radius scaled by a vector.
-    /// </summary>
-    /// <remarks>
-    /// Note: radius is scaled by the largest component in the scaling vector.
-    /// </remarks>
-    /// <param name="scale">the scaling vector.</param>
-    /// <returns>the resultant circle.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public Circle Scale(Vector2 scale)
-    {
-        return Scale(in this, scale);
-    }
 
     /// <summary>
     /// Constructs a circle based on a circle, with its radius scaled by a vector.
@@ -77,22 +64,10 @@ public struct Circle
     /// </remarks>
     /// <param name="circle">the circle to scale.</param>
     /// <param name="scale">the scaling vector.</param>
-    /// <returns>the resultant circle.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    /// <returns>the resultant circle.</returns>    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Circle Scale(in Circle circle, Vector2 scale)
     {
-        return new Circle(circle.X, circle.Y, circle.Radius * MathF.Max(scale.X, scale.Y));
-    }
-
-    /// <summary>
-    /// Constructs a circle based on this circle, with the radius scaled by a factor.
-    /// </summary>
-    /// <param name="scale">the scaling factor.</param>
-    /// <returns>the resultant circle.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public Circle Scale(float scale)
-    {
-        return Scale(in this, scale);
+        return new Circle(circle.X, circle.Y, circle.Radius * Math.Max(scale.X, scale.Y));
     }
 
     /// <summary>
@@ -108,17 +83,17 @@ public struct Circle
     }
 
     /// <summary>
-    /// Gets the Axis-Aligned-Bounding-Box of this circle.
+    /// Gets the Axis-Aligned-Bounding-Box of a circle.
     /// </summary>
     /// <returns>The calculated AABB.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public AABB GetAABB()
+    public static AABB GetAABB(in Circle circle)
     {
         return new(
-            X - Radius,
-            Y - Radius,
-            X + Radius,
-            Y + Radius
+            circle.X - circle.Radius,
+            circle.Y - circle.Radius,
+            circle.X + circle.Radius,
+            circle.Y + circle.Radius
         );
     }
 }
