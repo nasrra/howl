@@ -23,6 +23,8 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     /// </summary>
     private List<Branch> branches;
 
+    private List<SpatialPair> spatialPairs;
+
     /// <summary>
     /// Gets and sets whether or not this instance has been disposed.
     /// </summary>
@@ -41,6 +43,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         leaves = new();
         queryResult = new();
         branches = new();
+        spatialPairs = new();
     }
 
     /// <summary>
@@ -60,6 +63,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         leaves.Clear();
         branches.Clear();        
         queryResult.Clear();
+        spatialPairs.Clear();
     }
 
     /// <summary>
@@ -81,6 +85,12 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         ThrowIfDisposed();
         return CollectionsMarshal.AsSpan(leaves);
     }
+    
+    public ReadOnlySpan<SpatialPair> GetSpatialPairs()
+    {
+        ThrowIfDisposed();
+        return CollectionsMarshal.AsSpan(spatialPairs);
+    }
 
     /// <summary>
     /// Constructs the tree with the inserted leaves.
@@ -99,8 +109,10 @@ public sealed class BoundingVolumeHierarchy : IDisposable
 
         int writeIndex = 0; // start at the root node
         ConstructBranches(leafSpan, branchSpan, nodeSpan, ref writeIndex, out AABB aabb);
-
         branches.AddRange(branchSpan[..writeIndex]);
+
+        // pre-compute spatial pairs so systems dont have to query specfic leaves.
+        ConstructSpatialPairs();
     }
 
     /// <summary>
@@ -331,6 +343,48 @@ public sealed class BoundingVolumeHierarchy : IDisposable
             if(AABB.Intersect(leaf.AABB, raycastStart, raycastEnd))
             {
                 queryResult.Add(new QueryResult(leaf.GenIndex, leaf.Flag));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the spatial pair list from the current BVH leaf set.
+    /// </summary>
+    /// <remarks>
+    /// This method performs the broad-phase pairing step by querying each leaf's
+    /// AABB against the BVH and collecting all overlapping collider pairs. This 
+    /// method does not produce duplicate pairings.
+    ///
+    /// For every leaf:
+    /// - Its AABB is queried against the tree.
+    /// - All overlapping leaves are retrieved.
+    /// - Unique unordered pairs are generated and appended to <c>spatialPairs</c>.
+    /// </remarks>
+    private void ConstructSpatialPairs()
+    {
+        spatialPairs.Clear();
+
+        ReadOnlySpan<Leaf> leafSpan = CollectionsMarshal.AsSpan(leaves);
+        
+        for(int i = 0; i < leafSpan.Length; i++)
+        {
+            ref readonly Leaf ownerLeaf = ref leafSpan[i]; 
+            QueryResult owner = new QueryResult(ownerLeaf.GenIndex, ownerLeaf.Flag);
+
+            // get all near collider to the leaf AABB.
+            ReadOnlySpan<QueryResult> nearSpan = Query(leafSpan[i].AABB);
+
+            for(int j = 0; j < nearSpan.Length; j++)
+            {
+                ref readonly QueryResult other = ref nearSpan[j];
+
+                // ensure that spatial pairs are not added twice.
+                if(owner.GenIndex.Index <= other.GenIndex.Index)
+                {
+                    continue;
+                }
+
+                spatialPairs.Add(new SpatialPair(owner, other));                
             }
         }
     }

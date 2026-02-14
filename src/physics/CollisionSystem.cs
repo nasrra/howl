@@ -61,55 +61,41 @@ public static class CollisionSystem
         GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
         GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>(); 
 
-        ReadOnlySpan<Leaf> leaves = state.Bvh.GetLeaves();
+        ReadOnlySpan<SpatialPair> spatialPairs = state.Bvh.GetSpatialPairs();
 
-        for(int i = 0; i < leaves.Length; i++)
+        for(int i = 0; i < spatialPairs.Length; i++)
         {
-            ColliderType colliderTypeA = (ColliderType)leaves[i].Flag;
-            
-            // get all near collider to the leaf AABB.
-            ReadOnlySpan<QueryResult> near = state.Bvh.Query(leaves[i].AABB);
-            
-            for(int j = 0; j < near.Length; j++)
+            ref readonly SpatialPair spatialPair = ref spatialPairs[i];
+            ref readonly QueryResult owner = ref spatialPair.Owner;
+            ref readonly QueryResult other = ref spatialPair.Other;
+
+            ColliderType ownerType = (ColliderType)owner.Flag;
+            ColliderType otherType = (ColliderType)other.Flag;
+
+            switch (ownerType)
             {
-
-                // ensure that intersection tests are one way.
-                // This stops two colliding objects applying the same
-                // collision resolution to eachother. Instead its only
-                // one that applys the resolution to eachother. This also stops 
-                // the same collider from colliding with itself.
-                if(leaves[i].GenIndex.Index <= near[j].GenIndex.Index)
-                {
-                    continue;
-                }
-
-                ColliderType colliderTypeB = (ColliderType)near[j].Flag;
-
-                switch (colliderTypeA)
-                {
-                    case ColliderType.Circle:
-                        switch (colliderTypeB)
-                        {
-                            case ColliderType.Circle:
-                                CircleToCircleIntersect(state, transforms, circleColliders, leaves[i].GenIndex, near[j].GenIndex);
-                            break;
-                            case ColliderType.Rectangle:
-                                RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, near[j].GenIndex, leaves[i].GenIndex);
-                            break;
-                        }
-                    break;
-                    case ColliderType.Rectangle:
-                        switch (colliderTypeB)
-                        {
-                            case ColliderType.Rectangle:
-                                RectangleToRectangleIntersect(state, transforms, rectangleColliders, leaves[i].GenIndex, near[j].GenIndex);
-                            break;
-                            case ColliderType.Circle:
-                                RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, leaves[i].GenIndex, near[j].GenIndex);
-                            break;
-                        }
-                    break;
-                }
+                case ColliderType.Circle:
+                    switch (otherType)
+                    {
+                        case ColliderType.Circle:
+                            CircleToCircleIntersect(state, transforms, circleColliders, owner.GenIndex, other.GenIndex);
+                        break;
+                        case ColliderType.Rectangle:
+                            RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, other.GenIndex, owner.GenIndex);
+                        break;
+                    }
+                break;
+                case ColliderType.Rectangle:
+                    switch (otherType)
+                    {
+                        case ColliderType.Rectangle:
+                            RectangleToRectangleIntersect(state, transforms, rectangleColliders, owner.GenIndex, other.GenIndex);
+                        break;
+                        case ColliderType.Circle:
+                            RectangleToCircleIntersect(state, transforms, rectangleColliders, circleColliders, owner.GenIndex, other.GenIndex);
+                        break;
+                    }
+                break;
             }
         }
     }
