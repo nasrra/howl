@@ -55,13 +55,13 @@ public static class PhysicsSystem
                     CollisionSystem.ReconstructBvhTree(componentRegistry, collisionSystemState.Bvh);
                 collisionSystemState.BvhReconstructionStopwatch.Stop();
 
-                collisionSystemState.ProcessNearColliderPairsStopwatch.Restart();            
-                    CollisionSystem.FindNearColliderPairs(collisionSystemState);
-                collisionSystemState.ProcessNearColliderPairsStopwatch.Stop();
-
                 collisionSystemState.FindNearColliderPairsStopwatch.Restart();            
-                    CollisionSystem.ProcessNearColliderPairs(componentRegistry, collisionSystemState);
+                    CollisionSystem.FindNearColliderPairs(collisionSystemState);
                 collisionSystemState.FindNearColliderPairsStopwatch.Stop();
+
+                collisionSystemState.ProcessNearColliderPairsStopwatch.Restart();            
+                    CollisionSystem.ProcessNearColliderPairs(componentRegistry, collisionSystemState);
+                collisionSystemState.ProcessNearColliderPairsStopwatch.Stop();
 
                 // NOTE: ordering matters here, make sure to resolve 
                 // collisions before sorting the collision manifold.

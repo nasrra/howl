@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using static Howl.Math.Shapes.Rectangle;
 using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.PolygonRectangle;
+using static Howl.Math.Math;
 
 namespace Howl.Math.Shapes;
 
@@ -31,7 +32,7 @@ public static class SAT
         normal = Vector2.Zero;
         depth = 0f;
 
-        float distanceSqrd = Center(lhs).DistanceSquared(Center(rhs));
+        float distanceSqrd = DistanceSquared(lhs.X, lhs.Y, rhs.X, rhs.Y);
 
         float radiusSum = lhs.Radius + rhs.Radius;
         float radiusSumSq = radiusSum * radiusSum;
@@ -60,26 +61,44 @@ public static class SAT
     /// </summary>
     /// <param name="lhs">The lhs-rectangle.</param>
     /// <param name="rhs">The rhs-rectangle.</param>
+    /// <param name="lhsCentroid">the centroid of the lhs-rectangle.</param>
+    /// <param name="rhsCentroid">the centroid of the rhs-rectangle.</param>
     /// <param name="normal">The normal of the intersection in relation to the rhs-rectangle.</param>
     /// <param name="depth">The depth of the intersection in relation to the rhs-rectangle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
+    /// <exception cref="ArgumentException"></exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(PolygonRectangle lhs, PolygonRectangle rhs, out Vector2 normal, out float depth)
+    public static bool Intersect(PolygonRectangle lhs, PolygonRectangle rhs, Vector2 lhsCentroid, Vector2 rhsCentroid, out Vector2 normal, out float depth)
     {
 
-        Vector2 foundNormal;
+        Span<float> lhsX = VerticesXAsSpan(lhs);
+        Span<float> lhsY = VerticesYAsSpan(lhs);
+        Span<float> rhsX = VerticesXAsSpan(rhs);
+        Span<float> rhsY = VerticesYAsSpan(rhs);
+
+        if(lhsX.Length != lhsY.Length)
+        {
+            throw new ArgumentException($"lhs vertices length do not match: '{lhsX.Length}' != '{lhsY.Length}'");
+        }
+        if(rhsX.Length != rhsY.Length)
+        {
+            throw new ArgumentException($"rhs vertices length do not match: '{rhsX.Length}' != '{rhsY.Length}'");
+        }
+
+        float foundNormalX;
+        float foundNormalY;
         float foundDepth;
 
         normal = Vector2.Up;
         depth = float.MaxValue;
 
 
-        if (OneWayIntersect(VerticesXAsSpan(lhs), VerticesYAsSpan(lhs), VerticesXAsSpan(rhs), VerticesYAsSpan(rhs), out foundNormal, out foundDepth))
+        if (OneWayIntersect(lhsX, lhsY, rhsX, rhsY, out foundNormalX, out foundNormalY, out foundDepth))
         {            
             if(depth > foundDepth)
             {
                 depth = foundDepth;
-                normal = foundNormal;
+                normal = new Vector2(foundNormalX, foundNormalY);
             }
         }
         else
@@ -87,12 +106,12 @@ public static class SAT
             return false;
         }
 
-        if (OneWayIntersect(VerticesXAsSpan(rhs), VerticesYAsSpan(rhs), VerticesXAsSpan(lhs), VerticesYAsSpan(lhs), out foundNormal, out foundDepth))
+        if (OneWayIntersect(rhsX, rhsY, lhsX, lhsY, out foundNormalX, out foundNormalY, out foundDepth))
         {            
             if(depth > foundDepth)
             {
                 depth = foundDepth;
-                normal = foundNormal;
+                normal = new Vector2(foundNormalX, foundNormalY);
             }
         }
         else
@@ -105,7 +124,7 @@ public static class SAT
         // this is so that the resolution code will always push A out of B
         // and not push the two into each other when a smaller depth is found when 
         // looping through rect B.
-        if ((Centroid(rhs) - Centroid(lhs)).Dot(normal) < 0)
+        if(Dot(rhsCentroid.X - lhsCentroid.X, rhsCentroid.Y - lhsCentroid.Y, normal.X, normal.Y) < 0)
         {
             normal = -normal;
         }
@@ -124,33 +143,29 @@ public static class SAT
     /// <param name="normal">The normal of the intersection in relation to polygon B.</param>
     /// <param name="depth">The depth of the intersection in relation to polygon B.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
-    /// <exception cref="ArgumentException">throw when polygonA or polygonB vertex spans do not share the same length.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static bool OneWayIntersect(        
         ReadOnlySpan<float> polygonVerticesXA, 
         ReadOnlySpan<float> polygonVerticesYA, 
         ReadOnlySpan<float> polygonVerticesXB, 
         ReadOnlySpan<float> poylgonVerticesYB, 
-        out Vector2 normal,
+        out float normalX,
+        out float normalY,
         out float depth
     )
     {
         depth = float.MaxValue;
-        normal = Vector2.Up;
-
-        if(polygonVerticesXA.Length != polygonVerticesYA.Length)
-        {
-            throw new ArgumentException($"polygonVerticesXA length '{polygonVerticesXA.Length}' does not equal polygonVerticesYA length '{polygonVerticesYA.Length}'");
-        }
-        if(polygonVerticesXB.Length != poylgonVerticesYB.Length)
-        {
-            throw new ArgumentException($"poylgonVerticesXB length '{polygonVerticesXB.Length}' does not equal poylgonVerticesYB length '{poylgonVerticesYB.Length}'");
-        }
+        normalX = 0;
+        normalY = 1; // note: the default normal is up.
 
         for(int i = 0; i < polygonVerticesXA.Length; i++)
         {
             int vAIndex = i;
-            int vBIndex = (i+1)%polygonVerticesXA.Length;
+            int vBIndex = i+1;
+            
+            // this is faster than modulo.
+            if(vBIndex >= polygonVerticesXA.Length)
+                vBIndex = 0;
 
             float xA = polygonVerticesXA[vAIndex];
             float xB = polygonVerticesXA[vBIndex];
@@ -163,12 +178,16 @@ public static class SAT
             // the normal of the edge.
             // note: this only works as vertices are assumed to be in clockwise winding order.
             // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
-            Vector2 axis = new Vector2(-edgeY, edgeX).Normalise(); 
+            float axisX = -edgeY;
+            float axisY = edgeX;
         
+            // normalize (important for correct depth).
+            Normalise(axisX, axisY, out axisX, out axisY);
+
             // project all vertices onto the current edge to find the min and max values
             // of the two rectangles along the edge.
-            ProjectPolygon(polygonVerticesXA, polygonVerticesYA, axis, out float minA, out float maxA);
-            ProjectPolygon(polygonVerticesXB, poylgonVerticesYB, axis, out float minB, out float maxB);
+            ProjectPolygon(polygonVerticesXA, polygonVerticesYA, axisX, axisY, out float minA, out float maxA);
+            ProjectPolygon(polygonVerticesXB, poylgonVerticesYB, axisX, axisY, out float minB, out float maxB);
         
             if(minA > maxB || minB > maxA)
             {
@@ -181,7 +200,8 @@ public static class SAT
             {
                 // only assign if the newly found intersection depth is smaller.
                 depth = axisDepth;
-                normal = axis;
+                normalX = axisX;
+                normalY = axisY;
             }
         }
 
@@ -225,7 +245,8 @@ public static class SAT
         depth = float.MaxValue;
         normal = Vector2.Up;
 
-        Vector2 axis;
+        float axisX;
+        float axisY;
         float axisDepth;
         float minA;
         float maxA;
@@ -240,7 +261,11 @@ public static class SAT
         for(int i = 0; i < polygonVerticesX.Length; i++)
         {
             int vAIndex = i;
-            int vBIndex = (i+1)%polygonVerticesX.Length;
+            int vBIndex = i+1;
+
+            // this is faster than modulo.
+            if(vBIndex >= polygonVerticesX.Length)
+                vBIndex = 0;
 
             float xA = polygonVerticesX[vAIndex];
             float xB = polygonVerticesX[vBIndex];
@@ -253,12 +278,17 @@ public static class SAT
             // the normal of the edge.
             // note: this only works as vertices are assumed to be in clockwise winding order.
             // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
-            axis = new Vector2(-edgeY, edgeX).Normalise(); 
+            axisX = -edgeY;
+            axisY = edgeX;
+        
+            // normalize (important for correct depth).
+            Normalise(axisX, axisY, out axisX, out axisY);
+
         
             // project all vertices onto the current edge to find the min and max values
             // of the two rectangles along the edge.
-            ProjectPolygon(polygonVerticesX, polygonVerticesY, axis, out minA, out maxA);
-            ProjectCircle(circle, axis, out minB, out maxB);
+            ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);
+            ProjectCircle(circle, axisX, axisY, out minB, out maxB);
         
             if(minA > maxB || minB > maxA)
             {
@@ -271,19 +301,22 @@ public static class SAT
             {
                 // only assign if the newly found intersection depth is smaller.
                 depth = axisDepth;
-                normal = axis;
+                normal = new Vector2(axisX, axisY);
             }
         }
 
         int closestPointIndex = ShapeUtils.FindClosestVertexOnPolygon(Center(circle), polygonVerticesX, polygonVerticesY);
-        Vector2 closestPoint = new Vector2(polygonVerticesX[closestPointIndex], polygonVerticesY[closestPointIndex]);
-        
-        axis = (closestPoint - Center(circle)).Normalise();
+        float closestPointX = polygonVerticesX[closestPointIndex];
+        float closestPointY = polygonVerticesY[closestPointIndex];
+
+        axisX = closestPointX - circle.X;
+        axisY = closestPointY - circle.Y;
+        Normalise(axisX, axisY, out axisX, out axisY);
 
         // project all vertices onto the current edge to find the min and max values
         // of the two rectangles along the edge.
-        ProjectPolygon(polygonVerticesX, polygonVerticesY, axis, out minA, out maxA);
-        ProjectCircle(circle, axis, out minB, out maxB);
+        ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);
+        ProjectCircle(circle, axisX, axisY, out minB, out maxB);
     
         if(minA > maxB || minB > maxA)
         {
@@ -296,10 +329,10 @@ public static class SAT
         {
             // only assign if the newly found intersection depth is smaller.
             depth = axisDepth;
-            normal = axis;
+            normal = new Vector2(axisX, axisY);
         }
 
-        Vector2 polygonCentroid = ShapeUtils.GetCentroid(polygonVerticesX, polygonVerticesY);
+        Vector2 polygonCentroid = ShapeUtils.Centroid(polygonVerticesX, polygonVerticesY);
         Vector2 circleCentroid = Center(circle);
 
         // when a new smaller   
@@ -330,7 +363,8 @@ public static class SAT
     private static void ProjectPolygon(
         ReadOnlySpan<float> verticesX, 
         ReadOnlySpan<float> verticesY,
-        Vector2 axis, 
+        float axisX,
+        float axisY, 
         out float min, 
         out float max
     )
@@ -345,8 +379,7 @@ public static class SAT
 
         for(int i = 0; i < verticesX.Length; i++)
         {
-            Vector2 vector = new Vector2(verticesX[i], verticesY[i]);
-            float projection = Vector2.Dot(vector,axis);
+            float projection = Dot(verticesX[i], verticesY[i], axisX, axisY);
 
             if(projection < min)
             {
@@ -362,28 +395,30 @@ public static class SAT
     /// <summary>
     /// Projects the edges of circle onto a given axis.
     /// </summary>
-    /// <remarks>
-    /// Remarks: The 'edge' of a circle is defined as the radius from the origin of the circle.
-    /// </remarks>
     /// <param name="circle">The circle to project.</param>
-    /// <param name="axis">The axis to project onto.</param>
+    /// <param name="axisX">The x-component of the axis to project onto.</param>
+    /// <param name="axisY">The y-component of the axis to project onto.</param>
     /// <param name="min">The minimum-edge value of the circle.</param>
     /// <param name="max">The maximum-edge value of the circle.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void ProjectCircle(
-        Circle circle,
-        Vector2 axis,
+        in Circle circle,
+        float axisX,
+        float axisY,
         out float min,
         out float max
     )
     {
-        Vector2 directionAndRadius = axis * circle.Radius;
+        float directionAndRadiusX = axisX * circle.Radius;
+        float directionAndRadiusY = axisY * circle.Radius;
+
+        float vAX = circle.X + directionAndRadiusX;
+        float vAY = circle.Y + directionAndRadiusY;
+        float vBX = circle.X - directionAndRadiusX;
+        float vBY = circle.Y - directionAndRadiusY;
         
-        Vector2 vertex1 = Center(circle) + directionAndRadius;
-        Vector2 vertex2 = Center(circle) - directionAndRadius;
-        
-        min = vertex1.Dot(axis);
-        max = vertex2.Dot(axis);
+        min = Dot(vAX, vAY, axisX, axisY);
+        max = Dot(vBX, vBY, axisX, axisY);
 
         if(min > max)
         {
@@ -472,7 +507,13 @@ public static class SAT
         for(int startIndex = 0; startIndex < length; startIndex++)
         {
             Vector2 edgeStart = new Vector2(polygonVerticesX[startIndex], polygonVerticesY[startIndex]);
-            int endIndex = (startIndex + 1) % length;
+            
+            int endIndex = startIndex + 1;
+            
+            // this is faster than modulo.
+            if(endIndex >= length)
+                endIndex = 0;
+
             Vector2 edgeEnd = new Vector2(polygonVerticesX[endIndex], polygonVerticesY[endIndex]);
             Math.ClosestPoint(edgeStart, edgeEnd, Center(circle), out Vector2 closestPoint, out float distSqrd);
             if(distSqrd < minDistSqrd)
@@ -499,52 +540,6 @@ public static class SAT
     /// <param name="contactPoint2X">the x-value of contact point 2 vector.</param>
     /// <param name="contactPoint2Y">the y-value of contact point 2 vector.</param>
     /// <param name="contactPointsAmount">the amount of contact points found; can be 1 or 2.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(
-        ReadOnlySpan<float> polygonAVerticesX, 
-        ReadOnlySpan<float> polygonAVerticesY, 
-        ReadOnlySpan<float> polygonBVerticesX, 
-        ReadOnlySpan<float> polygonBVerticesY, 
-        float epsilon,
-        out float contactPoint1X, 
-        out float contactPoint1Y, 
-        out float contactPoint2X, 
-        out float contactPoint2Y, 
-        out int contactPointsAmount
-    )
-    {
-        FindContactPoints(
-            polygonAVerticesX, 
-            polygonAVerticesY, 
-            polygonBVerticesX, 
-            polygonBVerticesY,
-            epsilon,
-            out Vector2 contactPoint1,
-            out Vector2 contactPoint2,
-            out contactPointsAmount 
-        );
-        
-        contactPoint1X = contactPoint1.X;
-        contactPoint1Y = contactPoint1.Y;
-
-        contactPoint2X = contactPoint2.X;
-        contactPoint2Y = contactPoint2.Y;
-    }
-
-    /// <summary>
-    /// Finds the contact points between two intersecting polygons.
-    /// </summary>
-    /// <remarks>
-    /// Note: ensure to check contact points amount before using contactPoint2.
-    /// </remarks>
-    /// <param name="polygonAVerticesX">the x-values of the polygon A's vertices.</param>
-    /// <param name="polygonAVerticesY">the y-values of the polygon A's vertices.</param>
-    /// <param name="polygonBVerticesX">the x-values of the polygon B's vertices.</param>
-    /// <param name="polygonBVerticesY">the y-values of the polygon B's vertices.</param>
-    /// <param name="epsilon">the threshold for equality in the case of two contact points being found.</param>
-    /// <param name="contactPoint1">the first contact point.</param>
-    /// <param name="contactPoint2">the second contact point.</param>
-    /// <param name="contactPointsAmount">the amount of contact points found; can be 1 or 2.</param>
     /// <exception cref="ArgumentException">throws if polygon A or B vertices X and Y spans do not have matching lengths.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FindContactPoints(
@@ -553,8 +548,10 @@ public static class SAT
         ReadOnlySpan<float> polygonBVerticesX, 
         ReadOnlySpan<float> polygonBVerticesY,
         float epsilon, 
-        out Vector2 contactPoint1, 
-        out Vector2 contactPoint2, 
+        out float contactPoint1X, 
+        out float contactPoint1Y, 
+        out float contactPoint2X, 
+        out float contactPoint2Y, 
         out int contactPointsAmount
     )
     {
@@ -568,8 +565,10 @@ public static class SAT
             throw new ArgumentException($"polygonBVerticesX length '{polygonBVerticesX.Length}' is not equal to polygonBVerticesY length '{polygonBVerticesY.Length}'");
         }
 
-        contactPoint1 = Vector2.Zero;
-        contactPoint2 = Vector2.Zero;
+        contactPoint1X = 0;
+        contactPoint1Y = 0;
+        contactPoint2X = 0;
+        contactPoint2Y = 0;
         contactPointsAmount = 0;
         float minDistSqrd = float.MaxValue;
 
@@ -581,8 +580,10 @@ public static class SAT
             polygonBVerticesY,
             epsilon,
             ref minDistSqrd,
-            ref contactPoint1,
-            ref contactPoint2,
+            ref contactPoint1X,
+            ref contactPoint1Y,
+            ref contactPoint2X,
+            ref contactPoint2Y,
             ref contactPointsAmount
         );
 
@@ -594,8 +595,10 @@ public static class SAT
             polygonAVerticesY, 
             epsilon,
             ref minDistSqrd,
-            ref contactPoint1,
-            ref contactPoint2,
+            ref contactPoint1X,
+            ref contactPoint1Y,
+            ref contactPoint2X,
+            ref contactPoint2Y,
             ref contactPointsAmount
         );
     }
@@ -611,9 +614,12 @@ public static class SAT
     /// <param name="polygonBVerticesX">the x-values of the polygon B's vertices.</param>
     /// <param name="polygonBVerticesY">the y-values of the polygon B's vertices.</param>
     /// <param name="epsilon">the threshold for equality in the case of two contact points being found.</param>
-    /// <param name="contactPoint1">the first contact point.</param>
-    /// <param name="contactPoint2">the second contact point.</param>
-    /// <param name="contactPointsAmount">the amount of contact points found; can be 1 or 2.</param>
+    /// <param name="minDistSqrd">the current minimum dist sqrd found.</param>
+    /// <param name="contactPoint1X">the x-component of the first contact point.</param>
+    /// <param name="contactPoint1Y">the y-component of the first contact point.</param>
+    /// <param name="contactPoint2X">the x-component of the second contact point.</param>
+    /// <param name="contactPoint2Y">the y-component of the second contact point.</param>
+    /// <param name="contactPointsAmount"></param>
     private static void FindContactPointsOneWay(
         ReadOnlySpan<float> polygonAVerticesX, 
         ReadOnlySpan<float> polygonAVerticesY, 
@@ -621,8 +627,10 @@ public static class SAT
         ReadOnlySpan<float> polygonBVerticesY,
         float epsilon, 
         ref float minDistSqrd,
-        ref Vector2 contactPoint1, 
-        ref Vector2 contactPoint2, 
+        ref float contactPoint1X, 
+        ref float contactPoint1Y, 
+        ref float contactPoint2X, 
+        ref float contactPoint2Y, 
         ref int contactPointsAmount
     )
     {
@@ -631,32 +639,51 @@ public static class SAT
 
         for(int i = 0; i < polygonAVerticesLength; i++)
         {
-            Vector2 point = new Vector2(polygonAVerticesX[i], polygonAVerticesY[i]);
+            float pointX = polygonAVerticesX[i];
+            float pointY = polygonAVerticesY[i];
 
             for(int startIndex = 0; startIndex < polygonBVerticesLength; startIndex++)
             {
                 // find the closest point on polygon b to the vertice on polygon a.
                 
-                Vector2 edgeStart = new Vector2(polygonBVerticesX[startIndex], polygonBVerticesY[startIndex]);
-                
-                int endIndex = (startIndex + 1) % polygonBVerticesLength;
-                
-                Vector2 edgeEnd = new Vector2(polygonBVerticesX[endIndex], polygonBVerticesY[endIndex]);
-                
-                Math.ClosestPoint(edgeStart, edgeEnd, point, out Vector2 closestPoint, out float distSqrd);
+                float edgeStartX = polygonBVerticesX[startIndex];
+                float edgeStartY = polygonBVerticesY[startIndex];
 
-                if(Math.NearlyEqual(distSqrd, minDistSqrd, epsilon))
+                int endIndex = startIndex + 1;
+
+                // this is faster than modulo.
+                if(endIndex >= polygonBVerticesLength)
+                    endIndex = 0;
+                
+                float edgeEndX = polygonBVerticesX[endIndex];
+                float edgeEndY = polygonBVerticesY[endIndex];
+
+                ClosestPoint(
+                    edgeStartX, 
+                    edgeStartY, 
+                    edgeEndX, 
+                    edgeEndY,
+                    pointX,
+                    pointY, 
+                    out float closestPointX, 
+                    out float closestPointY, 
+                    out float distSqrd
+                );
+
+                if(NearlyEqual(distSqrd, minDistSqrd, epsilon))
                 {
                     // note: there is a chance that two contact points can be in the same place.
                     // this is caused by when two vertices - one from each polygon - are in contact.
                     // without this 'if check', all the contact information will be wiped out 
                     // when those two corners hit eachother.
 
-                    if(Vector2.NearlyEqual(closestPoint, contactPoint1, epsilon) == false)
+                    if(NearlyEqual(closestPointX, contactPoint1X, epsilon) == false
+                    || NearlyEqual(closestPointY, contactPoint1Y, epsilon) == false)
                     {
                         // there are two contact points.
                         contactPointsAmount = 2;
-                        contactPoint2 = closestPoint;                        
+                        contactPoint2X = closestPointX;             
+                        contactPoint2Y = closestPointY;
                     }
                 }
                 else if(distSqrd < minDistSqrd)
@@ -666,7 +693,8 @@ public static class SAT
 
                     minDistSqrd = distSqrd;
                     contactPointsAmount = 1;
-                    contactPoint1 = closestPoint;
+                    contactPoint1X = closestPointX;
+                    contactPoint1Y = closestPointY;
                 }
             } 
         } 

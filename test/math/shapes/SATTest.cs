@@ -2,6 +2,7 @@ using Howl.Math;
 using Howl.Math.Shapes;
 using Howl.Physics;
 using Xunit;
+using static Howl.Math.Shapes.PolygonRectangle;
 
 namespace Howl.Test.Math.Shapes;
 
@@ -70,7 +71,7 @@ public class SATTest
         // no intersection.
         rectangleA = new PolygonRectangle(0, 0, 10, 10);
         rectangleB = new PolygonRectangle(10.01f, 10.01f, 10, 10);
-        intersects = SAT.Intersect(rectangleA, rectangleB, out normal, out depth);
+        intersects = SAT.Intersect(rectangleA, rectangleB, Centroid(rectangleA), Centroid(rectangleB), out normal, out depth);
         Assert.False(intersects);
     }
 
@@ -85,7 +86,7 @@ public class SATTest
 
         rectangleA = new PolygonRectangle(0,0,10,10);
         rectangleB = new PolygonRectangle(5,5,10,10);
-        intersects = SAT.Intersect(rectangleA, rectangleB, out normal, out depth);
+        intersects = SAT.Intersect(rectangleA, rectangleB, Centroid(rectangleA), Centroid(rectangleB), out normal, out depth);
         Assert.True(intersects);        
         Assert.Equal(5, depth);
         Assert.Equal(Vector2.Up, normal);
@@ -96,7 +97,7 @@ public class SATTest
         // check at the end of the intersect function before returning true.
         rectangleA = new PolygonRectangle(0,0,10,10);
         rectangleB = new PolygonRectangle(10,10,10,10);
-        intersects = SAT.Intersect(rectangleA, rectangleB, out normal, out depth);
+        intersects = SAT.Intersect(rectangleA, rectangleB, Centroid(rectangleA), Centroid(rectangleB), out normal, out depth);
         Assert.True(intersects);
         Assert.Equal(0, depth);
         Assert.Equal(Vector2.Up, normal);
@@ -123,7 +124,7 @@ public class SATTest
 
         // axis-aligned rectangle.
         rectangleB = new PolygonRectangle(5,10,10,10);
-        intersects = SAT.Intersect(rectangleA, rectangleB, out normal, out depth);
+        intersects = SAT.Intersect(rectangleA, rectangleB, Centroid(rectangleA), Centroid(rectangleB), out normal, out depth);
         Assert.True(intersects);
         Assert.Equal(3.54f, depth, precision: 2);
         Assert.Equal(0.71f, normal.X, precision: 2);
@@ -183,18 +184,16 @@ public class SATTest
 
         intersects = SAT.Intersect(rectangle, circle, out normal, out depth);
         Assert.True(intersects);
-        Assert.Equal(0, depth);
-        Assert.Equal(0f, normal.X, precision: 2);        
-        Assert.Equal(0f, normal.Y, precision: 2);
+        // Assert.Equal(0, depth);
+        // Assert.Equal(0f, normal.X, precision: 2);        
+        // Assert.Equal(0f, normal.Y, precision: 2);
 
 
-        // Assert.Equal(5, depth);
-
-        // // note that the result is not Vector2.Up
-        // // circles will always have a diagonal normal when colliding with
-        // // corners of a box.
-
-        // Assert.Equal(-0.71f, normal.X, precision: 2);        
-        // Assert.Equal(0.71f, normal.Y, precision: 2);
+        Assert.Equal(5, depth);
+        // note that the result is not Vector2.Up
+        // circles will always have a diagonal normal when colliding with
+        // corners of a box.
+        Assert.Equal(-0.71f, normal.X, precision: 2);        
+        Assert.Equal(0.71f, normal.Y, precision: 2);
     }
 }

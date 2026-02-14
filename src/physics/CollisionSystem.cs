@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Howl.DataStructures;
 using Howl.ECS;
@@ -230,12 +231,18 @@ public static class CollisionSystem
     )
     {        
         GenIndexList<CircleCollider> colliders = componentRegistry.Get<CircleCollider>();
-
         ReadOnlySpan<ColliderPair> span = CollectionsMarshal.AsSpan(colliderPairs);
-        for(int i = 0; i < span.Length; i++)
+        ref ColliderPair start = ref MemoryMarshal.GetReference(span);
+
+        for (int i = 0; i < span.Length; i++)
         {
-            ref readonly ColliderPair pair = ref span[i]; 
-            CircleToCircleIntersect(collisionManifold, colliders, pair.ColliderA, pair.ColliderB);
+            ref readonly ColliderPair pair = ref Unsafe.Add(ref start, i);
+            CircleToCircleIntersect(
+                collisionManifold,
+                colliders,
+                pair.ColliderA,
+                pair.ColliderB
+            );
         }
     }
 
@@ -252,11 +259,12 @@ public static class CollisionSystem
     )
     {        
         GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
-        
         ReadOnlySpan<ColliderPair> span = CollectionsMarshal.AsSpan(colliderPairs);
+        ref ColliderPair start = ref MemoryMarshal.GetReference(span); 
+
         for(int i = 0; i < span.Length; i++)
         {
-            ref readonly ColliderPair pair = ref span[i]; 
+            ref readonly ColliderPair pair = ref Unsafe.Add(ref start, i); 
             RectangleToRectangleIntersect(collisionManifold, colliders, pair.ColliderA, pair.ColliderB);
         }
     }
@@ -278,11 +286,12 @@ public static class CollisionSystem
     {        
         GenIndexList<RectangleCollider> rectangles = componentRegistry.Get<RectangleCollider>();
         GenIndexList<CircleCollider> circles = componentRegistry.Get<CircleCollider>();
-
         ReadOnlySpan<ColliderPair> span = CollectionsMarshal.AsSpan(colliderPairs);
+        ref ColliderPair start = ref MemoryMarshal.GetReference(span);
+
         for(int i = 0; i < span.Length; i++)
         {
-            ref readonly ColliderPair pair = ref span[i]; 
+            ref readonly ColliderPair pair = ref Unsafe.Add(ref start, i); 
             RectangleToCircleIntersect(collisionManifold, rectangles, circles, pair.ColliderA, pair.ColliderB);
         }
     }
@@ -366,11 +375,16 @@ public static class CollisionSystem
             return;    
         }
 
+        Vector2 colliderACentroid = Centroid(colliderA.TransformedShape);
+        Vector2 colliderBCentroid = Centroid(colliderB.TransformedShape);
+
         // Narrow Phase:
         // perform an SAT check.
         if(SAT.Intersect(
             colliderA.TransformedShape,
             colliderB.TransformedShape,
+            colliderACentroid,
+            colliderBCentroid,
             out Vector2 normal,
             out float depth
         ))
@@ -401,8 +415,8 @@ public static class CollisionSystem
                         colliderB.Parameters,
                         [xContactPoint1],
                         [yContactPoint1],
-                        Centroid(colliderA.TransformedShape),
-                        Centroid(colliderB.TransformedShape),
+                        colliderACentroid,
+                        colliderBCentroid,
                         normal,
                         depth
                     );
@@ -416,8 +430,8 @@ public static class CollisionSystem
                         colliderB.Parameters,
                         [xContactPoint1, xContactPoint2],
                         [yContactPoint1, yContactPoint2],
-                        Centroid(colliderA.TransformedShape),
-                        Centroid(colliderB.TransformedShape),
+                        colliderACentroid,
+                        colliderBCentroid,
                         normal,
                         depth
                     );

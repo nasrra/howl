@@ -48,7 +48,7 @@ public static class ShapeUtils
     /// <returns>The centroid-vector.</returns>
     /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 GetCentroid(ReadOnlySpan<float> polygonVerticesX, ReadOnlySpan<float> polygonVerticesY)
+    public static Vector2 Centroid(ReadOnlySpan<float> polygonVerticesX, ReadOnlySpan<float> polygonVerticesY)
     {
         if(polygonVerticesX.Length != polygonVerticesY.Length)
         {

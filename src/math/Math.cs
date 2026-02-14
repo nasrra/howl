@@ -43,25 +43,82 @@ public static class Math
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 ClosestPoint(Vector2 lineSegmentStart, Vector2 lineSegmentEnd, Vector2 queryPoint)
     {
-        Vector2 lineDistance = lineSegmentEnd - lineSegmentStart;
-        Vector2 pointDistance = queryPoint - lineSegmentStart;
+        ClosestPoint(
+            lineSegmentStart.X,
+            lineSegmentStart.Y,
+            lineSegmentEnd.X,
+            lineSegmentEnd.Y,
+            queryPoint.X,
+            queryPoint.Y,
+            out float closestPointX,
+            out float closestPointY
+        );
+        return new Vector2(closestPointX, closestPointY);
+    }
 
-        float projection = Vector2.Dot(pointDistance, lineDistance);
-        
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ClosestPoint(
+        float lineSegmentStartX, 
+        float lineSegmentStartY,
+        float lineSegmentEndX, 
+        float lineSegmentEndY,
+        float queryPointX,
+        float queryPointY, 
+        out float closestPointX,
+        out float closestPointY, 
+        out float distanceSquared
+    )
+    {
+        ClosestPoint(
+            lineSegmentStartX, 
+            lineSegmentStartY, 
+            lineSegmentEndX, 
+            lineSegmentEndY, 
+            queryPointX,
+            queryPointY,
+            out closestPointX,
+            out closestPointY
+        );
+        distanceSquared = DistanceSquared(queryPointX, queryPointY, closestPointX, closestPointY);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ClosestPoint(
+        float lineSegmentStartX, 
+        float lineSegmentStartY,
+        float lineSegmentEndX, 
+        float lineSegmentEndY,
+        float queryPointX,
+        float queryPointY,
+        out float closestPointX,
+        out float closestPointY
+    )
+    {
+        float lineDistanceX = lineSegmentEndX - lineSegmentStartX;
+        float lineDistanceY = lineSegmentEndY - lineSegmentStartY;
+        float pointDistanceX = queryPointX - lineSegmentStartX;
+        float pointDistanceY = queryPointY - lineSegmentStartY;
+
+        // float projection = Vector2.Dot(pointDistance, lineDistance);
+        float projection = Dot(pointDistanceX, pointDistanceY, lineDistanceX, lineDistanceY);
+
         // move the point distance along the line segment.
-        float delta = projection / lineDistance.LengthSquared();
+        float delta = projection / LengthSquared(lineDistanceX, lineDistanceY);
 
         if(delta <= 0)
         {
-            return lineSegmentStart;
+            closestPointX = lineSegmentStartX;
+            closestPointY = lineSegmentStartY;
         }
         else if(delta >= 1)
         {
-            return lineSegmentEnd;
+            closestPointX = lineSegmentEndX;
+            closestPointY = lineSegmentEndY;
         }
         else
         {
-            return lineSegmentStart + lineDistance * delta;
+            closestPointX = lineSegmentStartX + lineDistanceX * delta;
+            closestPointY = lineSegmentStartY + lineDistanceY * delta;
         }
     }
 
@@ -185,5 +242,62 @@ public static class Math
     private static void ThrowMinMaxException<T>(T min, T max)
     {
         throw new ArgumentException($"cannot Clamp when min '{min}' is greater than max '{max}'");
+    }
+
+    /// <summary>
+    /// Gets the distance squared between two points.
+    /// </summary>
+    /// <param name="fromX">the x-component of the point to start at.</param>
+    /// <param name="fromY">the y-component of the point to start at.</param>
+    /// <param name="toX">the x-component of the point to end at</param>
+    /// <param name="toY">the y-component of the point to end at</param>
+    /// <returns>The distance squared.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float DistanceSquared(float fromX, float fromY, float toX, float toY)
+    {
+        float dx = fromX - toX;
+        float dy = fromY - toY;
+        return dx * dx + dy * dy;
+    }
+
+    /// <summary>
+    /// Noramlises two numbers with eachother.
+    /// </summary>
+    /// <param name="x">value 1.</param>
+    /// <param name="y">value 2.</param>
+    /// <param name="nX">normalised value 1.</param>
+    /// <param name="nY">normalised value 2.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Normalise(float x, float y, out float nX, out float nY)
+    {
+        float invLength = 1.0f / MathF.Sqrt(x * x + y * y);
+        nX = x * invLength;
+        nY = y * invLength;
+    }
+
+    /// <summary>
+    /// Gets the dot product of two points.
+    /// </summary>
+    /// <param name="lhsX">The x-component of the left-hand side point.</param>
+    /// <param name="lhsY">The y-component of the left-hand side point.</param>
+    /// <param name="rhsX">The x-component of the left-hand side point.</param>
+    /// <param name="rhsY">The y-component of the left-hand side point.</param>
+    /// <returns>The dot product.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float Dot(float lhsX, float lhsY, float rhsX, float rhsY)
+    {
+        return (lhsX * rhsX) + (lhsY * rhsY);
+    }
+
+    /// <summary>
+    /// Gets the squared length of a point.
+    /// </summary>
+    /// <param name="x">the x-component of the point.</param>
+    /// <param name="y">the y-compoennt of the point.</param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]    
+    public static float LengthSquared(float x, float y)
+    {
+        return Dot(x,y,x,y);
     }
 }

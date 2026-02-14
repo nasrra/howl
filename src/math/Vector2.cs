@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using static Howl.Math.Math;
 
 namespace Howl.Math;
 
@@ -412,9 +413,7 @@ public struct Vector2
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float DistanceSquared(Vector2 from, Vector2 to)
     {
-        float dx = from.X - to.X;
-        float dy = from.Y - to.Y;
-        return dx * dx + dy * dy;
+        return Math.DistanceSquared(from.X, from.Y, to.X, to.Y);
     }
 
     /// <summary>
