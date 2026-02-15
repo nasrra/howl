@@ -2,26 +2,34 @@ using Howl.Math;
 
 namespace Howl.DataStructures;
 
-public readonly struct SortNode
+public struct SortNode
 {
+
     /// <summary>
-    /// Gets the centroid of the node.
+    /// Gets and sets the position x-component.
     /// </summary>
-    public readonly Vector2 Centroid;
+    public float PositionX;
+
+    /// <summary>
+    /// Gets and sets the position y-component.
+    /// </summary>
+    public float PositionY;
 
     /// <summary>
     /// Gets the associated leaf index.
     /// </summary>
-    public readonly int LeafIndex;
+    public int LeafIndex;
 
     /// <summary>
     /// Constructs a SortNode.
     /// </summary>
-    /// <param name="centroid">The centroid of the leaf.</param>
-    /// <param name="leafIndex">The associated leaf index.</param>
-    public SortNode(Vector2 centroid, int leafIndex)
+    /// <param name="positionX">the positional x-component.</param>
+    /// <param name="positionY">the positional y-component.</param>
+    /// <param name="leafIndex">the associated leaf index.</param>
+    public SortNode(float positionX, float positionY, int leafIndex)
     {
-        Centroid = centroid;
+        PositionX = positionX;
+        PositionY = positionY;
         LeafIndex = leafIndex;
     }
 }

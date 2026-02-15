@@ -676,7 +676,10 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 new Transform(Vector2.Zero, Vector2.One, 0),
-                new Rectangle(MinVector(branch[i].AABB), MaxVector(branch[i].AABB)), 
+                new Rectangle(
+                    new Vector2(branch[i].BoundingBoxMinX, branch[i].BoundingBoxMinY), 
+                    new Vector2(branch[i].BoundingBoxMaxX, branch[i].BoundingBoxMaxY)
+                ), 
                 state.BvhBranchAABBColour
             );
         }

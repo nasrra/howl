@@ -5,18 +5,38 @@ using Howl.Math.Shapes;
 
 namespace Howl.DataStructures;
 
-public readonly struct Leaf
+public struct Leaf
 {
     /// <summary>
-    /// Gets the AABB.
+    /// Gets and sets the bounding-box minimun vector x-component.
     /// </summary>
-    public readonly AABB AABB;
+    public float BoundingBoxMinX;
 
     /// <summary>
-    /// Gets the associated gen index.
+    /// Gets and sets the bounding-box minimum vector y-component.
     /// </summary>
-    public readonly GenIndex GenIndex;
-    
+    public float BoundingBoxMinY;
+
+    /// <summary>
+    /// Gets and sets the bounding-box maximum vector x-component.
+    /// </summary>
+    public float BoundingBoxMaxX;
+
+    /// <summary>
+    /// Gets and sets the bounding-box maximum vector y-component.
+    /// </summary>
+    public float BoundingBoxMaxY;
+
+    /// <summary>
+    /// Gets and sets the index of the generational index.
+    /// </summary>
+    public int Index;
+
+    /// <summary>
+    /// Gets and sets the generation of the generational index.
+    /// </summary>
+    public int Generation;
+
     /// <summary>
     /// Gets any user-defined flags to distinguish the gen.
     /// </summary>
@@ -30,9 +50,13 @@ public readonly struct Leaf
     /// <param name="flag">any user-defined flags to distinguish this leaf.</param>
     public Leaf(AABB aabb, GenIndex genIndex, byte flag)
     {
-        AABB = aabb;
-        GenIndex = genIndex;
-        Flag = flag;
+        BoundingBoxMinX = aabb.MinX;
+        BoundingBoxMinY = aabb.MinY;
+        BoundingBoxMaxX = aabb.MaxX;
+        BoundingBoxMaxY = aabb.MaxY;
+        Index           = genIndex.Index;
+        Generation      = genIndex.Generation;
+        Flag            = flag;
     }
 
     /// <summary>
@@ -44,7 +68,14 @@ public readonly struct Leaf
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(Leaf a ,Leaf b)
     {
-        return a.AABB == b.AABB && a.GenIndex == b.GenIndex && a.Flag == b.Flag;
+        return 
+        a.BoundingBoxMinX       == b.BoundingBoxMinX
+        && a.BoundingBoxMinY    == b.BoundingBoxMinY
+        && a.BoundingBoxMaxX    == b.BoundingBoxMaxX
+        && a.BoundingBoxMaxY    == b.BoundingBoxMaxY
+        && a.Index              == b.Index
+        && a.Generation         == b.Generation
+        && a.Flag               == b.Flag;
     }
 
     /// <summary>
@@ -56,7 +87,14 @@ public readonly struct Leaf
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(Leaf a ,Leaf b)
     {
-        return a.AABB != b.AABB || a.GenIndex != b.GenIndex || a.Flag != b.Flag;        
+        return 
+        a.BoundingBoxMinX       != b.BoundingBoxMinX
+        || a.BoundingBoxMinY    != b.BoundingBoxMinY
+        || a.BoundingBoxMaxX    != b.BoundingBoxMaxX
+        || a.BoundingBoxMaxY    != b.BoundingBoxMaxY
+        || a.Index              != b.Index
+        || a.Generation         != b.Generation
+        || a.Flag               != b.Flag;     
     }
 
     /// <summary>
@@ -77,6 +115,14 @@ public readonly struct Leaf
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public override int GetHashCode()
     {
-        return HashCode.Combine(AABB, GenIndex, Flag);
+        return HashCode.Combine(
+            BoundingBoxMinX,
+            BoundingBoxMinY,
+            BoundingBoxMaxX,
+            BoundingBoxMaxY,
+            Index,
+            Generation,
+            Flag
+        );
     }
 }

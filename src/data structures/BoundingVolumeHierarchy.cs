@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Howl.ECS;
 using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.Math.Shapes.AABB;
+using static Howl.DataStructures.Branch;
+using System.Runtime.CompilerServices;
 
 namespace Howl.DataStructures;
 
@@ -17,7 +20,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     /// <summary>
     /// Gets and sets the results gathered from a query call.
     /// </summary>
-    private List<QueryResult> queryResult;
+    private List<QueryResult> queryResults;
 
     /// <summary>
     /// Gets the contructed branches from the inserted leaves.
@@ -42,7 +45,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     public BoundingVolumeHierarchy()
     {
         leaves = new();
-        queryResult = new();
+        queryResults = new();
         branches = new();
         spatialPairs = new();
     }
@@ -63,7 +66,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     {
         leaves.Clear();
         branches.Clear();        
-        queryResult.Clear();
+        queryResults.Clear();
         spatialPairs.Clear();
     }
 
@@ -100,7 +103,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     {
         branches.Clear();
 
-        ReadOnlySpan<Leaf> leafSpan = CollectionsMarshal.AsSpan(leaves);
+        Span<Leaf> leafSpan = CollectionsMarshal.AsSpan(leaves);
         Span<SortNode> nodeSpan = stackalloc SortNode[leafSpan.Length];
 
         CreateSortNodes(nodeSpan, leafSpan);
@@ -109,7 +112,16 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         Span<Branch> branchSpan = stackalloc Branch[leafSpan.Length * 2];
 
         int writeIndex = 0; // start at the root node
-        ConstructBranches(leafSpan, branchSpan, nodeSpan, ref writeIndex, out AABB aabb);
+        ConstructBranches(
+            leafSpan, 
+            branchSpan, 
+            nodeSpan, 
+            ref writeIndex, 
+            out float boundingBoxMinX,
+            out float boundingBoxMinY,
+            out float boundingBoxMaxX,
+            out float boundingBoxMaxY
+        );
         branches.AddRange(branchSpan[..writeIndex]);
 
         // pre-compute spatial pairs so systems dont have to query specfic leaves.
@@ -129,7 +141,10 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         Span<Branch> branchSpan,
         Span<SortNode> nodeSpan, 
         ref int writeIndex,
-        out AABB aabb
+        out float boundingBoxMinX,
+        out float boundingBoxMinY,
+        out float boundingBoxMaxX,
+        out float boundingBoxMaxY
     )
     {
         // Reserve space
@@ -139,34 +154,49 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         // == Leaf ==
         if(nodeSpan.Length <= 2)
         {
+
             // build leaf AABB
-            aabb = leafSpan[nodeSpan[0].LeafIndex].AABB;
+            int leafIndex1 = nodeSpan[0].LeafIndex;
+            ref readonly Leaf leaf1 = ref leafSpan[leafIndex1];
+            boundingBoxMinX = leaf1.BoundingBoxMinX;
+            boundingBoxMinY = leaf1.BoundingBoxMinY;
+            boundingBoxMaxX = leaf1.BoundingBoxMaxX;
+            boundingBoxMaxY = leaf1.BoundingBoxMaxY;
+
 
             if(nodeSpan.Length == 2)
             {
                 // union the sibling leaf if there is one.
-                aabb = Union(aabb, leafSpan[nodeSpan[1].LeafIndex].AABB);
+                int leafIndex2 = nodeSpan[1].LeafIndex;
+                ref readonly Leaf leaf2 = ref leafSpan[leafIndex2];
+                Union(
+                    boundingBoxMinX,
+                    boundingBoxMinY,
+                    boundingBoxMaxX,
+                    boundingBoxMaxY,
+                    leaf2.BoundingBoxMinX,
+                    leaf2.BoundingBoxMinY,
+                    leaf2.BoundingBoxMaxX,
+                    leaf2.BoundingBoxMaxY,
+                    out boundingBoxMinX,
+                    out boundingBoxMinY,
+                    out boundingBoxMaxX,
+                    out boundingBoxMaxY
+                );
                 
                 // and set both leaf indices into the branch.
-                branch.SetLeafIndices(
-                    [
-                        nodeSpan[0].LeafIndex,
-                        nodeSpan[1].LeafIndex
-                    ]
-                );
+                SetLeafIndices(ref branch,[leafIndex1, leafIndex2]);
             }
             else
             {
-
                 // set the only entry indice into the branch.
-                branch.SetLeafIndices(
-                    [
-                        nodeSpan[0].LeafIndex,
-                    ]
-                );                
+                SetLeafIndices(ref branch,[leafIndex1]);                
             }
 
-            branch.AABB = aabb;
+            branch.BoundingBoxMinX = boundingBoxMinX;
+            branch.BoundingBoxMinY = boundingBoxMinY;
+            branch.BoundingBoxMaxX = boundingBoxMaxX;
+            branch.BoundingBoxMaxY = boundingBoxMaxY;
             branch.SubtreeSize = 1;
             return;
         }
@@ -174,26 +204,40 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         // == Internal Node ==
 
         // get whether or not to vertically or horizontally split the branch.
-        Vector2 min = Vector2.MaxValue;
-        Vector2 max = Vector2.MinValue;
+        float minX = float.MaxValue;
+        float minY = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxY = float.MinValue;
         for(int i = 0; i < nodeSpan.Length; i++)
         {
-            Vector2 centroid = nodeSpan[i].Centroid;
-            min = min.Min(centroid);
-            max = max.Max(centroid);
+            ref SortNode node = ref nodeSpan[i];
+            float positionX = node.PositionX;
+            float positionY = node.PositionX;
+
+            if(positionX < minX && positionY < minY)
+            {
+                minX = positionX;
+                minY = positionY;
+            }
+            if(positionX > maxX && positionY > maxY)
+            {
+                maxX = positionX;
+                maxY = positionY;
+            }
         }
-        float width = max.X - min.X;
-        float height = max.Y - min.Y;
-        bool verticalSplit = width >= height;
+        float width = maxX - minX;
+        float height = maxY - minY;
 
         // sort by the longest axis.
-        if (verticalSplit)
+        if (width >= height)
         {
-            nodeSpan.Sort((a,b) => a.Centroid.X.CompareTo(b.Centroid.X));
+            // vertical split.
+            nodeSpan.Sort((a,b) => a.PositionX.CompareTo(b.PositionX));
         }
         else
         {
-            nodeSpan.Sort((a,b) => a.Centroid.Y.CompareTo(b.Centroid.Y));            
+            // horizontal split.
+            nodeSpan.Sort((a,b) => a.PositionY.CompareTo(b.PositionY));            
         }
 
         // split at the mid point.
@@ -202,12 +246,47 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         Span<SortNode> right = nodeSpan.Slice(mid, nodeSpan.Length - mid);
 
         // recurse (children are written contiguously after parent).
-        ConstructBranches(leafSpan, branchSpan, left, ref writeIndex, out AABB leftAABB);
-        ConstructBranches(leafSpan, branchSpan, right, ref writeIndex, out AABB rightAABB);
+        ConstructBranches(
+            leafSpan, 
+            branchSpan, 
+            left, 
+            ref writeIndex, 
+            out float leftBoundingBoxMinX,
+            out float leftBoundingBoxMinY,
+            out float leftBoundingBoxMaxX,
+            out float leftBoundingBoxMaxY
+        );
+        
+        ConstructBranches(
+            leafSpan, 
+            branchSpan, 
+            right, 
+            ref writeIndex, 
+            out float rightBoundingBoxMinX,
+            out float rightBoundingBoxMinY,
+            out float rightBoundingBoxMaxX,
+            out float rightBoundingBoxMaxY
+        );
 
         // assign aabb.
-        aabb = Union(leftAABB, rightAABB);
-        branch.AABB = aabb; 
+        Union(
+            leftBoundingBoxMinX,
+            leftBoundingBoxMinY,
+            leftBoundingBoxMaxX,
+            leftBoundingBoxMaxY,
+            rightBoundingBoxMinX,
+            rightBoundingBoxMinY,
+            rightBoundingBoxMaxX,
+            rightBoundingBoxMaxY,
+            out boundingBoxMinX,
+            out boundingBoxMinY,
+            out boundingBoxMaxX,
+            out boundingBoxMaxY
+        );
+        branch.BoundingBoxMinX = boundingBoxMinX;
+        branch.BoundingBoxMinY = boundingBoxMinY;
+        branch.BoundingBoxMaxX = boundingBoxMaxX;
+        branch.BoundingBoxMaxY = boundingBoxMaxY;
 
         // subtree = everything written since this node.
         branch.SubtreeSize = writeIndex - branchIndex;
@@ -222,11 +301,24 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     /// <param name="nodeSpan">The span of sort nodes to write to.</param>
     /// <param name="leafSpan">The leaf span to create sorting nodes from.</param>
     /// <returns></returns>
-    private Span<SortNode> CreateSortNodes(Span<SortNode> nodeSpan, ReadOnlySpan<Leaf> leafSpan)
+    private Span<SortNode> CreateSortNodes(Span<SortNode> nodeSpan, Span<Leaf> leafSpan)
     {
         for(int i = 0; i < leafSpan.Length; i++)
         {
-            nodeSpan[i] = new SortNode(Center(leafSpan[i].AABB), i);
+            ref Leaf leaf = ref leafSpan[i];
+            Center(
+                leaf.BoundingBoxMinX, 
+                leaf.BoundingBoxMinY, 
+                leaf.BoundingBoxMaxX, 
+                leaf.BoundingBoxMaxY,
+                out float centerX,
+                out float centerY
+            );
+
+            ref SortNode node = ref nodeSpan[i];
+            node.LeafIndex = i;
+            node.PositionX = centerX;
+            node.PositionY = centerY;
         }
         return nodeSpan;
     }
@@ -236,9 +328,23 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     /// </summary>
     /// <param name="aabb">The area to query for intersects.</param>
     /// <returns>A span of all of the found intersects.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public ReadOnlySpan<QueryResult> Query(in AABB aabb)
     {
-        queryResult.Clear();
+        return Query(aabb.MinX, aabb.MinY, aabb.MaxX, aabb.MaxY);
+    }
+
+    /// <summary>
+    /// Queries the tree for any leaves that may overlap within a given area.
+    /// </summary>
+    /// <param name="minX">the minimum x-component of the query area.</param>
+    /// <param name="minY">the minimum y-component of the query area.</param>
+    /// <param name="maxX">the maximum x-component of the query area.</param>
+    /// <param name="maxY">the maximum y-component of the query area.</param>
+    /// <returns>the resultant data found stored in the query location.</returns>
+    public ReadOnlySpan<QueryResult> Query(float minX, float minY, float maxX, float maxY)
+    {
+        queryResults.Clear();
 
         Span<Branch> branchSpan = CollectionsMarshal.AsSpan(branches);
 
@@ -248,7 +354,15 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         {
             ref Branch branch = ref branchSpan[i];
 
-            if (!AABB.Intersect(aabb, branch.AABB))
+            if (!Intersect(
+                minX, 
+                minY, 
+                maxX, 
+                maxY, 
+                branch.BoundingBoxMinX, 
+                branch.BoundingBoxMinY, 
+                branch.BoundingBoxMaxX, 
+                branch.BoundingBoxMaxY))
             {
                 // skip entire subtree
                 i += branch.SubtreeSize;
@@ -257,7 +371,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
 
             if (branch.LeafCount > 0)
             {
-                QueryLeaf(branch.GetLeafIndices(), aabb);
+                QueryLeaves(GetLeafIndices(branch), minX, minY, maxX, maxY);
                 i++;
             }
             else
@@ -267,7 +381,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
             }
         }
 
-        return CollectionsMarshal.AsSpan(queryResult);
+        return CollectionsMarshal.AsSpan(queryResults);
     }
 
     /// <summary>
@@ -275,10 +389,10 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     /// </summary>
     /// <param name="raycastStart">The starting position of the raycast.</param>
     /// <param name="raycastEnd">The end position of the raycast.</param>
-    /// <returns></returns>
+    /// <returns>the resultant data found stored in the query location.</returns>
     public ReadOnlySpan<QueryResult> Query(Vector2 raycastStart, Vector2 raycastEnd)
     {
-        queryResult.Clear();
+        queryResults.Clear();
 
         Span<Branch> branchSpan = CollectionsMarshal.AsSpan(branches);
 
@@ -288,7 +402,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         {
             ref Branch branch = ref branchSpan[i];
 
-            if (LineIntersect(branch.AABB, raycastStart, raycastEnd) == false)
+            if (LineIntersect(branch.BoundingBoxMinX, branch.BoundingBoxMinY, branch.BoundingBoxMaxX, branch.BoundingBoxMaxY, raycastStart.X, raycastStart.Y, raycastEnd.X, raycastEnd.Y) == false)
             {
                 // skip entire subtree
                 i += branch.SubtreeSize;
@@ -297,7 +411,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
 
             if (branch.LeafCount > 0)
             {
-                QueryLeaf(branch.GetLeafIndices(), raycastStart, raycastEnd);
+                RaycastLeaves(GetLeafIndices(branch), raycastStart, raycastEnd);
                 i++;
             }
             else
@@ -307,42 +421,83 @@ public sealed class BoundingVolumeHierarchy : IDisposable
             }
         }
 
-        return CollectionsMarshal.AsSpan(queryResult);
+        return CollectionsMarshal.AsSpan(queryResults);
     }
 
     /// <summary>
-    /// Queries a leaf for any data the may overlap within a given area.
+    /// Queries a span leaves for any data the may overlap within a given area.
     /// </summary>
     /// <param name="leafIndices">The leaves to query.</param>
     /// <param name="aabb">The area to check intersects against.</param>
-    private void QueryLeaf(ReadOnlySpan<int> leafIndices, in AABB aabb)
+    /// <returns>the resultant data found stored in the query location.</returns>
+    private void QueryLeaves(ReadOnlySpan<int> leafIndices, in AABB aabb)
+    {
+        QueryLeaves(leafIndices, aabb.MinX, aabb.MinY, aabb.MaxX, aabb.MaxY);
+    }
+
+    /// <summary>
+    /// Queries a span leaves for any data the may overlap within a given area.
+    /// </summary>
+    /// <param name="leafIndices">the leaves to query.</param>
+    /// <param name="minX">the minimum vector x-component of the query area.</param>
+    /// <param name="minY">the minimum vector y-component of the query area.</param>
+    /// <param name="maxX">the maximum vector x-component of the query area.</param>
+    /// <param name="maxY">the maximum vector y-component of the query area.</param>
+    private void QueryLeaves(ReadOnlySpan<int> leafIndices, float minX, float minY, float maxX, float maxY)
     {
         Span<Leaf> leafSpan = CollectionsMarshal.AsSpan(leaves);
         for(int i = 0; i < leafIndices.Length; i++)
         {
             ref Leaf leaf = ref leafSpan[leafIndices[i]];
-            if(Intersect(leaf.AABB, aabb))
+            if(Intersect(leaf.BoundingBoxMinX, leaf.BoundingBoxMinY, leaf.BoundingBoxMaxX, leaf.BoundingBoxMaxY, minX, minY, maxX, maxY))
             {
-                queryResult.Add(new QueryResult(leaf.GenIndex, leaf.Flag));
+                queryResults.Add(
+                    new QueryResult(
+                        new GenIndex(leaf.Index, leaf.Generation), 
+                        leaf.Flag
+                    )
+                );
             }
         }
     }
 
     /// <summary>
-    /// Queries a leaf for any data the may overlap a given raycast.
+    /// Queries a span of leaves for any data the may overlap a given raycast.
     /// </summary>
     /// <param name="leafIndices">The leaves to query.</param>
     /// <param name="raycastStart">The starting position of the raycast.</param>
     /// <param name="raycastEnd">The end position of the raycast.</param>
-    private void QueryLeaf(ReadOnlySpan<int> leafIndices, Vector2 raycastStart, Vector2 raycastEnd)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private void RaycastLeaves(ReadOnlySpan<int> leafIndices, Vector2 raycastStart, Vector2 raycastEnd)
     {
+        RaycastLeaves(leafIndices, raycastStart.X, raycastStart.Y, raycastEnd.X, raycastEnd.Y);
+    }
+
+    /// <summary>
+    /// Queries a span of leaves for any data the may overlap a given raycast.
+    /// </summary>
+    /// <param name="leafIndices">The leaves to query.</param>
+    /// <param name="raycastStartX">the raycast start position x-component.</param>
+    /// <param name="raycastStartY">the raycast start position y-component.</param>
+    /// <param name="raycastEndX">the raycast end position x-component.</param>
+    /// <param name="raycastEndY">the raycast end position y-component.</param>
+    private void RaycastLeaves(ReadOnlySpan<int> leafIndices, float raycastStartX, float raycastStartY, float raycastEndX, float raycastEndY)
+    {        
         Span<Leaf> leafSpan = CollectionsMarshal.AsSpan(leaves);
         for(int i = 0; i < leafIndices.Length; i++)
         {
             ref Leaf leaf = ref leafSpan[leafIndices[i]];
-            if(LineIntersect(leaf.AABB, raycastStart, raycastEnd))
+            if(LineIntersect(
+                leaf.BoundingBoxMinX, leaf.BoundingBoxMinY, leaf.BoundingBoxMaxX, leaf.BoundingBoxMaxY, 
+                raycastStartX, raycastStartY, raycastEndX, raycastEndY
+            ))
             {
-                queryResult.Add(new QueryResult(leaf.GenIndex, leaf.Flag));
+                queryResults.Add(
+                    new QueryResult(
+                        new GenIndex(leaf.Index, leaf.Generation), 
+                        leaf.Flag
+                    )
+                );
             }
         }
     }
@@ -369,10 +524,15 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         for(int i = 0; i < leafSpan.Length; i++)
         {
             ref readonly Leaf ownerLeaf = ref leafSpan[i]; 
-            QueryResult owner = new QueryResult(ownerLeaf.GenIndex, ownerLeaf.Flag);
+            QueryResult owner = new QueryResult(new GenIndex(ownerLeaf.Index, ownerLeaf.Generation), ownerLeaf.Flag);
 
             // get all near collider to the leaf AABB.
-            ReadOnlySpan<QueryResult> nearSpan = Query(leafSpan[i].AABB);
+            ReadOnlySpan<QueryResult> nearSpan = Query(
+                ownerLeaf.BoundingBoxMinX,
+                ownerLeaf.BoundingBoxMinY,
+                ownerLeaf.BoundingBoxMaxX,
+                ownerLeaf.BoundingBoxMaxY
+            );
 
             for(int j = 0; j < nearSpan.Length; j++)
             {
@@ -407,7 +567,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         if (disposing)
         {
             Clear();
-            queryResult = null;
+            queryResults = null;
             leaves = null;
             branches = null;
         }
