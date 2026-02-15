@@ -300,4 +300,18 @@ public static class Math
     {
         return Dot(x,y,x,y);
     }
+
+    /// <summary>
+    /// Gets the cross product between two points.
+    /// </summary>
+    /// <param name="lhsX">the x-component of the left-hand side point.</param>
+    /// <param name="lhsY">the y-component of the left-hand side point.</param>
+    /// <param name="rhsX">the x-component of the right-hand side point.</param>
+    /// <param name="rhsY">the y-component of the right-hand side point.</param>
+    /// <returns>the cross product.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float Cross(float lhsX, float lhsY, float rhsX, float rhsY)
+    {
+        return lhsX * rhsY - lhsY * rhsX;    
+    }   
 }

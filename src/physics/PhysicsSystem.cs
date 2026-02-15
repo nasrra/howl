@@ -43,7 +43,13 @@ public static class PhysicsSystem
                 }
                 
                 rigidbodySystemState.MovementStepStopwatch.Restart();
-                    RigidBodySystem.MovementStep(componentRegistry, state.RigidbodySystemState, deltaTime);
+                    RigidBodySystem.MovementStep(
+                        componentRegistry, 
+                        state.RigidbodySystemState.Gravity, 
+                        state.RigidbodySystemState.GravityDirection.X,
+                        state.RigidbodySystemState.GravityDirection.Y,
+                        deltaTime
+                    );
                 rigidbodySystemState.MovementStepStopwatch.Stop();
 
                 collisionSystemState.SyncCollidersToTransformsStopwatch.Restart();
