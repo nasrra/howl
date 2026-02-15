@@ -1,5 +1,6 @@
 using Howl.Math;
 using Howl.Math.Shapes;
+using static Howl.Math.Shapes.AABB;
 
 namespace Howl.Test.Math.Shapes;
 
@@ -18,11 +19,11 @@ public class AABBTest
         float maxX = 10;
         float maxY = 10;
         
-        aabb = new (minX, minY, maxX, maxY);
-        Assert.Equal(minX, aabb.Min.X);
-        Assert.Equal(minY, aabb.Min.Y);
-        Assert.Equal(maxX, aabb.Max.X);
-        Assert.Equal(maxY, aabb.Max.Y);
+        aabb = new(minX, minY, maxX, maxY);
+        Assert.Equal(minX, aabb.MinX);
+        Assert.Equal(minY, aabb.MinY);
+        Assert.Equal(maxX, aabb.MaxX);
+        Assert.Equal(maxY, aabb.MaxY);
     
     }
 
@@ -30,12 +31,24 @@ public class AABBTest
     public void VectorConstructor_Test()
     {        
         AABB aabb;
-
         Vector2 min = new(10,10);
         Vector2 max = new(30,30);
         aabb = new(min, max);
-        Assert.Equal(min, aabb.Min);
-        Assert.Equal(max, aabb.Max);
+        Assert.Equal(min.X, aabb.MinX);
+        Assert.Equal(min.Y, aabb.MinY);
+        Assert.Equal(max.X, aabb.MaxX);
+        Assert.Equal(max.Y, aabb.MaxY);
+    }
+
+    [Fact]
+    public void MinAndMaxVector_Test()
+    {
+        AABB aabb;
+        Vector2 min = new(10,10);
+        Vector2 max = new(30,30);
+        aabb = new(min, max);
+        Assert.Equal(min, MinVector(aabb));
+        Assert.Equal(max, MaxVector(aabb));
     }
 
     [Fact]
@@ -56,10 +69,12 @@ public class AABBTest
             new Vector2(66, 50)
         );
 
-        AABB result = new(a,b);
+        AABB result = Union(a,b);
 
-        Assert.Equal(expected.Min, result.Min);
-        Assert.Equal(expected.Max, result.Max);
+        Assert.Equal(expected.MinX, result.MinX);
+        Assert.Equal(expected.MinY, result.MinY);
+        Assert.Equal(expected.MaxX, result.MaxX);
+        Assert.Equal(expected.MaxY, result.MaxY);
     }
 
     [Fact]
@@ -79,8 +94,8 @@ public class AABBTest
         expectedHeight = 20;
         
         aabb = new (min,max);
-        Assert.Equal(expectedHeight, aabb.Height);
-        Assert.Equal(expectedWidth, aabb.Width);
+        Assert.Equal(expectedHeight, Height(aabb));
+        Assert.Equal(expectedWidth, Width(aabb));
 
         // test 2.
         min = new(-20,-30);
@@ -89,16 +104,16 @@ public class AABBTest
         expectedHeight = 60;
         
         aabb = new (min,max);
-        Assert.Equal(expectedHeight, aabb.Height);
-        Assert.Equal(expectedWidth, aabb.Width);
+        Assert.Equal(expectedHeight, Height(aabb));
+        Assert.Equal(expectedWidth, Width(aabb));
     }
 
     [Fact]
-    public void GetCentroid_Test()
+    public void Center_Test()
     {
         AABB aabb = new(new Vector2(-20, -30), new Vector2(15, 25));
         Vector2 expected = new Vector2(-2.5f, -2.5f);
-        Assert.Equal(expected, aabb.GetCentroid());
+        Assert.Equal(expected, Center(aabb));
     }
 
     [Fact]
@@ -197,10 +212,10 @@ public class AABBTest
         lineSegmentStart = new Vector2(-1,-1);
         lineSegmentEnd = new Vector2(10,10);
 
-        Assert.True(AABB.Intersect(aabb, lineSegmentStart, lineSegmentEnd));
+        Assert.True(LineIntersect(aabb, lineSegmentStart, lineSegmentEnd));
 
         lineSegmentEnd = new Vector2(-1,10);
-        Assert.False(AABB.Intersect(aabb, lineSegmentStart, lineSegmentEnd));
+        Assert.False(LineIntersect(aabb, lineSegmentStart, lineSegmentEnd));
     }
 
     [Fact]

@@ -36,18 +36,18 @@ public static class Math
     /// <summary>
     /// Gets the closest point along a line segment towards a given point. 
     /// </summary>
-    /// <param name="lineSegmentStart">the beginning of the line-segment.</param>
-    /// <param name="lineSegmentEnd">the end of the line-segment.</param>
+    /// <param name="lineStart">the beginning of the line-segment.</param>
+    /// <param name="lineEnd">the end of the line-segment.</param>
     /// <param name="queryPoint">the point to find the closest point towards.</param>
     /// <returns>The closest point along the line segment towards the query point.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 ClosestPoint(Vector2 lineSegmentStart, Vector2 lineSegmentEnd, Vector2 queryPoint)
+    public static Vector2 ClosestPoint(Vector2 lineStart, Vector2 lineEnd, Vector2 queryPoint)
     {
         ClosestPoint(
-            lineSegmentStart.X,
-            lineSegmentStart.Y,
-            lineSegmentEnd.X,
-            lineSegmentEnd.Y,
+            lineStart.X,
+            lineStart.Y,
+            lineEnd.X,
+            lineEnd.Y,
             queryPoint.X,
             queryPoint.Y,
             out float closestPointX,
@@ -56,12 +56,24 @@ public static class Math
         return new Vector2(closestPointX, closestPointY);
     }
 
+    /// <summary>
+    /// Gets the closest point along a line segment towards a given point.
+    /// </summary>
+    /// <param name="lineStartX">the x-component of the line segment starting point.</param>
+    /// <param name="lineStartY">the y-component of the line segment starting point.</param>
+    /// <param name="lineEndX">the x-component of the line segment end point.</param>
+    /// <param name="lineEndY">the y-component of the line segment end point.</param>
+    /// <param name="queryPointX">the x-component of the query point.</param>
+    /// <param name="queryPointY">the y-component of the query point.</param>
+    /// <param name="closestPointX">the x-compoennt of the closest point along the line segment towards the query point.</param>
+    /// <param name="closestPointY">the y-compoennt of the closest point along the line segment towards the query point.</param>
+    /// <param name="distanceSquared">the distance sqaured from the query point to the closest point.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void ClosestPoint(
-        float lineSegmentStartX, 
-        float lineSegmentStartY,
-        float lineSegmentEndX, 
-        float lineSegmentEndY,
+        float lineStartX, 
+        float lineStartY,
+        float lineEndX, 
+        float lineEndY,
         float queryPointX,
         float queryPointY, 
         out float closestPointX,
@@ -70,10 +82,10 @@ public static class Math
     )
     {
         ClosestPoint(
-            lineSegmentStartX, 
-            lineSegmentStartY, 
-            lineSegmentEndX, 
-            lineSegmentEndY, 
+            lineStartX, 
+            lineStartY, 
+            lineEndX, 
+            lineEndY, 
             queryPointX,
             queryPointY,
             out closestPointX,
@@ -82,22 +94,33 @@ public static class Math
         distanceSquared = DistanceSquared(queryPointX, queryPointY, closestPointX, closestPointY);
     }
 
+    /// <summary>
+    /// Gets the closest point along a line segment towards a given point.
+    /// </summary>
+    /// <param name="lineStartX">the x-component of the line segment starting point.</param>
+    /// <param name="lineStartY">the y-component of the line segment starting point.</param>
+    /// <param name="lineEndX">the x-component of the line segment end point.</param>
+    /// <param name="lineEndY">the y-component of the line segment end point.</param>
+    /// <param name="queryPointX">the x-component of the query point.</param>
+    /// <param name="queryPointY">the y-component of the query point.</param>
+    /// <param name="closestPointX">the x-compoennt of the closest point along the line segment towards the query point.</param>
+    /// <param name="closestPointY">the y-compoennt of the closest point along the line segment towards the query point.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void ClosestPoint(
-        float lineSegmentStartX, 
-        float lineSegmentStartY,
-        float lineSegmentEndX, 
-        float lineSegmentEndY,
+        float lineStartX, 
+        float lineStartY,
+        float lineEndX, 
+        float lineEndY,
         float queryPointX,
         float queryPointY,
         out float closestPointX,
         out float closestPointY
     )
     {
-        float lineDistanceX = lineSegmentEndX - lineSegmentStartX;
-        float lineDistanceY = lineSegmentEndY - lineSegmentStartY;
-        float pointDistanceX = queryPointX - lineSegmentStartX;
-        float pointDistanceY = queryPointY - lineSegmentStartY;
+        float lineDistanceX = lineEndX - lineStartX;
+        float lineDistanceY = lineEndY - lineStartY;
+        float pointDistanceX = queryPointX - lineStartX;
+        float pointDistanceY = queryPointY - lineStartY;
 
         // float projection = Vector2.Dot(pointDistance, lineDistance);
         float projection = Dot(pointDistanceX, pointDistanceY, lineDistanceX, lineDistanceY);
@@ -107,18 +130,18 @@ public static class Math
 
         if(delta <= 0)
         {
-            closestPointX = lineSegmentStartX;
-            closestPointY = lineSegmentStartY;
+            closestPointX = lineStartX;
+            closestPointY = lineStartY;
         }
         else if(delta >= 1)
         {
-            closestPointX = lineSegmentEndX;
-            closestPointY = lineSegmentEndY;
+            closestPointX = lineEndX;
+            closestPointY = lineEndY;
         }
         else
         {
-            closestPointX = lineSegmentStartX + lineDistanceX * delta;
-            closestPointY = lineSegmentStartY + lineDistanceY * delta;
+            closestPointX = lineStartX + lineDistanceX * delta;
+            closestPointY = lineStartY + lineDistanceY * delta;
         }
     }
 

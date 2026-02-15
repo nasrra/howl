@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using static Howl.Math.Math;
 
 namespace Howl.Math.Shapes;
 
@@ -8,24 +9,24 @@ public struct AABB
     public static AABB Zero => new AABB(Vector2.Zero, Vector2.Zero);
 
     /// <summary>
-    /// Gets and sets the minimum vector.
+    /// Gets and sets the x-component of the minimum vector.
     /// </summary>
-    public Vector2 Min;
+    public float MinX;
 
     /// <summary>
-    /// Gets and sets the maximum vector.
+    /// Gets and sets the y-component of the minimum vector.
     /// </summary>
-    public Vector2 Max;
+    public float MinY;
 
     /// <summary>
-    /// Calculates and gets the height of this AABB.
+    /// Gets and sets the x-component of the maximum vector.
     /// </summary>
-    public float Height => Max.Y - Min.Y;
+    public float MaxX;
 
     /// <summary>
-    /// Calculates and gets the width of this AABB.
+    /// Gets and sets the y-component of the maximum vector. 
     /// </summary>
-    public float Width => Max.X - Min.X;
+    public float MaxY;
 
     /// <summary>
     /// Constructs a Axis-Aligned-Bounding-Box.
@@ -33,10 +34,8 @@ public struct AABB
     /// <param name="min">The minimum vector.</param>
     /// <param name="max">The maximum vector.</param>
     public AABB(Vector2 min, Vector2 max)
-    {
-        Min = min;
-        Max = max;
-    }
+    : this(min.X, min.Y, max.X, max.Y)
+    {}
 
     /// <summary>
     /// Constructs a Axis-Aligned-Bounding-Box.
@@ -47,87 +46,10 @@ public struct AABB
     /// <param name="maxY">the y-value of the maximum vector.</param>
     public AABB(float minX, float minY, float maxX, float maxY)
     {
-        Min = new (minX, minY);
-        Max = new (maxX, maxY);
-    }
-
-    /// <summary>
-    /// Constructs a Axis-Aligned-Bounding-Box from the union of two AABB's
-    /// </summary>
-    /// <param name="a">aabb-a</param>
-    /// <param name="b">aabb-b</param>
-    public AABB(AABB a, AABB b)
-    {
-        Min = a.Min.MinComponent(b.Min);
-        Max = a.Max.MaxComponent(b.Max);
-    }
-
-    /// <summary>
-    /// Checks whether two Axis-Aligned-Bounding-Boxes are intersecting.
-    /// </summary>
-    /// <param name="a">The first AABB.</param>
-    /// <param name="b">The other AABB.</param>
-    /// <returns>true, if there is an intersection; otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(in AABB a, in AABB b)
-    {
-        if(a.Max.X <= b.Min.X || b.Max.X <= a.Min.X)
-        {
-            return false;
-        }
-        if (a.Max.Y <= b.Min.Y || b.Max.Y <= a.Min.Y)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
-    /// </summary>
-    /// <param name="a">the aabb.</param>
-    /// <param name="vector">the vector.</param>
-    /// <returns>true, if there is an intersection; otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(Vector2 vector, in AABB aabb)
-    {
-        return Intersect(aabb, vector);
-    }
-
-    /// <summary>
-    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
-    /// </summary>
-    /// <param name="a">the aabb.</param>
-    /// <param name="vector">the vector.</param>
-    /// <returns>true, if there is an intersection; otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(in AABB aabb, Vector2 vector)
-    {
-        return 
-        aabb.Min.X <= vector.X &&
-        aabb.Min.Y <= vector.Y && 
-        aabb.Max.X >= vector.X &&
-        aabb.Max.Y >= vector.Y;
-    }
-
-    /// <summary>
-    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a line segment.
-    /// </summary>
-    /// <param name="aabb">The aabb.</param>
-    /// <param name="lineSegmentStart">the start of the line-segment.</param>
-    /// <param name="lineSegmentEnd">the end of the line-segment.</param>
-    /// <returns>true, if there is an intersection; otherwise false.</returns>
-    public static bool Intersect(in AABB aabb, Vector2 lineSegmentStart, Vector2 lineSegmentEnd)
-    {
-        if(Intersect(aabb,Math.ClosestPoint(lineSegmentStart, lineSegmentEnd, aabb.Min)))
-        {
-            if(Intersect(aabb,Math.ClosestPoint(lineSegmentStart, lineSegmentEnd, aabb.Max)))
-            {
-                return true;
-            }
-        }
-        return false;
+        MinX = minX;
+        MinY = minY;
+        MaxX = maxX;
+        MaxY = maxY;
     }
 
     /// <summary>
@@ -139,7 +61,12 @@ public struct AABB
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static AABB operator +(AABB aabb, Vector2 vector)
     {
-        return new(aabb.Min + vector, aabb.Max + vector);
+        return new AABB(
+            aabb.MinX + vector.X,
+            aabb.MinY + vector.Y,
+            aabb.MaxX + vector.X,
+            aabb.MaxY + vector.Y
+        );
     }
 
     /// <summary>
@@ -151,17 +78,12 @@ public struct AABB
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static AABB operator -(AABB aabb, Vector2 vector)
     {
-        return new(aabb.Min - vector, aabb.Max - vector);        
-    }
-
-    /// <summary>
-    /// Gets the center point of this AABB.
-    /// </summary>
-    /// <returns>The resultant vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public Vector2 GetCentroid()
-    {
-        return (Max + Min) * 0.5f; 
+        return new AABB(
+            aabb.MinX - vector.X,
+            aabb.MinY - vector.Y,
+            aabb.MaxX - vector.X,
+            aabb.MaxY - vector.Y
+        );      
     }
 
     /// <summary>
@@ -173,7 +95,11 @@ public struct AABB
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool operator ==(AABB a, AABB b)
     {
-        return a.Min == b.Min && a.Max == b.Max;   
+        return 
+        a.MinX == b.MinX 
+        && a.MinY == b.MinY
+        && a.MaxX == b.MaxX
+        && a.MaxY == b.MaxY;   
     }
 
     /// <summary>
@@ -185,7 +111,11 @@ public struct AABB
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool operator !=(AABB a, AABB b)
     {
-        return a.Min != b.Min || a.Max != b.Max;
+        return 
+        a.MinX != b.MinX
+        || a.MinY != b.MinY 
+        || a.MaxX != b.MaxX
+        || a.MaxY != b.MaxY;
     }
 
     /// <summary>
@@ -221,7 +151,12 @@ public struct AABB
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool NearlyEqual(AABB a, AABB b, float epsilon)
     {
-        return Vector2.NearlyEqual(a.Min, b.Min, epsilon) && Vector2.NearlyEqual(a.Max, b.Max, epsilon);
+        return 
+        Math.NearlyEqual(a.MinX, b.MinX, epsilon)
+        && Math.NearlyEqual(a.MinY, b.MinY, epsilon)
+        && Math.NearlyEqual(a.MaxX, b.MaxX, epsilon)
+        && Math.NearlyEqual(a.MaxY, b.MaxY, epsilon);
+
     }
 
     /// <summary>
@@ -236,5 +171,351 @@ public struct AABB
     public override string ToString()
     {
         return $"Min: '{Min}', Max: '{Max}'";
+    }
+
+    /// <summary>
+    /// Gets the height of an AABB.
+    /// </summary>
+    /// <param name="aabb">the aabb.</param>
+    /// <returns>the height of the aabb.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float Height(in AABB aabb)
+    {
+        return aabb.MaxY - aabb.MinY;
+    }
+
+    /// <summary>
+    /// Gets the width of an AABB.
+    /// </summary>
+    /// <param name="aabb">the aabb.</param>
+    /// <returns>the width of the aabb.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float Width(in AABB aabb)
+    {
+        return aabb.MaxX - aabb.MinX;
+    }
+
+    /// <summary>
+    /// Constructs a vector of the center point of a AABB.
+    /// </summary>
+    /// <returns>The resultant vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 Center(in AABB aabb)
+    {
+        Center(aabb.MinX, aabb.MinY, aabb.MaxX, aabb.MaxY, out float centerX, out float centerY);
+        return new Vector2(centerX, centerY); 
+    }
+
+    /// <summary>
+    /// Gets the center point of an AABB.
+    /// </summary>
+    /// <param name="minX">the x-component of the minimum vector.</param>
+    /// <param name="minY">the y-component of the minimum vector.</param>
+    /// <param name="maxX">the x-component of the maxiumum vector.</param>
+    /// <param name="maxY">the y-component of the maxiumum vector.</param>
+    /// <param name="centerX">the x-component of the center point.</param>
+    /// <param name="centerY">the y-component of the center point.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveInlining)]
+    public static void Center(float minX, float minY, float maxX, float maxY, out float centerX, out float centerY)
+    {
+        centerX = (maxX + minX) * 0.5f;
+        centerY = (maxY + minY) * 0.5f;
+    }
+
+    /// <summary>
+    /// Constructs the minimum vector of an AABB.
+    /// </summary>
+    /// <param name="aabb">the aabb.</param>
+    /// <returns>the minimum vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 MinVector(in AABB aabb)
+    {
+        return new Vector2(aabb.MinX, aabb.MinY);
+    }
+
+    /// <summary>
+    /// Constructs the maximum vector of an AABB.
+    /// </summary>
+    /// <param name="aabb">the aabb.</param>
+    /// <returns>the maximum vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector2 MaxVector(in AABB aabb)
+    {
+        return new Vector2(aabb.MaxX, aabb.MaxY);
+    }
+
+
+
+
+    /*******************
+    
+        Union.
+    
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Constructs a Axis-Aligned-Bounding-Box from the union of two AABB's
+    /// </summary>
+    /// <param name="a">aabb-a</param>
+    /// <param name="b">aabb-b</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static AABB Union(AABB a, AABB b)
+    {
+        Union(
+            a.MinX, 
+            a.MinY,
+            a.MaxX, 
+            a.MaxY,
+            b.MinX, 
+            b.MinY,
+            b.MaxX, 
+            b.MaxY,
+            out float unionMinX,
+            out float unionMinY,
+            out float unionMaxX,
+            out float unionMaxY
+        );
+
+        return new AABB(
+            unionMinX,
+            unionMinY,
+            unionMaxX,
+            unionMaxY
+        );
+    }
+
+    /// <summary>
+    /// Gets the min and max components for the union of an AABB.
+    /// </summary>
+    /// <param name="aMinX">the x-component of the minimum vector from aabbb a.</param>
+    /// <param name="aMinY">the y-component of the minimum vector from aabbb a.</param>
+    /// <param name="aMaxX">the x-component of the maximum vector from aabbb a.</param>
+    /// <param name="aMaxY">the y-component of the maximum vector from aabbb a.</param>
+    /// <param name="bMinX">the x-component of the minimum vector from aabbb b.</param>
+    /// <param name="bMinY">the y-component of the minimum vector from aabbb b.</param>
+    /// <param name="bMaxX">the x-component of the maximum vector from aabbb b.</param>
+    /// <param name="bMaxY">the y-component of the maximum vector from aabbb b.</param>
+    /// <param name="unionMinX">the x-component of the minimum vector for the unioned aabbb.</param>
+    /// <param name="unionMinY">the y-component of the minimum vector for the unioned aabbb.</param>
+    /// <param name="unionMaxX">the x-component of the maximum vector for the unioned aabbb.</param>
+    /// <param name="unionMaxY">the y-component of the maximum vector for the unioned aabbb.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Union(
+        float aMinX, 
+        float aMinY,
+        float aMaxX, 
+        float aMaxY,
+        float bMinX, 
+        float bMinY,
+        float bMaxX, 
+        float bMaxY,
+        out float unionMinX,
+        out float unionMinY,
+        out float unionMaxX,
+        out float unionMaxY
+    )
+    {
+        unionMinX = Math.Min(aMinX, bMinX);
+        unionMinY = Math.Min(aMinY, bMinY);
+        unionMaxX = Math.Max(aMaxX, bMaxX);
+        unionMaxY = Math.Max(aMaxY, bMaxY);
+    }
+
+
+
+
+    /*******************
+    
+        Intersect.
+    
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Checks whether two Axis-Aligned-Bounding-Boxes are intersecting.
+    /// </summary>
+    /// <param name="a">The first AABB.</param>
+    /// <param name="b">The other AABB.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(in AABB a, in AABB b)
+    {
+        return Intersect(
+            a.MinX,
+            a.MinY,
+            a.MaxX,
+            a.MaxY,
+            b.MinX,
+            b.MinY,
+            b.MaxX,
+            b.MaxY
+        );
+    }
+
+
+    /// <summary>
+    /// Checks whether two Axis-Aligned-Bounding-Boxes are intersecting.
+    /// </summary>
+    /// <param name="aMinX">the x-component of the minimum vector from aabbb a.</param>
+    /// <param name="aMinY">the y-component of the minimum vector from aabbb a.</param>
+    /// <param name="aMaxX">the x-component of the maximum vector from aabbb a.</param>
+    /// <param name="aMaxY">the y-component of the maximum vector from aabbb a.</param>
+    /// <param name="bMinX">the x-component of the minimum vector from aabbb b.</param>
+    /// <param name="bMinY">the y-component of the minimum vector from aabbb b.</param>
+    /// <param name="bMaxX">the x-component of the maximum vector from aabbb b.</param>
+    /// <param name="bMaxY">the y-component of the maximum vector from aabbb b.</param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(
+        float aMinX,
+        float aMinY,
+        float aMaxX,
+        float aMaxY,
+        float bMinX,
+        float bMinY,
+        float bMaxX,
+        float bMaxY
+    )
+    {        
+        if(aMaxX <= bMinX || bMaxX <= aMinX)
+        {
+            return false;
+        }
+        if (aMaxY <= bMinY || bMaxY <= aMinY)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
+    /// </summary>
+    /// <param name="a">the aabb.</param>
+    /// <param name="vector">the vector.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(Vector2 vector, in AABB aabb)
+    {
+        return Intersect(
+            aabb.MinX,
+            aabb.MinY,
+            aabb.MaxX,
+            aabb.MaxY,
+            vector.X,
+            vector.Y
+        );
+    }
+
+    /// <summary>
+    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
+    /// </summary>
+    /// <param name="a">the aabb.</param>
+    /// <param name="vector">the vector.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(in AABB aabb, Vector2 vector)
+    {
+        return Intersect(
+            aabb.MinX,
+            aabb.MinY,
+            aabb.MaxX,
+            aabb.MaxY,
+            vector.X,
+            vector.Y
+        );
+    }
+
+    /// <summary>
+    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
+    /// </summary>
+    /// <param name="aabbMinX">the x-component of the minimum vector in the aabb.</param>
+    /// <param name="aabbMinY">the y-component of the minimum vector in the aabb.</param>
+    /// <param name="aabbMaxX">the x-component of the maximum vector in the aabb.</param>
+    /// <param name="aabbMaxY">the y-component of the maximum vector in the aabb.</param>
+    /// <param name="vectorX">the x-component of the vector.</param>
+    /// <param name="vectorY">the y-component of the vector.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(
+        float aabbMinX,
+        float aabbMinY,
+        float aabbMaxX,
+        float aabbMaxY,
+        float vectorX,
+        float vectorY
+    )
+    {
+        return 
+        aabbMinX <= vectorX &&
+        aabbMinY <= vectorY && 
+        aabbMaxX >= vectorX &&
+        aabbMaxY >= vectorY;        
+    }
+
+    /// <summary>
+    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a line segment.
+    /// </summary>
+    /// <param name="aabb">The aabb.</param>
+    /// <param name="lineStart">the start of the line-segment.</param>
+    /// <param name="lineEnd">the end of the line-segment.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    public static bool LineIntersect(in AABB aabb, Vector2 lineStart, Vector2 lineEnd)
+    {
+        
+        return LineIntersect(
+            aabb.MinX,
+            aabb.MinY,
+            aabb.MaxX,
+            aabb.MaxY,
+            lineStart.X,
+            lineStart.Y,
+            lineEnd.X,
+            lineEnd.Y
+        );
+    }
+
+    /// <summary>
+    /// Checks whether an Axis-Aligned-Bounding-Box intersects with a line segment.
+    /// </summary>
+    /// <param name="aabbMinX">the x-component of the aabb minimum vector.</param>
+    /// <param name="aabbMinY">the y-component of the aabb minimum vector.</param>
+    /// <param name="aabbMaxX">the x-component of the aabb maximum vector.</param>
+    /// <param name="aabbMaxY">the y-component of the aabb minimum vector.</param>
+    /// <param name="lineStartX">the x-component of the line statrting point.</param>
+    /// <param name="lineStartY">the x-component of the line statrting point.</param>
+    /// <param name="lineEndX">the x-component of the line end point.</param>
+    /// <param name="lineEndY">the x-component of the line end point.</param>
+    /// <returns></returns>
+    public static bool LineIntersect(
+        float aabbMinX,
+        float aabbMinY,
+        float aabbMaxX,
+        float aabbMaxY,
+        float lineStartX,
+        float lineStartY,
+        float lineEndX,
+        float lineEndY
+    )
+    {       
+        float closestPointX;
+        float closestPointY;
+
+        ClosestPoint(lineStartX, lineStartY, lineEndX, lineEndY, aabbMinX, aabbMinY, out closestPointX, out closestPointY);
+        if(Intersect(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, closestPointX, closestPointY))
+        {
+            ClosestPoint(lineStartX, lineStartY, lineEndX, lineEndY, aabbMaxX, aabbMaxY, out closestPointX, out closestPointY);
+            if(Intersect(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, closestPointX, closestPointY))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -12,6 +12,7 @@ using static Howl.ECS.GenIndexListProc;
 using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Shapes.Rectangle;
+using static Howl.Math.Shapes.AABB;
 
 namespace Howl.Physics;
 
@@ -675,7 +676,7 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 new Transform(Vector2.Zero, Vector2.One, 0),
-                new Rectangle(branch[i].AABB.Min, branch[i].AABB.Max), 
+                new Rectangle(MinVector(branch[i].AABB), MaxVector(branch[i].AABB)), 
                 state.BvhBranchAABBColour
             );
         }
@@ -773,7 +774,7 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 new Transform(transform.Position, transform.Scale, 0), // no rotation for AABB's 
-                new Rectangle(aabb.Min, aabb.Max), 
+                new Rectangle(MinVector(aabb), MaxVector(aabb)), 
                 state.AABBColour 
             );
         }
@@ -809,7 +810,7 @@ public static class CollisionSystem
             Debug.Draw.Wireframe(
                 componentRegistry,
                 Math.Transform.Identity, // no rotation for AABB's 
-                new Rectangle(aabb.Min, aabb.Max), 
+                new Rectangle(MinVector(aabb), MaxVector(aabb)), 
                 state.AABBColour
             );
         }

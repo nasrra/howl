@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Howl.Math;
 using Howl.Math.Shapes;
+using static Howl.Math.Shapes.AABB;
 
 namespace Howl.DataStructures;
 
@@ -144,7 +145,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
             if(nodeSpan.Length == 2)
             {
                 // union the sibling leaf if there is one.
-                aabb = new AABB(aabb, leafSpan[nodeSpan[1].LeafIndex].AABB);
+                aabb = Union(aabb, leafSpan[nodeSpan[1].LeafIndex].AABB);
                 
                 // and set both leaf indices into the branch.
                 branch.SetLeafIndices(
@@ -203,10 +204,9 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         // recurse (children are written contiguously after parent).
         ConstructBranches(leafSpan, branchSpan, left, ref writeIndex, out AABB leftAABB);
         ConstructBranches(leafSpan, branchSpan, right, ref writeIndex, out AABB rightAABB);
-        
 
         // assign aabb.
-        aabb = new AABB(leftAABB, rightAABB);
+        aabb = Union(leftAABB, rightAABB);
         branch.AABB = aabb; 
 
         // subtree = everything written since this node.
@@ -226,7 +226,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     {
         for(int i = 0; i < leafSpan.Length; i++)
         {
-            nodeSpan[i] = new SortNode(leafSpan[i].AABB.GetCentroid(), i);
+            nodeSpan[i] = new SortNode(Center(leafSpan[i].AABB), i);
         }
         return nodeSpan;
     }
@@ -288,7 +288,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         {
             ref Branch branch = ref branchSpan[i];
 
-            if (!AABB.Intersect(branch.AABB, raycastStart, raycastEnd))
+            if (LineIntersect(branch.AABB, raycastStart, raycastEnd) == false)
             {
                 // skip entire subtree
                 i += branch.SubtreeSize;
@@ -321,7 +321,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         for(int i = 0; i < leafIndices.Length; i++)
         {
             ref Leaf leaf = ref leafSpan[leafIndices[i]];
-            if(AABB.Intersect(leaf.AABB, aabb))
+            if(Intersect(leaf.AABB, aabb))
             {
                 queryResult.Add(new QueryResult(leaf.GenIndex, leaf.Flag));
             }
@@ -340,7 +340,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         for(int i = 0; i < leafIndices.Length; i++)
         {
             ref Leaf leaf = ref leafSpan[leafIndices[i]];
-            if(AABB.Intersect(leaf.AABB, raycastStart, raycastEnd))
+            if(LineIntersect(leaf.AABB, raycastStart, raycastEnd))
             {
                 queryResult.Add(new QueryResult(leaf.GenIndex, leaf.Flag));
             }
