@@ -63,6 +63,38 @@ public class PolygonRectangleTest
         Assert.Equal(0,     y2[1]);
         Assert.Equal(-1,    y2[2]);
         Assert.Equal(-1,    y2[3]);
+    }
 
+    [Fact]
+    public void Centroid_Test()
+    {
+        PolygonRectangle rectangle;
+        Vector2 centroid;
+
+        rectangle = new PolygonRectangle(-0.5f, 0.5f, 1f, 1f);
+        centroid = new Vector2(0, 0);
+        Assert.Equal(centroid, Centroid(rectangle));
+        
+        rectangle = new PolygonRectangle(
+            [
+                new Vector2(-10, 5),
+                new Vector2(0, 15),
+                new Vector2(10, 5),
+                new Vector2(0,-5),
+            ]
+        );
+        centroid = new Vector2(0, 5);
+        Assert.Equal(centroid, Centroid(rectangle));
+    
+        rectangle = new PolygonRectangle(
+            [
+                new Vector2(-20, 10),
+                new Vector2(10, 10),
+                new Vector2(10, -5),
+                new Vector2(-20,-5),
+            ]
+        );
+        centroid = new Vector2(-5, 2.5f);
+        Assert.Equal(centroid, Centroid(rectangle));    
     }
 }

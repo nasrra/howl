@@ -16,6 +16,8 @@ using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Shapes.Rectangle;
 using static Howl.Math.Shapes.AABB;
+using static Howl.DataStructures.BoundingVolumeHierarchy;
+using static System.Runtime.InteropServices.CollectionsMarshal;
 
 namespace Howl.Physics;
 
@@ -162,7 +164,7 @@ public static class CollisionSystem
     /// <param name="state">The state instance that holds a constructed bvh with collider data.</param>
     public static void FindNearColliderPairs(CollisionSystemState state)
     {
-        ReadOnlySpan<SpatialPair> spatialPairs = state.Bvh.GetSpatialPairs();
+        Span<SpatialPair> spatialPairs = AsSpan(state.Bvh.SpatialPairs);
         state.NearCircleColliders.Clear();
         state.NearRectangleColliders.Clear();
         state.NearRectangleToCircleColliders.Clear();
@@ -605,7 +607,7 @@ public static class CollisionSystem
     public static void ReconstructBvhTree(ComponentRegistry componentRegistry, BoundingVolumeHierarchy bvh)
     {   
         // clear the previous bvh data.
-        bvh.Clear();
+        Clear(bvh);
 
         GenIndexList<CircleCollider> circleColliders = componentRegistry.Get<CircleCollider>();
         GenIndexList<RectangleCollider> rectangleColliders = componentRegistry.Get<RectangleCollider>();
@@ -618,7 +620,8 @@ public static class CollisionSystem
             ref CircleCollider collider = ref denseEntry.Value;
             GetGenIndex(circleColliders, denseEntry.sparseIndex, out GenIndex genIndex);
 
-            bvh.InsertLeaf(
+            InsertLeaf(
+                bvh,
                 new Leaf(
                     GetAABB(collider.TransformedShape),
                     genIndex, 
@@ -635,7 +638,8 @@ public static class CollisionSystem
             ref RectangleCollider collider = ref denseEntry.Value;
             GetGenIndex(circleColliders, denseEntry.sparseIndex, out GenIndex genIndex);
 
-            bvh.InsertLeaf(
+            InsertLeaf(
+                bvh,
                 new Leaf(
                     GetAABB(collider.TransformedShape),
                     genIndex, 
@@ -645,7 +649,7 @@ public static class CollisionSystem
         }
 
         // construct the bvh with the new data.
-        bvh.Construct();
+        ConstructTree(bvh);
     }
 
 
@@ -662,16 +666,16 @@ public static class CollisionSystem
 
     private static void DebugDrawBvhBranches(ComponentRegistry componentRegistry, CollisionSystemState state, BoundingVolumeHierarchy bvh)
     {
-        ReadOnlySpan<Branch> branch = bvh.GetBranches();
+        Span<Branch> branches = AsSpan(bvh.Branches);
 
-        for(int i = 0; i < branch.Length; i++)
+        for(int i = 0; i < branches.Length; i++)
         {
             Debug.Draw.Wireframe(
                 componentRegistry,
                 new Transform(Vector2.Zero, Vector2.One, 0),
                 new Rectangle(
-                    new Vector2(branch[i].BoundingBoxMinX, branch[i].BoundingBoxMinY), 
-                    new Vector2(branch[i].BoundingBoxMaxX, branch[i].BoundingBoxMaxY)
+                    new Vector2(branches[i].BoundingBoxMinX, branches[i].BoundingBoxMinY), 
+                    new Vector2(branches[i].BoundingBoxMaxX, branches[i].BoundingBoxMaxY)
                 ), 
                 state.BvhBranchAABBColour
             );

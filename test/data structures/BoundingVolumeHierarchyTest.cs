@@ -2,6 +2,8 @@ using Howl.DataStructures;
 using Howl.ECS;
 using Howl.Math;
 using Howl.Math.Shapes;
+using static Howl.DataStructures.BoundingVolumeHierarchy;
+using static System.Runtime.InteropServices.CollectionsMarshal;
 
 namespace Howl.Test.DataStructures;
 
@@ -11,15 +13,15 @@ public class BoundingVolumeHierarchyTest
     public void Instantiate_Test()
     {
         BoundingVolumeHierarchy bvh = new();
-        Assert.Equal(0, bvh.GetLeaves().Length);
-        Assert.Equal(0, bvh.GetBranches().Length);
-        Assert.False(bvh.IsDiposed);
+        Assert.Empty(bvh.Leaves);
+        Assert.Empty(bvh.Branches);
+        Assert.False(bvh.isDisposed);
         
         bvh.Dispose();
         
-        Assert.Throws<ObjectDisposedException>(() => {bvh.GetLeaves();});
-        Assert.Throws<ObjectDisposedException>(() => {bvh.GetBranches();});
-        Assert.True(bvh.IsDiposed);
+        Assert.Null(bvh.Leaves);
+        Assert.Null(bvh.Branches);
+        Assert.True(bvh.isDisposed);
     }
 
     [Fact]
@@ -38,9 +40,9 @@ public class BoundingVolumeHierarchyTest
             flag
         );
         
-        bvh.InsertLeaf(leaf);
+        InsertLeaf(bvh, leaf);
 
-        ReadOnlySpan<Leaf> leaves = bvh.GetLeaves();
+        ReadOnlySpan<Leaf> leaves = AsSpan(bvh.Leaves);
         Assert.Equal(1, leaves.Length);
         Assert.Equal(leaf, leaves[0]);
     }
@@ -67,18 +69,18 @@ public class BoundingVolumeHierarchyTest
                 genIndex = new GenIndex(x,0);
                 flag = 0;
                 leaf = new Leaf(aabb,genIndex,flag);
-                bvh.InsertLeaf(leaf);
+                InsertLeaf(bvh, leaf);
             }
         }
  
-        bvh.Construct();
+        ConstructTree(bvh);
 
         // ensure that there is atleast as many branches as there are leaves
-        Assert.True(bvh.GetBranches().Length >= 20*20);
+        Assert.True(bvh.Branches.Count >= 20*20);
     }
 
     [Fact]
-    public void QueryAABB_Test()
+    public void AreaQuery_Test()
     {
         BoundingVolumeHierarchy bvh = new();
 
@@ -91,38 +93,41 @@ public class BoundingVolumeHierarchyTest
         genIndex = new GenIndex(0,0);
         flag = 0;
         Leaf leaf1 = new Leaf(leafAABB, genIndex, flag);
-        bvh.InsertLeaf(leaf1);
+        InsertLeaf(bvh, leaf1);
 
         // leaf 2
         leafAABB = new AABB(10,10,20,20);
         genIndex = new GenIndex(1,0);
         flag = 0;
         Leaf leaf2 = new Leaf(leafAABB, genIndex, flag);
-        bvh.InsertLeaf(leaf2);
+        InsertLeaf(bvh, leaf2);
 
-        bvh.Construct();
+        ConstructTree(bvh);
     
         // fail to intersect.
-        ReadOnlySpan<QueryResult> zeroResult = bvh.Query(new AABB(100,100,333,333));
+        ReadOnlySpan<QueryResult> zeroResult = AreaQuery(bvh, new AABB(100,100,333,333));
         Assert.Equal(0,zeroResult.Length);
 
         // find single intersect.
-        ReadOnlySpan<QueryResult> singleResult = bvh.Query(new AABB(0,0,9,9));
+        ReadOnlySpan<QueryResult> singleResult = AreaQuery(bvh, new AABB(0,0,9,9));
         Assert.Equal(1,singleResult.Length);
-        Assert.Equal(leaf1.GenIndex,    singleResult[0].GenIndex);
+        Assert.Equal(leaf1.Index,       singleResult[0].GenIndex.Index);
+        Assert.Equal(leaf1.Generation,  singleResult[0].GenIndex.Generation);
         Assert.Equal(leaf1.Flag,        singleResult[0].Flag);
 
         // find dual intersect.
-        ReadOnlySpan<QueryResult> doubleResult = bvh.Query(new AABB(5,5,20,20));
+        ReadOnlySpan<QueryResult> doubleResult = AreaQuery(bvh, new AABB(5,5,20,20));
         Assert.Equal(2,doubleResult.Length);
-        Assert.Equal(leaf1.GenIndex,    doubleResult[0].GenIndex);
+        Assert.Equal(leaf1.Index,       doubleResult[0].GenIndex.Index);
+        Assert.Equal(leaf1.Generation,  doubleResult[0].GenIndex.Generation);
         Assert.Equal(leaf1.Flag,        doubleResult[0].Flag);
-        Assert.Equal(leaf2.GenIndex,    doubleResult[1].GenIndex);
+        Assert.Equal(leaf2.Index,       doubleResult[1].GenIndex.Index);
+        Assert.Equal(leaf2.Generation,  doubleResult[1].GenIndex.Generation);
         Assert.Equal(leaf2.Flag,        doubleResult[1].Flag);
     }
 
     [Fact]
-    public void QueryRaycast_Test()
+    public void RaycastQuery_Test()
     {
         BoundingVolumeHierarchy bvh = new();
 
@@ -135,33 +140,36 @@ public class BoundingVolumeHierarchyTest
         genIndex = new GenIndex(0,0);
         flag = 0;
         Leaf leaf1 = new Leaf(leafAABB, genIndex, flag);
-        bvh.InsertLeaf(leaf1);
+        InsertLeaf(bvh, leaf1);
 
         // leaf 2
         leafAABB = new AABB(10,10,20,20);
         genIndex = new GenIndex(1,0);
         flag = 0;
         Leaf leaf2 = new Leaf(leafAABB, genIndex, flag);
-        bvh.InsertLeaf(leaf2);
+        InsertLeaf(bvh, leaf2);
 
-        bvh.Construct();
+        ConstructTree(bvh);
 
         // fail to interset.
-        ReadOnlySpan<QueryResult> zeroResult = bvh.Query(new Vector2(-1,-1), new Vector2(-10,-10));
+        Span<QueryResult> zeroResult = RaycastQuery(bvh, new Vector2(-1,-1), new Vector2(-10,-10));
         Assert.Equal(0, zeroResult.Length);
 
         // find single intersect.
-        ReadOnlySpan<QueryResult> singleResult = bvh.Query(new Vector2(5,0), new Vector2(5,30));
+        ReadOnlySpan<QueryResult> singleResult = RaycastQuery(bvh, new Vector2(5,0), new Vector2(5,30));
         Assert.Equal(1,singleResult.Length);
-        Assert.Equal(leaf1.GenIndex,    singleResult[0].GenIndex);
+        Assert.Equal(leaf1.Index,       singleResult[0].GenIndex.Index);
+        Assert.Equal(leaf1.Generation,  singleResult[0].GenIndex.Generation);
         Assert.Equal(leaf1.Flag,        singleResult[0].Flag);
 
         // find double intersect.
-        ReadOnlySpan<QueryResult> doubleResult = bvh.Query(new Vector2(0,0), new Vector2(40,40));
+        ReadOnlySpan<QueryResult> doubleResult = RaycastQuery(bvh, new Vector2(0,0), new Vector2(40,40));
         Assert.Equal(2,doubleResult.Length);
-        Assert.Equal(leaf1.GenIndex,    doubleResult[0].GenIndex);
+        Assert.Equal(leaf1.Index,       doubleResult[0].GenIndex.Index);
+        Assert.Equal(leaf1.Generation,  doubleResult[0].GenIndex.Generation);
         Assert.Equal(leaf1.Flag,        doubleResult[0].Flag);
-        Assert.Equal(leaf2.GenIndex,    doubleResult[1].GenIndex);
+        Assert.Equal(leaf2.Index,       doubleResult[1].GenIndex.Index);
+        Assert.Equal(leaf2.Generation,  doubleResult[1].GenIndex.Generation);
         Assert.Equal(leaf2.Flag,        doubleResult[1].Flag);
     }
 }
