@@ -23,20 +23,37 @@ public static class SAT
     /// <summary>
     /// Checks for intersection between two circles.
     /// </summary>
-    /// <param name="lhs">The lhs-circle data.</param>
-    /// <param name="rhs">The rhs-circle data.</param>
-    /// <param name="normal">The normal of the intersection in relation to the rhs-circle.</param>
-    /// <param name="depth">The depth of the intersection in relation to the rhs-circle.</param>
+    /// <param name="lhs">The left-hand side circle data.</param>
+    /// <param name="rhs">The right-hand side circle data.</param>
+    /// <param name="normal">The normal of the intersection in relation to the right-hand side circle.</param>
+    /// <param name="depth">The depth of the intersection in relation to the right-hand side circle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect(
-        Circle lhs,
-        Circle rhs,
+        in Circle lhs,
+        in Circle rhs,
         out Vector2 normal,
         out float depth
     )
     {
-        normal = Vector2.Zero;
+        bool intersects = Intersect(lhs, rhs, out float normalX, out float normalY, out depth);
+        normal = new Vector2(normalX, normalY);
+        return intersects;
+    }
+
+    /// <summary>
+    /// Checks for intersection between two circles.
+    /// </summary>
+    /// <param name="lhs">the left-hand side circle.</param>
+    /// <param name="rhs">the right-hand side circle.</param>
+    /// <param name="normalX">the x-component of the intersection normal in relation to the right-hand side circle.</param>
+    /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side circle.</param>
+    /// <param name="depth">the depth of the intersection in relation to the right-hand side circle.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    public static bool Intersect(in Circle lhs, in Circle rhs, out float normalX, out float normalY, out float depth)
+    {
+        normalX = InitialNormalX;
+        normalY = InitialNormalY;
         depth = 0f;
 
         float distanceSqrd = DistanceSquared(lhs.X, lhs.Y, rhs.X, rhs.Y);
@@ -51,37 +68,84 @@ public static class SAT
         // this also stops the whole collision system from exploding.
         if (distanceSqrd < float.Epsilon)
         {
-            normal = Vector2.Up;
             depth = radiusSum;
             return true;
         }
 
         float distance = MathF.Sqrt(distanceSqrd);
-        normal = (Center(rhs) - Center(lhs)).Normalise();
+        Normalise(rhs.X - lhs.X, rhs.Y - lhs.Y, out normalX, out normalY);
         depth = radiusSum - distance;
-
-        return true;
+        return true;        
     }
 
     /// <summary>
     /// Checks for intersection between two rectangles.
     /// </summary>
-    /// <param name="lhs">The lhs-rectangle.</param>
-    /// <param name="rhs">The rhs-rectangle.</param>
-    /// <param name="lhsCentroid">the centroid of the lhs-rectangle.</param>
-    /// <param name="rhsCentroid">the centroid of the rhs-rectangle.</param>
-    /// <param name="normal">The normal of the intersection in relation to the rhs-rectangle.</param>
-    /// <param name="depth">The depth of the intersection in relation to the rhs-rectangle.</param>
+    /// <param name="lhs">The left-hand side rectangle.</param>
+    /// <param name="rhs">The right-hand side rectangle.</param>
+    /// <param name="lhsCentroid">the centroid of the left-hand side rectangle.</param>
+    /// <param name="rhsCentroid">the centroid of the right-hand side rectangle.</param>
+    /// <param name="normal">The normal of the intersection in relation to the right-hand side rectangle.</param>
+    /// <param name="depth">The depth of the intersection in relation to the right-hand side rectangle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     /// <exception cref="ArgumentException"></exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(PolygonRectangle lhs, PolygonRectangle rhs, Vector2 lhsCentroid, Vector2 rhsCentroid, out Vector2 normal, out float depth)
+    public static bool Intersect(
+        in PolygonRectangle lhs, 
+        in PolygonRectangle rhs, 
+        Vector2 lhsCentroid, 
+        Vector2 rhsCentroid, 
+        out Vector2 normal, 
+        out float depth
+    )   
     {
+        bool intersects = Intersect(
+            VerticesXAsSpan(lhs),
+            VerticesYAsSpan(lhs),
+            VerticesXAsSpan(rhs),
+            VerticesYAsSpan(rhs),
+            lhsCentroid.X, 
+            lhsCentroid.Y, 
+            rhsCentroid.X, 
+            rhsCentroid.Y, 
+            out float normalX, 
+            out float normalY, 
+            out depth
+        );
+        normal = new Vector2(normalX, normalY);
+        return intersects;
+    }
 
-        Span<float> lhsX = VerticesXAsSpan(lhs);
-        Span<float> lhsY = VerticesYAsSpan(lhs);
-        Span<float> rhsX = VerticesXAsSpan(rhs);
-        Span<float> rhsY = VerticesYAsSpan(rhs);
+    /// <summary>
+    /// Checks for an intersection between two polygons.
+    /// </summary>
+    /// <param name="lhsX">the x-components of the left-hand side rectangle vertices.</param>
+    /// <param name="lhsY">the y-components of the left-hand side rectangle vertices.</param>
+    /// <param name="rhsX">the x-components of the right-hand side rectangle vertices.</param>
+    /// <param name="rhsY">the y-components of the right-hand side rectangle vertices.</param>
+    /// <param name="lhsCentroidX">the x-component of the left-hand side rectangle's centroid.</param>
+    /// <param name="lhsCentroidY">the y-component of the left-hand side rectangle's centroid.</param>
+    /// <param name="rhsCentroidX">the x-component of the right-hand side rectangle's centroid.</param>
+    /// <param name="rhsCentroidY">the y-component of the right-hand side rectangle's centroid.</param>
+    /// <param name="normalX">the x-component of the intersection normal in relation to the right-hand side rectangle.</param>
+    /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side rectangle.</param>
+    /// <param name="depth">The depth of the intersection in relation to the right-hand side rectangle.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static bool Intersect(
+        Span<float> lhsX,
+        Span<float> lhsY,
+        Span<float> rhsX,
+        Span<float> rhsY,
+        float lhsCentroidX, 
+        float lhsCentroidY, 
+        float rhsCentroidX, 
+        float rhsCentroidY, 
+        out float normalX, 
+        out float normalY,
+        out float depth
+    )
+    {
 
         if(lhsX.Length != lhsY.Length)
         {
@@ -92,11 +156,11 @@ public static class SAT
             throw new ArgumentException($"rhs vertices length do not match: '{rhsX.Length}' != '{rhsY.Length}'");
         }
 
+        normalX = InitialNormalX;
+        normalY = InitialNormalY;
         float foundNormalX;
         float foundNormalY;
         float foundDepth;
-
-        normal = Vector2.Up;
         depth = float.MaxValue;
 
 
@@ -105,7 +169,8 @@ public static class SAT
             if(depth > foundDepth)
             {
                 depth = foundDepth;
-                normal = new Vector2(foundNormalX, foundNormalY);
+                normalX = foundNormalX; 
+                normalY = foundNormalY;
             }
         }
         else
@@ -118,7 +183,8 @@ public static class SAT
             if(depth > foundDepth)
             {
                 depth = foundDepth;
-                normal = new Vector2(foundNormalX, foundNormalY);
+                normalX = foundNormalX; 
+                normalY = foundNormalY;
             }
         }
         else
@@ -131,11 +197,11 @@ public static class SAT
         // this is so that the resolution code will always push A out of B
         // and not push the two into each other when a smaller depth is found when 
         // looping through rect B.
-        if(Dot(rhsCentroid.X - lhsCentroid.X, rhsCentroid.Y - lhsCentroid.Y, normal.X, normal.Y) < 0)
+        if(Dot(rhsCentroidX - lhsCentroidX, rhsCentroidY - lhsCentroidY, normalX, normalY) < 0)
         {
-            normal = -normal;
+            normalX = -normalX;
+            normalY = -normalY;
         }
-
         
         return true;
     }
@@ -143,11 +209,12 @@ public static class SAT
     /// <summary>
     /// Checks for intersection from polygon A to polygon B, but not the vice versa.
     /// </summary>
-    /// <param name="polygonVerticesXA">the x-values of polygonA's vertices.</param>
-    /// <param name="polygonVerticesYA">the y-values of polygonA's vertices.</param>
-    /// <param name="polygonVerticesXB">the x-values of polygonB's vertices.</param>
-    /// <param name="poylgonVerticesYB">the y-values of polygonB's vertices.</param>
-    /// <param name="normal">The normal of the intersection in relation to polygon B.</param>
+    /// <param name="polygonVerticesXA">the x-components of polygonA's vertices.</param>
+    /// <param name="polygonVerticesYA">the y-components of polygonA's vertices.</param>
+    /// <param name="polygonVerticesXB">the x-components of polygonB's vertices.</param>
+    /// <param name="poylgonVerticesYB">the y-components of polygonB's vertices.</param>
+    /// <param name="normalX">the x-component of the intersection normal in relation to the right-hand side rectangle.</param>
+    /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side rectangle.</param>
     /// <param name="depth">The depth of the intersection in relation to polygon B.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -224,18 +291,34 @@ public static class SAT
     /// <param name="depth">The depth of the intersection in relation to the circle.</param>
     /// <returns>true, if there was an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(PolygonRectangle rectangle, Circle circle, Vector2 polgonCenter, Vector2 circleCenter, out Vector2 normal, out float depth)
+    public static bool Intersect(in PolygonRectangle rectangle, in Circle circle, Vector2 polgonCenter, Vector2 circleCenter, out Vector2 normal, out float depth)
     {
-        return Intersect(VerticesXAsSpan(rectangle), VerticesYAsSpan(rectangle), circle, polgonCenter.X, polgonCenter.Y, circleCenter.X, circleCenter.Y, out normal, out depth);
+        bool intersects = Intersect(
+            VerticesXAsSpan(rectangle), 
+            VerticesYAsSpan(rectangle), 
+            circle, 
+            polgonCenter.X, 
+            polgonCenter.Y, 
+            circleCenter.X, 
+            circleCenter.Y, 
+            out float normalX, 
+            out float normalY, 
+            out depth
+        );
+
+        normal = new Vector2(normalX, normalY);
+
+        return intersects;
     }
 
     /// <summary>
     /// Checks whether a polygon and a circle intersect.
     /// </summary>
-    /// <param name="polygonVerticesX">The x-values of a polygon's vertices.</param>
-    /// <param name="polygonVerticesY">The y-values of a polygon's vertices.</param>
+    /// <param name="polygonVerticesX">The x-components of a polygon's vertices.</param>
+    /// <param name="polygonVerticesY">The y-components of a polygon's vertices.</param>
     /// <param name="circle">The circle data.</param>
-    /// <param name="normal">The normal of the intersect in relation to the circle.</param>
+    /// <param name="normalX">the x-component of the intersection normal in relation to the right-hand side rectangle.</param>
+    /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side rectangle.</param>
     /// <param name="depth">The depth of the intersection in relation to the circle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
@@ -244,12 +327,13 @@ public static class SAT
     (
         Span<float> polygonVerticesX,
         Span<float> polygonVerticesY,
-        Circle circle,
+        in Circle circle,
         float polygonCentroidX,
         float polygonCentroidY,
         float circleCenterX,
         float circleCenterY,
-        out Vector2 normal,
+        out float normalX,
+        out float normalY,
         out float depth
     )
     {
@@ -258,9 +342,8 @@ public static class SAT
         // store normals as floats and operate on them as
         // floats before allocating a Vector as numerical
         // arithematic is faster.
-        float normalX = InitialNormalX;
-        float normalY = InitialNormalY;
-        normal = Vector2.Zero;
+        normalX = InitialNormalX;
+        normalY = InitialNormalY;
 
         float axisX;
         float axisY;
@@ -365,7 +448,6 @@ public static class SAT
             normalY = -normalY;
         }
 
-        normal = new Vector2(normalX, normalY);
         return true;
     }
 
@@ -489,8 +571,8 @@ public static class SAT
     /// <param name="yContactPoint">the y-value of the calculated contact point vector.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FindContactPoints(
-        ReadOnlySpan<float> polygonXVertices, 
-        ReadOnlySpan<float> polygonYVertices,
+        Span<float> polygonXVertices, 
+        Span<float> polygonYVertices,
         in Circle circle, 
         out float xContactPoint, 
         out float yContactPoint)        
@@ -510,8 +592,8 @@ public static class SAT
     /// <exception cref="ArgumentException">throws if the two vertice spans do not have the same length.</exception>    
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FindContactPoints(
-        ReadOnlySpan<float> polygonVerticesX, 
-        ReadOnlySpan<float> polygonVerticesY, 
+        Span<float> polygonVerticesX, 
+        Span<float> polygonVerticesY, 
         in Circle circle, 
         out Vector2 contactPoint
     )
@@ -537,7 +619,7 @@ public static class SAT
                 endIndex = 0;
 
             Vector2 edgeEnd = new Vector2(polygonVerticesX[endIndex], polygonVerticesY[endIndex]);
-            Math.ClosestPoint(edgeStart, edgeEnd, Center(circle), out Vector2 closestPoint, out float distSqrd);
+            ClosestPoint(edgeStart, edgeEnd, Center(circle), out Vector2 closestPoint, out float distSqrd);
             if(distSqrd < minDistSqrd)
             {
                 minDistSqrd = distSqrd;

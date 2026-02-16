@@ -3,6 +3,7 @@ using Howl.Math.Shapes;
 using Howl.Physics;
 using Xunit;
 using static Howl.Math.Shapes.PolygonRectangle;
+using static Howl.Math.Shapes.Circle;
 
 namespace Howl.Test.Math.Shapes;
 
@@ -28,9 +29,6 @@ public class SATTest
                 out depth
             )
         );
-
-        Assert.Equal(0, depth);
-        Assert.Equal(Vector2.Zero, normal);
     }
 
     [Fact]
@@ -142,7 +140,7 @@ public class SATTest
 
         rectangle = new PolygonRectangle(0,0,10,10);
         circle = new Circle(20,20,5);
-        intersects = SAT.Intersect(rectangle, circle, out normal, out depth);
+        intersects = SAT.Intersect(rectangle, circle, Centroid(rectangle), Center(circle), out normal, out depth);
 
         Assert.False(intersects);
     }
@@ -161,7 +159,7 @@ public class SATTest
 
         rectangle = new PolygonRectangle(0,0,10,10);
         circle = new Circle(5f,0f,5);
-        intersects = SAT.Intersect(rectangle, circle, out normal, out depth);
+        intersects = SAT.Intersect(rectangle, circle, Centroid(rectangle), Center(circle), out normal, out depth);
 
         Assert.True(intersects);
         Assert.Equal(5, depth);
@@ -182,7 +180,7 @@ public class SATTest
 
         circle = new Circle(0f,10f,5);
 
-        intersects = SAT.Intersect(rectangle, circle, out normal, out depth);
+        intersects = SAT.Intersect(rectangle, circle, Centroid(rectangle), Center(circle), out normal, out depth);
         Assert.True(intersects);
         // Assert.Equal(0, depth);
         // Assert.Equal(0f, normal.X, precision: 2);        

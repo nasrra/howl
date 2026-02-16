@@ -109,21 +109,6 @@ public unsafe struct PolygonRectangle
     }
 
     /// <summary>
-    /// Gets the x-value of vertices in a readonly span. 
-    /// </summary>
-    /// <param name="polygonRectangle">the polygon rectangle.</param>
-    /// <returns>the readonly span.</returns>
-    public unsafe static ReadOnlySpan<float> VerticesXAsReadOnlySpan(in PolygonRectangle polygonRectangle)
-    {
-        Span<float> span;
-        fixed(float* ptr = polygonRectangle.VerticesX)
-        {
-            span = new Span<float>(ptr, PolygonRectangle.MaxVertices);
-        }
-        return span;
-    }
-
-    /// <summary>
     /// Gets y-value of the vertices in a span.
     /// </summary>
     /// <param name="polygonRectangle">the polygon rectangle</param>
@@ -137,22 +122,6 @@ public unsafe struct PolygonRectangle
         }
         return span;
     }
-
-    /// <summary>
-    /// Gets the y-value of the vertices in a readonly span.
-    /// </summary>
-    /// <param name="polygonRectangle">the polygon rectangle.</param>
-    /// <returns>the readonly span.</returns>
-    public unsafe static ReadOnlySpan<float> VerticesYAsReadOnlySpan(in PolygonRectangle polygonRectangle)
-    {
-        Span<float> span;
-        fixed(float* ptr = polygonRectangle.VerticesY)
-        {
-            span = new Span<float>(ptr, PolygonRectangle.MaxVertices);
-        }
-        return span;
-    }
-
 
     /// <summary>
     /// Constructs a new rectangle by transform the vertices of the specified rectangle.
@@ -181,6 +150,19 @@ public unsafe struct PolygonRectangle
     {
         return ShapeUtils.Centroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle));
     }
+
+    /// <summary>
+    /// Calculates the centroid-vector of a polygon rectangle.
+    /// </summary>
+    /// <param name="polygonRectangle">The polygon rectangle.</param>
+    /// <param name="centroidX">the x-component of the centroid.</param>
+    /// <param name="centroidY">the y-component of the centroid.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Centroid(in PolygonRectangle polygonRectangle, out float centroidX, out float centroidY)
+    {
+        ShapeUtils.Centroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), out centroidX, out centroidY);
+    }
+
 
     /// <summary>
     /// Gets the Axis-Aligned-Bounding-Box of a polygon rectangle.

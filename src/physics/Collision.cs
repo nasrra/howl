@@ -18,68 +18,84 @@ public unsafe struct Collision
     /// <summary>
     /// Gets the owning collider of this collision.
     /// </summary>
-    public readonly GenIndex Owner;
+    public GenIndex Owner;
 
     /// <summary>
     /// Gets the other collider of this collision.
     /// </summary>
-    public readonly GenIndex Other;
+    public GenIndex Other;
 
     /// <summary>
     /// Gets the owner's parameters.
     /// </summary>
-    public readonly ColliderParameters OwnerParameters;
+    public ColliderParameters OwnerParameters;
 
     /// <summary>
     /// Gets the other's parameters.
     /// </summary>
-    public readonly ColliderParameters OtherParameters;
+    public ColliderParameters OtherParameters;
 
     /// <summary>
-    /// Gets the normal of the collision.
+    /// Gets and sets the x-component of the collision normal.
     /// </summary>
-    public readonly Vector2 Normal;
+    public float NormalX;
 
     /// <summary>
-    /// Gets the center of the owner's collider shape.
+    /// Gets and sets the y-component of the collision normal.
     /// </summary>
-    /// <remarks>
-    /// Note: the shape must not be transformed in any way, it must be the untransformed shape directly from a collider.
-    /// </remarks>
-    public readonly Vector2 OwnerColliderShapeCenter;
+    public float NormalY;
 
     /// <summary>
-    /// Gets the center of the other's collider shape.
+    /// Gets the X-component of the owner collider shape's center.
     /// </summary>
     /// <remarks>
     /// Note: the shape must not be transformed in any way, it must be the untransformed shape directly from a collider.
     /// </remarks>
-    public readonly Vector2 OtherColliderShapeCenter;
+    public float OwnerColliderShapeCenterX;
+
+    /// <summary>
+    /// Gets the y-component of the owner collider shape's center.
+    /// </summary>
+    /// <remarks>
+    /// Note: the shape must not be transformed in any way, it must be the untransformed shape directly from a collider.
+    /// </remarks>
+    public float OwnerColliderShapeCenterY;
+
+    /// <summary>
+    /// Gets the X-component of the other collider shape's center.
+    /// </summary>
+    /// <remarks>
+    /// Note: the shape must not be transformed in any way, it must be the untransformed shape directly from a collider.
+    /// </remarks>
+    public float OtherColliderShapeCenterX;
+
+    /// <summary>
+    /// Gets the y-component of the other collider shape's center.
+    /// </summary>
+    /// <remarks>
+    /// Note: the shape must not be transformed in any way, it must be the untransformed shape directly from a collider.
+    /// </remarks>
+    public float OtherColliderShapeCenterY;
 
     /// <summary>
     /// Gets and sets the x-positional value for the contact points.
     /// </summary>
-    private fixed float xContactPoints[MaxContactPoints];
+    public fixed float ContactPointsX[MaxContactPoints];
 
     /// <summary>
     /// Gets and sets the y-positional value for the contact points.
     /// </summary>
-    private fixed float yContactPoints[MaxContactPoints];
+    public fixed float ContactPointsY[MaxContactPoints];
 
     /// <summary>
-    /// Gets the depth of the collision.
+    /// Gets and sets the depth of the collision.
     /// </summary>
-    public readonly float Depth;
+    public float Depth;
 
     /// <summary>
     /// Gets and sets the count of stored contact points. 
     /// </summary>
-    private int contactPointsCount;
-
-    /// <summary>
-    /// Gets the count of stored contact points. 
-    /// </summary>
-    public readonly int ContactPointsCount => contactPointsCount;
+    public int ContactPointsCount;
 
     /// <summary>
     /// Constructs a Collision.
@@ -99,32 +115,38 @@ public unsafe struct Collision
         GenIndex other, 
         ColliderParameters ownerParameters, 
         ColliderParameters otherParameters, 
-        ReadOnlySpan<float> xContactPoints,
-        ReadOnlySpan<float> yContactPoints,
-        Vector2 ownerColliderShapeCenter,
-        Vector2 otherColliderShapeCenter,
-        Vector2 normal,
+        Span<float> xContactPoints,
+        Span<float> yContactPoints,
+        float normalX,
+        float normalY,
+        float ownerColliderShapeCenterX,
+        float ownerColliderShapeCenterY,
+        float otherColliderShapeCenterX,
+        float otherColliderShapeCenterY,
         float depth)
     {
         Owner = owner;
         Other = other;
         OwnerParameters = ownerParameters;
         OtherParameters = otherParameters;
-        Normal = normal;
+        NormalX = normalX;
+        NormalY = normalY;
         Depth = depth;
-        SetContactPoints(xContactPoints, yContactPoints);
-        OwnerColliderShapeCenter = ownerColliderShapeCenter;
-        OtherColliderShapeCenter = otherColliderShapeCenter;
+        OwnerColliderShapeCenterX = ownerColliderShapeCenterX;
+        OwnerColliderShapeCenterY = ownerColliderShapeCenterY;
+        OtherColliderShapeCenterX = otherColliderShapeCenterX;
+        OtherColliderShapeCenterY = otherColliderShapeCenterY;
+        SetContactPoints(ref this, xContactPoints, yContactPoints);
     }
 
-    private void SetContactPoints(ReadOnlySpan<float> xContactPoints, ReadOnlySpan<float> yContactPoints)
+    public static void SetContactPoints(ref Collision collision, Span<float> xContactPoints, Span<float> yContactPoints)
     {
         if(xContactPoints.Length != yContactPoints.Length)
         {
             throw new ArgumentException($"xContactPoints length '{xContactPoints.Length}' does not equal yContactPoints length '{yContactPoints.Length}'");
         }
 
-        fixed (float* x = this.xContactPoints)
+        fixed (float* x = collision.ContactPointsX)
         {
             for(int i = 0; i < xContactPoints.Length; i++)
             {
@@ -132,7 +154,7 @@ public unsafe struct Collision
             }
         }
 
-        fixed (float* y = this.yContactPoints)
+        fixed (float* y = collision.ContactPointsY)
         {
             for(int i = 0; i < yContactPoints.Length; i++)
             {
@@ -140,33 +162,35 @@ public unsafe struct Collision
             }
         }
 
-        contactPointsCount = xContactPoints.Length;
+        collision.ContactPointsCount = xContactPoints.Length;
     }
 
     /// <summary>
-    /// Gets a readonly span of the x-positional values of the stored contact points.
+    /// Gets a span of the y-components of the stored contact points.
     /// </summary>
-    /// <returns>the readonly span.</returns>
-    public ReadOnlySpan<float> GetXContactPointsAsReadOnlySpan()
+    /// <param name="collision">the collision.</param>
+    /// <returns>the span.</returns>
+    public static Span<float> ContactPointsXAsSpan(in Collision collision)
     {
-        ReadOnlySpan<float> span;
-        fixed(float* ptr = xContactPoints)
+        Span<float> span;
+        fixed(float* ptr = collision.ContactPointsX)
         {
-            span = new ReadOnlySpan<float>(ptr, ContactPointsCount);
+            span = new Span<float>(ptr, collision.ContactPointsCount);
         }
         return span;
     }
 
     /// <summary>
-    /// Gets a readonly span of the y-positional values of the stored contact points.
+    /// Gets a span of the y-components of a collision's stored contact points.
     /// </summary>
-    /// <returns>the readonly span.</returns>
-    public ReadOnlySpan<float> GetYContactPointsAsReadOnlySpan()
+    /// <param name="collision">the collision.</param>
+    /// <returns>the span.</returns>
+    public static Span<float> ContactPointsYAsSpan(in Collision collision)
     {
-        ReadOnlySpan<float> span;
-        fixed(float* ptr = yContactPoints)
+        Span<float> span;
+        fixed(float* ptr = collision.ContactPointsY)
         {
-            span = new ReadOnlySpan<float>(ptr, ContactPointsCount);
+            span = new Span<float>(ptr, collision.ContactPointsCount);
         }
         return span;
     }

@@ -9,6 +9,7 @@ using Howl.Math;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.Physics.RigidBody;
 using static Howl.Math.Math;
+using static Howl.Physics.Collision;
 
 namespace Howl.Physics;
 
@@ -165,7 +166,7 @@ public static class RigidBodySystem
         float relativeVelocityY = rigidBodyB.LinearVelocityY - rigidBodyA.LinearVelocityY;
 
         // the magnitude of the relative velocity relative to the normal
-        float magnitude = Dot(relativeVelocityX, relativeVelocityY, collision.Normal.X, collision.Normal.Y);
+        float magnitude = Dot(relativeVelocityX, relativeVelocityY, collision.NormalX, collision.NormalY);
 
         if(magnitude > 0)
         {
@@ -183,15 +184,15 @@ public static class RigidBodySystem
 
         if(rigidBodyA.Mode == RigidBodyMode.Dynamic)
         {
-            impulseForceX = -(impulseMagnitude / rigidBodyA.Mass * collision.Normal.X);
-            impulseForceY = -(impulseMagnitude / rigidBodyA.Mass * collision.Normal.Y);
+            impulseForceX = -(impulseMagnitude / rigidBodyA.Mass * collision.NormalX);
+            impulseForceY = -(impulseMagnitude / rigidBodyA.Mass * collision.NormalY);
             ImpulseLinearForce(ref rigidBodyA, impulseForceX, impulseForceY);            
         }
 
         if(rigidBodyB.Mode == RigidBodyMode.Dynamic)
         {
-            impulseForceX = impulseMagnitude / rigidBodyB.Mass * collision.Normal.X;
-            impulseForceY = impulseMagnitude / rigidBodyB.Mass * collision.Normal.Y;
+            impulseForceX = impulseMagnitude / rigidBodyB.Mass * collision.NormalX;
+            impulseForceY = impulseMagnitude / rigidBodyB.Mass * collision.NormalY;
             ImpulseLinearForce(ref rigidBodyB, impulseForceX, impulseForceY);
         }
     } 
@@ -218,8 +219,8 @@ public static class RigidBodySystem
     {             
         float restitution = MathF.Min(rigidBodyA.Restitution, rigidBodyB.Restitution);
 
-        ReadOnlySpan<float> contactPointsX = collision.GetXContactPointsAsReadOnlySpan();
-        ReadOnlySpan<float> contactPointsY = collision.GetYContactPointsAsReadOnlySpan();
+        Span<float> contactPointsX = ContactPointsXAsSpan(collision);
+        Span<float> contactPointsY = ContactPointsYAsSpan(collision);
 
         int count = collision.ContactPointsCount;
         Span<float> impulsesX   = stackalloc float[count];
@@ -235,10 +236,10 @@ public static class RigidBodySystem
             float contactPointY = contactPointsY[j];
 
             // get the angular velocity to travel in.
-            distsAX[j] = contactPointX - collision.OwnerColliderShapeCenter.X;
-            distsAY[j] = contactPointY - collision.OwnerColliderShapeCenter.Y;
-            distsBX[j] = contactPointX - collision.OtherColliderShapeCenter.X;
-            distsBY[j] = contactPointY - collision.OtherColliderShapeCenter.Y;            
+            distsAX[j] = contactPointX - collision.OwnerColliderShapeCenterX;
+            distsAY[j] = contactPointY - collision.OwnerColliderShapeCenterY;
+            distsBX[j] = contactPointX - collision.OtherColliderShapeCenterX;
+            distsBY[j] = contactPointY - collision.OtherColliderShapeCenterY;            
             
             float perpendicularAX = -distsAY[j];
             float perpendicularAY = distsAX[j];
@@ -254,7 +255,7 @@ public static class RigidBodySystem
             float relativeVelocityY = rigidBodyB.LinearVelocityY + angularVelocityBY - (rigidBodyA.LinearVelocityY + angularVelocityAY);
             
             // the magnitude of the relative velocity relative to the normal
-            float magnitude = Dot(relativeVelocityX, relativeVelocityY, collision.Normal.X, collision.Normal.Y);
+            float magnitude = Dot(relativeVelocityX, relativeVelocityY, collision.NormalX, collision.NormalY);
 
             if(magnitude > 0)
             {
@@ -262,8 +263,8 @@ public static class RigidBodySystem
             }
 
             // calculate the denominator.
-            float perpADotNormal = Dot(perpendicularAX, perpendicularAY, collision.Normal.X, collision.Normal.Y);
-            float perpBDotNormal = Dot(perpendicularBX, perpendicularBY, collision.Normal.X, collision.Normal.Y);
+            float perpADotNormal = Dot(perpendicularAX, perpendicularAY, collision.NormalX, collision.NormalY);
+            float perpBDotNormal = Dot(perpendicularBX, perpendicularBY, collision.NormalX, collision.NormalY);
             float denominator = rigidBodyA.InverseMass + rigidBodyB.InverseMass + 
                 (perpADotNormal * perpADotNormal) * rigidBodyA.InverseRotationalInertia +
                 (perpBDotNormal * perpBDotNormal) * rigidBodyB.InverseRotationalInertia;
@@ -279,8 +280,8 @@ public static class RigidBodySystem
             // save the impulse magnitude for later friction resolution.
             impulseMagnitudes[j] = impulseMagnitude;
 
-            impulsesX[j] = impulseMagnitude * collision.Normal.X;
-            impulsesY[j] = impulseMagnitude * collision.Normal.Y;
+            impulsesX[j] = impulseMagnitude * collision.NormalX;
+            impulsesY[j] = impulseMagnitude * collision.NormalY;
         }
 
         // keep these outside the for loop so they dont allocate each time.
@@ -348,8 +349,8 @@ public static class RigidBodySystem
         ref RigidBody rigidBodyB
     )
     {
-        ReadOnlySpan<float> contactPointsX = collision.GetXContactPointsAsReadOnlySpan();
-        ReadOnlySpan<float> contactPointsY = collision.GetYContactPointsAsReadOnlySpan();
+        Span<float> contactPointsX = ContactPointsXAsSpan(collision);
+        Span<float> contactPointsY = ContactPointsYAsSpan(collision);
 
         int count = collision.ContactPointsCount;
         Span<float> impulsesX   = stackalloc float[count];
@@ -385,10 +386,10 @@ public static class RigidBodySystem
             float contactPointY = contactPointsY[j];
 
             // get the angular velocity to travel in.
-            distsAX[j] = contactPointX - collision.OwnerColliderShapeCenter.X;
-            distsAY[j] = contactPointY - collision.OwnerColliderShapeCenter.Y;
-            distsBX[j] = contactPointX - collision.OtherColliderShapeCenter.X;
-            distsBY[j] = contactPointY - collision.OtherColliderShapeCenter.Y;            
+            distsAX[j] = contactPointX - collision.OwnerColliderShapeCenterX;
+            distsAY[j] = contactPointY - collision.OwnerColliderShapeCenterY;
+            distsBX[j] = contactPointX - collision.OtherColliderShapeCenterX;
+            distsBY[j] = contactPointY - collision.OtherColliderShapeCenterY;            
             
             float perpendicularAX = -distsAY[j];
             float perpendicularAY = distsAX[j];
@@ -404,9 +405,9 @@ public static class RigidBodySystem
             float relativeVelocityY = rigidBodyB.LinearVelocityY + angularVelocityBY - (rigidBodyA.LinearVelocityY + angularVelocityAY);
 
             // this is the direction the body is travelling in along the contact point surface.
-            float relativeDotNormal = Dot(relativeVelocityX, relativeVelocityY, collision.Normal.X, collision.Normal.Y);
-            float tangentX = relativeVelocityX - relativeDotNormal * collision.Normal.X;
-            float tangentY = relativeVelocityY - relativeDotNormal * collision.Normal.Y;
+            float relativeDotNormal = Dot(relativeVelocityX, relativeVelocityY, collision.NormalX, collision.NormalY);
+            float tangentX = relativeVelocityX - relativeDotNormal * collision.NormalX;
+            float tangentY = relativeVelocityY - relativeDotNormal * collision.NormalY;
 
             if(NearlyEqual(tangentX, 0, 1e-8f) || NearlyEqual(tangentX, 0, 1e-8f))
             {

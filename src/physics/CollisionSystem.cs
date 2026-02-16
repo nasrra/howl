@@ -19,6 +19,7 @@ using static Howl.Math.Shapes.AABB;
 using static Howl.DataStructures.BoundingVolumeHierarchy;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Math.Shapes.ShapeUtils; 
+using static Howl.Physics.Collision;
 
 namespace Howl.Physics;
 
@@ -262,9 +263,8 @@ public static class CollisionSystem
         Parallel.For(0, pairs.Count, static i =>
         {
             GenIndexList<CircleCollider> colliders = CircleCollisionContext.Colliders;
-            List<ColliderPair> pairs = CircleCollisionContext.Pairs;
-            Span<ColliderPair> pairsSpan = CollectionsMarshal.AsSpan(pairs);
-            ref ColliderPair pair = ref pairsSpan[i];
+            Span<ColliderPair> pairs = AsSpan(CircleCollisionContext.Pairs);
+            ref ColliderPair pair = ref pairs[i];
 
             GetDenseRef(colliders, pair.ColliderA, out Ref<CircleCollider> colliderRefA);
             GetDenseRef(colliders, pair.ColliderB, out Ref<CircleCollider> colliderRefB);
@@ -284,10 +284,12 @@ public static class CollisionSystem
             if(SAT.Intersect(
                 colliderA.TransformedShape,
                 colliderB.TransformedShape,
-                out Vector2 normal,
+                out float normalX,
+                out float normalY,
                 out float depth
             ))
             {
+
                 // submit the collision with contact points if one of the colliders needs them.
                 SAT.FindContactPoints(colliderA.TransformedShape, colliderB.TransformedShape, out float xContactPoint, out float yContactPoint);
                 RegisterCollision(
@@ -298,10 +300,13 @@ public static class CollisionSystem
                     colliderB.Parameters,
                     [xContactPoint],
                     [yContactPoint],
-                    Center(colliderA.TransformedShape),
-                    Center(colliderB.TransformedShape),
-                    normal,
-                    depth
+                    normalX, 
+                    normalY, 
+                    colliderA.TransformedShape.X, 
+                    colliderA.TransformedShape.Y, 
+                    colliderB.TransformedShape.X, 
+                    colliderB.TransformedShape.Y, 
+                    in depth
                 );
             }              
         });
@@ -330,7 +335,7 @@ public static class CollisionSystem
         {            
             CollisionManifold manifold = RectangleCollisionContext.CollisionManifold;
             GenIndexList<RectangleCollider> colliders =  RectangleCollisionContext.Colliders;
-            Span<ColliderPair> pairs =  CollectionsMarshal.AsSpan(RectangleCollisionContext.Pairs);
+            Span<ColliderPair> pairs =  AsSpan(RectangleCollisionContext.Pairs);
             ref ColliderPair pair = ref pairs[i];
 
             GetDenseRef(colliders, pair.ColliderA, out Ref<RectangleCollider> colliderRefA);
@@ -344,26 +349,37 @@ public static class CollisionSystem
                 return;    
             }
 
-            Vector2 colliderACentroid = Centroid(colliderA.TransformedShape);
-            Vector2 colliderBCentroid = Centroid(colliderB.TransformedShape);
+            Centroid(colliderA.TransformedShape, out float centroidAX, out float centroidAY);
+            Centroid(colliderB.TransformedShape, out float centroidBX, out float centroidBY);
+
+            Span<float> verticesAX = VerticesXAsSpan(colliderA.TransformedShape);
+            Span<float> verticesAY = VerticesYAsSpan(colliderA.TransformedShape);
+            Span<float> verticesBX = VerticesXAsSpan(colliderB.TransformedShape);
+            Span<float> verticesBY = VerticesYAsSpan(colliderB.TransformedShape);
 
             // Narrow Phase:
             // perform an SAT check.
             if(SAT.Intersect(
-                colliderA.TransformedShape,
-                colliderB.TransformedShape,
-                colliderACentroid,
-                colliderBCentroid,
-                out Vector2 normal,
+                verticesAX,
+                verticesAY,
+                verticesBX,
+                verticesBY,
+                centroidAX, 
+                centroidAY, 
+                centroidBX, 
+                centroidBY, 
+                out float normalX, 
+                out float normalY,
                 out float depth
+
             ))
             {
 
                 SAT.FindContactPoints(
-                    VerticesXAsReadOnlySpan(colliderA.TransformedShape),
-                    VerticesYAsReadOnlySpan(colliderA.TransformedShape), 
-                    VerticesXAsReadOnlySpan(colliderB.TransformedShape),
-                    VerticesYAsReadOnlySpan(colliderB.TransformedShape), 
+                    verticesAX,
+                    verticesAY, 
+                    verticesBX,
+                    verticesBY, 
                     PolygonContactPointEpsilon,
                     out float xContactPoint1, 
                     out float yContactPoint1,
@@ -384,9 +400,12 @@ public static class CollisionSystem
                             colliderB.Parameters,
                             [xContactPoint1],
                             [yContactPoint1],
-                            colliderACentroid,
-                            colliderBCentroid,
-                            normal,
+                            normalX, 
+                            normalY, 
+                            centroidAX, 
+                            centroidAY, 
+                            centroidBX, 
+                            centroidBY, 
                             depth
                         );
                     break;
@@ -399,9 +418,12 @@ public static class CollisionSystem
                             colliderB.Parameters,
                             [xContactPoint1, xContactPoint2],
                             [yContactPoint1, yContactPoint2],
-                            colliderACentroid,
-                            colliderBCentroid,
-                            normal,
+                            normalX, 
+                            normalY, 
+                            centroidAX, 
+                            centroidAY, 
+                            centroidBX, 
+                            centroidBY, 
                             depth
                         );
                     break;
@@ -440,7 +462,8 @@ public static class CollisionSystem
 
         Parallel.For(0, pairs.Count, static i =>
         {
-            Span<ColliderPair> pairs = CollectionsMarshal.AsSpan(RectangleToCircleCollisionContext.Pairs);
+            CollisionManifold manifold = RectangleToCircleCollisionContext.CollisionManifold;
+            Span<ColliderPair> pairs = AsSpan(RectangleToCircleCollisionContext.Pairs);
             ref ColliderPair pair = ref pairs[i];
 
             GetDenseRef(RectangleToCircleCollisionContext.Rectangles, pair.ColliderA, out Ref<RectangleCollider> colliderRefA);
@@ -468,7 +491,8 @@ public static class CollisionSystem
 
             // Narrow Phase:
             // perform an SAT check.
-            if(SAT.Intersect(
+            if(SAT.Intersect
+            (
                 rectangleVerticesX,
                 rectangleVerticesY,
                 circle.TransformedShape,
@@ -476,28 +500,32 @@ public static class CollisionSystem
                 rectangleCentroidY,
                 circle.TransformedShape.X,
                 circle.TransformedShape.Y,
-                out Vector2 normal,
+                out float normalX,
+                out float normalY,
                 out float depth
             ))
             {
                 SAT.FindContactPoints(
-                    VerticesXAsReadOnlySpan(rectangle.TransformedShape),
-                    VerticesYAsReadOnlySpan(rectangle.TransformedShape), 
+                    rectangleVerticesX,
+                    rectangleVerticesY, 
                     circle.TransformedShape, 
                     out float xContactPoint, 
                     out float yContactPoint
                 );
                 RegisterCollision(
-                    RectangleToCircleCollisionContext.CollisionManifold,
-                    pair.ColliderA, 
-                    pair.ColliderB, 
+                    manifold,
+                    pair.ColliderA,
+                    pair.ColliderB,
                     rectangle.Parameters,
                     circle.Parameters,
                     [xContactPoint],
                     [yContactPoint],
-                    Centroid(rectangle.TransformedShape),
-                    Center(circle.TransformedShape),
-                    normal,
+                    normalX, 
+                    normalY, 
+                    rectangleCentroidX, 
+                    rectangleCentroidY, 
+                    circle.TransformedShape.X, 
+                    circle.TransformedShape.Y, 
                     depth
                 );
             }              
@@ -524,11 +552,14 @@ public static class CollisionSystem
         in GenIndex genIndexB,
         in ColliderParameters parametersA,
         in ColliderParameters parametersB,
-        ReadOnlySpan<float> xContactPoints,
-        ReadOnlySpan<float> yContactPoints,
-        Vector2 colliderShapeCenterA,
-        Vector2 colliderShapeCenterB,
-        in Vector2 normal,
+        Span<float> xContactPoints,
+        Span<float> yContactPoints,
+        float normalX,
+        float normalY,
+        float colliderAShapeCenterX,
+        float colliderAShapeCenterY,
+        float colliderBShapeCenterX,
+        float colliderBShapeCenterY,
         in float depth
     )
     {                
@@ -549,9 +580,12 @@ public static class CollisionSystem
                 parametersB, 
                 xContactPoints,
                 yContactPoints,
-                colliderShapeCenterA,
-                colliderShapeCenterB,
-                normal, 
+                normalX,
+                normalY,
+                colliderAShapeCenterX,
+                colliderAShapeCenterY,
+                colliderBShapeCenterX,
+                colliderBShapeCenterY,
                 depth
             )
         );
@@ -564,9 +598,12 @@ public static class CollisionSystem
                 parametersA, 
                 xContactPoints,
                 yContactPoints,
-                colliderShapeCenterB,
-                colliderShapeCenterA,
-                normal, 
+                normalX,
+                normalY,
+                colliderBShapeCenterX,
+                colliderBShapeCenterY,
+                colliderAShapeCenterX,
+                colliderAShapeCenterY,
                 depth
             )
         );
@@ -594,21 +631,28 @@ public static class CollisionSystem
             if(collision.OwnerParameters.Mode == ColliderMode.Kinematic)
             {
                 // separate only collider B if A is Kinematic.
-                Vector2 displacement = collision.Normal * collision.Depth * 0.5f;
-                transformRefB.Value.Position += displacement;
+                float displacementX = collision.NormalX * collision.Depth;
+                float displacementY = collision.NormalY * collision.Depth;
+                transformRefB.Value.Position.X += displacementX;
+                transformRefB.Value.Position.Y += displacementY;
             }
             else if(collision.OtherParameters.Mode == ColliderMode.Kinematic)
             {
                 // separate only collider A if B is Kinematic.
-                Vector2 displacement = collision.Normal * collision.Depth;                
-                transformRefA.Value.Position -= displacement;
+                float displacementX = collision.NormalX * collision.Depth;
+                float displacementY = collision.NormalY * collision.Depth;
+                transformRefA.Value.Position.X -= displacementX;
+                transformRefA.Value.Position.Y -= displacementY;
             }
             else
             {
                 // separate both colliders if they are both dynamic.
-                Vector2 displacement = collision.Normal * collision.Depth * 0.5f;
-                transformRefA.Value.Position -= displacement;
-                transformRefB.Value.Position += displacement;    
+                float displacementX = collision.NormalX * collision.Depth * 0.5f;
+                float displacementY = collision.NormalY * collision.Depth * 0.5f;
+                transformRefA.Value.Position.X -= displacementX;
+                transformRefA.Value.Position.Y -= displacementY;    
+                transformRefB.Value.Position.X += displacementX;
+                transformRefB.Value.Position.Y += displacementY;    
             }
         }
 
@@ -840,8 +884,8 @@ public static class CollisionSystem
         for(int i = 0; i < span.Length; i++)
         {
             ref readonly Collision collision = ref span[i];
-            ReadOnlySpan<float> x = collision.GetXContactPointsAsReadOnlySpan();
-            ReadOnlySpan<float> y = collision.GetYContactPointsAsReadOnlySpan();
+            Span<float> x = ContactPointsXAsSpan(collision);
+            Span<float> y = ContactPointsYAsSpan(collision);
 
 
             for(int j = 0; j < collision.ContactPointsCount; j++)
