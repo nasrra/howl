@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Howl.DataStructures;
 using Howl.ECS;
@@ -8,6 +7,10 @@ using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math;
 using Howl.Math.Shapes;
+using System.Threading.Tasks;
+using static Howl.Physics.CircleCollisionContext;
+using static Howl.Physics.RectangleCollisionContext;
+using static Howl.Physics.RectangleToCircleCollisionContext;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.PolygonRectangle;
@@ -18,7 +21,22 @@ namespace Howl.Physics;
 
 public static class CollisionSystem
 {
-    private const float PolygonContactPointEpsilon = 1e-5f;
+    public const float PolygonContactPointEpsilon = 1e-5f;
+
+    /// <summary>
+    /// Gets and sets the currently bound collision context for parallel circle to circle collision checks.
+    /// </summary>
+    public static CircleCollisionContext CircleCollisionContext;
+
+    /// <summary>
+    /// Gets and sets the currently bound collision context for parallel rectangle to rectangle collision checks.
+    /// </summary>
+    public static RectangleCollisionContext RectangleCollisionContext;
+
+    /// <summary>
+    /// Gets and sets the currently bound collision context for parallel rectangle to circle collision checks.
+    /// </summary>
+    public static RectangleToCircleCollisionContext RectangleToCircleCollisionContext;
 
     /// <summary>
     /// Registers all necessary components of this system.
@@ -210,296 +228,262 @@ public static class CollisionSystem
     /// <summary>
     /// Processes all near collider pairs in a collision system state.
     /// </summary>
-    /// <param name="componentRegistry">The component registry that stores all the collision system states colliders.</param>
+    /// <remarks>
+    /// Note: this function should not be called in parallel.
+    /// </remarks>
+    /// <param name="registry">The component registry that stores all the collision system states colliders.</param>
     /// <param name="state">The  collision system state that stores the collider pairs.</param>
-    public static void ProcessNearColliderPairs(ComponentRegistry componentRegistry, CollisionSystemState state)
+    public static void ProcessNearColliderPairs(ComponentRegistry registry, CollisionSystemState state)
     {        
-        ProcessNearCircles(componentRegistry, state.NearCircleColliders, state.CollisionManifold);
-        ProcessNearRectangles(componentRegistry, state.NearRectangleColliders, state.CollisionManifold);
-        ProcessNearRectangleToCircles(componentRegistry, state.NearRectangleToCircleColliders, state.CollisionManifold);
+        ProcessNearCircles(registry, state.NearCircleColliders, state.CollisionManifold);
+        ProcessNearRectangles(registry, state.NearRectangleColliders, state.CollisionManifold);
+        ProcessNearRectangleToCircles(registry, state.NearRectangleToCircleColliders, state.CollisionManifold);
     }
 
     /// <summary>
     /// Checks all near circle colliders for intersection.
     /// </summary>
-    /// <param name="componentRegistry">the component registry that stores all the collision system state's colliders.</param>
-    /// <param name="colliderPairs">the near collider pairs.</param>
-    /// <param name="collisionManifold">the collision manifold to register any found intersections to.</param>
+    /// <remarks>
+    /// Note: this function should not be called in parallel.
+    /// </remarks>
+    /// <param name="registry">the component registry that stores all the collision system state's colliders.</param>
+    /// <param name="pairs">the near collider pairs.</param>
     public static void ProcessNearCircles(
-        ComponentRegistry componentRegistry, 
-        List<ColliderPair> colliderPairs,
-        CollisionManifold collisionManifold
+        ComponentRegistry registry, 
+        List<ColliderPair> pairs,
+        CollisionManifold manifold
     )
     {        
-        GenIndexList<CircleCollider> colliders = componentRegistry.Get<CircleCollider>();
-        ReadOnlySpan<ColliderPair> span = CollectionsMarshal.AsSpan(colliderPairs);
-        ref ColliderPair start = ref MemoryMarshal.GetReference(span);
+        CircleCollisionContext = new CircleCollisionContext(registry.Get<CircleCollider>(), pairs, manifold);        
 
-        for (int i = 0; i < span.Length; i++)
+        Parallel.For(0, pairs.Count, static i =>
         {
-            ref readonly ColliderPair pair = ref Unsafe.Add(ref start, i);
-            CircleToCircleIntersect(
-                collisionManifold,
-                colliders,
-                pair.ColliderA,
-                pair.ColliderB
-            );
-        }
+            GenIndexList<CircleCollider> colliders = CircleCollisionContext.Colliders;
+            List<ColliderPair> pairs = CircleCollisionContext.Pairs;
+            Span<ColliderPair> pairsSpan = CollectionsMarshal.AsSpan(pairs);
+            ref ColliderPair pair = ref pairsSpan[i];
+
+            GetDenseRef(colliders, pair.ColliderA, out Ref<CircleCollider> colliderRefA);
+            GetDenseRef(colliders, pair.ColliderB, out Ref<CircleCollider> colliderRefB);
+            
+            ref CircleCollider colliderA = ref colliderRefA.Value;
+            ref CircleCollider colliderB = ref colliderRefB.Value;
+
+            // Broad Phase:
+            if(Intersect(GetAABB(colliderA.TransformedShape), GetAABB(colliderB.TransformedShape)) == false)
+            {
+                return;    
+            }
+
+
+            // Narrow Phase:
+            // perform an SAT check.
+            if(SAT.Intersect(
+                colliderA.TransformedShape,
+                colliderB.TransformedShape,
+                out Vector2 normal,
+                out float depth
+            ))
+            {
+                // submit the collision with contact points if one of the colliders needs them.
+                SAT.FindContactPoints(colliderA.TransformedShape, colliderB.TransformedShape, out float xContactPoint, out float yContactPoint);
+                RegisterCollision(
+                    CircleCollisionContext.CollisionManifold,
+                    pair.ColliderA,
+                    pair.ColliderB,
+                    colliderA.Parameters,
+                    colliderB.Parameters,
+                    [xContactPoint],
+                    [yContactPoint],
+                    Center(colliderA.TransformedShape),
+                    Center(colliderB.TransformedShape),
+                    normal,
+                    depth
+                );
+            }              
+        });
+
+        Clear(ref CircleCollisionContext);
     }
 
     /// <summary>
     /// Checks all near rectangle colliders for intersection.
     /// </summary>
-    /// <param name="componentRegistry">the component registry that stores all the collision system state's colliders.</param>
-    /// <param name="colliderPairs">the near collider pairs.</param>
-    /// <param name="collisionManifold">the collision manifold to register any found intersections to.</param>
+    /// <remarks>
+    /// Note: this function should not be called in parallel.
+    /// </remarks>
+    /// <param name="registry">the component registry that stores all the collision system state's colliders.</param>
+    /// <param name="pairs">the near collider pairs.</param>
+    /// <param name="manifold">the collision manifold to register any found intersections to.</param>
     public static void ProcessNearRectangles(
-        ComponentRegistry componentRegistry, 
-        List<ColliderPair> colliderPairs,
-        CollisionManifold collisionManifold
+        ComponentRegistry registry, 
+        List<ColliderPair> pairs,
+        CollisionManifold manifold
     )
     {        
-        GenIndexList<RectangleCollider> colliders = componentRegistry.Get<RectangleCollider>();
-        ReadOnlySpan<ColliderPair> span = CollectionsMarshal.AsSpan(colliderPairs);
-        ref ColliderPair start = ref MemoryMarshal.GetReference(span); 
+        RectangleCollisionContext = new RectangleCollisionContext(registry.Get<RectangleCollider>(), pairs, manifold);
 
-        for(int i = 0; i < span.Length; i++)
-        {
-            ref readonly ColliderPair pair = ref Unsafe.Add(ref start, i); 
-            RectangleToRectangleIntersect(collisionManifold, colliders, pair.ColliderA, pair.ColliderB);
-        }
+        Parallel.For(0, pairs.Count, static i =>
+        {            
+            CollisionManifold manifold = RectangleCollisionContext.CollisionManifold;
+            GenIndexList<RectangleCollider> colliders =  RectangleCollisionContext.Colliders;
+            Span<ColliderPair> pairs =  CollectionsMarshal.AsSpan(RectangleCollisionContext.Pairs);
+            ref ColliderPair pair = ref pairs[i];
+
+            GetDenseRef(colliders, pair.ColliderA, out Ref<RectangleCollider> colliderRefA);
+            GetDenseRef(colliders, pair.ColliderB, out Ref<RectangleCollider> colliderRefB);
+            ref RectangleCollider colliderA = ref colliderRefA.Value;
+            ref RectangleCollider colliderB = ref colliderRefB.Value;
+
+            // Broad Phase:
+            if(Intersect(GetAABB(colliderA.TransformedShape), GetAABB(colliderB.TransformedShape)) == false)
+            {
+                return;    
+            }
+
+            Vector2 colliderACentroid = Centroid(colliderA.TransformedShape);
+            Vector2 colliderBCentroid = Centroid(colliderB.TransformedShape);
+
+            // Narrow Phase:
+            // perform an SAT check.
+            if(SAT.Intersect(
+                colliderA.TransformedShape,
+                colliderB.TransformedShape,
+                colliderACentroid,
+                colliderBCentroid,
+                out Vector2 normal,
+                out float depth
+            ))
+            {
+
+                SAT.FindContactPoints(
+                    VerticesXAsReadOnlySpan(colliderA.TransformedShape),
+                    VerticesYAsReadOnlySpan(colliderA.TransformedShape), 
+                    VerticesXAsReadOnlySpan(colliderB.TransformedShape),
+                    VerticesYAsReadOnlySpan(colliderB.TransformedShape), 
+                    PolygonContactPointEpsilon,
+                    out float xContactPoint1, 
+                    out float yContactPoint1,
+                    out float xContactPoint2, 
+                    out float yContactPoint2,
+                    out int contactCount
+                );
+
+                // check if there are one or two contact points found.
+                switch (contactCount)
+                {
+                    case 1:
+                        RegisterCollision(
+                            manifold,
+                            pair.ColliderA,
+                            pair.ColliderB,
+                            colliderA.Parameters,
+                            colliderB.Parameters,
+                            [xContactPoint1],
+                            [yContactPoint1],
+                            colliderACentroid,
+                            colliderBCentroid,
+                            normal,
+                            depth
+                        );
+                    break;
+                    case 2:
+                        RegisterCollision(
+                            manifold,
+                            pair.ColliderA,
+                            pair.ColliderB,
+                            colliderA.Parameters,
+                            colliderB.Parameters,
+                            [xContactPoint1, xContactPoint2],
+                            [yContactPoint1, yContactPoint2],
+                            colliderACentroid,
+                            colliderBCentroid,
+                            normal,
+                            depth
+                        );
+                    break;
+                    default:
+                        throw new Exception();
+                }
+            }  
+        });
+
+        Clear(ref RectangleCollisionContext);
     }
 
     /// <summary>
     /// Checks all near rectangle to circle colliders for intersection.
     /// </summary>
     /// <remarks>
-    /// Note: it is assumed that the collider pairs have collider A as the rectangle and collider B as the circle.
+    /// Note: 
+    /// - This function should not be called in parallel.
+    /// - it is assumed that the collider pairs have collider A as the rectangle and collider B as the circle.
     /// </remarks>
-    /// <param name="componentRegistry">the component registry that stores all the collision system state's colliders.</param>
-    /// <param name="colliderPairs">the near collider pairs.</param>
-    /// <param name="collisionManifold">the collision manifold to register any found intersections to.</param>
+    /// <param name="registry">the component registry that stores all the collision system state's colliders.</param>
+    /// <param name="pairs">the near collider pairs.</param>
+    /// <param name="manifold">the collision manifold to register any found intersections to.</param>
     public static void ProcessNearRectangleToCircles(
-        ComponentRegistry componentRegistry, 
-        List<ColliderPair> colliderPairs,
-        CollisionManifold collisionManifold
+        ComponentRegistry registry, 
+        List<ColliderPair> pairs,
+        CollisionManifold manifold
     )
     {        
-        GenIndexList<RectangleCollider> rectangles = componentRegistry.Get<RectangleCollider>();
-        GenIndexList<CircleCollider> circles = componentRegistry.Get<CircleCollider>();
-        ReadOnlySpan<ColliderPair> span = CollectionsMarshal.AsSpan(colliderPairs);
-        ref ColliderPair start = ref MemoryMarshal.GetReference(span);
+        RectangleToCircleCollisionContext = new RectangleToCircleCollisionContext(
+            registry.Get<RectangleCollider>(),
+            registry.Get<CircleCollider>(),
+            pairs,
+            manifold
+        );
 
-        for(int i = 0; i < span.Length; i++)
+        Parallel.For(0, pairs.Count, static i =>
         {
-            ref readonly ColliderPair pair = ref Unsafe.Add(ref start, i); 
-            RectangleToCircleIntersect(collisionManifold, rectangles, circles, pair.ColliderA, pair.ColliderB);
-        }
-    }
+            Span<ColliderPair> pairs = CollectionsMarshal.AsSpan(RectangleToCircleCollisionContext.Pairs);
+            ref ColliderPair pair = ref pairs[i];
 
-    /// <summary>
-    /// Performs a intersection check against two circle colliders.
-    /// </summary>
-    /// <param name="collisionManifold">the collision manifold to register to if an intersection was found.</param>
-    /// <param name="circleColliders">the colliders list to source the two colliders from.</param>
-    /// <param name="genIndexA">the gen index of collider a.</param>
-    /// <param name="genIndexB">the gen index of collider b.</param>
-    private static void CircleToCircleIntersect(
-        CollisionManifold collisionManifold, 
-        GenIndexList<CircleCollider> circleColliders,
-        in GenIndex genIndexA, 
-        in GenIndex genIndexB
-    )
-    {
-        GetDenseRef(circleColliders, genIndexA, out Ref<CircleCollider> colliderRefA);
-        GetDenseRef(circleColliders, genIndexB, out Ref<CircleCollider> colliderRefB);
-        ref CircleCollider colliderA = ref colliderRefA.Value;
-        ref CircleCollider colliderB = ref colliderRefB.Value;
+            GetDenseRef(RectangleToCircleCollisionContext.Rectangles, pair.ColliderA, out Ref<RectangleCollider> colliderRefA);
+            GetDenseRef(RectangleToCircleCollisionContext.Circles, pair.ColliderB, out Ref<CircleCollider> colliderRefB);
+            ref RectangleCollider rectangle = ref colliderRefA.Value;
+            ref CircleCollider circle = ref colliderRefB.Value;
 
-        // Broad Phase:
-        if(AABB.Intersect(GetAABB(colliderA.TransformedShape), GetAABB(colliderB.TransformedShape)) == false)
-        {
-            return;    
-        }
-
-
-        // Narrow Phase:
-        // perform an SAT check.
-        if(SAT.Intersect(
-            colliderA.TransformedShape,
-            colliderB.TransformedShape,
-            out Vector2 normal,
-            out float depth
-        ))
-        {
-            // submit the collision with contact points if one of the colliders needs them.
-            SAT.FindContactPoints(colliderA.TransformedShape, colliderB.TransformedShape, out float xContactPoint, out float yContactPoint);
-            RegisterCollision(
-                collisionManifold,
-                genIndexA,
-                genIndexB,
-                colliderA.Parameters,
-                colliderB.Parameters,
-                [xContactPoint],
-                [yContactPoint],
-                Center(colliderA.TransformedShape),
-                Center(colliderB.TransformedShape),
-                normal,
-                depth
-            );
-        }                
-    }
-
-    /// <summary>
-    /// Performs a intersection check against two rectangle colliders.
-    /// </summary>
-    /// <param name="collisionManifold">the collision manifold to register to if an intersection was found.</param>
-    /// <param name="rectangleColliders">the colliders list to source the two colliders from.</param>
-    /// <param name="genIndexA">the gen index of collider a.</param>
-    /// <param name="genIndexB">the gen index of collider b.</param>
-    /// <exception cref="Exception"></exception>
-    private static void RectangleToRectangleIntersect(
-        CollisionManifold collisionManifold, 
-        GenIndexList<RectangleCollider> rectangleColliders,
-        in GenIndex genIndexA, 
-        in GenIndex genIndexB
-    )
-    {
-        GetDenseRef(rectangleColliders, genIndexA, out Ref<RectangleCollider> colliderRefA);
-        GetDenseRef(rectangleColliders, genIndexB, out Ref<RectangleCollider> colliderRefB);
-        ref RectangleCollider colliderA = ref colliderRefA.Value;
-        ref RectangleCollider colliderB = ref colliderRefB.Value;
-
-        // Broad Phase:
-        if(AABB.Intersect(GetAABB(colliderA.TransformedShape), GetAABB(colliderB.TransformedShape)) == false)
-        {
-            return;    
-        }
-
-        Vector2 colliderACentroid = Centroid(colliderA.TransformedShape);
-        Vector2 colliderBCentroid = Centroid(colliderB.TransformedShape);
-
-        // Narrow Phase:
-        // perform an SAT check.
-        if(SAT.Intersect(
-            colliderA.TransformedShape,
-            colliderB.TransformedShape,
-            colliderACentroid,
-            colliderBCentroid,
-            out Vector2 normal,
-            out float depth
-        ))
-        {
-
-            SAT.FindContactPoints(
-                VerticesXAsReadOnlySpan(colliderA.TransformedShape),
-                VerticesYAsReadOnlySpan(colliderA.TransformedShape), 
-                VerticesXAsReadOnlySpan(colliderB.TransformedShape),
-                VerticesYAsReadOnlySpan(colliderB.TransformedShape), 
-                PolygonContactPointEpsilon,
-                out float xContactPoint1, 
-                out float yContactPoint1,
-                out float xContactPoint2, 
-                out float yContactPoint2,
-                out int contactCount
-            );
-
-            // check if there are one or two contact points found.
-            switch (contactCount)
+            // Broad Phase:
+            if(Intersect(GetAABB(rectangle.TransformedShape), GetAABB(circle.TransformedShape)) == false)
             {
-                case 1:
-                    RegisterCollision(
-                        collisionManifold,
-                        genIndexA,
-                        genIndexB,
-                        colliderA.Parameters,
-                        colliderB.Parameters,
-                        [xContactPoint1],
-                        [yContactPoint1],
-                        colliderACentroid,
-                        colliderBCentroid,
-                        normal,
-                        depth
-                    );
-                break;
-                case 2:
-                    RegisterCollision(
-                        collisionManifold,
-                        genIndexA,
-                        genIndexB,
-                        colliderA.Parameters,
-                        colliderB.Parameters,
-                        [xContactPoint1, xContactPoint2],
-                        [yContactPoint1, yContactPoint2],
-                        colliderACentroid,
-                        colliderBCentroid,
-                        normal,
-                        depth
-                    );
-                break;
-                default:
-                    throw new Exception();
+                return;    
             }
-        }                
-    }
 
-    /// <summary>
-    /// Performs a intersection check against a rectangle  and circle collider.
-    /// </summary>
-    /// <param name="collisionManifold">the collision manifold to register to if an intersection was found.</param>
-    /// <param name="rectangleColliders">the colliders list to source the rectangle collider from.</param>
-    /// <param name="circleColliders">the colliders list to source the circle collider from.</param>
-    /// <param name="rectangleGenIndex">the gen index of the rectangle collider.</param>
-    /// <param name="circleGenIndex">the gen index of the circle collider.</param>
-    private static void RectangleToCircleIntersect(
-        CollisionManifold collisionManifold,
-        GenIndexList<RectangleCollider> rectangleColliders,
-        GenIndexList<CircleCollider> circleColliders,
-        in GenIndex rectangleGenIndex, 
-        in GenIndex circleGenIndex
-    )
-    {
-        GetDenseRef(rectangleColliders, rectangleGenIndex, out Ref<RectangleCollider> colliderRefA);
-        GetDenseRef(circleColliders, circleGenIndex, out Ref<CircleCollider> colliderRefB);
-        ref RectangleCollider rectangle = ref colliderRefA.Value;
-        ref CircleCollider circle = ref colliderRefB.Value;
+            // Narrow Phase:
+            // perform an SAT check.
+            if(SAT.Intersect(
+                rectangle.TransformedShape,
+                circle.TransformedShape,
+                out Vector2 normal,
+                out float depth
+            ))
+            {
+                SAT.FindContactPoints(
+                    VerticesXAsReadOnlySpan(rectangle.TransformedShape),
+                    VerticesYAsReadOnlySpan(rectangle.TransformedShape), 
+                    circle.TransformedShape, 
+                    out float xContactPoint, 
+                    out float yContactPoint
+                );
+                RegisterCollision(
+                    RectangleToCircleCollisionContext.CollisionManifold,
+                    pair.ColliderA, 
+                    pair.ColliderB, 
+                    rectangle.Parameters,
+                    circle.Parameters,
+                    [xContactPoint],
+                    [yContactPoint],
+                    Centroid(rectangle.TransformedShape),
+                    Center(circle.TransformedShape),
+                    normal,
+                    depth
+                );
+            }              
+        });
 
-        // Broad Phase:
-        if(AABB.Intersect(GetAABB(rectangle.TransformedShape), GetAABB(circle.TransformedShape)) == false)
-        {
-            return;    
-        }
-
-        // Narrow Phase:
-        // perform an SAT check.
-        if(SAT.Intersect(
-            rectangle.TransformedShape,
-            circle.TransformedShape,
-            out Vector2 normal,
-            out float depth
-        ))
-        {
-            SAT.FindContactPoints(
-                VerticesXAsReadOnlySpan(rectangle.TransformedShape),
-                VerticesYAsReadOnlySpan(rectangle.TransformedShape), 
-                circle.TransformedShape, 
-                out float xContactPoint, 
-                out float yContactPoint
-            );
-            RegisterCollision(
-                collisionManifold,
-                rectangleGenIndex, 
-                circleGenIndex, 
-                rectangle.Parameters,
-                circle.Parameters,
-                [xContactPoint],
-                [yContactPoint],
-                Centroid(rectangle.TransformedShape),
-                Center(circle.TransformedShape),
-                normal,
-                depth
-            );
-        }                
+        Clear(ref RectangleToCircleCollisionContext);
     }
 
     /// <summary>
@@ -527,11 +511,17 @@ public static class CollisionSystem
         in Vector2 normal,
         in float depth
     )
-    {        
-        // Add the sibling collisions to the collisions manifold for later resolution.
-        // NOTE: this is done so that the collision manifold can correctly binary search
-        // for collisions outside of the collision system.
-        collisionManifold.AddCollision(
+    {                
+        // register two collisions, one for each collider.
+        
+        // Add one to the collisions to resolve and the other directly to collisions.
+        // this is done so that during the resolution step, a seperating force is 
+        // not applied twice to the same colliders.
+
+        // collisions to resolve is later added back to the collision list after
+        // they have been resolved.
+
+        collisionManifold.CollisionsToResolve.Add(
             new Collision(
                 genIndexA, 
                 genIndexB,
@@ -546,7 +536,7 @@ public static class CollisionSystem
             )
         );
 
-        collisionManifold.AddCollision(
+        collisionManifold.Collisions.Add(
             new Collision(
                 genIndexB,
                 genIndexA, 
@@ -565,9 +555,9 @@ public static class CollisionSystem
     public static void ResolveCollisions(ComponentRegistry componentRegistry, CollisionSystemState state)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        ReadOnlySpan<Collision> span = state.CollisionManifold.GetCollisionsAsReadOnlySpan();
+        Span<Collision> span = CollectionsMarshal.AsSpan(state.CollisionManifold.CollisionsToResolve);
 
-        for(int i = 0; i < span.Length; i+=2) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
+        for(int i = 0; i < span.Length; i++) // NOTE: increment by two as collisions are stored as siblings before the collision manifold is sorted.
         {
             ref readonly Collision collision = ref span[i]; 
             
@@ -600,8 +590,11 @@ public static class CollisionSystem
                 transformRefA.Value.Position -= displacement;
                 transformRefB.Value.Position += displacement;    
             }
-
         }
+
+        // add the resolved collisions to the collisions list.
+        state.CollisionManifold.Collisions.AddRange(state.CollisionManifold.CollisionsToResolve);
+        state.CollisionManifold.CollisionsToResolve.Clear();
     }
     
     /// <summary>

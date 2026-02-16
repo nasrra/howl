@@ -11,12 +11,12 @@ public sealed class CollisionManifold : IDisposable
     /// <summary>
     /// Gets and sets the stored collisions.
     /// </summary>
-    private List<Collision> collisions;
+    public List<Collision> Collisions; 
 
     /// <summary>
-    /// Gets the stored collision data.
+    /// Gets and sets the collisions that need to be resolved.
     /// </summary>
-    public IReadOnlyList<Collision> Collisions => collisions;
+    public List<Collision> CollisionsToResolve;
 
     /// <summary>
     /// Gets and sets whether this instance has been disposed.
@@ -34,7 +34,8 @@ public sealed class CollisionManifold : IDisposable
     public CollisionManifold()
     {
         disposed = false;
-        collisions = new(InitialCapacity);
+        Collisions = new(InitialCapacity);
+        CollisionsToResolve = new(InitialCapacity);
     }
 
     /// <summary>
@@ -42,34 +43,33 @@ public sealed class CollisionManifold : IDisposable
     /// </summary>
     public void Clear()
     {
-        collisions.Clear();
-    }
-
-    /// <summary>
-    /// Adds a collision to the manifold.
-    /// </summary>
-    /// <param name="collision">The collision to add.</param>
-    public void AddCollision(Collision collision)
-    {
-        collisions.Add(collision);
+        Collisions.Clear();
+        CollisionsToResolve.Clear();
     }
 
     /// <summary>
     /// Sorts this manifold's collisions in a GenIndex index ascending order 
     /// </summary>
+    /// <remarks>
+    /// Note: This is done so that the retrieve collision method can binary search for collisions.
+    /// </remarks>
     public void Sort()
     {
-        collisions.Sort((a,b) => a.Owner.Index.CompareTo(b.Owner.Index));
+        Collisions.Sort((a,b) => a.Owner.Index.CompareTo(b.Owner.Index));
     }
 
     /// <summary>
     /// Retrieves all collisions associated with a given GenIndex
     /// </summary>
+    /// <remarks>
+    /// Note: this method uses binary search, ensure that the collisions list has been sorted
+    /// using the sort utility function before attempting to retrieve any collisions. 
+    /// </remarks>
     /// <param name="genIndex"></param>
     /// <returns></returns>
     public ReadOnlySpan<Collision> RetrieveCollisions(GenIndex genIndex)
     {
-        ReadOnlySpan<Collision> collisionSpan = CollectionsMarshal.AsSpan(collisions);
+        ReadOnlySpan<Collision> collisionSpan = CollectionsMarshal.AsSpan(Collisions);
         ReadOnlySpan<Collision> result;
 
         int index = BinarySearch(collisionSpan, genIndex);
@@ -154,7 +154,7 @@ public sealed class CollisionManifold : IDisposable
     /// <returns>The read-only span</returns>
     public ReadOnlySpan<Collision> GetCollisionsAsReadOnlySpan()
     {
-        return CollectionsMarshal.AsSpan(collisions);
+        return CollectionsMarshal.AsSpan(Collisions);
     }
 
     /// <summary>
@@ -175,7 +175,7 @@ public sealed class CollisionManifold : IDisposable
         if (disposing)
         {
             Clear();
-            collisions = null;
+            Collisions = null;
         }
 
         GC.SuppressFinalize(this);

@@ -47,7 +47,7 @@ public sealed class CollisionSystemState : IDisposable
     /// <summary>
     /// Gets the collision manifold.
     /// </summary>
-    public readonly CollisionManifold CollisionManifold;
+    public CollisionManifold CollisionManifold;
 
     /// <summary>
     /// Gets and sets the collider pairs for near circle colliders.
