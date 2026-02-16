@@ -4,6 +4,7 @@ using static Howl.Math.Shapes.Rectangle;
 using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Math;
+using static Howl.Math.Shapes.ShapeUtils;
 
 namespace Howl.Math.Shapes;
 
@@ -13,6 +14,12 @@ namespace Howl.Math.Shapes;
 /// </summary>
 public static class SAT
 {
+    // the fallback normal for any SAT intersect will be up.
+    // meaning that if any shapes perfectly overlap with eachother
+    // (sharing the same position) one will be pushed up and the other down.
+    public const float InitialNormalX = 0;
+    public const float InitialNormalY = 1;
+
     /// <summary>
     /// Checks for intersection between two circles.
     /// </summary>
@@ -217,9 +224,9 @@ public static class SAT
     /// <param name="depth">The depth of the intersection in relation to the circle.</param>
     /// <returns>true, if there was an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(PolygonRectangle rectangle, Circle circle, out Vector2 normal, out float depth)
+    public static bool Intersect(PolygonRectangle rectangle, Circle circle, Vector2 polgonCenter, Vector2 circleCenter, out Vector2 normal, out float depth)
     {
-        return Intersect(VerticesXAsSpan(rectangle), VerticesYAsSpan(rectangle), circle, out normal, out depth);
+        return Intersect(VerticesXAsSpan(rectangle), VerticesYAsSpan(rectangle), circle, polgonCenter.X, polgonCenter.Y, circleCenter.X, circleCenter.Y, out normal, out depth);
     }
 
     /// <summary>
@@ -235,15 +242,25 @@ public static class SAT
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect
     (
-        ReadOnlySpan<float> polygonVerticesX,
-        ReadOnlySpan<float> polygonVerticesY,
+        Span<float> polygonVerticesX,
+        Span<float> polygonVerticesY,
         Circle circle,
+        float polygonCentroidX,
+        float polygonCentroidY,
+        float circleCenterX,
+        float circleCenterY,
         out Vector2 normal,
         out float depth
     )
     {
         depth = float.MaxValue;
-        normal = Vector2.Up;
+
+        // store normals as floats and operate on them as
+        // floats before allocating a Vector as numerical
+        // arithematic is faster.
+        float normalX = InitialNormalX;
+        float normalY = InitialNormalY;
+        normal = Vector2.Zero;
 
         float axisX;
         float axisY;
@@ -301,11 +318,12 @@ public static class SAT
             {
                 // only assign if the newly found intersection depth is smaller.
                 depth = axisDepth;
-                normal = new Vector2(axisX, axisY);
+                normalX = axisX;
+                normalY = axisY;
             }
         }
 
-        int closestPointIndex = ShapeUtils.FindClosestVertexOnPolygon(Center(circle), polygonVerticesX, polygonVerticesY);
+        int closestPointIndex = FindClosestVertexOnPolygon(circleCenterX, circleCenterY, polygonVerticesX, polygonVerticesY);
         float closestPointX = polygonVerticesX[closestPointIndex];
         float closestPointY = polygonVerticesY[closestPointIndex];
 
@@ -329,21 +347,25 @@ public static class SAT
         {
             // only assign if the newly found intersection depth is smaller.
             depth = axisDepth;
-            normal = new Vector2(axisX, axisY);
+            normalX = axisX;
+            normalY = axisY;
         }
 
-        Vector2 polygonCentroid = ShapeUtils.Centroid(polygonVerticesX, polygonVerticesY);
-        Vector2 circleCentroid = Center(circle);
+        float distanceX = circleCenterX - polygonCentroidX;
+        float distanceY = circleCenterY - polygonCentroidY;
 
         // when a new smaller   
         // depth is found but in relation to rect B, not A.
         // this is so that the resolution code will always push A out of B
         // and not push the two into each other when a smaller depth is found when 
         // looping through rect B.
-        if ((circleCentroid - polygonCentroid).Dot(normal) < 0)
+        if(Dot(distanceX, distanceY, normalX,  normalY) < 0)
         {
-            normal = -normal;
+            normalX = -normalX;
+            normalY = -normalY;
         }
+
+        normal = new Vector2(normalX, normalY);
         return true;
     }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using static Howl.Math.Math;
 
 namespace Howl.Math.Shapes;
 
@@ -8,12 +9,25 @@ public static class ShapeUtils
     /// <summary>
     /// Finds the closest vertex on a polygon to a given position.
     /// </summary>
-    /// <param name="queryPosition">The position to find the closest point from.</param>
-    /// <param name="verticesX">The x-values of a polygons vertices.</param>
-    /// <param name="verticesY">The y-values of a polygons vertices.</param>
+    /// <param name="queryPosition">position to find the closest vertex to.</param>
+    /// <param name="verticesX">The x-componentes of a polygons vertices.</param>
+    /// <param name="verticesY">The y-componentes of a polygons vertices.</param>
     /// <returns>The index of the vertex in the vertices span that is the closest point.</returns>
     /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
-    public static int FindClosestVertexOnPolygon(Vector2 queryPosition, ReadOnlySpan<float> verticesX, ReadOnlySpan<float> verticesY)
+    public static int FindClosestVertexOnPolygon(Vector2 queryPosition, Span<float> verticesX, Span<float> verticesY)
+    {
+        return FindClosestVertexOnPolygon(queryPosition.X, queryPosition.Y, verticesX, verticesY);
+    }
+
+    /// <summary>
+    /// Finds the closest vertex on a polygon to a given position.
+    /// </summary>
+    /// <param name="queryPositionX">the x-component of the position to find the closest vertex to.</param>
+    /// <param name="queryPositionY">the x-component of the position to find the closest vertex to.</param>
+    /// <param name="verticesX">The x-componentes of a polygons vertices.</param>
+    /// <param name="verticesY">The y-componentes of a polygons vertices.</param>
+    /// <returns>The index of the vertex in the vertices span that is the closest point.</returns>
+    public static int FindClosestVertexOnPolygon(float queryPositionX, float queryPositionY, Span<float> verticesX, Span<float> verticesY)
     {
         int result = -1;
         float minDistance = float.MaxValue;
@@ -23,12 +37,9 @@ public static class ShapeUtils
             throw new ArgumentException($"verticesX length '{verticesX.Length}' is not equal to verticesY length '{verticesY.Length}'");
         }
         
-        int length = verticesX.Length;
-
-        for(int i = 0; i < length; i++)
+        for(int i = 0; i < verticesX.Length; i++)
         {
-            Vector2 vector = new Vector2(verticesX[i], verticesY[i]);
-            float distance = vector.DistanceSquared(queryPosition);
+            float distance = DistanceSquared(verticesX[i], verticesY[i], queryPositionX, queryPositionY);
 
             if(distance < minDistance)
             {
@@ -37,7 +48,7 @@ public static class ShapeUtils
             }
         }
 
-        return result;
+        return result;        
     }
 
     /// <summary>
@@ -48,8 +59,22 @@ public static class ShapeUtils
     /// <returns>The centroid-vector.</returns>
     /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 Centroid(ReadOnlySpan<float> polygonVerticesX, ReadOnlySpan<float> polygonVerticesY)
+    public static Vector2 Centroid(Span<float> polygonVerticesX, Span<float> polygonVerticesY)
     {
+        Centroid(polygonVerticesX, polygonVerticesY, out float centroidX, out float centroidY);
+        return new Vector2(centroidX, centroidY);
+    }
+
+    /// <summary>
+    /// Calculates the centroid of a polygon.
+    /// </summary>
+    /// <param name="polygonVerticesX">The x-values of a polygon's vertices.</param>
+    /// <param name="polygonVerticesY">The y-values of a polygon's vertices.</param>
+    /// <param name="centroidX">The x-component centroid.</param>
+    /// <param name="centroidY">The y-component centroid.</param>
+    /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
+    public static void Centroid(Span<float> polygonVerticesX, Span<float> polygonVerticesY, out float centroidX, out float centroidY)
+    {        
         if(polygonVerticesX.Length != polygonVerticesY.Length)
         {
             throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' is not equal to polygonVerticesY length {polygonVerticesY.Length}'");
@@ -57,11 +82,16 @@ public static class ShapeUtils
 
         int length = polygonVerticesX.Length;
 
-        Vector2 sum = Vector2.Zero;
+        centroidX = 0;
+        centroidY = 0;
+        
         for(int i = 0; i < length; i++)
         {
-            sum += new Vector2(polygonVerticesX[i], polygonVerticesY[i]);
+            centroidX += polygonVerticesX[i];
+            centroidY += polygonVerticesY[i];
         }
-        return sum /= length;
+
+        centroidX /= length;
+        centroidY /= length;
     }
 }

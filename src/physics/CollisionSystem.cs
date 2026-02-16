@@ -18,6 +18,7 @@ using static Howl.Math.Shapes.Rectangle;
 using static Howl.Math.Shapes.AABB;
 using static Howl.DataStructures.BoundingVolumeHierarchy;
 using static System.Runtime.InteropServices.CollectionsMarshal;
+using static Howl.Math.Shapes.ShapeUtils; 
 
 namespace Howl.Physics;
 
@@ -453,11 +454,28 @@ public static class CollisionSystem
                 return;    
             }
 
+            // cache vertices span.
+            Span<float> rectangleVerticesX = VerticesXAsSpan(rectangle.TransformedShape);
+            Span<float> rectangleVerticesY = VerticesYAsSpan(rectangle.TransformedShape);
+            
+            // pre compute centroid.
+            Centroid(
+                rectangleVerticesX, 
+                rectangleVerticesY, 
+                out float rectangleCentroidX,
+                out float rectangleCentroidY
+            );
+
             // Narrow Phase:
             // perform an SAT check.
             if(SAT.Intersect(
-                rectangle.TransformedShape,
+                rectangleVerticesX,
+                rectangleVerticesY,
                 circle.TransformedShape,
+                rectangleCentroidX,
+                rectangleCentroidY,
+                circle.TransformedShape.X,
+                circle.TransformedShape.Y,
                 out Vector2 normal,
                 out float depth
             ))

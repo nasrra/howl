@@ -670,6 +670,9 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     /// <summary>
     /// Rebuilds the spatial pair list for a bounding volume hierarchy.
     /// </summary>
+    /// <remarks>
+    /// Note: this function should not be called in parallel.
+    /// </remarks>
     /// <param name="bvh">the bounding volume hierarchy.</param>
     public static void ConstructSpatialPairs(BoundingVolumeHierarchy bvh)
     {
