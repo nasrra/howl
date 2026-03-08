@@ -43,6 +43,7 @@ TEST_MAP=(
     ["PolygonRectangle"]="${SHAPES_NAMESPACE}PolygonRectangleTest"
     ["Rectangle"]="${SHAPES_NAMESPACE}RectangleTest"
     ["RigidBody"]="${PHYSICS_NAMESPACE}RigidBodyTest"
+    ["PhysicsSystem"]="${PHYSICS_NAMESPACE}SOAPhysicsSystemTest"
     ["SAT"]="${SHAPES_NAMESPACE}SATTest"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"
     ["Text4096"]="${GRAPHICS_NAMESPACE}Text.Text4096Test"
