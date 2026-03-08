@@ -6,10 +6,12 @@ namespace Howl.Physics;
 
 public sealed class SOAPhysicsSystemState : IDisposable
 {
+    
+
     /// <summary>
-    /// The types of all physics bodies.
+    /// The type flags of all physics bodies.
     /// </summary>
-    public PhysicsBodyType[] BodyType;
+    public PhysicsBodyFlags[] Flags;
 
     /// <summary>
     /// The widths of all physics bodies.
@@ -51,6 +53,22 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// The transformed y-component vertex position of all physics bodies.  
     /// </summary>
     public float[] TransformedVerticeY;
+
+    /// <summary>
+    /// Gets and sets the static friction values of all physics bodies.
+    /// </summary>
+    /// <remarks>
+    /// Note: static friction resists motion before an object starts sliding.
+    /// </remarks>
+    public float[] StaticFriction;
+
+    /// <summary>
+    /// Gets and sets the kinetic friction value of all physics bodies.
+    /// </summary>
+    /// <remarks>
+    /// Note: kinetic friction is applied when an object is sliding/currently in motion.
+    /// </remarks>
+    public float[] KineticFriction;
     
     /// <summary>
     /// The index of the next vertice of a given shape's vertex.
@@ -114,7 +132,7 @@ public sealed class SOAPhysicsSystemState : IDisposable
         FixedUpdateSubStepStopwatch = new();
         FixedUpdateStepStopwatch = new();
 
-        BodyType            = new PhysicsBodyType[physicsBodyCount];
+        Flags               = new PhysicsBodyFlags[physicsBodyCount];
         Width               = new float[physicsBodyCount];
         Height              = new float[physicsBodyCount];
         Radius              = new float[physicsBodyCount];
@@ -122,10 +140,14 @@ public sealed class SOAPhysicsSystemState : IDisposable
         VerticeY            = new float[physicsBodyCount];
         TransformedVerticeX = new float[maxVertices];
         TransformedVerticeY = new float[maxVertices];
+        StaticFriction      = new float[physicsBodyCount];
+        KineticFriction     = new float[physicsBodyCount];
         NextVertice         = new int[maxVertices];
         Generation          = new int[physicsBodyCount];
         Free                = new();
-        Free.Push(0); // push the first index.
+
+        for(int i = physicsBodyCount-1; i >= 0; i--)
+            Free.Push(i); // push all available indices to the stack.
     }
 
     /// <summary>

@@ -2,33 +2,54 @@ using System;
 
 namespace Howl.Physics;
 
+/// <remarks>
+/// Note: 
+/// the default assumed state for any physics body in the physics system is that they:
+/// - have a collider.
+/// - are solid (Resolves collisions by separating from the colliding object.)
+/// </remarks>
 [Flags]
-public enum PhysicsBodyType : byte
+public enum PhysicsBodyFlags : byte
 {
     None = 0,
 
+    /// <summary>
+    /// Whether or not a body is a circle.
+    /// </summary>
     CircleShape = 1<<0,
-    
-    RectangleShape = 1<<1,
-    
-    PolygonShape = 1<<2,
+        
+    /// <summary>
+    /// Whether or not a body is a polygon.
+    /// </summary>
+    PolygonShape = 1<<1,
 
     /// <summary>
-    /// Resolves collisions by separating from the colliding object.
+    /// Whether or not a physics body slot has been allocated in the physics system.
     /// </summary>
-    SolidCollider = 1<<3,
+    Allocated = 1<<2,
 
     /// <summary>
     /// Responds to collisions by recording the intersection of the colliding object.
     /// </summary>
-    TriggerCollider = 1<<4,
+    Trigger = 1<<3,
 
     /// <summary>
     /// Resolves collisions be separating the colliding object from this collider.
     /// </summary>
-    KinematicCollider = 1<<5,
+    Kinematic = 1<<4,
 
-    DynamicRigidbody = 1<<6,
+    /// <summary>
+    /// Whether or not a physics body uses friction.
+    /// </summary>
+    UseFriction = 1<<5,
 
-    KinematicRigidbody = 1<<7,
+    /// <summary>
+    /// Whether or not a physics body has a rigidbody.
+    /// </summary>
+    RigidBody = 1<<6,
+
+    /// <summary>
+    /// Whether or not a physics body is in active within the physics simulation
+    /// </summary>
+    Active = 1<<7,    
 }
