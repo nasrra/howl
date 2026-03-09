@@ -2,6 +2,7 @@ using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.AABB;
+using static Howl.Math.Math;
 
 namespace Howl.Test.Math.Shapes;
 
@@ -53,5 +54,45 @@ public class CircleTest
         AABB aabb = GetAABB(circle);
         Assert.Equal(new Vector2(-3,-3), MinVector(aabb));
         Assert.Equal(new Vector2(3,3), MaxVector(aabb));
+    }
+
+    [Fact]
+    public void NearlyEqual_Test()
+    {
+        Circle a;
+        Circle b;
+
+        a = new Circle(0.1f, 0.1f, 1);
+        b = new Circle(0.1f, 0.1f, 1);
+        Assert.True(NearlyEqual(a,b,1e-4f));
+
+        a = new Circle(0.1002f, 0.1002f, 1);
+        b = new Circle(0.1f, 0.1f, 1);
+        Assert.False(NearlyEqual(a,b,1e-4f));
+    }
+
+    [Fact]
+    public void Transform_Test()
+    {
+        Circle circle;
+        Circle expected;
+        Circle tCircle;
+        Transform transform;
+
+        // test 1.
+
+        circle = new Circle(0,0,3);
+        expected = new Circle(12, 23, 3);
+        transform = new Transform(new Vector2(12,23), 1, 0);
+        tCircle = Transform(circle, transform);
+        Assert.True(NearlyEqual(expected, tCircle, 1e-4f));
+
+        // test 2.
+
+        circle = new Circle(1,1,3);
+        expected = new Circle(6, 6, 9);
+        transform = new Transform(new Vector2(3,3), 3, 0);
+        tCircle = Transform(circle, transform);
+        Assert.True(NearlyEqual(expected, tCircle, 1e-4f));
     }
 }

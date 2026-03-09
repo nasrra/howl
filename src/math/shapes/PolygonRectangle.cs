@@ -98,7 +98,7 @@ public unsafe struct PolygonRectangle
     /// </summary>
     /// <param name="polygonRectangle">the polygon rectangle.</param>
     /// <returns>The span</returns>
-    public unsafe static Span<float> VerticesXAsSpan(in PolygonRectangle polygonRectangle)
+    public static Span<float> VerticesXAsSpan(in PolygonRectangle polygonRectangle)
     {
         Span<float> span;
         fixed(float* ptr = polygonRectangle.VerticesX)
@@ -113,7 +113,7 @@ public unsafe struct PolygonRectangle
     /// </summary>
     /// <param name="polygonRectangle">the polygon rectangle</param>
     /// <returns>the span.</returns>
-    public unsafe static Span<float> VerticesYAsSpan(in PolygonRectangle polygonRectangle)
+    public static Span<float> VerticesYAsSpan(in PolygonRectangle polygonRectangle)
     {
         Span<float> span;
         fixed(float* ptr = polygonRectangle.VerticesY)
@@ -130,12 +130,12 @@ public unsafe struct PolygonRectangle
     /// <param name="transform">The transform data.</param>
     /// <returns>The resultant rectangle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public unsafe static PolygonRectangle Transform(in PolygonRectangle rectangle, in Transform transform)
+    public static PolygonRectangle Transform(in PolygonRectangle rectangle, in Transform transform)
     {
         Span<Vector2> transformedVertices = stackalloc Vector2[PolygonRectangle.MaxVertices];
         for(int i = 0; i < PolygonRectangle.MaxVertices; i++)
         {
-            transformedVertices[i] = Vector2.Transform(rectangle.VerticesX[i], rectangle.VerticesY[i], transform);
+            transformedVertices[i] = Vector2.Transform(transform, rectangle.VerticesX[i], rectangle.VerticesY[i]);
         }
         return new PolygonRectangle(transformedVertices);
     }

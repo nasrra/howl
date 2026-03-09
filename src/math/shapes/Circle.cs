@@ -45,9 +45,55 @@ public struct Circle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Circle Transform(Circle circle, Transform transform)
     {
-        Vector2 origin = Vector2.Transform(circle.X, circle.Y, transform);
-        float radius = circle.Radius * Math.Max(transform.Scale.X, transform.Scale.Y); 
-        return new Circle(origin.X, origin.Y, radius);
+        Transform(
+            circle.X,
+            circle.Y,
+            circle.Radius,
+            transform.Scale.X,
+            transform.Scale.Y,
+            transform.Cos,
+            transform.Sin,
+            transform.Position.X,
+            transform.Position.Y,
+            out float x,
+            out float y,
+            out float radius
+        );
+        return new Circle(x, y, radius);
+    }
+
+    /// <summary>
+    /// Transforms a circle.
+    /// </summary>
+    /// <param name="x">the x-component of the circle's origin.</param>
+    /// <param name="y">the y-component of the circle's origin.</param>
+    /// <param name="radius">the radius of the circle.</param>
+    /// <param name="scaleX">the x-component of the scaling vector to transform by.</param>
+    /// <param name="scaleY">the y-component of the scaling vector to transform by.</param>
+    /// <param name="cos">the cos of the rotation.</param>
+    /// <param name="sin">the sin of the rotation.</param>
+    /// <param name="posX">the x-component of the position vector to transform by.</param>
+    /// <param name="posY">the y-component of the position vector to transform by.</param>
+    /// <param name="tX">the x-component of the transformed origin.</param>
+    /// <param name="tY">the y-component of the transformed origin.</param>
+    /// <param name="tRadius">the scaled radius.</param>
+    public static void Transform(
+        float x, 
+        float y, 
+        float radius,
+        float scaleX, 
+        float scaleY, 
+        float cos,
+        float sin,
+        float posX,
+        float posY,
+        out float tX, 
+        out float tY,
+        out float tRadius 
+    )
+    {
+        Math.TransformVector(x,y,scaleX, scaleY, cos, sin, posX, posY, out tX, out tY);
+        tRadius = radius * Math.Max(scaleX, scaleY);
     }
 
 
@@ -98,6 +144,21 @@ public struct Circle
     public static Vector2 Center(in Circle circle)
     {
         return new Vector2(circle.X,circle.Y);    
+    }
+
+    /// <summary>
+    /// Checks whether or not two circles are nearly equal with eachother.
+    /// </summary>
+    /// <param name="a">circle a.</param>
+    /// <param name="b">circle b.</param>
+    /// <param name="epsilon">the threshold for equality.</param>
+    /// <returns></returns>
+    public static bool NearlyEqual(in Circle a, in Circle b, float epsilon)
+    {
+        return 
+            Math.NearlyEqual(a.X, b.X, epsilon) &&
+            Math.NearlyEqual(a.Y, b.Y, epsilon) &&
+            Math.NearlyEqual(a.Radius, b.Radius, epsilon);
     }
     
 }

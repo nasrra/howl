@@ -324,46 +324,43 @@ public struct Vector2
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public Vector2 Transform(Transform transform)
     {
-        return Transform(this, transform); 
+        return Transform(transform, this); 
     }
 
     /// <summary>
     /// Transforms a vector by the supplied transform.
     /// </summary>
-    /// <param name="vector">The vector to transform.</param>
     /// <param name="transform">The transform data to transform by.</param>
+    /// <param name="vector">The vector to transform.</param>
     /// <returns>The resultant vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 Transform(Vector2 vector, Transform transform)
+    public static Vector2 Transform(in Transform transform, Vector2 vector)
     {
-        return Transform(vector.X, vector.Y, transform);
+        return Transform(transform, vector.X, vector.Y);
     }
 
     /// <summary>
     /// Transforms a vector by the supplied transform.
     /// </summary>
+    /// <param name="transform">The transform data to transform by.</param>
     /// <param name="x">the x-value of the vector.</param>
     /// <param name="y">the y-value of the vector.</param>
-    /// <param name="transform">The transform data to transform by.</param>
     /// <returns>The resultant vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 Transform(float x, float  y, Transform transform)
+    public static Vector2 Transform(in Transform transform, float x, float  y)
     {
-        // NOTE:
-        // This ordering: Scale -> Rotation -> Translation
-        // should remain the same. It is pretty much Matrix math.
-
-        // Scale:
-        float sx = x * transform.Scale.X;
-        float sy = y * transform.Scale.Y; 
-
-        // Rotation:
-        float rx = sx * transform.Cos - sy * transform.Sin;
-        float ry = sx * transform.Sin + sy * transform.Cos;
-
-        // Translation:
-        float tx = rx + transform.Position.X;
-        float ty = ry + transform.Position.Y;
+        Math.TransformVector(
+            x,
+            y, 
+            transform.Scale.X, 
+            transform.Scale.Y,
+            transform.Cos,
+            transform.Sin,
+            transform.Position.X,
+            transform.Position.Y,
+            out float tx,
+            out float ty
+        );
 
         return new(tx, ty);
     }

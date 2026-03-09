@@ -4,6 +4,7 @@ using Howl.ECS;
 using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.Math.Shapes.PolygonRectangle;
+using static Howl.Math.Math;
 
 namespace Howl.Physics;
 
@@ -40,26 +41,13 @@ public static class SOAPhysicsSystem
     //     state.FixedUpdateStepStopwatch.Stop();
     // }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="verticeX">the x-compoponent of a vertex.</param>
-    /// <param name="verticeY">the y-compoponent of a vertex.</param>
-    /// <param name="positionX">the x-component of a position.</param>
-    /// <param name="positionY">the y-component of a position.</param>
-    /// <param name="transformedX">the span to mutate and store the x-component transformed vertices.</param>
-    /// <param name="transformedY">the span to mutate and store the y-component transformed vertices.</param>
-    /// <param name="startIndex">The index to start at.</param>
-    /// <param name="length">The length of elements to transform.</param>
     public static void TransformPhysicsBodyVertices(
+        SoaVector2 vertice,
+        SoaVector2 transformedVertice,
+        SoaTransform transform,
         Span<PhysicsBodyFlags> flags, 
         Span<float> radius,
-        Span<float> verticeX, 
-        Span<float> verticeY, 
-        Span<float> positionX, 
-        Span<float> positionY, 
-        Span<float> transformedX, 
-        Span<float> transformedY,
+        Span<float> transformedRadius,
         Span<int> firstVertice,
         Span<int> nextVertice, 
         int startIndex, 
@@ -75,12 +63,55 @@ public static class SOAPhysicsSystem
             {
                 if((flag & PhysicsBodyFlags.PolygonShape) != 0)
                 {
-                    int v = firstVertice[i];
-                    // for
+                    int first = firstVertice[i]; 
+                    int v = first;
+                    while (true)
+                    {
+
+                        // transform the base/un-transformed vertice.
+                        TransformVector(
+                            vertice.X[v],
+                            vertice.Y[v],
+                            transform.Scale.X[v],
+                            transform.Scale.Y[v],
+                            transform.Cos[v],
+                            transform.Sin[v],
+                            transform.Position.X[v],
+                            transform.Position.Y[v],
+                            out float x,
+                            out float y
+                        );
+
+                        // mutate the transformed vertices array.
+                        transformedVertice.X[v] = x;
+                        transformedVertice.Y[v] = y;
+
+                        v = nextVertice[v];
+
+                        if (v == first)
+                            break;
+                    }
                 }
                 else // circle shape.
                 {
-                    
+                    Circle.Transform(
+                        vertice.X[i],
+                        vertice.Y[i],
+                        radius[i],
+                        transform.Scale.X[i],
+                        transform.Scale.Y[i],
+                        transform.Cos[i],
+                        transform.Sin[i],
+                        transform.Position.X[i],
+                        transform.Position.Y[i],
+                        out float x,
+                        out float y,
+                        out float r
+                    );
+
+                    transformedVertice.X[i] = x;
+                    transformedVertice.Y[i] = y;
+                    transformedRadius[i] = r;
                 }
             }
         }
@@ -346,6 +377,8 @@ public static class SOAPhysicsSystem
         state.Transform.Scale.X[genIndex.Index]     = transform.Scale.X;
         state.Transform.Scale.Y[genIndex.Index]     = transform.Scale.Y;
         state.Transform.Rotation[genIndex.Index]    = transform.Rotation;
+        state.Transform.Cos[genIndex.Index]         = transform.Cos;
+        state.Transform.Sin[genIndex.Index]         = transform.Sin;
 
         return true;
     }

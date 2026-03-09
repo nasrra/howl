@@ -3,6 +3,7 @@ using Howl.Math.Shapes;
 using Howl.Physics;
 using static Howl.Physics.SOAPhysicsSystem;
 using static Howl.Math.Shapes.Rectangle;
+using Howl.Math;
 
 namespace Howl.Test.Physics;
 
@@ -33,7 +34,7 @@ public class SOAPhysicsSystemTest
 
     /*******************
     
-        other.
+        Single Procedures.
     
     ********************/
 
@@ -60,6 +61,37 @@ public class SOAPhysicsSystemTest
             }            
         }
         Assert.True(circular);
+    }
+
+    [Fact]
+    public void SetTransform_Test()
+    {
+        SOAPhysicsSystemState state = new SOAPhysicsSystemState(maxBodies, maxVertices, new(), new());
+
+        GenIndex genIndex = new GenIndex(1,0);
+        float posX = -2.5f;
+        float posY = 3.325f;
+        float scaleX = 1f;
+        float scaleY = -2f;
+        float rotation = 75f;
+        float cos = 0.9217512697f; // cos of rotation.
+        float sin = -0.3877816354f; // sin of rotation.
+        
+        Transform transform = new Transform(
+            new Vector2(posX, posY), 
+            new Vector2(scaleX, scaleY), 
+            rotation
+        );
+
+        SetTransform(state, genIndex, transform);
+    
+        Assert.Equal(posX, state.Transform.Position.X[genIndex.Index], precision: 1);
+        Assert.Equal(posY, state.Transform.Position.Y[genIndex.Index], precision: 3);
+        Assert.Equal(scaleX, state.Transform.Scale.X[genIndex.Index], precision: 1);
+        Assert.Equal(scaleY, state.Transform.Scale.Y[genIndex.Index], precision: 3);        
+        Assert.Equal(rotation, state.Transform.Rotation[genIndex.Index], precision: 1);
+        Assert.Equal(cos, state.Transform.Cos[genIndex.Index], precision: 4);
+        Assert.Equal(sin, state.Transform.Sin[genIndex.Index], precision: 4);
     }
 
 
@@ -489,5 +521,90 @@ public class SOAPhysicsSystemTest
         firstVertice = state.FirstVertice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
+    }
+
+
+
+
+    /*******************
+    
+        Composite Procedures.
+    
+    ********************/
+
+
+
+
+    [Fact]
+    public void TransformPhysicsBodyVertices_Test()
+    {        
+        
+        SOAPhysicsSystemState state = new SOAPhysicsSystemState(maxBodies, maxVertices, new(), new());
+        
+        // define and insert circle.
+
+        float expectedCircleX         = 4;
+        float expectedCircleY         = 6;
+        float expectedCircleRadius    = 9;
+        Circle circle = new Circle(1,1,3);
+        Transform circleTransform = new Transform(new Vector2(1,3), 3, 0);
+
+        AllocateCircleCollider(state, circle, false, false, out GenIndex circleGenIndex);
+        SetTransform(state, circleGenIndex, circleTransform);
+
+        // define and insert rect.
+
+        Span<float> expectedX = [4, 6, 6, 4];
+        Span<float> expectedY = [6, 6, 4, 4];
+        Rectangle rectangle = new Rectangle(1,1,2,2);
+        Transform rectangleTransform = new Transform(new Vector2(3,3), 2, 0);
+
+        AllocateRectangleCollider(state, rectangle, false, false, out GenIndex rectangleGenIndex);
+        SetTransform(state, rectangleGenIndex, rectangleTransform);
+
+        // transform the shapes.
+
+        TransformPhysicsBodyVertices(
+            state.Vertice,
+            state.TransformedVertice,
+            state.Transform,
+            state.Flags, 
+            state.Radius,
+            state.TransformedRadius,
+            state.FirstVertice,
+            state.NextVertice, 
+            0, 
+            maxBodies
+        );
+
+        // assert circle.
+        
+        Assert.Equal(expectedCircleX,           state.TransformedVertice.X[circleGenIndex.Index],   precision: 1);
+        Assert.Equal(expectedCircleY,           state.TransformedVertice.Y[circleGenIndex.Index],   precision: 1);
+        Assert.Equal(expectedCircleRadius,      state.TransformedRadius[circleGenIndex.Index],      precision: 1);
+        Assert.Equal(circleTransform.Scale.X,   state.Transform.Scale.X[circleGenIndex.Index],      precision: 1);
+        Assert.Equal(circleTransform.Scale.Y,   state.Transform.Scale.Y[circleGenIndex.Index],      precision: 1);        
+        Assert.Equal(circleTransform.Rotation,  state.Transform.Rotation[circleGenIndex.Index],     precision: 1);
+        Assert.Equal(circleTransform.Cos,       state.Transform.Cos[circleGenIndex.Index],          precision: 4);
+        Assert.Equal(circleTransform.Sin,       state.Transform.Sin[circleGenIndex.Index],          precision: 4);
+
+        // assert rect.
+        
+        int first = state.FirstVertice[rectangleGenIndex.Index];
+        int v = first;
+        int count = 0;
+        while (true)
+        {
+            Assert.Equal(expectedX[count], state.TransformedVertice.X[v], precision: 1);
+            Assert.Equal(expectedY[count], state.TransformedVertice.Y[v], precision: 1);
+            count++;
+            if(v==first)
+                break;
+        }
+        Assert.Equal(rectangleTransform.Scale.X,   state.Transform.Scale.X[rectangleGenIndex.Index],      precision: 1);
+        Assert.Equal(rectangleTransform.Scale.Y,   state.Transform.Scale.Y[rectangleGenIndex.Index],      precision: 1);        
+        Assert.Equal(rectangleTransform.Rotation,  state.Transform.Rotation[rectangleGenIndex.Index],     precision: 1);
+        Assert.Equal(rectangleTransform.Cos,       state.Transform.Cos[rectangleGenIndex.Index],          precision: 4);
+        Assert.Equal(rectangleTransform.Sin,       state.Transform.Sin[rectangleGenIndex.Index],          precision: 4);
     }
 }

@@ -18,13 +18,25 @@ public class SoaTransform
     public float[] Rotation;
 
     /// <summary>
+    /// Gets and sets the Sin value of a rotation.
+    /// </summary>
+    public float[] Sin;
+
+    /// <summary>
+    /// Gets and sets the Cos value of a rotation.
+    /// </summary>
+    public float[] Cos;
+
+    /// <summary>
     /// Creates a new SoaTransform instance.
     /// </summary>
     /// <param name="length"></param>
     public SoaTransform(int length)
     {
-        Position = new(length);
-        Scale = new(length);
-        Rotation = new float[length];
+        Position    = new(length);
+        Scale       = new(length);
+        Rotation    = new float[length];
+        Sin         = new float[length];
+        Cos         = new float[length];
     }
 }

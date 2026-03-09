@@ -337,4 +337,49 @@ public static class Math
     {
         return lhsX * rhsY - lhsY * rhsX;    
     }   
+
+    /// <summary>
+    /// Transforms a vector.
+    /// </summary>
+    /// <param name="valueX">the x-component of the vector.</param>
+    /// <param name="valueY">the y-component of the vector.</param>
+    /// <param name="scaleX">the x-component of the scaling vector to transform by.</param>
+    /// <param name="scaleY">the y-component of the scaling vector to transform by.</param>
+    /// <param name="cos">the cos of the rotation.</param>
+    /// <param name="sin">the sin of the rotation.</param>
+    /// <param name="positionX">the x-component of the position vector to transform by.</param>
+    /// <param name="positionY">the y-component of the position vector to transform by.</param>
+    /// <param name="tX">the x-component of the transformed vector.</param>
+    /// <param name="tY">the y-component of the transformed vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void TransformVector(
+        float valueX, 
+        float valueY, 
+        float scaleX, 
+        float scaleY, 
+        float cos,
+        float sin,
+        float positionX,
+        float positionY,
+        out float tX, 
+        out float tY
+    )
+    {
+        // NOTE:
+        // This ordering: Scale -> Rotation -> Translation
+        // should remain the same. It is pretty much Matrix math.
+
+        // Scale:
+        float sx = valueX * scaleX;
+        float sy = valueY * scaleY; 
+
+        // Rotation:
+        float rx = sx * cos - sy * sin;
+        float ry = sx * sin + sy * cos;
+
+        // Translation:
+        tX = rx + positionX;
+        tY = ry + positionY;
+    }
+
 }

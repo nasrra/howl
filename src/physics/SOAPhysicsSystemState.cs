@@ -13,21 +13,6 @@ public sealed class SOAPhysicsSystemState : IDisposable
     public PhysicsBodyFlags[] Flags;
 
     /// <summary>
-    /// Gets and sets the widths of all physics bodies.
-    /// </summary>
-    public float[] Width;
-
-    /// <summary>
-    /// Gets and sets the heights of all physics bodies.
-    /// </summary>
-    public float[] Height;
-
-    /// <summary>
-    /// Gets and sets the radii of all physics bodies.
-    /// </summary>
-    public float[] Radius;
-    
-    /// <summary>
     /// Gets and sets the vertices positions of all physics bodies.  
     /// </summary>
     /// <remarks>
@@ -44,6 +29,26 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// Gets and sets the transforms of all physics bodies.
     /// </summary>
     public SoaTransform Transform;
+
+    /// <summary>
+    /// Gets and sets the widths of all physics bodies.
+    /// </summary>
+    public float[] Width;
+
+    /// <summary>
+    /// Gets and sets the heights of all physics bodies.
+    /// </summary>
+    public float[] Height;
+
+    /// <summary>
+    /// Gets and sets the radii of all physics bodies.
+    /// </summary>
+    public float[] Radius;
+
+    /// <summary>
+    /// Gets and sets the transformed radii of all physics bodies.
+    /// </summary>
+    public float[] TransformedRadius;    
 
     /// <summary>
     /// Gets and sets the static friction values of all physics bodies.
@@ -156,6 +161,7 @@ public sealed class SOAPhysicsSystemState : IDisposable
         Transform           = new SoaTransform(physicsBodyCount);
         StaticFriction      = new float[physicsBodyCount];
         KineticFriction     = new float[physicsBodyCount];
+        TransformedRadius   = new float[physicsBodyCount];
         NextVertice         = new int[maxVertices];
         Generation          = new int[physicsBodyCount];
         FirstVertice        = new int[physicsBodyCount];
