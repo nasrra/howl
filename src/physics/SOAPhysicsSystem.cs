@@ -1,11 +1,42 @@
+using System;
 using System.Linq;
 using Howl.ECS;
 using Howl.Math.Shapes;
+using static Howl.Math.Shapes.PolygonRectangle;
 
 namespace Howl.Physics;
 
 public static class SOAPhysicsSystem
 {
+    public static int AddVertices(SOAPhysicsSystemState state, Span<float> verticesX, Span<float> verticesY, out int firstIndex, out int vertexCount)
+    {
+        if(verticesX.Length != verticesY.Length)
+        {
+            throw new ArgumentException($"vertices X length '{verticesX.Length}' must be equalt to vertices Y length '{verticesY.Length}'");
+        }
+
+        vertexCount = verticesX.Length;
+
+        // set the first index.
+        firstIndex = state.FreeVertexIndex.Pop();
+        int previousIndex = -1;
+        int index = firstIndex;
+        state.VerticeX[index] = verticesX[0];
+        state.VerticeY[index] = verticesY[0];
+
+        // add the rest of them.
+        for(int i = 1; i < vertexCount; i++)
+        {
+            previousIndex = index;
+            index = state.FreeVertexIndex.Pop();
+            state.VerticeX[index] = verticesX[i];
+            state.VerticeY[index] = verticesY[i];
+            state.NextVertice[previousIndex] = index;
+        }
+
+        return firstIndex;
+    }
+
     public static void SetActive(ref PhysicsBodyFlags flags, bool isActive)
     {
         if (isActive)
@@ -154,8 +185,7 @@ public static class SOAPhysicsSystem
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateCircleCollider(SOAPhysicsSystemState state, in Circle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
-
-        // handle body type.
+        // handle flags.
 
         PhysicsBodyFlags flags = PhysicsBodyFlags.CircleShape;
         SetActive(ref flags, true);
@@ -166,7 +196,7 @@ public static class SOAPhysicsSystem
         SetKinematic(ref flags, isKinematic);
 
         // apply data.
-        int index = state.Free.Pop();
+        int index = state.FreePhysicsBodyIndex.Pop();
 
         state.Radius[index]     = shape.Radius;
         state.VerticeX[index]   = shape.X;
@@ -188,8 +218,7 @@ public static class SOAPhysicsSystem
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateCircleRigidBody(SOAPhysicsSystemState state, in Circle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
-
-        // handle body type.
+        // handle flags.
 
         PhysicsBodyFlags flags = PhysicsBodyFlags.CircleShape;
         SetActive(ref flags, true);
@@ -200,7 +229,7 @@ public static class SOAPhysicsSystem
         SetKinematic(ref flags, isKinematic);
 
         // apply data.
-        int index = state.Free.Pop();
+        int index = state.FreePhysicsBodyIndex.Pop();
 
         state.Radius[index]     = shape.Radius;
         state.VerticeX[index]   = shape.X;
@@ -223,7 +252,7 @@ public static class SOAPhysicsSystem
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateCircleRigidBody(SOAPhysicsSystemState state, in Circle shape, in PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
-        // handle body type.
+        // handle flags.
 
         PhysicsBodyFlags flags = PhysicsBodyFlags.CircleShape;
         SetActive(ref flags, true);
@@ -234,7 +263,7 @@ public static class SOAPhysicsSystem
         SetKinematic(ref flags, isKinematic);
 
         // apply data.
-        int index = state.Free.Pop();
+        int index = state.FreePhysicsBodyIndex.Pop();
 
         state.Radius[index]             = shape.Radius;
         state.VerticeX[index]           = shape.X;
@@ -246,5 +275,98 @@ public static class SOAPhysicsSystem
         // return gen index.
 
         genIndex = new(index, state.Generation[index]);        
+    }
+
+    public static void AllocateRectangleCollider(SOAPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
+    {
+        // handle flags.
+
+        PhysicsBodyFlags flags = PhysicsBodyFlags.PolygonShape;
+        SetActive(ref flags, true);
+        SetAllocated(ref flags, true);
+        SetRigidBody(ref flags, false);
+        SetUsesFriction(ref flags, false);
+        SetTrigger(ref flags, isTrigger);
+        SetKinematic(ref flags, isKinematic);
+
+        // apply data.
+
+        PolygonRectangle polyRect = new(shape);
+
+        int bodyIndex = state.FreePhysicsBodyIndex.Pop();
+        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
+
+        state.Height[bodyIndex]         = shape.Height;
+        state.Width[bodyIndex]          = shape.Width;
+        state.Flags[bodyIndex]          = flags;
+        state.FirstVertice[bodyIndex]   = verticeFirstIndex;
+        state.VerticeCount[bodyIndex]   = verticeCount;
+
+        // return gen index.
+
+        genIndex = new(bodyIndex, state.Generation[bodyIndex]);    
+    }
+
+
+    public static void AllocateRectangleRigidBody(SOAPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
+    {
+        // handle flags.
+
+        PhysicsBodyFlags flags = PhysicsBodyFlags.PolygonShape;
+        SetActive(ref flags, true);
+        SetAllocated(ref flags, true);
+        SetRigidBody(ref flags, true);
+        SetUsesFriction(ref flags, false);
+        SetTrigger(ref flags, isTrigger);
+        SetKinematic(ref flags, isKinematic);
+    
+        // apply data.
+
+        PolygonRectangle polyRect = new(shape);
+
+        int bodyIndex = state.FreePhysicsBodyIndex.Pop();
+        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
+
+        state.Height[bodyIndex]         = shape.Height;
+        state.Width[bodyIndex]          = shape.Width;
+        state.Flags[bodyIndex]          = flags;
+        state.FirstVertice[bodyIndex]   = verticeFirstIndex;
+        state.VerticeCount[bodyIndex]   = verticeCount;
+
+        // return gen index.
+
+        genIndex = new(bodyIndex, state.Generation[bodyIndex]);
+    }
+
+    public static void AllocateRectangleRigidBody(SOAPhysicsSystemState state, in Rectangle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, out GenIndex genIndex)
+    {
+        // handle flags.
+
+        PhysicsBodyFlags flags = PhysicsBodyFlags.PolygonShape;
+        SetActive(ref flags, true);
+        SetAllocated(ref flags, true);
+        SetRigidBody(ref flags, true);
+        SetUsesFriction(ref flags, true);
+        SetTrigger(ref flags, isTrigger);
+        SetKinematic(ref flags, isKinematic);
+    
+        // apply data.
+
+        PolygonRectangle polyRect = new(shape);
+
+        int bodyIndex = state.FreePhysicsBodyIndex.Pop();
+        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
+
+        state.Height[bodyIndex]             = shape.Height;
+        state.Width[bodyIndex]              = shape.Width;
+        state.Flags[bodyIndex]              = flags;
+        state.FirstVertice[bodyIndex]       = verticeFirstIndex;
+        state.VerticeCount[bodyIndex]       = verticeCount;
+        state.KineticFriction[bodyIndex]    = physicsMaterial.KineticFriction;
+        state.StaticFriction[bodyIndex]     = physicsMaterial.StaticFriction;
+
+        // return gen index.
+
+        genIndex = new(bodyIndex, state.Generation[bodyIndex]);
     }
 }

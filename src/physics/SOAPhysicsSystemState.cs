@@ -71,6 +71,16 @@ public sealed class SOAPhysicsSystemState : IDisposable
     public float[] KineticFriction;
     
     /// <summary>
+    /// Gets and sets the first index of a physics bodies first vertice of physics body's shape.
+    /// </summary>
+    public int[] FirstVertice;
+
+    /// <summary>
+    /// Gets and sets the count of vertices of a physics body's shape.
+    /// </summary>
+    public int[] VerticeCount;
+
+    /// <summary>
     /// The index of the next vertice of a given shape's vertex.
     /// </summary>
     public int[] NextVertice;
@@ -81,9 +91,14 @@ public sealed class SOAPhysicsSystemState : IDisposable
     public int[] Generation;
     
     /// <summary>
-    /// the indices available for reuse and allocation.
+    /// the physics body indices available for reuse and allocation.
     /// </summary>
-    public Stack<int> Free;
+    public Stack<int> FreePhysicsBodyIndex;
+
+    /// <summary>
+    /// the vertice indices available for reuse and allocation.
+    /// </summary>
+    public Stack<int> FreeVertexIndex;
 
     /// <summary>
     /// Gets and sets the CollisionSystemState.
@@ -130,7 +145,7 @@ public sealed class SOAPhysicsSystemState : IDisposable
         CollisionSystemState = collisionSystemState;
         RigidbodySystemState = rigidbodySystemState;
         FixedUpdateSubStepStopwatch = new();
-        FixedUpdateStepStopwatch = new();
+        FixedUpdateStepStopwatch    = new();
 
         Flags               = new PhysicsBodyFlags[physicsBodyCount];
         Width               = new float[physicsBodyCount];
@@ -144,10 +159,17 @@ public sealed class SOAPhysicsSystemState : IDisposable
         KineticFriction     = new float[physicsBodyCount];
         NextVertice         = new int[maxVertices];
         Generation          = new int[physicsBodyCount];
-        Free                = new();
+        FirstVertice        = new int[physicsBodyCount];
+        VerticeCount        = new int[physicsBodyCount];
+        
+        FreePhysicsBodyIndex = new();
+        FreeVertexIndex = new();
 
         for(int i = physicsBodyCount-1; i >= 0; i--)
-            Free.Push(i); // push all available indices to the stack.
+            FreePhysicsBodyIndex.Push(i); // push all available indices to the stack.
+
+        for(int i = maxVertices-1; i >= 0; i--)
+            FreeVertexIndex.Push(i); // push all available indices to the stack.
     }
 
     /// <summary>
