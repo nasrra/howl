@@ -8,6 +8,19 @@ namespace Howl.Physics;
 
 public static class SOAPhysicsSystem
 {
+
+
+
+
+    /*******************
+    
+        Utility.
+    
+    ********************/
+
+
+
+
     public static int AddVertices(SOAPhysicsSystemState state, Span<float> verticesX, Span<float> verticesY, out int firstIndex, out int vertexCount)
     {
         if(verticesX.Length != verticesY.Length)
@@ -36,6 +49,18 @@ public static class SOAPhysicsSystem
 
         return firstIndex;
     }
+
+
+
+
+    /*******************
+    
+        Setters & Getters.
+    
+    ********************/
+
+
+
 
     /// <summary>
     /// Sets whether or not a physics body is active within a physics simulation.
@@ -208,6 +233,18 @@ public static class SOAPhysicsSystem
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.HasPhysicsMaterial) != 0;
     }
 
+
+
+
+    /*******************
+    
+        Circle.
+    
+    ********************/
+
+
+
+
     /// <summary>
     /// Allocates a circle collider into a phsyics system state.
     /// </summary>
@@ -239,6 +276,8 @@ public static class SOAPhysicsSystem
         // return gen index.
 
         genIndex = new(index, state.Generation[index]);
+
+        state.AlloctedPhysicsBodyCount++;
     }
 
     /// <summary>
@@ -272,6 +311,8 @@ public static class SOAPhysicsSystem
         // return gen index.
 
         genIndex = new(index, state.Generation[index]);
+
+        state.AlloctedPhysicsBodyCount++;
     }
 
     /// <summary>
@@ -308,6 +349,8 @@ public static class SOAPhysicsSystem
         // return gen index.
 
         genIndex = new(index, state.Generation[index]);        
+        
+        state.AlloctedPhysicsBodyCount++;
     }
 
 
@@ -358,6 +401,8 @@ public static class SOAPhysicsSystem
         // return gen index.
 
         genIndex = new(bodyIndex, state.Generation[bodyIndex]);    
+
+        state.AlloctedPhysicsBodyCount++;
     }
 
     /// <summary>
@@ -396,6 +441,8 @@ public static class SOAPhysicsSystem
         // return gen index.
 
         genIndex = new(bodyIndex, state.Generation[bodyIndex]);
+        
+        state.AlloctedPhysicsBodyCount++;
     }
 
     /// <summary>
@@ -437,5 +484,7 @@ public static class SOAPhysicsSystem
         // return gen index.
 
         genIndex = new(bodyIndex, state.Generation[bodyIndex]);
+    
+        state.AlloctedPhysicsBodyCount++;
     }
 }

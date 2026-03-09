@@ -6,8 +6,6 @@ namespace Howl.Physics;
 
 public sealed class SOAPhysicsSystemState : IDisposable
 {
-    
-
     /// <summary>
     /// The type flags of all physics bodies.
     /// </summary>
@@ -119,6 +117,11 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// Gets and sets the debug stopwatch for timing a physics system fixed-update step.
     /// </summary>
     public Stopwatch FixedUpdateStepStopwatch;
+
+    /// <summary>
+    /// Gets and sets the count of allocated physics body stored in this physics system state.
+    /// </summary>
+    public int AlloctedPhysicsBodyCount = 0;
 
     /// <summary>
     /// Gets and sets whether or not this instance has been diposed.

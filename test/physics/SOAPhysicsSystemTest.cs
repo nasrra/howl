@@ -66,6 +66,7 @@ public class SOAPhysicsSystemTest
         Assert.False(HasPhysicsMaterial(state, genIndex1));
         Assert.True(IsKinematic(state, genIndex1));
         Assert.False(IsTrigger(state, genIndex1));
+        Assert.Equal(1, state.AlloctedPhysicsBodyCount);
 
         // second data set test.
 
@@ -84,6 +85,7 @@ public class SOAPhysicsSystemTest
         Assert.False(HasPhysicsMaterial(state, genIndex2));
         Assert.False(IsKinematic(state, genIndex2));
         Assert.True(IsTrigger(state, genIndex2));
+        Assert.Equal(2, state.AlloctedPhysicsBodyCount);
     }
 
     [Fact]
@@ -113,6 +115,7 @@ public class SOAPhysicsSystemTest
         Assert.False(HasPhysicsMaterial(state, genIndex1));
         Assert.True(IsKinematic(state, genIndex1));
         Assert.False(IsTrigger(state, genIndex1));
+        Assert.Equal(1, state.AlloctedPhysicsBodyCount);
 
         // second data set test.
 
@@ -131,6 +134,7 @@ public class SOAPhysicsSystemTest
         Assert.False(HasPhysicsMaterial(state, genIndex2));
         Assert.False(IsKinematic(state, genIndex2));
         Assert.True(IsTrigger(state, genIndex2));
+        Assert.Equal(2, state.AlloctedPhysicsBodyCount);
     }
 
     [Fact]
@@ -163,8 +167,10 @@ public class SOAPhysicsSystemTest
         Assert.True(HasPhysicsMaterial(state, genIndex));
         Assert.True(IsKinematic(state, genIndex));
         Assert.False(IsTrigger(state, genIndex));
+        Assert.Equal(1, state.AlloctedPhysicsBodyCount);
         
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
+
 
         // second data set test.
 
@@ -184,6 +190,7 @@ public class SOAPhysicsSystemTest
         Assert.True(HasPhysicsMaterial(state, genIndex));
         Assert.False(IsKinematic(state, genIndex));
         Assert.True(IsTrigger(state, genIndex));
+        Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
     }
@@ -278,6 +285,7 @@ public class SOAPhysicsSystemTest
         Assert.False(HasPhysicsMaterial(state, genIndex));
         Assert.False(IsKinematic(state, genIndex));    
         Assert.True(IsTrigger(state, genIndex));
+        Assert.Equal(1, state.AlloctedPhysicsBodyCount);
 
         firstVertice = state.FirstVertice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
@@ -302,6 +310,7 @@ public class SOAPhysicsSystemTest
         Assert.False(HasPhysicsMaterial(state, genIndex));
         Assert.False(IsKinematic(state, genIndex));
         Assert.True(IsTrigger(state, genIndex));
+        Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
         firstVertice = state.FirstVertice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
@@ -343,6 +352,7 @@ public class SOAPhysicsSystemTest
         Assert.False(HasPhysicsMaterial(state, genIndex));
         Assert.False(IsKinematic(state, genIndex));    
         Assert.True(IsTrigger(state, genIndex));
+        Assert.Equal(1, state.AlloctedPhysicsBodyCount);
         
         firstVertice = state.FirstVertice[genIndex.Index];
 
@@ -368,6 +378,7 @@ public class SOAPhysicsSystemTest
         Assert.False(HasPhysicsMaterial(state, genIndex));
         Assert.True(IsKinematic(state, genIndex));
         Assert.False(IsTrigger(state, genIndex));
+        Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
         firstVertice = state.FirstVertice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
@@ -411,6 +422,7 @@ public class SOAPhysicsSystemTest
         Assert.True(HasPhysicsMaterial(state, genIndex));
         Assert.False(IsKinematic(state, genIndex));    
         Assert.True(IsTrigger(state, genIndex));
+        Assert.Equal(1, state.AlloctedPhysicsBodyCount);
 
         firstVertice = state.FirstVertice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
@@ -437,6 +449,7 @@ public class SOAPhysicsSystemTest
         Assert.True(HasPhysicsMaterial(state, genIndex));
         Assert.True(IsKinematic(state, genIndex));
         Assert.False(IsTrigger(state, genIndex));
+        Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
         firstVertice = state.FirstVertice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
