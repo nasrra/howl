@@ -37,6 +37,11 @@ public static class SOAPhysicsSystem
         return firstIndex;
     }
 
+    /// <summary>
+    /// Sets whether or not a physics body is active within a physics simulation.
+    /// </summary>
+    /// <param name="flags">a reference to the flags to mutate.</param>
+    /// <param name="isActive">true, to set to active; otherwise false for inactive.</param>
     public static void SetActive(ref PhysicsBodyFlags flags, bool isActive)
     {
         if (isActive)
@@ -60,6 +65,11 @@ public static class SOAPhysicsSystem
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Active) != 0;
     }
 
+    /// <summary>
+    /// Sets whether or not a physics body has collision resolution.
+    /// </summary>
+    /// <param name="flags">a reference to the flags to mutate.</param>
+    /// <param name="isKinematic">true, to enable kinematic behaviour; otherwise false.</param>
     public static void SetKinematic(ref PhysicsBodyFlags flags, bool isKinematic)
     {
         if (isKinematic)
@@ -83,6 +93,14 @@ public static class SOAPhysicsSystem
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Kinematic) != 0;
     }
 
+    /// <summary>
+    /// Sets whether or not a physics body slot has been allcoated in a physics system.
+    /// </summary>
+    /// <remarks>
+    /// Note: this flag indicates whether or not a slot in a physics body array is free and available for reuse.
+    /// </remarks>
+    /// <param name="flags">a reference to the flags to mutate.</param>
+    /// <param name="isAllocated">true, to set to allocated; otherwise false.</param>
     public static void SetAllocated(ref PhysicsBodyFlags flags, bool isAllocated)
     {
         if (isAllocated)
@@ -106,6 +124,11 @@ public static class SOAPhysicsSystem
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Allocated) != 0;
     }
 
+    /// <summary>
+    /// Sets whether or not a physics body should respond to collisions by recording the intersection of a colliding object.
+    /// </summary>
+    /// <param name="flags">a reference to the flags to mutate.</param>
+    /// <param name="isTrigger">true, to enable trigger behaviour; otherwise false.</param>
     public static void SetTrigger(ref PhysicsBodyFlags flags, bool isTrigger)
     {
         if (isTrigger)
@@ -129,6 +152,11 @@ public static class SOAPhysicsSystem
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Trigger) != 0;        
     }
 
+    /// <summary>
+    /// Sets whether or not a physics body is a rigidbody.
+    /// </summary>
+    /// <param name="flags">a reference to the flags to mutate.</param>
+    /// <param name="hasRigidBody">true to enable rigidbody behaviour; otherwise false.</param>
     public static void SetRigidBody(ref PhysicsBodyFlags flags, bool hasRigidBody)
     {
         if (hasRigidBody)
@@ -152,27 +180,32 @@ public static class SOAPhysicsSystem
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.RigidBody) != 0;
     }
 
-    public static void SetUsesFriction(ref PhysicsBodyFlags flags, bool usesFriction)
+    /// <summary>
+    /// Sets whether or not a physics body has a physics material.
+    /// </summary>
+    /// <param name="flags">a reference to the flags to mutate.</param>
+    /// <param name="hasPhysicsMaterial">true, to enable physics material behaviour; otherwise false.</param>
+    public static void SetHasPhysicsMaterial(ref PhysicsBodyFlags flags, bool hasPhysicsMaterial)
     {
-        if (usesFriction)
+        if (hasPhysicsMaterial)
         {
-            flags |= PhysicsBodyFlags.UseFriction;
+            flags |= PhysicsBodyFlags.HasPhysicsMaterial;
         }
         else
         {
-            flags &= ~PhysicsBodyFlags.UseFriction;
+            flags &= ~PhysicsBodyFlags.HasPhysicsMaterial;
         }
     }
 
     /// <summary>
-    /// Gets whether or not a physics body uses friction.
+    /// Gets whether or not a physics body has a physics material.
     /// </summary>
     /// <param name="state">the physics system state storing the body to check.</param>
     /// <param name="genIndex">the gen index used to look up the body.</param>
-    /// <returns>true, if the body uses friction; otherwise false.</returns>
-    public static bool UsesFriction(SOAPhysicsSystemState state, GenIndex genIndex)
+    /// <returns>true, if the body has a physics material; otherwise false.</returns>
+    public static bool HasPhysicsMaterial(SOAPhysicsSystemState state, GenIndex genIndex)
     {
-        return (state.Flags[genIndex.Index] & PhysicsBodyFlags.UseFriction) != 0;
+        return (state.Flags[genIndex.Index] & PhysicsBodyFlags.HasPhysicsMaterial) != 0;
     }
 
     /// <summary>
@@ -180,8 +213,8 @@ public static class SOAPhysicsSystem
     /// </summary>
     /// <param name="state">The physics system state to allocate into.</param>
     /// <param name="shape">the shape data of the circle.</param>
-    /// <param name="isKinematic">whether or not the collider mode is kinematic.</param>
-    /// <param name="isTrigger">whether or not the collider mode is trigger.</param>
+    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
+    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateCircleCollider(SOAPhysicsSystemState state, in Circle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
@@ -191,7 +224,7 @@ public static class SOAPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, false);
-        SetUsesFriction(ref flags, false);
+        SetHasPhysicsMaterial(ref flags, false);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
 
@@ -213,8 +246,8 @@ public static class SOAPhysicsSystem
     /// </summary>
     /// <param name="state">the physics system state to allocate into.</param>
     /// <param name="shape">the shape data of the circle.</param>
-    /// <param name="isKinematic">whether or not the collider mode is kinematic.</param>
-    /// <param name="isTrigger">whether or not the cllider mode is trigger.</param>
+    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
+    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateCircleRigidBody(SOAPhysicsSystemState state, in Circle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
@@ -224,7 +257,7 @@ public static class SOAPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
-        SetUsesFriction(ref flags, false);
+        SetHasPhysicsMaterial(ref flags, false);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
 
@@ -247,8 +280,8 @@ public static class SOAPhysicsSystem
     /// <param name="state">the physics system state to allocate into.</param>
     /// <param name="shape">the shape data of the circle.</param>
     /// <param name="physicsMaterial">the physics material to apply to the physics body.</param>
-    /// <param name="isKinematic">whether or not the collider mode is kinematic.</param>
-    /// <param name="isTrigger">whether or not the collider mode is trigger.</param>
+    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
+    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateCircleRigidBody(SOAPhysicsSystemState state, in Circle shape, in PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
@@ -258,7 +291,7 @@ public static class SOAPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
-        SetUsesFriction(ref flags, true);
+        SetHasPhysicsMaterial(ref flags, true);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
 
@@ -277,6 +310,26 @@ public static class SOAPhysicsSystem
         genIndex = new(index, state.Generation[index]);        
     }
 
+
+
+
+    /*******************
+    
+        Rectangle.
+    
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Allocates a rectangle collider into a physics system state.
+    /// </summary>
+    /// <param name="state">the physics system state to allocate a physics body into.</param>
+    /// <param name="shape">the rectangle shape data of the physics body.</param>
+    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
+    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
+    /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateRectangleCollider(SOAPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
         // handle flags.
@@ -285,7 +338,7 @@ public static class SOAPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, false);
-        SetUsesFriction(ref flags, false);
+        SetHasPhysicsMaterial(ref flags, false);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
 
@@ -307,7 +360,14 @@ public static class SOAPhysicsSystem
         genIndex = new(bodyIndex, state.Generation[bodyIndex]);    
     }
 
-
+    /// <summary>
+    /// Allocates a rectangle rigidbody - without a physics material - into a physics system state.
+    /// </summary>
+    /// <param name="state">the physics system state to allocate a physics body into.</param>
+    /// <param name="shape">the rectangle shape data of the physics body.</param>
+    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
+    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
+    /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateRectangleRigidBody(SOAPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
         // handle flags.
@@ -316,7 +376,7 @@ public static class SOAPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
-        SetUsesFriction(ref flags, false);
+        SetHasPhysicsMaterial(ref flags, false);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
     
@@ -338,6 +398,15 @@ public static class SOAPhysicsSystem
         genIndex = new(bodyIndex, state.Generation[bodyIndex]);
     }
 
+    /// <summary>
+    /// Allocates a rectangle rigidbody into a physics system state.
+    /// </summary>
+    /// <param name="state">the physics system state to allocate a physics body into.</param>
+    /// <param name="shape">the rectangle shape data of the physics body.</param>
+    /// <param name="physicsMaterial">the physics material to apply to the physics body.</param>
+    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
+    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
+    /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
     public static void AllocateRectangleRigidBody(SOAPhysicsSystemState state, in Rectangle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
         // handle flags.
@@ -346,7 +415,7 @@ public static class SOAPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
-        SetUsesFriction(ref flags, true);
+        SetHasPhysicsMaterial(ref flags, true);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
     
