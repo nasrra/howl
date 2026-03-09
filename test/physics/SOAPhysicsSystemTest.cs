@@ -30,6 +30,41 @@ public class SOAPhysicsSystemTest
 
 
 
+
+    /*******************
+    
+        other.
+    
+    ********************/
+
+
+
+
+    [Fact]
+    public void AddVertices_Test()
+    {
+        SOAPhysicsSystemState state = new SOAPhysicsSystemState(maxBodies, maxVertices, new(), new());        
+        
+        // first data set test.
+
+        AddVertices(state, [0,1,2,3], [2,3,4,5], out int firstIndex, out int vertexCount);
+        int nextIndex = state.NextVertice[firstIndex];
+        
+        bool circular = false;
+        for(int i = 0; i < vertexCount; i++)
+        {
+            if(nextIndex != firstIndex)
+            {
+                circular = true;
+                break;
+            }            
+        }
+        Assert.True(circular);
+    }
+
+
+
+
     /*******************
     
         Circle.

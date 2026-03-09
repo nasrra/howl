@@ -74,6 +74,10 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// <summary>
     /// The index of the next vertice of a given shape's vertex.
     /// </summary>
+    /// <remarks>
+    /// Note: the next index for a given shape are stored in a circular intrusive linked list; 
+    /// meaning that the next vertice index of the final vertice will be the first vertice index. 
+    /// </remarks>
     public int[] NextVertice;
     
     /// <summary>

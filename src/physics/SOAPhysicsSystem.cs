@@ -40,28 +40,51 @@ public static class SOAPhysicsSystem
     //     state.FixedUpdateStepStopwatch.Stop();
     // }
 
-    // /// <summary>
-    // /// 
-    // /// </summary>
-    // /// <param name="verticeX">the x-compoponent of a vertex.</param>
-    // /// <param name="verticeY">the y-compoponent of a vertex.</param>
-    // /// <param name="positionX">the x-component of a position.</param>
-    // /// <param name="positionY">the y-component of a position.</param>
-    // /// <param name="transformedX">the span to mutate and store the x-component transformed vertices.</param>
-    // /// <param name="transformedY">the span to mutate and store the y-component transformed vertices.</param>
-    // /// <param name="startIndex">The index to start at.</param>
-    // /// <param name="length">The length of elements to transform.</param>
-    // public static void TransformPhysicsBodyVertices(Span<PhysicsBodyFlags> flags, Span<float> verticeX, Span<float> verticeY, Span<float> positionX, Span<float> positionY, Span<float> transformedX, Span<float> transformedY, int startIndex, int length)
-    // {
-    //     for(int i = startIndex; i < length; i++)
-    //     {
-    //         PhysicsBodyFlags flag = flags[i];
-    //         if((flag & PhysicsBodyFlags.Allocated) != 0 && (flag & PhysicsBodyFlags.Active) != 0)
-    //         {
-    //             if(flag & PhysicsBodyFlags)
-    //         }
-    //     }
-    // }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="verticeX">the x-compoponent of a vertex.</param>
+    /// <param name="verticeY">the y-compoponent of a vertex.</param>
+    /// <param name="positionX">the x-component of a position.</param>
+    /// <param name="positionY">the y-component of a position.</param>
+    /// <param name="transformedX">the span to mutate and store the x-component transformed vertices.</param>
+    /// <param name="transformedY">the span to mutate and store the y-component transformed vertices.</param>
+    /// <param name="startIndex">The index to start at.</param>
+    /// <param name="length">The length of elements to transform.</param>
+    public static void TransformPhysicsBodyVertices(
+        Span<PhysicsBodyFlags> flags, 
+        Span<float> radius,
+        Span<float> verticeX, 
+        Span<float> verticeY, 
+        Span<float> positionX, 
+        Span<float> positionY, 
+        Span<float> transformedX, 
+        Span<float> transformedY,
+        Span<int> firstVertice,
+        Span<int> nextVertice, 
+        int startIndex, 
+        int length
+    )
+    {
+        for(int i = startIndex; i < length; i++)
+        {
+            PhysicsBodyFlags flag = flags[i];
+            
+            // if the physics body had been allocated and is active.
+            if((flag & PhysicsBodyFlags.Allocated) != 0 && (flag & PhysicsBodyFlags.Active) != 0)
+            {
+                if((flag & PhysicsBodyFlags.PolygonShape) != 0)
+                {
+                    int v = firstVertice[i];
+                    // for
+                }
+                else // circle shape.
+                {
+                    
+                }
+            }
+        }
+    }
 
 
 
@@ -75,6 +98,20 @@ public static class SOAPhysicsSystem
 
 
 
+    /// <summary>
+    /// Adds un-transformed vertices into a physics system state.
+    /// </summary>
+    /// <remarks>
+    /// Note: the next index for a given shape is inserted as a circular intrusive linked list; 
+    /// meaning that the next vertice index of the final vertice will be the first vertice index. 
+    /// </remarks>
+    /// <param name="state">the physics system state to insert into.</param>
+    /// <param name="verticesX">the x-component values of the vertices to insert.</param>
+    /// <param name="verticesY">the y-component values of the vertices to insert.</param>
+    /// <param name="firstIndex">the index in the physics system state's vertice array that contains the first vertice index in the state's vertice array.</param>
+    /// <param name="vertexCount">the amount of vertices added.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException">throws if verticesX is not of the same length as verticesY.</exception>
     public static int AddVertices(SOAPhysicsSystemState state, Span<float> verticesX, Span<float> verticesY, out int firstIndex, out int vertexCount)
     {
         if(verticesX.Length != verticesY.Length)
@@ -86,7 +123,7 @@ public static class SOAPhysicsSystem
 
         // set the first index.
         firstIndex = state.FreeVertexIndex.Pop();
-        int previousIndex = -1;
+        int previousIndex;
         int index = firstIndex;
         state.Vertice.X[index] = verticesX[0];
         state.Vertice.Y[index] = verticesY[0];
@@ -100,6 +137,10 @@ public static class SOAPhysicsSystem
             state.Vertice.Y[index] = verticesY[i];
             state.NextVertice[previousIndex] = index;
         }
+
+        // loop back to the beginning.
+        // note: this is very important, do not remove this.
+        state.NextVertice[index] = firstIndex;
 
         return firstIndex;
     }

@@ -13,16 +13,11 @@ namespace Howl.Physics;
 public enum PhysicsBodyFlags : byte
 {
     None = 0,
-
-    /// <summary>
-    /// Whether or not a body is a circle.
-    /// </summary>
-    RectangleShape = 1<<0,
         
     /// <summary>
     /// Whether or not a body is a polygon.
     /// </summary>
-    PolygonShape = 1<<1,
+    PolygonShape = 1<<0,
 
     /// <summary>
     /// Whether or not a physics body slot has been allocated in the physics system.
@@ -30,30 +25,30 @@ public enum PhysicsBodyFlags : byte
     /// </remarks>
     /// Note: this flag indicates whether or not a slot in a physics body array is free and available for reuse.
     /// <remarks>
-    Allocated = 1<<2,
+    Allocated = 1<<1,
 
     /// <summary>
     /// Responds to collisions by recording the intersection of a colliding object.
     /// </summary>
-    Trigger = 1<<3,
+    Trigger = 1<<2,
 
     /// <summary>
     /// Turns off collision resolution for this physics body.
     /// </summary>
-    Kinematic = 1<<4,
+    Kinematic = 1<<3,
 
     /// <summary>
     /// Whether or not a physics body has a physics material.
     /// </summary>
-    HasPhysicsMaterial = 1<<5,
+    HasPhysicsMaterial = 1<<4,
 
     /// <summary>
     /// Whether or not a physics body has a rigidbody.
     /// </summary>
-    RigidBody = 1<<6,
+    RigidBody = 1<<5,
 
     /// <summary>
     /// Whether or not a physics body is in active within the physics simulation
     /// </summary>
-    Active = 1<<7,    
+    Active = 1<<6,    
 }
