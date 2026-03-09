@@ -172,46 +172,8 @@ public unsafe struct PolygonRectangle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static AABB GetAABB(in PolygonRectangle polygonRectangle)
     {
-        float minX = float.MaxValue;
-        float minY = float.MaxValue;
-        float maxX = float.MinValue;
-        float maxY = float.MinValue;
-
-        ReadOnlySpan<float> verticesX = VerticesXAsSpan(polygonRectangle);
-        ReadOnlySpan<float> verticesY = VerticesYAsSpan(polygonRectangle);
-
-        for(int i = 0; i < PolygonRectangle.MaxVertices; i++)
-        {
-            float x = verticesX[i];
-            if (x < minX)
-            {
-                minX = x;
-            }
-            if(x > maxX)
-            {
-                maxX = x;
-            }
-        }
-
-        for(int i = 0; i < PolygonRectangle.MaxVertices; i++)
-        {
-            float y = verticesY[i];
-            if(y < minY)
-            {
-                minY = y;
-            }
-            if(y > maxY)
-            {
-                maxY = y;
-            }
-        }
-
-        return new(
-            minX,
-            minY,
-            maxX,
-            maxY
-        );
+        Math.GetMinMaxVectors(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), out float minX, out float minY, out float maxX, out float maxY);
+        return new(minX, minY, maxX, maxY);
     }
 
     /// <summary>
@@ -220,7 +182,7 @@ public unsafe struct PolygonRectangle
     /// <param name="rectangle">the polygon rectangle.</param>
     /// <returns>the width of the rectangle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public unsafe static float Width(in PolygonRectangle rectangle)
+    public static float Width(in PolygonRectangle rectangle)
     {   
         Vector2 vertexA = new Vector2(rectangle.VerticesX[0], rectangle.VerticesY[0]); 
         Vector2 vertexB = new Vector2(rectangle.VerticesX[1], rectangle.VerticesY[1]); 
@@ -233,7 +195,7 @@ public unsafe struct PolygonRectangle
     /// <param name="rectangle">the polygon rectangle.</param>
     /// <returns>the height of the rectangle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public unsafe static float Height(in PolygonRectangle rectangle)
+    public static float Height(in PolygonRectangle rectangle)
     {
         Vector2 vertexA = new Vector2(rectangle.VerticesX[0], rectangle.VerticesY[0]); 
         Vector2 vertexB = new Vector2(rectangle.VerticesX[3], rectangle.VerticesY[3]); 

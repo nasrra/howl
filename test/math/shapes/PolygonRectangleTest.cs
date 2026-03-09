@@ -97,4 +97,15 @@ public class PolygonRectangleTest
         centroid = new Vector2(-5, 2.5f);
         Assert.Equal(centroid, Centroid(rectangle));    
     }
+
+    [Fact]
+    public void GetAABB_Test()
+    {
+        PolygonRectangle shape = new PolygonRectangle(-0.5f, 0.5f, 20, 10);
+        AABB aabb = GetAABB(shape);
+        Assert.Equal(-0.5f, aabb.MinX, precision: 1);
+        Assert.Equal(-9.5f, aabb.MinY, precision: 1);
+        Assert.Equal(19.5f, aabb.MaxX, precision: 1);
+        Assert.Equal(0.5f, aabb.MaxY, precision: 1);
+    }
 }

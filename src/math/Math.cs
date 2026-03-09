@@ -382,4 +382,51 @@ public static class Math
         tY = ry + positionY;
     }
 
+    /// <summary>
+    /// Gets the min and max vectors from a span of vertices.
+    /// </summary>
+    /// <remarks>
+    /// Note: it is assumed that the x and y span are of equal length;
+    /// if they are not the same length: undefined behaviour will occur.
+    /// </remarks>
+    /// <param name="x">the x-components for each vertice.</param>
+    /// <param name="y">the y-components for each vertice.</param>
+    /// <param name="minX">the x-component of the minimum vertex.</param>
+    /// <param name="minY">the y-component of the minimum vertex.</param>
+    /// <param name="maxX">the x-component of the maximum vertex.</param>
+    /// <param name="maxY">the y-component of the maximum vertex.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void GetMinMaxVectors(Span<float> x, Span<float> y, out float minX, out float minY, out float maxX, out float maxY)
+    {
+        minX = float.MaxValue;
+        minY = float.MaxValue;
+        maxX = float.MinValue;
+        maxY = float.MinValue;
+
+        for(int i = 0; i < x.Length; i++)
+        {
+            float v = x[i];
+            if (v < minX)
+            {
+                minX = v;
+            }
+            if(v > maxX)
+            {
+                maxX = v;
+            }
+        }
+
+        for(int i = 0; i < y.Length; i++)
+        {
+            float v = y[i];
+            if(v < minY)
+            {
+                minY = v;
+            }
+            if(v > maxY)
+            {
+                maxY = v;
+            }
+        }
+    }
 }

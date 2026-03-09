@@ -46,17 +46,31 @@ public struct Leaf
     /// Constructs an leaf.
     /// </summary>
     /// <param name="aabb">The aabb.</param>
-    /// <param name="genIndex">The associated gen index.</param>
+    /// <param name="genIndex">The gen index of the data to associate with this leaf.</param>
     /// <param name="flag">any user-defined flags to distinguish this leaf.</param>
     public Leaf(AABB aabb, GenIndex genIndex, byte flag)
+    : this(aabb.MinX, aabb.MinY, aabb.MaxX, aabb.MaxY, genIndex.Index, genIndex.Generation, flag)
+    {}
+
+    /// <summary>
+    /// Constructs a leaf.
+    /// </summary>
+    /// <param name="minX">the x-component of the minimum vector.</param>
+    /// <param name="minY">the y-component of the minimum vector.</param>
+    /// <param name="maxX">the x-component of the maximum vector.</param>
+    /// <param name="maxY">the y-component of the maximum vector.</param>
+    /// <param name="index">the index of the gen index of the data to associate with this leaf.</param>
+    /// <param name="generation">the generation of the gen index of the data to associate with this leaf.</param>
+    /// <param name="flag">any-user-defined flags to distinguish this leaf.</param>
+    public Leaf(float minX, float minY, float maxX, float maxY, int index, int generation, byte flag)
     {
-        BoundingBoxMinX = aabb.MinX;
-        BoundingBoxMinY = aabb.MinY;
-        BoundingBoxMaxX = aabb.MaxX;
-        BoundingBoxMaxY = aabb.MaxY;
-        Index           = genIndex.Index;
-        Generation      = genIndex.Generation;
-        Flag            = flag;
+        BoundingBoxMinX = minX;
+        BoundingBoxMinY = minY;
+        BoundingBoxMaxX = maxX;
+        BoundingBoxMaxY = maxY;
+        Index           = index;
+        Generation      = generation;
+        Flag            = flag;        
     }
 
     /// <summary>

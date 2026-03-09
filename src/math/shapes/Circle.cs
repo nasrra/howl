@@ -130,12 +130,27 @@ public struct Circle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static AABB GetAABB(in Circle circle)
     {
-        return new(
-            circle.X - circle.Radius,
-            circle.Y - circle.Radius,
-            circle.X + circle.Radius,
-            circle.Y + circle.Radius
-        );
+        GetMinMaxVectors(circle.X, circle.Y, circle.Radius, out float minX, out float minY, out float maxX, out float maxY);
+        return new(minX, minY, maxX, maxY);
+    }
+
+    /// <summary>
+    /// Gets the min and max vectors of a circle.
+    /// </summary>
+    /// <param name="x">the positional x-component of the circle.</param>
+    /// <param name="y">the positional y-component of the circle.</param>
+    /// <param name="radius">the radius of the circle.</param>
+    /// <param name="minX">the x-component of the minimum vector.</param>
+    /// <param name="minY">the y-component of the minimum vector.</param>
+    /// <param name="maxX">the x-component of the maximum vector.</param>
+    /// <param name="maxY">the y-component of the maximum vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void GetMinMaxVectors(float x, float y, float radius, out float minX, out float minY, out float maxX, out float maxY)
+    {
+        minX = x - radius;
+        minY = y - radius;
+        maxX = x + radius;
+        maxY = y + radius;
     }
 
     /// <summary>
