@@ -5,7 +5,7 @@ using Howl.Math;
 
 namespace Howl.Physics;
 
-public sealed class SOAPhysicsSystemState : IDisposable
+public sealed class SoaPhysicsSystemState : IDisposable
 {
     /// <summary>
     /// Gets and sets the type flags of all physics bodies.
@@ -18,37 +18,37 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// <remarks>
     /// Note: this is the base/untransformed value for a physics body shape vertice.
     /// </remarks>
-    public SoaVector2 Vertice;
+    public SoaVector2 Vertices;
     
     /// <summary>
     /// Gets and sets the transformed vertice positions of all physics bodies.  
     /// </summary>
-    public SoaVector2 TransformedVertice;
+    public SoaVector2 TransformedVertices;
 
     /// <summary>
     /// Gets and sets the transforms of all physics bodies.
     /// </summary>
-    public SoaTransform Transform;
+    public SoaTransform Transforms;
 
     /// <summary>
     /// Gets and sets the widths of all physics bodies.
     /// </summary>
-    public float[] Width;
+    public float[] Widths;
 
     /// <summary>
     /// Gets and sets the heights of all physics bodies.
     /// </summary>
-    public float[] Height;
+    public float[] Heights;
 
     /// <summary>
     /// Gets and sets the radii of all physics bodies.
     /// </summary>
-    public float[] Radius;
+    public float[] Radii;
 
     /// <summary>
     /// Gets and sets the transformed radii of all physics bodies.
     /// </summary>
-    public float[] TransformedRadius;    
+    public float[] TransformedRadii;    
 
     /// <summary>
     /// Gets and sets the static friction values of all physics bodies.
@@ -56,7 +56,7 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// <remarks>
     /// Note: static friction resists motion before an object starts sliding.
     /// </remarks>
-    public float[] StaticFriction;
+    public float[] StaticFrictions;
 
     /// <summary>
     /// Gets and sets the kinetic friction value of all physics bodies.
@@ -64,17 +64,17 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// <remarks>
     /// Note: kinetic friction is applied when an object is sliding/currently in motion.
     /// </remarks>
-    public float[] KineticFriction;
+    public float[] KineticFrictions;
     
     /// <summary>
     /// Gets and sets the first index of a physics bodies first vertice of physics body's shape.
     /// </summary>
-    public int[] FirstVertice;
+    public int[] FirstVertices;
 
     /// <summary>
     /// Gets and sets the count of vertices of a physics body's shape.
     /// </summary>
-    public int[] VerticeCount;
+    public int[] VerticeCounts;
 
     /// <summary>
     /// The index of the next vertice of a given shape's vertex.
@@ -83,12 +83,12 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// Note: the next index for a given shape are stored in a circular intrusive linked list; 
     /// meaning that the next vertice index of the final vertice will be the first vertice index. 
     /// </remarks>
-    public int[] NextVertice;
+    public int[] NextVertices;
     
     /// <summary>
     /// The generation of a physics body id.
     /// </summary>
-    public int[] Generation;
+    public int[] Generations;
     
     /// <summary>
     /// Gets and sets the physics body indices available for reuse and allocation.
@@ -135,7 +135,7 @@ public sealed class SOAPhysicsSystemState : IDisposable
     /// </summary>
     public bool IsDisposed => disposed;
 
-    public SOAPhysicsSystemState(int physicsBodyCount, int maxVertices, CollisionSystemState collisionSystemState, RigidBodySystemState rigidbodySystemState)
+    public SoaPhysicsSystemState(int physicsBodyCount, int maxVertices, CollisionSystemState collisionSystemState, RigidBodySystemState rigidbodySystemState)
     {
         if (collisionSystemState == null)
         {
@@ -152,20 +152,20 @@ public sealed class SOAPhysicsSystemState : IDisposable
         FixedUpdateSubStepStopwatch = new();
         FixedUpdateStepStopwatch    = new();
 
-        Flags               = new PhysicsBodyFlags[physicsBodyCount];
-        Width               = new float[physicsBodyCount];
-        Height              = new float[physicsBodyCount];
-        Radius              = new float[physicsBodyCount];
-        Vertice             = new SoaVector2(physicsBodyCount);
-        TransformedVertice  = new SoaVector2(physicsBodyCount);
-        Transform           = new SoaTransform(physicsBodyCount);
-        StaticFriction      = new float[physicsBodyCount];
-        KineticFriction     = new float[physicsBodyCount];
-        TransformedRadius   = new float[physicsBodyCount];
-        NextVertice         = new int[maxVertices];
-        Generation          = new int[physicsBodyCount];
-        FirstVertice        = new int[physicsBodyCount];
-        VerticeCount        = new int[physicsBodyCount];
+        Flags                   = new PhysicsBodyFlags[physicsBodyCount];
+        Widths                  = new float[physicsBodyCount];
+        Heights                 = new float[physicsBodyCount];
+        Radii                   = new float[physicsBodyCount];
+        Vertices                = new SoaVector2(physicsBodyCount);
+        TransformedVertices     = new SoaVector2(physicsBodyCount);
+        Transforms              = new SoaTransform(physicsBodyCount);
+        StaticFrictions         = new float[physicsBodyCount];
+        KineticFrictions        = new float[physicsBodyCount];
+        TransformedRadii        = new float[physicsBodyCount];
+        NextVertices            = new int[maxVertices];
+        Generations             = new int[physicsBodyCount];
+        FirstVertices           = new int[physicsBodyCount];
+        VerticeCounts           = new int[physicsBodyCount];
 
         
         FreePhysicsBodyIndex = new();
@@ -222,7 +222,7 @@ public sealed class SOAPhysicsSystemState : IDisposable
         disposed = true;
     }
 
-    ~SOAPhysicsSystemState()
+    ~SoaPhysicsSystemState()
     {
         Dispose(false);    
     }
