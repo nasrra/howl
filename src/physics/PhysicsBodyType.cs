@@ -5,8 +5,9 @@ namespace Howl.Physics;
 /// <remarks>
 /// Note: 
 /// the default assumed state for any physics body in the physics system is that they:
-/// - have a collider.
+/// - have a collider (and will always have one).
 /// - are solid (Resolves collisions by separating from the colliding object.)
+/// - is of a circle shape.
 /// </remarks>
 [Flags]
 public enum PhysicsBodyFlags : byte
@@ -16,7 +17,7 @@ public enum PhysicsBodyFlags : byte
     /// <summary>
     /// Whether or not a body is a circle.
     /// </summary>
-    CircleShape = 1<<0,
+    RectangleShape = 1<<0,
         
     /// <summary>
     /// Whether or not a body is a polygon.
@@ -29,7 +30,6 @@ public enum PhysicsBodyFlags : byte
     /// </remarks>
     /// Note: this flag indicates whether or not a slot in a physics body array is free and available for reuse.
     /// <remarks>
-
     Allocated = 1<<2,
 
     /// <summary>

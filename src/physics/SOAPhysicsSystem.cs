@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Howl.ECS;
+using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.Math.Shapes.PolygonRectangle;
 
@@ -8,6 +9,59 @@ namespace Howl.Physics;
 
 public static class SOAPhysicsSystem
 {
+
+    // public static void FixedUpdate(ComponentRegistry componentRegistry, PhysicsSystemState state, float deltaTime, int subSteps)
+    // {
+    //     state.FixedUpdateStepStopwatch.Restart();
+
+    //     CollisionSystemState colState = state.CollisionSystemState;
+    //     RigidBodySystemState rigState = state.RigidbodySystemState;
+
+    //     // scale delta time by the substeps.
+    //     deltaTime /= (float)subSteps;
+
+    //     for(int i = 0; i < subSteps; i++)
+    //     {
+    //         state.FixedUpdateSubStepStopwatch.Restart();
+
+    //         if(colState.CollisionManifold.Collisions.Count > 0)
+    //         {
+    //             colState.CollisionManifold.Clear();
+    //         }
+
+    //         // Movement Step.
+    //         rigState.MovementStepStopwatch.Restart();
+            
+    //         rigState.MovementStepStopwatch.Stop();
+
+    //         state.FixedUpdateSubStepStopwatch.Stop();
+    //     }
+
+    //     state.FixedUpdateStepStopwatch.Stop();
+    // }
+
+    // /// <summary>
+    // /// 
+    // /// </summary>
+    // /// <param name="verticeX">the x-compoponent of a vertex.</param>
+    // /// <param name="verticeY">the y-compoponent of a vertex.</param>
+    // /// <param name="positionX">the x-component of a position.</param>
+    // /// <param name="positionY">the y-component of a position.</param>
+    // /// <param name="transformedX">the span to mutate and store the x-component transformed vertices.</param>
+    // /// <param name="transformedY">the span to mutate and store the y-component transformed vertices.</param>
+    // /// <param name="startIndex">The index to start at.</param>
+    // /// <param name="length">The length of elements to transform.</param>
+    // public static void TransformPhysicsBodyVertices(Span<PhysicsBodyFlags> flags, Span<float> verticeX, Span<float> verticeY, Span<float> positionX, Span<float> positionY, Span<float> transformedX, Span<float> transformedY, int startIndex, int length)
+    // {
+    //     for(int i = startIndex; i < length; i++)
+    //     {
+    //         PhysicsBodyFlags flag = flags[i];
+    //         if((flag & PhysicsBodyFlags.Allocated) != 0 && (flag & PhysicsBodyFlags.Active) != 0)
+    //         {
+    //             if(flag & PhysicsBodyFlags)
+    //         }
+    //     }
+    // }
 
 
 
@@ -34,16 +88,16 @@ public static class SOAPhysicsSystem
         firstIndex = state.FreeVertexIndex.Pop();
         int previousIndex = -1;
         int index = firstIndex;
-        state.VerticeX[index] = verticesX[0];
-        state.VerticeY[index] = verticesY[0];
+        state.Vertice.X[index] = verticesX[0];
+        state.Vertice.Y[index] = verticesY[0];
 
         // add the rest of them.
         for(int i = 1; i < vertexCount; i++)
         {
             previousIndex = index;
             index = state.FreeVertexIndex.Pop();
-            state.VerticeX[index] = verticesX[i];
-            state.VerticeY[index] = verticesY[i];
+            state.Vertice.X[index] = verticesX[i];
+            state.Vertice.Y[index] = verticesY[i];
             state.NextVertice[previousIndex] = index;
         }
 
@@ -233,6 +287,28 @@ public static class SOAPhysicsSystem
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.HasPhysicsMaterial) != 0;
     }
 
+    /// <summary>
+    /// Sets the position of a body in the physics simulation.
+    /// </summary>
+    /// <param name="state">the physics system state storing the body.</param>
+    /// <param name="genIndex">the gen index used look up the body.</param>
+    /// <param name="x">the positional x-component.</param>
+    /// <param name="y">the positional y-component.</param>
+    /// <returns>true; if successfully set; otherwise false.</returns>
+    public static bool SetTransform(SOAPhysicsSystemState state, GenIndex genIndex, Transform transform)
+    {
+        if(state.Generation[genIndex.Index] != genIndex.Generation)
+            return false;
+
+        state.Transform.Position.X[genIndex.Index]  = transform.Position.X;
+        state.Transform.Position.Y[genIndex.Index]  = transform.Position.Y;
+        state.Transform.Scale.X[genIndex.Index]     = transform.Scale.X;
+        state.Transform.Scale.Y[genIndex.Index]     = transform.Scale.Y;
+        state.Transform.Rotation[genIndex.Index]    = transform.Rotation;
+
+        return true;
+    }
+
 
 
 
@@ -256,8 +332,10 @@ public static class SOAPhysicsSystem
     public static void AllocateCircleCollider(SOAPhysicsSystemState state, in Circle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
         // handle flags.
+        // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
+        // set, a physics body is a circle.
+        PhysicsBodyFlags flags = PhysicsBodyFlags.None; 
 
-        PhysicsBodyFlags flags = PhysicsBodyFlags.CircleShape;
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, false);
@@ -269,8 +347,8 @@ public static class SOAPhysicsSystem
         int index = state.FreePhysicsBodyIndex.Pop();
 
         state.Radius[index]     = shape.Radius;
-        state.VerticeX[index]   = shape.X;
-        state.VerticeY[index]   = shape.Y;
+        state.Vertice.X[index]   = shape.X;
+        state.Vertice.Y[index]   = shape.Y;
         state.Flags[index]      = flags;
 
         // return gen index.
@@ -291,8 +369,10 @@ public static class SOAPhysicsSystem
     public static void AllocateCircleRigidBody(SOAPhysicsSystemState state, in Circle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
         // handle flags.
+        // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
+        // set, a physics body is a circle.
+        PhysicsBodyFlags flags = PhysicsBodyFlags.None; 
 
-        PhysicsBodyFlags flags = PhysicsBodyFlags.CircleShape;
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
@@ -304,8 +384,8 @@ public static class SOAPhysicsSystem
         int index = state.FreePhysicsBodyIndex.Pop();
 
         state.Radius[index]     = shape.Radius;
-        state.VerticeX[index]   = shape.X;
-        state.VerticeY[index]   = shape.Y;
+        state.Vertice.X[index]   = shape.X;
+        state.Vertice.Y[index]   = shape.Y;
         state.Flags[index]      = flags;
 
         // return gen index.
@@ -327,8 +407,10 @@ public static class SOAPhysicsSystem
     public static void AllocateCircleRigidBody(SOAPhysicsSystemState state, in Circle shape, in PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, out GenIndex genIndex)
     {
         // handle flags.
-
-        PhysicsBodyFlags flags = PhysicsBodyFlags.CircleShape;
+        // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
+        // set, a physics body is a circle.
+        PhysicsBodyFlags flags = PhysicsBodyFlags.None; 
+        
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
@@ -340,8 +422,8 @@ public static class SOAPhysicsSystem
         int index = state.FreePhysicsBodyIndex.Pop();
 
         state.Radius[index]             = shape.Radius;
-        state.VerticeX[index]           = shape.X;
-        state.VerticeY[index]           = shape.Y;
+        state.Vertice.X[index]           = shape.X;
+        state.Vertice.Y[index]           = shape.Y;
         state.Flags[index]              = flags;
         state.StaticFriction[index]     = physicsMaterial.StaticFriction;
         state.KineticFriction[index]    = physicsMaterial.KineticFriction;

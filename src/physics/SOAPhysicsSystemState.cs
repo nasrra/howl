@@ -1,56 +1,49 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Howl.Math;
 
 namespace Howl.Physics;
 
 public sealed class SOAPhysicsSystemState : IDisposable
 {
     /// <summary>
-    /// The type flags of all physics bodies.
+    /// Gets and sets the type flags of all physics bodies.
     /// </summary>
     public PhysicsBodyFlags[] Flags;
 
     /// <summary>
-    /// The widths of all physics bodies.
+    /// Gets and sets the widths of all physics bodies.
     /// </summary>
     public float[] Width;
 
     /// <summary>
-    /// The heights of all physics bodies.
+    /// Gets and sets the heights of all physics bodies.
     /// </summary>
     public float[] Height;
 
     /// <summary>
-    /// The radii of all physics bodies.
+    /// Gets and sets the radii of all physics bodies.
     /// </summary>
     public float[] Radius;
+    
+    /// <summary>
+    /// Gets and sets the vertices positions of all physics bodies.  
+    /// </summary>
+    /// <remarks>
+    /// Note: this is the base/untransformed value for a physics body shape vertice.
+    /// </remarks>
+    public SoaVector2 Vertice;
+    
+    /// <summary>
+    /// Gets and sets the transformed vertice positions of all physics bodies.  
+    /// </summary>
+    public SoaVector2 TransformedVertice;
 
     /// <summary>
-    /// The x-component vertex position of all physics bodies.  
+    /// Gets and sets the transforms of all physics bodies.
     /// </summary>
-    /// <remarks>
-    /// Note: this is the base/untransformed value for a physics body shape vertice.
-    /// </remarks>
-    public float[] VerticeX;
-    
-    /// <summary>
-    /// The y-component vertex position of all physics bodies.  
-    /// </summary>
-    /// <remarks>
-    /// Note: this is the base/untransformed value for a physics body shape vertice.
-    /// </remarks>
-    public float[] VerticeY;
-    
-    /// <summary>
-    /// The transformed x-component vertex position of all physics bodies.  
-    /// </summary>
-    public float[] TransformedVerticeX;
-    
-    /// <summary>
-    /// The transformed y-component vertex position of all physics bodies.  
-    /// </summary>
-    public float[] TransformedVerticeY;
+    public SoaTransform Transform;
 
     /// <summary>
     /// Gets and sets the static friction values of all physics bodies.
@@ -89,12 +82,12 @@ public sealed class SOAPhysicsSystemState : IDisposable
     public int[] Generation;
     
     /// <summary>
-    /// the physics body indices available for reuse and allocation.
+    /// Gets and sets the physics body indices available for reuse and allocation.
     /// </summary>
     public Stack<int> FreePhysicsBodyIndex;
 
     /// <summary>
-    /// the vertice indices available for reuse and allocation.
+    /// Gets and sets the vertice indices available for reuse and allocation.
     /// </summary>
     public Stack<int> FreeVertexIndex;
 
@@ -154,16 +147,16 @@ public sealed class SOAPhysicsSystemState : IDisposable
         Width               = new float[physicsBodyCount];
         Height              = new float[physicsBodyCount];
         Radius              = new float[physicsBodyCount];
-        VerticeX            = new float[physicsBodyCount];
-        VerticeY            = new float[physicsBodyCount];
-        TransformedVerticeX = new float[maxVertices];
-        TransformedVerticeY = new float[maxVertices];
+        Vertice             = new SoaVector2(physicsBodyCount);
+        TransformedVertice  = new SoaVector2(physicsBodyCount);
+        Transform           = new SoaTransform(physicsBodyCount);
         StaticFriction      = new float[physicsBodyCount];
         KineticFriction     = new float[physicsBodyCount];
         NextVertice         = new int[maxVertices];
         Generation          = new int[physicsBodyCount];
         FirstVertice        = new int[physicsBodyCount];
         VerticeCount        = new int[physicsBodyCount];
+
         
         FreePhysicsBodyIndex = new();
         FreeVertexIndex = new();

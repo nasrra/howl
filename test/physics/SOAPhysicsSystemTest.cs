@@ -243,8 +243,8 @@ public class SOAPhysicsSystemTest
         int v = firstVerticeIndex;
         for (int i = 0; i < 4; i++)
         {
-            Assert.Equal(expectedX[i], state.VerticeX[v], precision: 1);
-            Assert.Equal(expectedY[i], state.VerticeY[v], precision: 1);
+            Assert.Equal(expectedX[i], state.Vertice.X[v], precision: 1);
+            Assert.Equal(expectedY[i], state.Vertice.Y[v], precision: 1);
             v = state.NextVertice[v];
         }
     }
