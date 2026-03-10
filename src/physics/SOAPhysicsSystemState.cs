@@ -1,12 +1,27 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Howl.DataStructures;
+using Howl.Graphics;
 using Howl.Math;
 
 namespace Howl.Physics;
 
 public sealed class SoaPhysicsSystemState : IDisposable
 {
+
+
+
+
+    /*******************
+    
+        Phsyics Body Data.
+    
+    ********************/
+
+
+
+
     /// <summary>
     /// Gets and sets the type flags of all physics bodies.
     /// </summary>
@@ -95,15 +110,44 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// </summary>
     public Stack<int> FreeVertexIndex;
 
+
+
+
+    /*******************
+    
+        Utility.
+    
+    ********************/
+
+
+
+
     /// <summary>
-    /// Gets and sets the CollisionSystemState.
+    /// Gets the bounding volume hierarchy for a collision system.
     /// </summary>
-    public CollisionSystemState CollisionSystemState;
+    public BoundingVolumeHierarchy Bvh;
 
     /// <summary>
     /// Gets and sets the RigidbodySystemState.
     /// </summary>
     public RigidBodySystemState RigidbodySystemState;
+
+    /// <summary>
+    /// Gets the collision manifold.
+    /// </summary>
+    public CollisionManifoldNew CollisionManifold;
+
+
+
+
+    /*******************
+    
+        Debug Diagnostic Stopwatches.
+    
+    ********************/
+
+
+
 
     /// <summary>
     /// Gets and sets the debug stopwatch for timing a physics system fixed-update substep.
@@ -114,6 +158,105 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Gets and sets the debug stopwatch for timing a physics system fixed-update step.
     /// </summary>
     public Stopwatch FixedUpdateStepStopwatch;
+
+    /// <summary>
+    /// Gets the debug stopwatch for timing a collision intersect step.
+    /// </summary>
+    public Stopwatch ProcessNearColliderPairsStopwatch;
+
+    /// <summary>
+    /// Gets the debug stopwatch for timing a collision resolution step.
+    /// </summary>
+    public Stopwatch CollisionResolutionStopwatch;
+
+    /// <summary>
+    /// Gets the debug stop watch for timing a bvh reconstruction step.
+    /// </summary>
+    public Stopwatch BvhReconstructionStopwatch;
+
+    /// <summary>
+    /// Gets the debug stopwatch for timing a collision manifold sort step.
+    /// </summary>
+    public Stopwatch CollisionManifoldSortStopwatch;
+
+    /// <summary>
+    /// Gets the debug stopwatch for syncing collider transformed shapes to their associated transforms.
+    /// </summary>
+    public Stopwatch SyncCollidersToTransformsStopwatch;
+
+
+
+
+    /*******************
+    
+        Debug Colours.
+    
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for the solid-colliders.
+    /// </summary>
+    public Colour SolidColliderColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for the trigger-colliders.
+    /// </summary>
+    public Colour TriggerColliderColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for kinematic-colliders.
+    /// </summary>
+    public Colour KinematicColliderColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for trigger colliders when triggered.
+    /// </summary>
+    public Colour TriggerColliderTriggeredColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for AABB's.
+    /// </summary>
+    public Colour AABBColour;
+
+    /// <summary>
+    /// Gets and sets the fallback debug draw colour for colliders.
+    /// </summary>
+    public Colour FallbackColliderColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for inactive colliders.
+    /// </summary>
+    public Colour InactiveColliderColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for bvh-tree leaf aabb's.
+    /// </summary>
+    public Colour BvhLeafAABBColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for bvh-treee branch aabb's
+    /// </summary>
+    public Colour BvhBranchAABBColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for contact-points;
+    /// </summary>
+    public Colour ContactPointColour;
+
+
+
+
+    /*******************
+    
+        Counters.
+    
+    ********************/
+
+
+
 
     /// <summary>
     /// Gets and sets the count of allocated physics body stored in this physics system state.
@@ -130,33 +273,70 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// </remarks>
     public int MaxPhysicsBodyVertexCount;
 
-    /// <summary>
-    /// Gets and sets whether or not this instance has been diposed.
-    /// </summary>
-    private bool disposed;
+
+
+
+    /*******************
+    
+        Debug Draw Flags.
+    
+    ********************/
+
+
+
 
     /// <summary>
-    /// Gets whether or not this instance has been disposed.
+    /// Gets and sets whether or not to draw collider wireframes.
     /// </summary>
-    public bool IsDisposed => disposed;
+    public bool DrawColliderWireframes;
 
-    public SoaPhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount, CollisionSystemState collisionSystemState, RigidBodySystemState rigidbodySystemState)
+    /// <summary>
+    /// Gets and sets whether or not to draw collider AABB wireframes.
+    /// </summary>
+    public bool DrawAABBWireframes;
+
+    /// <summary>
+    /// Gets and sets whether or not to draw bvh branches.
+    /// </summary>
+    public bool DrawBvhBranches;
+
+    /// <summary>
+    /// Gets and sets whether or not to draw contact points.
+    /// </summary>
+    public bool DrawContactPoints;
+
+
+
+
+    /*******************
+    
+        Disposal.
+    
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Gets and sets whether or not this instance has been disposed.
+    /// </summary>
+    public bool IsDisposed;
+
+
+
+
+
+    public SoaPhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount, int maxCollisions, RigidBodySystemState rigidbodySystemState)
     {
-        if (collisionSystemState == null)
-        {
-            throw new ArgumentNullException($"'{nameof(PhysicsSystemState)}' cannot initialise with a null '{nameof(CollisionSystemState)}'");
-        }
-
         if(rigidbodySystemState == null)
-        {
             throw new ArgumentNullException($"'{nameof(PhysicsSystemState)}' cannot initialise with a null '{nameof(RigidbodySystemState)}'");
-        }
 
-        CollisionSystemState = collisionSystemState;
+        // Utility.
         RigidbodySystemState = rigidbodySystemState;
-        FixedUpdateSubStepStopwatch = new();
-        FixedUpdateStepStopwatch    = new();
+        Bvh = new();
+        CollisionManifold = new(maxCollisions);
 
+        // Physics body data.
         Flags                   = new PhysicsBodyFlags[physicsBodyCount];
         Widths                  = new float[physicsBodyCount];
         Heights                 = new float[physicsBodyCount];
@@ -167,32 +347,63 @@ public sealed class SoaPhysicsSystemState : IDisposable
         StaticFrictions         = new float[physicsBodyCount];
         KineticFrictions        = new float[physicsBodyCount];
         TransformedRadii        = new float[physicsBodyCount];
-        NextVertexIndice            = new int[physicsBodyVerticesCount];
+        NextVertexIndice        = new int[physicsBodyVerticesCount];
         Generations             = new int[physicsBodyCount];
-        FirstVertexIndice           = new int[physicsBodyCount];
-        
-        FreePhysicsBodyIndex = new();
-        FreeVertexIndex = new();
+        FirstVertexIndice       = new int[physicsBodyCount];
+        FreePhysicsBodyIndex    = new();
+        FreeVertexIndex         = new();
+
+        // Debug diagnostic stopwatches.
+        FixedUpdateSubStepStopwatch         = new();
+        FixedUpdateStepStopwatch            = new();
+        ProcessNearColliderPairsStopwatch   = new();
+        CollisionResolutionStopwatch                 = new();
+        BvhReconstructionStopwatch          = new();
+        CollisionManifoldSortStopwatch      = new();
+        SyncCollidersToTransformsStopwatch  = new();
+
+        // debug colours
+        SolidColliderColour             = Colour.Green;
+        KinematicColliderColour         = Colour.Orange;
+        TriggerColliderColour           = Colour.LightBlue;
+        TriggerColliderTriggeredColour  = Colour.Red;
+        AABBColour                      = new Colour(Colour.Pink.R, Colour.Pink.G, Colour.Pink.B, 50);
+        FallbackColliderColour          = Colour.White;
+        InactiveColliderColour          = Colour.Black;
+        BvhLeafAABBColour               = Colour.Purple;
+        BvhBranchAABBColour             = Colour.Yellow;
+        ContactPointColour              = Colour.Red;
+
+        // Counters.
+        MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;
 
         for(int i = physicsBodyCount-1; i >= 0; i--)
             FreePhysicsBodyIndex.Push(i); // push all available indices to the stack.
 
         for(int i = physicsBodyVerticesCount-1; i >= 0; i--)
             FreeVertexIndex.Push(i); // push all available indices to the stack.
-
-        MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;
     }
 
+
+
+
+    /*******************
+    
+        Disposal.
+    
+    ********************/
+
+
+
+
     /// <summary>
-    /// Throws an exception if this instance is disposed.
+    /// Throws an exception if an physics system state instance is disposed.
     /// </summary>
     /// <exception cref="ObjectDisposedException"></exception>
-    public void ThrowIfDisposed()
+    public static void ThrowIfDisposed(SoaPhysicsSystemState state)
     {
-        if (disposed)
-        {
-            throw new ObjectDisposedException($"{nameof(PhysicsSystemState)}");
-        }        
+        if (state.IsDisposed)
+            throw new ObjectDisposedException($"{nameof(SoaPhysicsSystemState)}");
     }
 
     /// <summary>
@@ -200,35 +411,23 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// </summary>
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        Dispose(this);
     }
 
     /// <summary>
-    /// Disposes this instance.
+    /// Disposes an physics system instance. instance.
     /// </summary>
-    /// <param name="disposing"></param>
-    private void Dispose(bool disposing)
+    /// <param name="state">the physics system state to dispose.</param>
+    public static void Dispose(SoaPhysicsSystemState state)
     {
-        if (disposed)
-        {
+        if (state.IsDisposed)
             return;
-        }
+        
+        state.IsDisposed = true;
+        GC.SuppressFinalize(state);
 
-        if (disposing)
-        {
-            CollisionSystemState?.Dispose();
-            CollisionSystemState = null;
-
-            RigidbodySystemState?.Dispose();
-            RigidbodySystemState = null;
-        }
-
-        disposed = true;
-    }
-
-    ~SoaPhysicsSystemState()
-    {
-        Dispose(false);    
+        state.RigidbodySystemState?.Dispose();
+        state.RigidbodySystemState = null;
+        
     }
 }

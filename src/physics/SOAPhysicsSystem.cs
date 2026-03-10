@@ -10,6 +10,7 @@ using static Howl.Math.Math;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.DataStructures.BoundingVolumeHierarchy;
 using static Howl.Math.Shapes.AABB;
+using static Howl.Collections.Buffer;
 
 namespace Howl.Physics;
 
@@ -26,7 +27,6 @@ public static class SoaPhysicsSystem
     {
         state.FixedUpdateStepStopwatch.Restart();
 
-        CollisionSystemState colState = state.CollisionSystemState;
         RigidBodySystemState rigState = state.RigidbodySystemState;
 
         // scale delta time by the substeps.
@@ -36,9 +36,9 @@ public static class SoaPhysicsSystem
         {
             state.FixedUpdateSubStepStopwatch.Restart();
 
-            if(colState.CollisionManifold.Collisions.Count > 0)
+            if(state.CollisionManifold.Collisions.Count > 0)
             {
-                colState.CollisionManifold.Clear();
+                Clear(state.CollisionManifold.Collisions);
             }
 
             // Movement Step.
@@ -46,12 +46,12 @@ public static class SoaPhysicsSystem
             rigState.MovementStepStopwatch.Stop();
 
             // Sync Colliders to Transforms Step.
-            colState.SyncCollidersToTransformsStopwatch.Restart();
+            state.SyncCollidersToTransformsStopwatch.Restart();
             SyncPhysicsBodiesToEntityTransforms(registry, state.Transforms, state.Generations);
-            colState.SyncCollidersToTransformsStopwatch.Stop();
+            state.SyncCollidersToTransformsStopwatch.Stop();
 
             // Reconstruct Bvh.
-            colState.BvhReconstructionStopwatch.Restart();
+            state.BvhReconstructionStopwatch.Restart();
             ReconstructBvhTree(
                 state.TransformedVertices, 
                 state.TransformedRadii, 
@@ -59,26 +59,22 @@ public static class SoaPhysicsSystem
                 state.NextVertexIndice, 
                 state.Generations, 
                 state.Flags, 
-                colState.Bvh,
+                state.Bvh,
                 state.MaxPhysicsBodyVertexCount
             );
-            colState.BvhReconstructionStopwatch.Stop();
-
-            // Find Near Colliders.
-            colState.FindNearColliderPairsStopwatch.Restart();
-            colState.FindNearColliderPairsStopwatch.Stop();
+            state.BvhReconstructionStopwatch.Stop();
 
             // Process Near Colliders.
-            colState.ProcessNearColliderPairsStopwatch.Restart();
-            colState.ProcessNearColliderPairsStopwatch.Stop();
+            state.ProcessNearColliderPairsStopwatch.Restart();
+            state.ProcessNearColliderPairsStopwatch.Stop();
 
             // Resolve Collider Collisions.
             // NOTE: ordering matters here, make sure to resolve 
             // collisions before sorting the collision manifold.
             // Also make sure that this is above rigidbody collision resolution.
             // this function also moves the transforms of the colliders.
-            colState.ResolutionStopwatch.Restart();
-            colState.ResolutionStopwatch.Stop();
+            state.CollisionResolutionStopwatch.Restart();
+            state.CollisionResolutionStopwatch.Stop();
 
             // Resolve RigidBody Collisions.
             // NOTE: ordering matters here, make sure to resolve 
@@ -92,8 +88,8 @@ public static class SoaPhysicsSystem
             // sort the collision manifold after resolution step.
             // this is to ensure that binary searching for collisions
             // using a GenIndex work outside of this function.
-            colState.CollisionManifoldSortStopwatch.Restart();
-            colState.CollisionManifoldSortStopwatch.Stop();
+            state.CollisionManifoldSortStopwatch.Restart();
+            state.CollisionManifoldSortStopwatch.Stop();
 
             state.FixedUpdateSubStepStopwatch.Stop();
         }
@@ -337,7 +333,6 @@ public static class SoaPhysicsSystem
     {
         Span<SpatialPair> spatialPairs = AsSpan(state.Bvh.SpatialPairs);
         bool colliding = false;
-        int collisionCount = 0;
         
         for(int i = 0; i < spatialPairs.Length; i++)
         {

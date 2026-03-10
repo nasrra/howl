@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
 using Howl.ECS;
 using Howl.Math;
@@ -7,6 +9,11 @@ namespace Howl.Physics;
 
 public unsafe struct Collision
 {
+    /// <summary>
+    /// A comparer to sort collisions in an ascending order in relation to the owners index.
+    /// </summary>
+    public static Comparer<Collision> AscendingOwnerIndexComparer = Comparer<Collision>.Create((a, b) => a.Owner.Index.CompareTo(b.Owner.Index));
+
     /// <summary>
     /// Gets the maximum amount of contact points for a collision.
     /// </summary>
