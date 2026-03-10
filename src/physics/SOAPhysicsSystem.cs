@@ -2,10 +2,12 @@ using System;
 using Howl.ECS;
 using Howl.Math;
 using Howl.Math.Shapes;
+using Howl.Generic;
+using Howl.DataStructures;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Math;
 using static Howl.ECS.GenIndexListProc;
-using Howl.Generic;
+using static Howl.DataStructures.BoundingVolumeHierarchy;
 
 namespace Howl.Physics;
 
@@ -18,7 +20,7 @@ public static class SoaPhysicsSystem
         registry.RegisterComponent<PhysicsBodyId>();
     }
 
-    public static void FixedUpdate(ComponentRegistry componentRegistry, SoaPhysicsSystemState state, float deltaTime, int subSteps)
+    public static void FixedUpdate(ComponentRegistry registry, SoaPhysicsSystemState state, float deltaTime, int subSteps)
     {
         state.FixedUpdateStepStopwatch.Restart();
 
@@ -39,8 +41,57 @@ public static class SoaPhysicsSystem
 
             // Movement Step.
             rigState.MovementStepStopwatch.Restart();
-            
             rigState.MovementStepStopwatch.Stop();
+
+            // Sync Colliders to Transforms Step.
+            colState.SyncCollidersToTransformsStopwatch.Restart();
+            SyncPhysicsBodiesToEntityTransforms(registry, state.Transforms, state.Generations);
+            colState.SyncCollidersToTransformsStopwatch.Stop();
+
+            // Reconstruct Bvh.
+            colState.BvhReconstructionStopwatch.Restart();
+            ReconstructBvhTree(
+                state.TransformedVertices, 
+                state.TransformedRadii, 
+                state.FirstVertexIndice, 
+                state.NextVertexIndice, 
+                state.Generations, 
+                state.Flags, 
+                colState.Bvh,
+                state.MaxPhysicsBodyVertexCount
+            );
+            colState.BvhReconstructionStopwatch.Stop();
+
+            // Find Near Colliders.
+            colState.FindNearColliderPairsStopwatch.Restart();
+            colState.FindNearColliderPairsStopwatch.Stop();
+
+            // Process Near Colliders.
+            colState.ProcessNearColliderPairsStopwatch.Restart();
+            colState.ProcessNearColliderPairsStopwatch.Stop();
+
+            // Resolve Collider Collisions.
+            // NOTE: ordering matters here, make sure to resolve 
+            // collisions before sorting the collision manifold.
+            // Also make sure that this is above rigidbody collision resolution.
+            // this function also moves the transforms of the colliders.
+            colState.ResolutionStopwatch.Restart();
+            colState.ResolutionStopwatch.Stop();
+
+            // Resolve RigidBody Collisions.
+            // NOTE: ordering matters here, make sure to resolve 
+            // collisions before sorting the collision manifold.
+            // Also make sure that this is below collision resolution.
+            // this function also moves the transforms of the colliders.
+            rigState.CollisionResolutionStepStopwatch.Restart();
+            rigState.CollisionResolutionStepStopwatch.Stop();
+
+            // Sort Collision Manifold.
+            // sort the collision manifold after resolution step.
+            // this is to ensure that binary searching for collisions
+            // using a GenIndex work outside of this function.
+            colState.CollisionManifoldSortStopwatch.Restart();
+            colState.CollisionManifoldSortStopwatch.Stop();
 
             state.FixedUpdateSubStepStopwatch.Stop();
         }
@@ -48,7 +99,13 @@ public static class SoaPhysicsSystem
         state.FixedUpdateStepStopwatch.Stop();
     }
 
-    public static void SyncTransforms(ComponentRegistry componentRegistry, SoaTransform soaTransform, Span<int> generation)
+    /// <summary>
+    /// Syncs an SoaTransform collection to entities that contain both a transform component and a physics body id component. 
+    /// </summary>
+    /// <param name="componentRegistry">the component registry housing the entity components.</param>
+    /// <param name="soaTransform">the structure-of-array transforms to mutate in relation to the entity data.</param>
+    /// <param name="generation">the generations for each entry in the SOA transform's.</param>
+    public static void SyncPhysicsBodiesToEntityTransforms(ComponentRegistry componentRegistry, SoaTransform soaTransform, Span<int> generation)
     {
         GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
         GenIndexList<PhysicsBodyId> bodyIds = componentRegistry.Get<PhysicsBodyId>();
@@ -108,31 +165,31 @@ public static class SoaPhysicsSystem
                 if((flag & PhysicsBodyFlags.PolygonShape) != 0)
                 {
                     int first = firstVertice[i]; 
-                    int v = first;
+                    int verticeIndex = first;
                     while (true)
                     {
 
                         // transform the base/un-transformed vertice.
                         TransformVector(
-                            soaVertice.X[v],
-                            soaVertice.Y[v],
-                            soaTransform.Scale.X[v],
-                            soaTransform.Scale.Y[v],
-                            soaTransform.Cos[v],
-                            soaTransform.Sin[v],
-                            soaTransform.Position.X[v],
-                            soaTransform.Position.Y[v],
+                            soaVertice.X[verticeIndex],
+                            soaVertice.Y[verticeIndex],
+                            soaTransform.Scale.X[verticeIndex],
+                            soaTransform.Scale.Y[verticeIndex],
+                            soaTransform.Cos[verticeIndex],
+                            soaTransform.Sin[verticeIndex],
+                            soaTransform.Position.X[verticeIndex],
+                            soaTransform.Position.Y[verticeIndex],
                             out float x,
                             out float y
                         );
 
                         // mutate the transformed vertices array.
-                        soaTransformedVertice.X[v] = x;
-                        soaTransformedVertice.Y[v] = y;
+                        soaTransformedVertice.X[verticeIndex] = x;
+                        soaTransformedVertice.Y[verticeIndex] = y;
 
-                        v = nextVertice[v];
+                        verticeIndex = nextVertice[verticeIndex];
 
-                        if (v == first)
+                        if (verticeIndex == first)
                             break;
                     }
                 }
@@ -159,6 +216,119 @@ public static class SoaPhysicsSystem
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Reconstructs a bounding volume hierarchy tree with physics body data.
+    /// </summary>
+    /// <remarks>
+    /// Note: 
+    /// Matching lengths are required as data is associated via index (SOA).
+    /// - 'next vertex indices' and 'transformed vertices' must be the same length.
+    /// - 'transformed radii', 'generations', 'first vertex indices' and 'flags' must be the same length.
+    /// </remarks>
+    /// <param name="transformedVertices">the transformed vertices of all physics bodies to insert into the bounding volume hierarchy.</param>
+    /// <param name="transformedRadii">the transformed radii of circle physics bodies to calculate the bounding box necessary for insertion in the bounding volume hierarchy.</param>
+    /// <param name="firstVertexIndices">the first vertex indices for each physics body.</param>
+    /// <param name="nextVertexIndices">the next vertex indices for each vertex in transform vertices.</param>
+    /// <param name="generations">the generation for each physics body.</param>
+    /// <param name="flags">the flags for each physics body.</param>
+    /// <param name="bvh">the bounding volume hierarchy.</param>
+    /// <param name="maxPhysicsBodyVertexCount">the max amount of vertices that a physics body shape can have.</param>
+    public static void ReconstructBvhTree(
+        SoaVector2 transformedVertices, 
+        Span<float> transformedRadii,
+        Span<int> firstVertexIndices, 
+        Span<int> nextVertexIndices, 
+        Span<int> generations,
+        Span<PhysicsBodyFlags> flags, 
+        BoundingVolumeHierarchy bvh,
+        int maxPhysicsBodyVertexCount
+    )
+    {   
+        // clear the previous bvh data.
+        Clear(bvh);
+
+        // create spans of the maximum amount of vertices a given 
+        // body shape can store.
+        Span<float> x = stackalloc float[maxPhysicsBodyVertexCount];
+        Span<float> y = stackalloc float[maxPhysicsBodyVertexCount];
+
+        for(int i = 0; i < flags.Length; i++)
+        {
+            ref PhysicsBodyFlags flag = ref flags[i];
+            if((flag & PhysicsBodyFlags.Allocated) != 0 && (flag & PhysicsBodyFlags.Active) != 0)
+            {
+                float minX;
+                float minY;
+                float maxX;
+                float maxY;
+
+                if((flag & PhysicsBodyFlags.PolygonShape) != 0)
+                {
+
+                    // get the body's shape vertices.
+                    int verticeCount = 0;
+                    int firstVerticeIndex = firstVertexIndices[i];
+                    int verticeIndex = firstVerticeIndex;
+                    
+                    while (true)
+                    {
+                        // store the vertice data.
+                        x[verticeCount] = transformedVertices.X[verticeIndex];
+                        y[verticeCount] = transformedVertices.Y[verticeIndex];
+                        
+                        // go to the next vertice.
+                        verticeCount++;
+                        verticeIndex = nextVertexIndices[verticeIndex];
+                        
+                        // break when looping back to the start.
+                        if(verticeIndex == firstVerticeIndex)
+                            break;    
+                    }
+
+                    // get the min and max vertices of the current body.
+                    GetMinMaxVectors(
+                        x.Slice(0, verticeCount), // only read the valid vertices data.
+                        y.Slice(0, verticeCount), // only read the valid vertices data.
+                        out minX,
+                        out minY,
+                        out maxX,
+                        out maxY
+                    );
+                    
+                }
+                else // circle
+                {
+                    Circle.GetMinMaxVectors(
+                        transformedVertices.X[i],
+                        transformedVertices.Y[i],
+                        transformedRadii[i],
+                        out minX,
+                        out minY,
+                        out maxX,
+                        out maxY
+                    );
+                }
+
+                // insert into the bvh.
+                InsertLeaf(
+                    bvh,
+                    new Leaf(
+                        minX,
+                        minY,
+                        maxX,
+                        maxY,
+                        i,
+                        generations[i],
+                        (byte)flag // this is okay as PhysicsBodyFlags is a byte under the hood.
+                    )
+                );
+            }
+        }
+
+        // construct the bvh with the new data.
+        ConstructTree(bvh);
     }
 
 
@@ -190,11 +360,12 @@ public static class SoaPhysicsSystem
     public static int AddVertices(SoaPhysicsSystemState state, Span<float> verticesX, Span<float> verticesY, out int firstIndex, out int vertexCount)
     {
         if(verticesX.Length != verticesY.Length)
-        {
             throw new ArgumentException($"vertices X length '{verticesX.Length}' must be equalt to vertices Y length '{verticesY.Length}'");
-        }
 
         vertexCount = verticesX.Length;
+
+        if(vertexCount > state.MaxPhysicsBodyVertexCount)
+            throw new ArgumentException($"vertices cannot have a length greater than the state's set max physics body vertice count '{state.MaxPhysicsBodyVertexCount}'");
 
         // set the first index.
         firstIndex = state.FreeVertexIndex.Pop();
@@ -210,12 +381,12 @@ public static class SoaPhysicsSystem
             index = state.FreeVertexIndex.Pop();
             state.Vertices.X[index] = verticesX[i];
             state.Vertices.Y[index] = verticesY[i];
-            state.NextVertices[previousIndex] = index;
+            state.NextVertexIndice[previousIndex] = index;
         }
 
         // loop back to the beginning.
         // note: this is very important, do not remove this.
-        state.NextVertices[index] = firstIndex;
+        state.NextVertexIndice[index] = firstIndex;
 
         return firstIndex;
     }
@@ -464,9 +635,9 @@ public static class SoaPhysicsSystem
         // apply data.
         int index = state.FreePhysicsBodyIndex.Pop();
 
-        state.Radii[index]     = shape.Radius;
-        state.Vertices.X[index]   = shape.X;
-        state.Vertices.Y[index]   = shape.Y;
+        state.Radii[index]      = shape.Radius;
+        state.Vertices.X[index] = shape.X;
+        state.Vertices.Y[index] = shape.Y;
         state.Flags[index]      = flags;
 
         // return gen index.
@@ -501,9 +672,9 @@ public static class SoaPhysicsSystem
         // apply data.
         int index = state.FreePhysicsBodyIndex.Pop();
 
-        state.Radii[index]     = shape.Radius;
-        state.Vertices.X[index]   = shape.X;
-        state.Vertices.Y[index]   = shape.Y;
+        state.Radii[index]      = shape.Radius;
+        state.Vertices.X[index] = shape.X;
+        state.Vertices.Y[index] = shape.Y;
         state.Flags[index]      = flags;
 
         // return gen index.
@@ -539,12 +710,12 @@ public static class SoaPhysicsSystem
         // apply data.
         int index = state.FreePhysicsBodyIndex.Pop();
 
-        state.Radii[index]             = shape.Radius;
-        state.Vertices.X[index]           = shape.X;
-        state.Vertices.Y[index]           = shape.Y;
+        state.Radii[index]              = shape.Radius;
+        state.Vertices.X[index]         = shape.X;
+        state.Vertices.Y[index]         = shape.Y;
         state.Flags[index]              = flags;
-        state.StaticFrictions[index]     = physicsMaterial.StaticFriction;
-        state.KineticFrictions[index]    = physicsMaterial.KineticFriction;
+        state.StaticFrictions[index]    = physicsMaterial.StaticFriction;
+        state.KineticFrictions[index]   = physicsMaterial.KineticFriction;
 
         // return gen index.
 
@@ -592,11 +763,10 @@ public static class SoaPhysicsSystem
         int bodyIndex = state.FreePhysicsBodyIndex.Pop();
         AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
 
-        state.Heights[bodyIndex]         = shape.Height;
-        state.Widths[bodyIndex]          = shape.Width;
+        state.Heights[bodyIndex]        = shape.Height;
+        state.Widths[bodyIndex]         = shape.Width;
         state.Flags[bodyIndex]          = flags;
-        state.FirstVertices[bodyIndex]   = verticeFirstIndex;
-        state.VerticeCounts[bodyIndex]   = verticeCount;
+        state.FirstVertexIndice[bodyIndex]  = verticeFirstIndex;
 
         // return gen index.
 
@@ -632,11 +802,10 @@ public static class SoaPhysicsSystem
         int bodyIndex = state.FreePhysicsBodyIndex.Pop();
         AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
 
-        state.Heights[bodyIndex]         = shape.Height;
-        state.Widths[bodyIndex]          = shape.Width;
+        state.Heights[bodyIndex]        = shape.Height;
+        state.Widths[bodyIndex]         = shape.Width;
         state.Flags[bodyIndex]          = flags;
-        state.FirstVertices[bodyIndex]   = verticeFirstIndex;
-        state.VerticeCounts[bodyIndex]   = verticeCount;
+        state.FirstVertexIndice[bodyIndex]  = verticeFirstIndex;
 
         // return gen index.
 
@@ -673,13 +842,12 @@ public static class SoaPhysicsSystem
         int bodyIndex = state.FreePhysicsBodyIndex.Pop();
         AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
 
-        state.Heights[bodyIndex]             = shape.Height;
-        state.Widths[bodyIndex]              = shape.Width;
+        state.Heights[bodyIndex]            = shape.Height;
+        state.Widths[bodyIndex]             = shape.Width;
         state.Flags[bodyIndex]              = flags;
-        state.FirstVertices[bodyIndex]       = verticeFirstIndex;
-        state.VerticeCounts[bodyIndex]       = verticeCount;
-        state.KineticFrictions[bodyIndex]    = physicsMaterial.KineticFriction;
-        state.StaticFrictions[bodyIndex]     = physicsMaterial.StaticFriction;
+        state.FirstVertexIndice[bodyIndex]      = verticeFirstIndex;
+        state.KineticFrictions[bodyIndex]   = physicsMaterial.KineticFriction;
+        state.StaticFrictions[bodyIndex]    = physicsMaterial.StaticFriction;
 
         // return gen index.
 

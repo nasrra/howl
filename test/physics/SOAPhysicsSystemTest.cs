@@ -10,7 +10,8 @@ namespace Howl.Test.Physics;
 public class SOAPhysicsSystemTest
 {
     int maxBodies = 10;
-    int maxVertices = 100;
+    int maxBodyShapeVertices = 100;
+    int maxBodyShapeVerticeCount = 5;
 
 
 
@@ -66,12 +67,12 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AddVertices_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxVertices, new(), new());        
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());        
         
         // first data set test.
 
         AddVertices(state, [0,1,2,3], [2,3,4,5], out int firstIndex, out int vertexCount);
-        int nextIndex = state.NextVertices[firstIndex];
+        int nextIndex = state.NextVertexIndice[firstIndex];
         
         bool circular = false;
         for(int i = 0; i < vertexCount; i++)
@@ -88,7 +89,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void SetTransform_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxVertices, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
 
         GenIndex genIndex = new GenIndex(1,0);
         float posX = -2.5f;
@@ -131,7 +132,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateCircleCollider_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxVertices, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
         
         float posX;
         float posY;
@@ -180,7 +181,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateCircleRigidbodyWithoutPhysicsMaterial_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxVertices, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
 
         float posX;
         float posY;
@@ -229,7 +230,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateCircleRigidBodyWithPhysicsMaterial_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxVertices, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
                 
         float posX;
         float posY;
@@ -334,7 +335,7 @@ public class SOAPhysicsSystemTest
         {
             Assert.Equal(expectedX[i], state.Vertices.X[v], precision: 1);
             Assert.Equal(expectedY[i], state.Vertices.Y[v], precision: 1);
-            v = state.NextVertices[v];
+            v = state.NextVertexIndice[v];
         }
     }
 
@@ -344,7 +345,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateRectangleCollider_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxVertices, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
 
         float posX;
         float posY;
@@ -366,8 +367,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.VerticeCounts[genIndex.Index]);
-        Assert.Equal(0, state.FirstVertices[genIndex.Index]);
+        Assert.Equal(0, state.FirstVertexIndice[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.False(HasRigidBody(state, genIndex));
@@ -376,7 +376,7 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertices[genIndex.Index];
+        firstVertice = state.FirstVertexIndice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
 
         posX = 123;
@@ -391,8 +391,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.VerticeCounts[genIndex.Index]);
-        Assert.Equal(4, state.FirstVertices[genIndex.Index]);
+        Assert.Equal(4, state.FirstVertexIndice[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.False(HasRigidBody(state, genIndex));
@@ -401,7 +400,7 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertices[genIndex.Index];
+        firstVertice = state.FirstVertexIndice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
     }
 
@@ -411,7 +410,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateRectangleRigidBodyWithoutPhysicsMaterial_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxVertices, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
 
         float posX;
         float posY;
@@ -433,8 +432,7 @@ public class SOAPhysicsSystemTest
     
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.VerticeCounts[genIndex.Index]);
-        Assert.Equal(0, state.FirstVertices[genIndex.Index]);
+        Assert.Equal(0, state.FirstVertexIndice[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.True(HasRigidBody(state, genIndex));
@@ -443,7 +441,7 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
         
-        firstVertice = state.FirstVertices[genIndex.Index];
+        firstVertice = state.FirstVertexIndice[genIndex.Index];
 
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
 
@@ -459,8 +457,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.VerticeCounts[genIndex.Index]);
-        Assert.Equal(4, state.FirstVertices[genIndex.Index]);
+        Assert.Equal(4, state.FirstVertexIndice[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.True(HasRigidBody(state, genIndex));
@@ -469,7 +466,7 @@ public class SOAPhysicsSystemTest
         Assert.False(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertices[genIndex.Index];
+        firstVertice = state.FirstVertexIndice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
     }
 
@@ -479,7 +476,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateRectangleRigidBody_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxVertices, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
 
         float posX;
         float posY;
@@ -503,8 +500,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.VerticeCounts[genIndex.Index]);
-        Assert.Equal(0, state.FirstVertices[genIndex.Index]);
+        Assert.Equal(0, state.FirstVertexIndice[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.True(HasRigidBody(state, genIndex));
@@ -513,7 +509,7 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertices[genIndex.Index];
+        firstVertice = state.FirstVertexIndice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
         
@@ -530,8 +526,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.VerticeCounts[genIndex.Index]);
-        Assert.Equal(4, state.FirstVertices[genIndex.Index]);
+        Assert.Equal(4, state.FirstVertexIndice[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.True(HasRigidBody(state, genIndex));
@@ -540,7 +535,7 @@ public class SOAPhysicsSystemTest
         Assert.False(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertices[genIndex.Index];
+        firstVertice = state.FirstVertexIndice[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
     }
@@ -561,7 +556,7 @@ public class SOAPhysicsSystemTest
     public void TransformPhysicsBodyVertices_Test()
     {        
         
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxVertices, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
         
         // define and insert circle.
 
@@ -593,8 +588,8 @@ public class SOAPhysicsSystemTest
             state.Flags, 
             state.Radii,
             state.TransformedRadii,
-            state.FirstVertices,
-            state.NextVertices, 
+            state.FirstVertexIndice,
+            state.NextVertexIndice, 
             0, 
             maxBodies
         );
@@ -606,7 +601,7 @@ public class SOAPhysicsSystemTest
         AssertTransform(state, cTransform, cBodyGenIndex);
 
         // assert rect.
-        int first = state.FirstVertices[rBodyGenIndex.Index];
+        int first = state.FirstVertexIndice[rBodyGenIndex.Index];
         int v = first;
         int count = 0;
         while (true)
@@ -623,7 +618,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void SyncTransforms_Test()
     {
-        SoaPhysicsSystemState state = new(maxBodies, maxVertices, new(), new());
+        SoaPhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
         GenIndexAllocator allocator = new();
         ComponentRegistry registry = new(allocator);
         SoaPhysicsSystem.RegisterComponents(registry);
@@ -657,7 +652,7 @@ public class SOAPhysicsSystemTest
         GenIndexListProc.Allocate(registry.Get<Transform>(), rEntityGenIndex, rTransform);
     
         // sync the physics engine with the transforms.
-        SyncTransforms(registry, state.Transforms, state.Generations);
+        SyncPhysicsBodiesToEntityTransforms(registry, state.Transforms, state.Generations);
 
         // ensure the data was properly set inside the state.
         AssertTransform(state, cTransform, cBodyGenIndex);    

@@ -67,23 +67,18 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public float[] KineticFrictions;
     
     /// <summary>
-    /// Gets and sets the first index of a physics bodies first vertice of physics body's shape.
+    /// Gets and sets the first index of a physics bodies first vertex of physics body's shape.
     /// </summary>
-    public int[] FirstVertices;
+    public int[] FirstVertexIndice;
 
     /// <summary>
-    /// Gets and sets the count of vertices of a physics body's shape.
-    /// </summary>
-    public int[] VerticeCounts;
-
-    /// <summary>
-    /// The index of the next vertice of a given shape's vertex.
+    /// The index of the next vertex of a given shape's vertex.
     /// </summary>
     /// <remarks>
     /// Note: the next index for a given shape are stored in a circular intrusive linked list; 
-    /// meaning that the next vertice index of the final vertice will be the first vertice index. 
+    /// meaning that the next vertice index of the final vertex will be the first vertex index. 
     /// </remarks>
-    public int[] NextVertices;
+    public int[] NextVertexIndice;
     
     /// <summary>
     /// The generation of a physics body id.
@@ -126,6 +121,16 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public int AlloctedPhysicsBodyCount = 0;
 
     /// <summary>
+    /// Gets and sets the maximum amount of vertices a physics body can have.
+    /// </summary>
+    /// <remarks>
+    /// Note: this value should never shrink - only enlargen;
+    /// undefined behaviour may occur when the value is set to
+    /// lower then its stored value.
+    /// </remarks>
+    public int MaxPhysicsBodyVertexCount;
+
+    /// <summary>
     /// Gets and sets whether or not this instance has been diposed.
     /// </summary>
     private bool disposed;
@@ -135,7 +140,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// </summary>
     public bool IsDisposed => disposed;
 
-    public SoaPhysicsSystemState(int physicsBodyCount, int maxVertices, CollisionSystemState collisionSystemState, RigidBodySystemState rigidbodySystemState)
+    public SoaPhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount, CollisionSystemState collisionSystemState, RigidBodySystemState rigidbodySystemState)
     {
         if (collisionSystemState == null)
         {
@@ -162,11 +167,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
         StaticFrictions         = new float[physicsBodyCount];
         KineticFrictions        = new float[physicsBodyCount];
         TransformedRadii        = new float[physicsBodyCount];
-        NextVertices            = new int[maxVertices];
+        NextVertexIndice            = new int[physicsBodyVerticesCount];
         Generations             = new int[physicsBodyCount];
-        FirstVertices           = new int[physicsBodyCount];
-        VerticeCounts           = new int[physicsBodyCount];
-
+        FirstVertexIndice           = new int[physicsBodyCount];
         
         FreePhysicsBodyIndex = new();
         FreeVertexIndex = new();
@@ -174,8 +177,10 @@ public sealed class SoaPhysicsSystemState : IDisposable
         for(int i = physicsBodyCount-1; i >= 0; i--)
             FreePhysicsBodyIndex.Push(i); // push all available indices to the stack.
 
-        for(int i = maxVertices-1; i >= 0; i--)
+        for(int i = physicsBodyVerticesCount-1; i >= 0; i--)
             FreeVertexIndex.Push(i); // push all available indices to the stack.
+
+        MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;
     }
 
     /// <summary>
