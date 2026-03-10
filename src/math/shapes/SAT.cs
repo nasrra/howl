@@ -50,15 +50,35 @@ public static class SAT
     /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side circle.</param>
     /// <param name="depth">the depth of the intersection in relation to the right-hand side circle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect(in Circle lhs, in Circle rhs, out float normalX, out float normalY, out float depth)
+    {
+        return Intersect(lhs.X, lhs.Y, lhs.Radius, rhs.X, rhs.Y , rhs.Radius, out normalX, out normalY, out depth);
+    }
+
+    /// <summary>
+    /// Checks for intersection between two circles.
+    /// </summary>
+    /// <param name="lhsX">the positional x-component of the left-hand side circle.</param>
+    /// <param name="lhsY">the positional y-component of the left-hand side circle.</param>
+    /// <param name="lhsRadius">the radius of the left-hand side circle.</param>
+    /// <param name="rhsX">the positional x-component of the right-hand side circle.</param>
+    /// <param name="rhsY">the positional y-component of the right-hand side circle.</param>
+    /// <param name="rhsRadius">the radius of the right-hand side circle.</param>
+    /// <param name="normalX">the x-component of the intersection normal in relation to the right-hand side circle.</param>
+    /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side circle.</param>
+    /// <param name="depth">the depth of the intersection in relation to the right-hand side circle.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(float lhsX, float lhsY, float lhsRadius, float rhsX, float rhsY, float rhsRadius, out float normalX, out float normalY, out float depth)
     {
         normalX = InitialNormalX;
         normalY = InitialNormalY;
         depth = 0f;
 
-        float distanceSqrd = DistanceSquared(lhs.X, lhs.Y, rhs.X, rhs.Y);
+        float distanceSqrd = DistanceSquared(lhsX, lhsY, rhsX, rhsY);
 
-        float radiusSum = lhs.Radius + rhs.Radius;
+        float radiusSum = lhsRadius + rhsRadius;
         float radiusSumSq = radiusSum * radiusSum;
 
         if (distanceSqrd >= radiusSumSq)
@@ -73,7 +93,7 @@ public static class SAT
         }
 
         float distance = MathF.Sqrt(distanceSqrd);
-        Normalise(rhs.X - lhs.X, rhs.Y - lhs.Y, out normalX, out normalY);
+        Normalise(rhsX - lhsX, rhsY - lhsY, out normalX, out normalY);
         depth = radiusSum - distance;
         return true;        
     }
@@ -532,20 +552,6 @@ public static class SAT
         }
     }  
 
-    /// <summary>
-    /// Finds the contact point between two intersecting circles.
-    /// </summary>
-    /// <param name="a">circle a.</param>
-    /// <param name="b">circle b.</param>
-    /// <param name="xContactPoint">the x-value of the calculated contact point vector.</param>
-    /// <param name="yContactPoint">the y-value of the calculated contact point vector.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(in Circle a, in Circle b, out float xContactPoint, out float yContactPoint)
-    {
-        FindContactPoints(a,b,out Vector2 contactPoint);
-        xContactPoint = contactPoint.X;
-        yContactPoint = contactPoint.Y;
-    }
 
     /// <summary>
     /// Finds the contact point between two intersecting circles.
@@ -556,9 +562,41 @@ public static class SAT
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FindContactPoints(in Circle a, in Circle b, out Vector2 contactPoint)
     {
-        Vector2 distance = Center(b) - Center(a);
-        Vector2 direction = distance.Normalise();
-        contactPoint = Center(a) + (direction * a.Radius);
+        FindContactPoints(a, b, out float xContactPoint, out float yContactPoint);
+        contactPoint = new Vector2(xContactPoint, yContactPoint);
+    }
+
+    /// <summary>
+    /// Finds the contact point between two intersecting circles.
+    /// </summary>
+    /// <param name="a">circle a.</param>
+    /// <param name="b">circle b.</param>
+    /// <param name="xContactPoint">the x-value of the calculated contact point vector.</param>
+    /// <param name="yContactPoint">the y-value of the calculated contact point vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(in Circle a, in Circle b, out float xContactPoint, out float yContactPoint)
+    {
+        FindContactPoints(a.X, a.Y, a.Radius, b.X, b.Y, out xContactPoint, out yContactPoint);
+    }
+
+    /// <summary>
+    /// Finds the contact points between two circles.
+    /// </summary>
+    /// <param name="aX">the positional x-component of circle a.</param>
+    /// <param name="aY">the positional y-component of circle a.</param>
+    /// <param name="aRadius">the radius of circle a.</param>
+    /// <param name="bX">the positional x-component of circle b.</param>
+    /// <param name="bY">the positional y-component of circle b.</param>
+    /// <param name="contactPointX">the x-component of the point of contact.</param>
+    /// <param name="contactPointY">the x-component of the point of contact.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(float aX, float aY, float aRadius, float bX, float bY, out float contactPointX, out float contactPointY)
+    {
+        float distanceX = bX - aX;
+        float distanceY = bY - aY;
+        Normalise(distanceX, distanceY, out float directionX, out float directionY);
+        contactPointX = aX + (directionX * aRadius);
+        contactPointY = aY + (directionY * aRadius);
     }
 
     /// <summary>

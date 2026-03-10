@@ -4,10 +4,12 @@ using Howl.Math;
 using Howl.Math.Shapes;
 using Howl.Generic;
 using Howl.DataStructures;
+using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Math;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.DataStructures.BoundingVolumeHierarchy;
+using static Howl.Math.Shapes.AABB;
 
 namespace Howl.Physics;
 
@@ -329,6 +331,133 @@ public static class SoaPhysicsSystem
 
         // construct the bvh with the new data.
         ConstructTree(bvh);
+    }
+
+    public static void FindCollisions(CollisionSystemState state)
+    {
+        Span<SpatialPair> spatialPairs = AsSpan(state.Bvh.SpatialPairs);
+        bool colliding = false;
+        int collisionCount = 0;
+        
+        for(int i = 0; i < spatialPairs.Length; i++)
+        {
+            ref SpatialPair pair = ref spatialPairs[i];
+            PhysicsBodyFlags ownerFlag = (PhysicsBodyFlags)pair.Owner.Flag;
+            PhysicsBodyFlags otherFlag = (PhysicsBodyFlags)pair.Other.Flag;
+
+
+            if((ownerFlag & PhysicsBodyFlags.PolygonShape) != 0)
+            {
+                if((otherFlag & PhysicsBodyFlags.PolygonShape) != 0)
+                {
+                    
+                }
+                else // other is circle.
+                {
+                    
+                }
+            }
+            else // owner is circle.
+            {
+                if((otherFlag & PhysicsBodyFlags.PolygonShape) != 0)
+                {
+                    
+                }
+                else // other is circle.
+                {
+                    // colliding = CircleBodiesAreColliding();
+                }
+            }
+
+            if (colliding)
+            {
+                // RegisterCollision(
+                //     CircleCollisionContext.CollisionManifold,
+                //     pair.ColliderA,
+                //     pair.ColliderB,
+                //     colliderA.Parameters,
+                //     colliderB.Parameters,
+                //     [xContactPoint],
+                //     [yContactPoint],
+                //     normalX, 
+                //     normalY, 
+                //     colliderA.TransformedShape.X, 
+                //     colliderA.TransformedShape.Y, 
+                //     colliderB.TransformedShape.X, 
+                //     colliderB.TransformedShape.Y, 
+                //     in depth
+                // );                
+            }
+
+        }
+    }
+
+    public static bool CircleBodiesAreColliding(
+        Span<float> transformedVerticesX, 
+        Span<float> transformedVerticesY, 
+        Span<float> transformedRadii,
+        int circleA, 
+        int circleB,
+        out float normalX,
+        out float normalY,
+        out float depth,
+        out float contactPointX,
+        out float contactPointY
+    )
+    {
+        
+        normalX         = 0;
+        normalY         = 0;
+        depth           = 0;
+        contactPointX   = 0;
+        contactPointY   = 0;
+
+        float aX        = transformedVerticesX[circleA];
+        float aY        = transformedVerticesY[circleA];
+        float aRadius   = transformedRadii[circleA];
+        float bX        = transformedVerticesX[circleB];
+        float bY        = transformedVerticesY[circleB];
+        float bRadius   = transformedRadii[circleB];
+
+        // get AABB of circle A.
+        Circle.GetMinMaxVectors(
+            transformedVerticesX[circleA], 
+            transformedVerticesY[circleA], 
+            transformedRadii[circleA], 
+            out float aMinX,
+            out float aMinY,
+            out float aMaxX,
+            out float aMaxY
+        );
+
+        // get AABB of circle B.
+        Circle.GetMinMaxVectors(
+            transformedVerticesX[circleB], 
+            transformedVerticesY[circleB], 
+            transformedRadii[circleB], 
+            out float bMinX,
+            out float bMinY,
+            out float bMaxX,
+            out float bMaxY
+        );
+
+        // Broad Phase:
+        if (Intersect(aMinX, aMinY, aMaxX, aMaxY, bMinX, bMinY, bMaxX, bMaxY) == false)
+        {
+            return false;
+        }
+
+
+        // Narrow Phase:
+        // perform an SAT check.
+        if(SAT.Intersect(aX, aY, aRadius, bX, bY, bRadius, out normalX, out normalY, out depth))
+        {
+            // submit the collision with contact points if one of the colliders needs them.
+            SAT.FindContactPoints(aX, aY, aRadius, bX, bY, out contactPointX, out contactPointY);
+            return true;
+        }   
+        return false;
+
     }
 
 
