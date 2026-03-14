@@ -118,6 +118,7 @@ public static class CollisionSystem
         
         for(int i = 0; i < denseEntries.Length; i++)
         {
+            
             ref DenseEntry<CircleCollider> denseEntry = ref denseEntries[i];
             ref CircleCollider collider = ref denseEntry.Value;
             GetGenIndex(colliders, denseEntry.sparseIndex, out GenIndex genIndex);
@@ -654,7 +655,17 @@ public static class CollisionSystem
                 transformRefB.Value.Position.X += displacementX;
                 transformRefB.Value.Position.Y += displacementY;    
             }
+            
+            var a = transformRefA.Value.Position;
+            var b = transformRefB.Value.Position;
+
+            if (float.IsNaN(a.X) || float.IsNaN(a.Y) ||
+                float.IsNaN(b.X) || float.IsNaN(b.Y))
+            {
+                System.Diagnostics.Debug.Assert(false, "NaN!");
+            }
         }
+
 
         // add the resolved collisions to the collisions list.
         state.CollisionManifold.Collisions.AddRange(state.CollisionManifold.CollisionsToResolve);

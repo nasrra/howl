@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../src/howl.csproj"/>
+    <ProjectReference Include="../src/Howl.csproj"/>
   </ItemGroup>
 
   <ItemGroup>

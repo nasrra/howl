@@ -43,7 +43,7 @@ OUTPUT_DIR=${BUILD_TYPE_DIRECTORY[$BUILD_TYPE]}
 # list matching nuget packages and order from latest modified: ls bin/Debug/Howl.*.nupkg
 # ls -t lists files sorted newest first
 # head -n 1 picks the first file only — the newest one
-NUPKG_FILE=$(ls -t "$OUTPUT_DIR"howl.*.nupkg 2>/dev/null | head -n 1)
+NUPKG_FILE=$(ls -t "$OUTPUT_DIR"Howl.*.nupkg 2>/dev/null | head -n 1)
 
 if [[ -z "$NUPKG_FILE" ]]; then
 echo "[ERROR] No nupkg file found at ${OUTPUT_DIR}"

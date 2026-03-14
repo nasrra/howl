@@ -79,7 +79,6 @@ public static class SAT
         depth = 0f;
 
         float distanceSqrd = DistanceSquared(lhsX, lhsY, rhsX, rhsY);
-5
         float radiusSum = lhsRadius + rhsRadius;
         float radiusSumSq = radiusSum * radiusSum;
 
@@ -655,8 +654,11 @@ public static class SAT
         float distanceX = bX - aX;
         float distanceY = bY - aY;
         Normalise(distanceX, distanceY, out float directionX, out float directionY);
-        contactPointX = aX + (directionX * aRadius);
-        contactPointY = aY + (directionY * aRadius);
+        
+        // check for Nan in case the two circles are perfectly ontop of one another,
+        // as normalising a distance of zero gives a NaN.
+        contactPointX = float.IsNaN(directionX)? aX : aX + (directionX * aRadius);
+        contactPointY = float.IsNaN(directionX)? aY : aY + (directionY * aRadius); 
     }
 
 
