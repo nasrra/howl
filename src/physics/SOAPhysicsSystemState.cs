@@ -33,17 +33,17 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// <remarks>
     /// Note: this is the base/untransformed value for a physics body shape vertice.
     /// </remarks>
-    public SoaVector2 Vertices;
+    public Soa_Vector2 Vertices;
     
     /// <summary>
     /// Gets and sets the transformed vertice positions of all physics bodies.  
     /// </summary>
-    public SoaVector2 TransformedVertices;
+    public Soa_Vector2 TransformedVertices;
 
     /// <summary>
     /// Gets and sets the transforms of all physics bodies.
     /// </summary>
-    public SoaTransform Transforms;
+    public Soa_Transform Transforms;
 
     /// <summary>
     /// Gets and sets the widths of all physics bodies.
@@ -341,9 +341,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
         Widths                  = new float[physicsBodyCount];
         Heights                 = new float[physicsBodyCount];
         Radii                   = new float[physicsBodyCount];
-        Vertices                = new SoaVector2(physicsBodyCount);
-        TransformedVertices     = new SoaVector2(physicsBodyCount);
-        Transforms              = new SoaTransform(physicsBodyCount);
+        Vertices                = new Soa_Vector2(physicsBodyCount);
+        TransformedVertices     = new Soa_Vector2(physicsBodyCount);
+        Transforms              = new Soa_Transform(physicsBodyCount);
         StaticFrictions         = new float[physicsBodyCount];
         KineticFrictions        = new float[physicsBodyCount];
         TransformedRadii        = new float[physicsBodyCount];

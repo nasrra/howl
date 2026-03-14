@@ -2,28 +2,29 @@ using System;
 using Howl.Collections;
 using Howl.ECS;
 using Howl.Physics;
+using static Howl.Physics.Soa_Collision;
 
 public class CollisionManifoldNew : IDisposable
 {
     /// <summary>
     /// Gets and sets the circle to circle collisions to resolve.
     /// </summary>
-    public Buffer<Collision> CircleCollisionsToResolve;
+    public Soa_Collision CircleCollisionsToResolve;
 
     /// <summary>
     /// Gets and sets the polygon to polygon collisions to resolve.
     /// </summary>
-    public Buffer<Collision> PolygonCollisionsToResolve;
+    public Soa_Collision PolygonCollisionsToResolve;
 
     /// <summary>
     /// Gets and sets the polyon to circle collisions to resolve.
     /// </summary>
-    public Buffer<Collision> PolygonToCircleCollisionsToResolve;
+    public Soa_Collision PolygonToCircleCollisionsToResolve;
 
     /// <summary>
     /// Gets and sets all found collisions.
     /// </summary>
-    public Buffer<Collision> Collisions;
+    public Soa_Collision Collisions;
 
     /// <summary>
     /// Gets and sets whetheror not this instance has been disposed.
@@ -36,10 +37,10 @@ public class CollisionManifoldNew : IDisposable
     /// <param name="maxCollisions"></param>
     public CollisionManifoldNew(int maxCollisions)
     {
-        CircleCollisionsToResolve           = new Buffer<Collision>(maxCollisions);
-        PolygonCollisionsToResolve          = new Buffer<Collision>(maxCollisions);
-        PolygonToCircleCollisionsToResolve  = new Buffer<Collision>(maxCollisions);
-        Collisions                          = new Buffer<Collision>(maxCollisions);
+        CircleCollisionsToResolve           = new Soa_Collision(maxCollisions);
+        PolygonCollisionsToResolve          = new Soa_Collision(maxCollisions);
+        PolygonToCircleCollisionsToResolve  = new Soa_Collision(maxCollisions);
+        Collisions                          = new Soa_Collision(maxCollisions);
     }
 
     /// <summary>
@@ -48,7 +49,8 @@ public class CollisionManifoldNew : IDisposable
     /// <param name="manifold">the collision manifold to sort.</param>
     public static void SortCollisions(CollisionManifoldNew manifold)
     {
-        Array.Sort(manifold.Collisions.Data, 0, manifold.Collisions.Count, Collision.AscendingOwnerIndexComparer);
+        // Array.Sort(manifold.Collisions.Data, 0, manifold.Collisions.Count, Collision.AscendingOwnerIndexComparer);
+        SortByOwnerGenIndex(manifold.Collisions);
     }
 
     /// <summary>

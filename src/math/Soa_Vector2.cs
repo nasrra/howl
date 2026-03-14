@@ -1,7 +1,7 @@
 
 namespace Howl.Math;
 
-public class SoaVector2
+public class Soa_Vector2
 {
     /// <summary>
     /// Gets and sets the x-coordinate values.
@@ -17,7 +17,7 @@ public class SoaVector2
     /// Creates a new SoaVector2 instance.
     /// </summary>
     /// <param name="length">the length of x and y-components to store.</param>
-    public SoaVector2(int length)
+    public Soa_Vector2(int length)
     {
         X = new float[length];
         Y = new float[length];

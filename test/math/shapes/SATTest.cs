@@ -4,6 +4,7 @@ using Howl.Physics;
 using Xunit;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Shapes.Circle;
+using static Howl.Math.Shapes.SAT;
 
 namespace Howl.Test.Math.Shapes;
 
@@ -193,5 +194,46 @@ public class SATTest
         // corners of a box.
         Assert.Equal(-0.71f, normal.X, precision: 2);        
         Assert.Equal(0.71f, normal.Y, precision: 2);
+    }
+
+    [Fact]
+    public void FindCircleContactPoints_Test()
+    {
+        Circle a;
+        Circle b;
+        Vector2 contactPoint;
+
+        a = new Circle(-1,1,2);
+        b = new Circle(-2,1,2);
+        FindContactPoints(a,b, out contactPoint);
+        Assert.Equal(-3,contactPoint.X);
+        Assert.Equal(1,contactPoint.Y,precision:2);
+
+        a = new Circle(3, -2, 3);
+        b = new Circle(3, -5, 3);
+        FindContactPoints(a,b, out contactPoint);
+        Assert.Equal(3,contactPoint.X);
+        Assert.Equal(-5f,contactPoint.Y,precision:2);
+    }
+
+    [Fact]
+    public void FindPolygonContactPoints_Test()
+    {
+        float cX1;
+        float cY1;
+        float cX2;
+        float cY2;
+        int contactCount;
+
+        Span<float> xA = [0.5f, -0.5f, -0.5f, 0.5f];
+        Span<float> xB = [0.5f, -1.5f, -1.5f, 0.5f];
+        Span<float> yA = [0.5f, 0.5f, -0.5f, -0.5f];
+        Span<float> yB = [0.5f, 0.5f, -1.5f, -1.5f];
+        FindContactPoints(xA, yA, xB, yB, PolygonContactPointEpsilon, out cX1, out cY1, out cX2, out cY2, out contactCount);
+        Assert.Equal(0.5f, cX1);
+        Assert.Equal(0.5f, cY1);
+        Assert.Equal(0.5f, cX2);
+        Assert.Equal(-0.5f, cY2);
+        Assert.Equal(2, contactCount);
     }
 }

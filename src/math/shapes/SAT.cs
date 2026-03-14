@@ -14,6 +14,8 @@ namespace Howl.Math.Shapes;
 /// </summary>
 public static class SAT
 {
+    public const float PolygonContactPointEpsilon = 1e-5f;
+
     // the fallback normal for any SAT intersect will be up.
     // meaning that if any shapes perfectly overlap with eachother
     // (sharing the same position) one will be pushed up and the other down.
@@ -77,7 +79,7 @@ public static class SAT
         depth = 0f;
 
         float distanceSqrd = DistanceSquared(lhsX, lhsY, rhsX, rhsY);
-
+5
         float radiusSum = lhsRadius + rhsRadius;
         float radiusSumSq = radiusSum * radiusSum;
 
@@ -357,6 +359,41 @@ public static class SAT
         out float depth
     )
     {
+        return Intersect(
+            polygonVerticesX,
+            polygonVerticesY,
+            polygonCentroidX,
+            polygonCentroidY,
+            circle.X,
+            circle.Y,
+            circle.Radius,
+            circleCenterX,
+            circleCenterY,
+            out normalX,
+            out normalY,
+            out depth
+        );       
+    }
+
+    /// <summary>
+    /// Checks whether a polygon and a circle intersect with eachother.
+    /// </summary>
+    /// <returns>true, if the two shapes are colliding; otherwise false.</returns>
+    public static bool Intersect(        
+        Span<float> polygonVerticesX,
+        Span<float> polygonVerticesY,
+        float polygonCentroidX,
+        float polygonCentroidY,
+        float circleX,
+        float circleY,
+        float circleRadius,
+        float circleCenterX,
+        float circleCenterY,
+        out float normalX,
+        out float normalY,
+        out float depth
+    )
+    {
         depth = float.MaxValue;
 
         // store normals as floats and operate on them as
@@ -407,9 +444,9 @@ public static class SAT
         
             // project all vertices onto the current edge to find the min and max values
             // of the two rectangles along the edge.
-            ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);
-            ProjectCircle(circle, axisX, axisY, out minB, out maxB);
-        
+            ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);        
+            ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
+
             if(minA > maxB || minB > maxA)
             {
                 // there is separation.
@@ -430,14 +467,14 @@ public static class SAT
         float closestPointX = polygonVerticesX[closestPointIndex];
         float closestPointY = polygonVerticesY[closestPointIndex];
 
-        axisX = closestPointX - circle.X;
-        axisY = closestPointY - circle.Y;
+        axisX = closestPointX - circleX;
+        axisY = closestPointY - circleY;
         Normalise(axisX, axisY, out axisX, out axisY);
 
         // project all vertices onto the current edge to find the min and max values
         // of the two rectangles along the edge.
         ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);
-        ProjectCircle(circle, axisX, axisY, out minB, out maxB);
+        ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
     
         if(minA > maxB || minB > maxA)
         {
@@ -525,7 +562,7 @@ public static class SAT
     /// <param name="min">The minimum-edge value of the circle.</param>
     /// <param name="max">The maximum-edge value of the circle.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void ProjectCircle(
+    public static void ProjectCircle(
         in Circle circle,
         float axisX,
         float axisY,
@@ -533,13 +570,36 @@ public static class SAT
         out float max
     )
     {
-        float directionAndRadiusX = axisX * circle.Radius;
-        float directionAndRadiusY = axisY * circle.Radius;
+        ProjectCircle(circle.X, circle.Y, circle.Radius, axisX, axisY, out min, out max);
+    }  
 
-        float vAX = circle.X + directionAndRadiusX;
-        float vAY = circle.Y + directionAndRadiusY;
-        float vBX = circle.X - directionAndRadiusX;
-        float vBY = circle.Y - directionAndRadiusY;
+    /// <summary>
+    /// Projects the edges of a circle onto a given axis.
+    /// </summary>
+    /// <param name="circleX">the positional x-component of the circle.</param>
+    /// <param name="circleY">the positional y-component of the circle.</param>
+    /// <param name="circleRadius">the radius of the circle.</param>
+    /// <param name="axisX">the x-component of the axis to project onto.</param>
+    /// <param name="axisY">the y-component of the axis to project onto.</param>
+    /// <param name="min">the minimum-edge value of the circle.</param>
+    /// <param name="max">the maximum-edge value of the circle.</param>
+    public static void ProjectCircle(
+        float circleX,
+        float circleY,
+        float circleRadius,
+        float axisX,
+        float axisY,
+        out float min,
+        out float max
+    )
+    {
+        float directionAndRadiusX = axisX * circleRadius;
+        float directionAndRadiusY = axisY * circleRadius;
+
+        float vAX = circleX + directionAndRadiusX;
+        float vAY = circleY + directionAndRadiusY;
+        float vBX = circleX - directionAndRadiusX;
+        float vBY = circleY - directionAndRadiusY;
         
         min = Dot(vAX, vAY, axisX, axisY);
         max = Dot(vBX, vBY, axisX, axisY);
@@ -550,7 +610,7 @@ public static class SAT
             min = max;
             max = temp;
         }
-    }  
+    }
 
 
     /// <summary>
@@ -558,12 +618,12 @@ public static class SAT
     /// </summary>
     /// <param name="a">circle a.</param>
     /// <param name="b">circle b.</param>
-    /// <param name="contactPoint">The calculated contact point.</param>
+    /// <param name="contactPoint">The calculated contact point relative to circle a.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FindContactPoints(in Circle a, in Circle b, out Vector2 contactPoint)
     {
-        FindContactPoints(a, b, out float xContactPoint, out float yContactPoint);
-        contactPoint = new Vector2(xContactPoint, yContactPoint);
+        FindContactPoints(a, b, out float cX, out float cY);
+        contactPoint = new Vector2(cX, cY);
     }
 
     /// <summary>
@@ -571,12 +631,12 @@ public static class SAT
     /// </summary>
     /// <param name="a">circle a.</param>
     /// <param name="b">circle b.</param>
-    /// <param name="xContactPoint">the x-value of the calculated contact point vector.</param>
-    /// <param name="yContactPoint">the y-value of the calculated contact point vector.</param>
+    /// <param name="cX">the x-component of the calculated contact point vector relative to circle a.</param>
+    /// <param name="cY">the y-component of the calculated contact point vector relative to circle a.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(in Circle a, in Circle b, out float xContactPoint, out float yContactPoint)
+    public static void FindContactPoints(in Circle a, in Circle b, out float cX, out float cY)
     {
-        FindContactPoints(a.X, a.Y, a.Radius, b.X, b.Y, out xContactPoint, out yContactPoint);
+        FindContactPoints(a.X, a.Y, a.Radius, b.X, b.Y, out cX, out cY);
     }
 
     /// <summary>
@@ -587,8 +647,8 @@ public static class SAT
     /// <param name="aRadius">the radius of circle a.</param>
     /// <param name="bX">the positional x-component of circle b.</param>
     /// <param name="bY">the positional y-component of circle b.</param>
-    /// <param name="contactPointX">the x-component of the point of contact.</param>
-    /// <param name="contactPointY">the x-component of the point of contact.</param>
+    /// <param name="contactPointX">the x-component of the contact point vector relative to circle a.</param>
+    /// <param name="contactPointY">the y-component of the contact point vector relative to circle a.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FindContactPoints(float aX, float aY, float aRadius, float bX, float bY, out float contactPointX, out float contactPointY)
     {
@@ -599,26 +659,6 @@ public static class SAT
         contactPointY = aY + (directionY * aRadius);
     }
 
-    /// <summary>
-    /// Finds the contact point between an intersecting polygon and circle.
-    /// </summary>
-    /// <param name="polygonXVertices">the x-values of the polygon's vertices </param>
-    /// <param name="polygonYVertices">the y-values of the polygon's vertices.</param>
-    /// <param name="circle">the circle.</param>
-    /// <param name="xContactPoint">the x-value of the calculated contact point vector.</param>
-    /// <param name="yContactPoint">the y-value of the calculated contact point vector.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(
-        Span<float> polygonXVertices, 
-        Span<float> polygonYVertices,
-        in Circle circle, 
-        out float xContactPoint, 
-        out float yContactPoint)        
-    {
-        FindContactPoints(polygonXVertices, polygonYVertices, circle, out Vector2 contactPoint);
-        xContactPoint = contactPoint.X;
-        yContactPoint = contactPoint.Y;
-    }
 
     /// <summary>
     /// Finds the contact point between an intersecting polygon and circle.
@@ -636,12 +676,69 @@ public static class SAT
         out Vector2 contactPoint
     )
     {
-        if(polygonVerticesX.Length != polygonVerticesY.Length)
-        {
-            throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' is not equal to polygonVerticesY length '{polygonVerticesY.Length}'");
-        }
+        FindContactPoints(
+            polygonVerticesX, 
+            polygonVerticesY, 
+            circle.X, 
+            circle.Y, 
+            out float contactPointX,
+            out float contactPointY
+        );
 
-        contactPoint = Vector2.MaxValue;
+        contactPoint = new(contactPointX, contactPointY);
+    }
+
+    /// <summary>
+    /// Finds the contact point between an intersecting polygon and circle.
+    /// </summary>
+    /// <param name="polygonVerticesX">the x-values of the polygon's vertices </param>
+    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
+    /// <param name="circle">the circle.</param>
+    /// <param name="contactPointX">the x-value of the calculated contact point vector.</param>
+    /// <param name="contactPointY">the y-value of the calculated contact point vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(
+        Span<float> polygonVerticesX, 
+        Span<float> polygonVerticesY,
+        in Circle circle, 
+        out float contactPointX, 
+        out float contactPointY
+    )
+    {
+        FindContactPoints(
+            polygonVerticesX, 
+            polygonVerticesY, 
+            circle.X, 
+            circle.Y, 
+            out contactPointX,
+            out contactPointY
+        );
+    }
+
+    /// <summary>
+    /// Finds the contact points between a polygon and a circle.
+    /// </summary>
+    /// <param name="polygonVerticesX">the x-values of the polygon's vertices.</param>
+    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
+    /// <param name="circleX">the x-value of the circle's position.</param>
+    /// <param name="circleY">the y-value of the circle's position.</param>
+    /// <param name="contactPointX">the x-value of the contact point.</param>
+    /// <param name="contactPointY">the y-value of the contact point.</param>
+    /// <exception cref="ArgumentException"></exception>
+    public static void FindContactPoints(
+        Span<float> polygonVerticesX, 
+        Span<float> polygonVerticesY, 
+        float circleX, 
+        float circleY, 
+        out float contactPointX,
+        out float contactPointY
+    )
+    {
+        if(polygonVerticesX.Length != polygonVerticesY.Length)
+            throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' is not equal to polygonVerticesY length '{polygonVerticesY.Length}'");
+
+        contactPointX = float.MaxValue;    
+        contactPointY = float.MaxValue;
         float minDistSqrd = float.MaxValue;
         int length = polygonVerticesX.Length;
 
@@ -657,13 +754,26 @@ public static class SAT
                 endIndex = 0;
 
             Vector2 edgeEnd = new Vector2(polygonVerticesX[endIndex], polygonVerticesY[endIndex]);
-            ClosestPoint(edgeStart, edgeEnd, Center(circle), out Vector2 closestPoint, out float distSqrd);
+            ClosestPoint(
+                polygonVerticesX[startIndex], 
+                polygonVerticesY[startIndex],
+                polygonVerticesX[endIndex], 
+                polygonVerticesY[endIndex],
+                circleX,
+                circleY,
+                out float closestPointX,
+                out float closestPointY,
+                out float distSqrd
+            );
+
+
             if(distSqrd < minDistSqrd)
             {
                 minDistSqrd = distSqrd;
-                contactPoint = closestPoint;
+                contactPointX = closestPointX;
+                contactPointY = closestPointY;
             }
-        }
+        } 
     }
 
     /// <summary>
@@ -685,10 +795,10 @@ public static class SAT
     /// <exception cref="ArgumentException">throws if polygon A or B vertices X and Y spans do not have matching lengths.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FindContactPoints(
-        ReadOnlySpan<float> polygonAVerticesX, 
-        ReadOnlySpan<float> polygonAVerticesY, 
-        ReadOnlySpan<float> polygonBVerticesX, 
-        ReadOnlySpan<float> polygonBVerticesY,
+        Span<float> polygonAVerticesX, 
+        Span<float> polygonAVerticesY, 
+        Span<float> polygonBVerticesX, 
+        Span<float> polygonBVerticesY,
         float epsilon, 
         out float contactPoint1X, 
         out float contactPoint1Y, 

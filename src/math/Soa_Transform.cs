@@ -1,16 +1,16 @@
 namespace Howl.Math;
 
-public class SoaTransform
+public class Soa_Transform
 {
     /// <summary>
     /// Gets and sets the positional values.
     /// </summary>
-    public SoaVector2 Position;
+    public Soa_Vector2 Position;
 
     /// <summary>
     /// Gets and sets the scaling values.
     /// </summary>
-    public SoaVector2 Scale;
+    public Soa_Vector2 Scale;
 
     /// <summary>
     /// Gets and sets the rotational values.
@@ -31,7 +31,7 @@ public class SoaTransform
     /// Creates a new SoaTransform instance.
     /// </summary>
     /// <param name="length"></param>
-    public SoaTransform(int length)
+    public Soa_Transform(int length)
     {
         Position    = new(length);
         Scale       = new(length);
