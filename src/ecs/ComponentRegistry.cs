@@ -191,7 +191,3 @@ public class ComponentRegistry : IDisposable
         Dispose(false);
     }
 }
-
-internal class ReadOnlyList<T>
-{
-}

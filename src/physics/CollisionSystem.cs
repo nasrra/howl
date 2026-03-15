@@ -655,15 +655,6 @@ public static class CollisionSystem
                 transformRefB.Value.Position.X += displacementX;
                 transformRefB.Value.Position.Y += displacementY;    
             }
-            
-            var a = transformRefA.Value.Position;
-            var b = transformRefB.Value.Position;
-
-            if (float.IsNaN(a.X) || float.IsNaN(a.Y) ||
-                float.IsNaN(b.X) || float.IsNaN(b.Y))
-            {
-                System.Diagnostics.Debug.Assert(false, "NaN!");
-            }
         }
 
 

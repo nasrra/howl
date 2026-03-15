@@ -52,7 +52,7 @@ public class Soa_Collision
     /// <summary>
     /// Gets and sets the depth of the collision.
     /// </summary>
-    public float[] Depth;
+    public float[] Depths;
 
     /// <summary>
     /// Gets and sets a copy of an owner's physics body flags for a collision.
@@ -96,7 +96,7 @@ public class Soa_Collision
         OtherShapeCenters           = new Soa_Vector2(maxCollisions);
         FirstContactPoints          = new Soa_Vector2(maxCollisions);
         SecondContactPoints         = new Soa_Vector2(maxCollisions);
-        Depth                       = new float[maxCollisions];
+        Depths                       = new float[maxCollisions];
         OwnerFlags                  = new PhysicsBodyFlags[maxCollisions];
         OtherFlags                  = new PhysicsBodyFlags[maxCollisions];
         TwoContactPoints            = new bool[maxCollisions];
@@ -155,7 +155,7 @@ public class Soa_Collision
         buffer.OtherShapeCenters.Y[count] = otherShapeCenterY;
         buffer.FirstContactPoints.X[count] = contactPointX;
         buffer.FirstContactPoints.Y[count] = contactPointY;
-        buffer.Depth[count] = depth;
+        buffer.Depths[count] = depth;
         buffer.OwnerFlags[count] = ownerFlags;
         buffer.OtherFlags[count] = otherFlags;
         buffer.TwoContactPoints[count] = false;
@@ -222,7 +222,7 @@ public class Soa_Collision
         buffer.FirstContactPoints.Y[count] = firstContactPointY;
         buffer.SecondContactPoints.X[count] = secondContactPointX;
         buffer.SecondContactPoints.Y[count] = secondContactPointY;
-        buffer.Depth[count] = depth;
+        buffer.Depths[count] = depth;
         buffer.OwnerFlags[count] = ownerFlags;
         buffer.OtherFlags[count] = otherFlags;
         buffer.TwoContactPoints[count] = true;

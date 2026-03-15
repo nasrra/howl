@@ -16,7 +16,7 @@ using static Howl.Physics.Soa_Collision;
 using static Howl.DataStructures.Soa_SpatialPair;
 using static Howl.Math.Shapes.SAT;
 using static System.Runtime.InteropServices.CollectionsMarshal;
-using System.Collections.Generic;
+using static Howl.Math.Soa_Transform;
 
 namespace Howl.Physics;
 
@@ -118,23 +118,55 @@ public static class SoaPhysicsSystem
         GenIndexList<PhysicsBodyId> bodyIds, Soa_Transform soaTransform, Span<int> generation
     )
     {
-        Span<DenseEntry<Transform>> denseEntries = GetDenseAsSpan(transforms);
+        Span<DenseEntry<PhysicsBodyId>> denseEntries = GetDenseAsSpan(bodyIds);
 
-        // loop through all transforms.
+        // loop through all body id's.
         for(int i = 0; i < denseEntries.Length; i++)
         {
-            ref DenseEntry<Transform> entry = ref denseEntries[i];
-            ref Transform transform = ref entry.Value;
-            GetGenIndex(transforms, entry.sparseIndex, out GenIndex genIndex);
+            ref DenseEntry<PhysicsBodyId> entry = ref denseEntries[i];
+            ref PhysicsBodyId bodyId = ref entry.Value;
+            GetGenIndex(bodyIds, entry.sparseIndex, out GenIndex genIndex);
+
+            // skip if the physics body id isn't valid.
+            if(generation[bodyId.GenIndex.Index] != bodyId.GenIndex.Generation)
+                continue;
             
             // sync the transform data to the physics simulation 
             // if it has an associated physics body id.
             
-            if(GetDenseRef(bodyIds, genIndex, out Ref<PhysicsBodyId> bodyIdRef).Ok())
-            {
-                SetTransform(soaTransform, generation, bodyIdRef.Value.GenIndex, transform);
-            }
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Ok())
+                SetTransform(soaTransform, generation, genIndex, transformRef);
         } 
+    }
+
+    /// <summary>
+    /// Syncs a entities that contain both a transform and physics body id component to an soa transform collection.
+    /// </summary>
+    /// <param name="transforms">the gen index list that stores the entity transform components to mutate..</param>
+    /// <param name="bodyIds">the gen index list that stores the entity physics body id components to mutate..</param>
+    /// <param name="soaTransform">the soa transforms to copy into the entity transform components.</param>
+    /// <param name="generation">the generation of each soa transform entry.</param>
+    public static void SyncEntityTransformsToPhysicsBodies(GenIndexList<Transform> transforms,
+        GenIndexList<PhysicsBodyId> bodyIds, Soa_Transform soaTransform, Span<int> generation)
+    {
+        Span<DenseEntry<PhysicsBodyId>> denseEntries = GetDenseAsSpan(bodyIds);
+        
+        for(int i = 0; i < denseEntries.Length; i++)
+        {
+            ref DenseEntry<PhysicsBodyId> entry = ref denseEntries[i];
+            ref PhysicsBodyId bodyId = ref entry.Value;
+            GetGenIndex(bodyIds, entry.sparseIndex, out GenIndex genIndex);
+
+            // skip if the physics body id isn't valid.
+            if(generation[bodyId.GenIndex.Index] != bodyId.GenIndex.Generation)
+                continue;
+
+            // sync the transform data to the physics simulation 
+            // if it has an associated physics body id.
+            
+            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Ok())
+                CopySoaToTransform(soaTransform, ref transformRef.Value, bodyId.GenIndex.Index);
+        }
     }
 
     /// <summary>
@@ -1332,8 +1364,67 @@ public static class SoaPhysicsSystem
         state.AlloctedPhysicsBodyCount++;
     }
 
-    // public static void ResolveColliderCollisions(Soa_Collision collisions, )
-    // {
-        
-    // }
+    public static void ResolveColliderCollisions(Soa_Collision collisions, Soa_Transform transforms)
+    {
+        // hoisting invariance.
+        float depth;
+        float displacementX;
+        float displacementY;
+        Span<float> positionX = transforms.Position.X;
+        Span<float> positionY = transforms.Position.Y;
+        Span<float> normalX = collisions.Normals.X;
+        Span<float> normalY = collisions.Normals.Y;
+        Span<float> depths = collisions.Depths;
+        Span<int> ownerIndices = collisions.OwnerGenIndices.Indices;
+        Span<int> otherIndices = collisions.OtherGenIndices.Indices;
+        Span<PhysicsBodyFlags> ownerFlags = collisions.OwnerFlags;
+        Span<PhysicsBodyFlags> otherFlags = collisions.OtherFlags;
+
+        for(int i = 0; i < collisions.Count; i++)
+        {
+            ref int ownerIndex = ref ownerIndices[i];
+            ref int otherIndex = ref otherIndices[i];
+            ref PhysicsBodyFlags ownerFlag = ref ownerFlags[i];
+            ref PhysicsBodyFlags otherFlag = ref otherFlags[i];
+
+            if((ownerFlag & PhysicsBodyFlags.Kinematic) != 0 && (otherFlag & PhysicsBodyFlags.Kinematic) != 0)
+            {
+                // two kinematic bodies wont collide with eachother.
+                continue;
+            }
+            else
+            {
+                depth = depths[i];
+                displacementX = normalX[i] * depth;
+                displacementY = normalY[i] * depth;
+
+                if((ownerFlag & PhysicsBodyFlags.Kinematic) != 0)
+                {
+                    // only move away the 'other' if the 'owner' is kinematic.
+                    positionX[otherIndex] += displacementX;
+                    positionY[otherIndex] += displacementY;
+                }
+                else if((otherFlag & PhysicsBodyFlags.Kinematic) != 0)
+                {
+                    // only move away the 'owner' if the other is kinematic.
+                    positionX[ownerIndex] -= displacementX;
+                    positionY[ownerIndex] -= displacementY;
+                }
+                else
+                {
+                    // move 'owner' and 'other' away from eachother.
+                    displacementX *= 0.5f;
+                    displacementY *= 0.5f;
+                    positionX[otherIndex] += displacementX;
+                    positionY[otherIndex] += displacementY;
+                    positionX[ownerIndex] -= displacementX;
+                    positionY[ownerIndex] -= displacementY;
+                }
+
+                // // add the resolved collisions to the collisions list.
+                // state.CollisionManifold.Collisions.AddRange(state.CollisionManifold.CollisionsToResolve);
+                // state.CollisionManifold.CollisionsToResolve.Clear();
+            }
+        }
+    }
 }

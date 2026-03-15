@@ -3,13 +3,16 @@ using Howl.Math.Shapes;
 using Howl.Physics;
 using Howl.Math;
 using Howl.DataStructures;
+using Howl.Generic;
 using static Howl.Physics.SoaPhysicsSystem;
 using static Howl.Math.Shapes.Rectangle;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Test.Physics.SoaSpatialPairHelpers;
 using static Howl.DataStructures.Soa_SpatialPair;
 using static Howl.Math.Soa_Vector2;
-using System.ComponentModel;
+using static Howl.Test.Math.Soa_TransformHelpers;
+using static Howl.Test.Math.TransformHelpers;
+
 
 namespace Howl.Test.Physics;
 
@@ -40,23 +43,6 @@ public class SOAPhysicsSystemTest
     {
         Assert.Equal(physicsMaterial.KineticFriction, state.KineticFrictions[genIndex.Index], precision: 4);
         Assert.Equal(physicsMaterial.StaticFriction, state.StaticFrictions[genIndex.Index], precision: 4);
-    }
-
-    /// <summary>
-    /// Ensures that a transform ntry in a physics system state is equal to the specified transform struct.
-    /// </summary>
-    /// <param name="state">the phsyics system state that holds the transform data.</param>
-    /// <param name="transform">the transform to check equality against.</param>
-    /// <param name="genIndex">the gen index used to look up the stored transform data.</param>
-    private static void AssertTransform(SoaPhysicsSystemState state, in Transform transform, GenIndex genIndex)
-    {
-        Assert.Equal(transform.Position.X, state.Transforms.Position.X[genIndex.Index],   precision: 1);
-        Assert.Equal(transform.Position.Y, state.Transforms.Position.Y[genIndex.Index],   precision: 1);
-        Assert.Equal(transform.Scale.X,    state.Transforms.Scale.X[genIndex.Index],      precision: 1);
-        Assert.Equal(transform.Scale.Y,    state.Transforms.Scale.Y[genIndex.Index],      precision: 1);        
-        Assert.Equal(transform.Rotation,   state.Transforms.Rotation[genIndex.Index],     precision: 1);
-        Assert.Equal(transform.Cos,        state.Transforms.Cos[genIndex.Index],          precision: 4);
-        Assert.Equal(transform.Sin,        state.Transforms.Sin[genIndex.Index],          precision: 4);
     }
 
 
@@ -608,7 +594,7 @@ public class SOAPhysicsSystemTest
         Assert.Equal(cExpectedX,           state.TransformedVertices.X[cBodyGenIndex.Index],   precision: 1);
         Assert.Equal(cExpectedY,           state.TransformedVertices.Y[cBodyGenIndex.Index],   precision: 1);
         Assert.Equal(cExpectedRadius,      state.TransformedRadii[cBodyGenIndex.Index],        precision: 1);
-        AssertTransform(state, cTransform, cBodyGenIndex);
+        AssertEqualsSoaTransformEntry(state.Transforms, ref cTransform, cBodyGenIndex.Index, 4);
 
         // assert rect.
         int first = state.FirstVertexIndices[rBodyGenIndex.Index];
@@ -622,11 +608,40 @@ public class SOAPhysicsSystemTest
             if(v==first)
                 break;
         }
-        AssertTransform(state, rTransform, rBodyGenIndex);
+        AssertEqualsSoaTransformEntry(state.Transforms, ref rTransform, rBodyGenIndex.Index, 4);
     }
 
     [Fact]
-    public void SyncTransforms_Test()
+    public void SyncEntityTransformsToPhysicsBodies_Test()
+    {
+        SoaPhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        GenIndexAllocator allocator = new();
+        ComponentRegistry registry = new(allocator);
+        SoaPhysicsSystem.RegisterComponents(registry);
+
+        GenIndexList<PhysicsBodyId> physicsBodyIds = registry.Get<PhysicsBodyId>();
+        GenIndexList<Transform> transforms = registry.Get<Transform>();
+
+        Transform expected = new Transform(0,9,8,7,6,5,4);
+
+        allocator.Allocate(out GenIndex entityGenIndex, out _);
+
+        // allocate entity.
+        AllocateRectangleCollider(state, new Rectangle(0,0,2,2), true, false, out GenIndex bodyGenIndex);
+        GenIndexListProc.Allocate(physicsBodyIds, entityGenIndex, new(bodyGenIndex));
+        GenIndexListProc.Allocate(transforms, entityGenIndex, new Transform(1,2,3,4,5,6,7));
+
+        // set body transform to be the expected transform.
+        SetTransform(state.Transforms, state.Generations, bodyGenIndex, expected);
+    
+        SyncEntityTransformsToPhysicsBodies(transforms, physicsBodyIds, state.Transforms, state.Generations);
+
+        GenIndexListProc.GetDenseRef(transforms, entityGenIndex, out Ref<Transform> transformRef);
+        AssertEqualTransforms(ref expected, ref transformRef.Value, 4);
+    }
+
+    [Fact]
+    public void SyncPhysicsBodiesToEntityTransforms_Test()
     {
         SoaPhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
         GenIndexAllocator allocator = new();
@@ -666,8 +681,8 @@ public class SOAPhysicsSystemTest
         SyncPhysicsBodiesToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), state.Transforms, state.Generations);
 
         // ensure the data was properly set inside the state.
-        AssertTransform(state, cTransform, cBodyGenIndex);    
-        AssertTransform(state, rTransform, rBodyGenIndex);    
+        AssertEqualsSoaTransformEntry(state.Transforms, ref cTransform, cBodyGenIndex.Index, 4);    
+        AssertEqualsSoaTransformEntry(state.Transforms, ref rTransform, rBodyGenIndex.Index, 4);    
     }
 
     [Fact]

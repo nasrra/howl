@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Howl.Math;
 
 namespace Howl.Test.Math;

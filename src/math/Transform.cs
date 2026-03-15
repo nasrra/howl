@@ -42,14 +42,14 @@ public struct Transform
     }
 
     /// <summary>
-    /// Gets the Sin value of the rotation.
+    /// Gets and sets the sin value of the rotation.
     /// </summary>
-    public float Sin {get; private set;}
+    public float Sin;
 
     /// <summary>
-    /// Gets the Cos value of the rotation.
+    /// Gets and sets the cos value of the rotation.
     /// </summary>
-    public float Cos {get; private set;} = 1;
+    public float Cos;
 
     /// <summary>
     /// Constructs a Transform.
@@ -58,13 +58,7 @@ public struct Transform
     /// <param name="scale">The horizontal (x) and vertical (y) scaling values.</param>
     /// <param name="rotation">The rotation - in radians.</param>
     public Transform(Vector2 position, Vector2 scale, float rotation)
-    {
-        Position = position;
-        Scale = scale;
-        this.rotation = rotation;
-        Sin = MathF.Sin(rotation);
-        Cos = MathF.Cos(rotation);
-    }   
+    : this(position.X, position.Y, scale.X, scale.Y, rotation, MathF.Sin(rotation), MathF.Cos(rotation)){}
 
     /// <summary>
     /// Constructs a Transform.
@@ -73,13 +67,7 @@ public struct Transform
     /// <param name="scale">The horizontal (x) and vertical (y) scaling values.</param>
     /// <param name="rotation">The rotation - in radians.</param>
     public Transform(Vector2Int position, Vector2 scale, float rotation)
-    {
-        Position = new Vector2(position.X, position.Y);
-        Scale = scale;
-        this.rotation = rotation;
-        Sin = MathF.Sin(rotation);
-        Cos = MathF.Cos(rotation);
-    }   
+    : this(position.X, position.Y, scale.X, scale.Y, rotation, MathF.Sin(rotation), MathF.Cos(rotation)){}   
 
     /// <summary>
     /// Constructs a Transform.
@@ -88,12 +76,27 @@ public struct Transform
     /// <param name="scale">The horizontal (x) and vertical (y) scaling values.</param>
     /// <param name="rotation">The rotation - in radians.</param>
     public Transform(Vector2 position, float scale, float rotation)
+    : this(position.X, position.Y, scale, scale, rotation, MathF.Sin(rotation), MathF.Cos(rotation)){}
+    
+    /// <summary>
+    /// Constructs a Transform.
+    /// </summary>
+    /// <param name="positionX">the x-component of the positional vector.</param>
+    /// <param name="positionY">the y-component of the positional vector.</param>
+    /// <param name="scaleX">the x-component of the scaling vector.</param>
+    /// <param name="scaleY">the y-component of the scaling vector.</param>
+    /// <param name="rotation">the rotational value - in radians.</param>
+    /// <param name="sin">the sin of the rotation.</param>
+    /// <param name="cos">the cos of the rotation.</param>
+    public Transform(float positionX, float positionY, float scaleX, float scaleY, float rotation, float sin, float cos)
     {
-        Position = position;
-        Scale = new(scale, scale);
-        this.rotation = rotation;
-        Sin = MathF.Sin(rotation);
-        Cos = MathF.Cos(rotation);
+        Position.X = positionX;
+        Position.Y = positionY;
+        Scale.X = scaleX;
+        Scale.Y = scaleY;
+        Rotation = rotation;
+        Sin = sin;
+        Cos = cos;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
