@@ -36,7 +36,16 @@ public class ComponentRegistry : IDisposable
     public ComponentRegistry(GenIndexAllocator genIndexAllocator)
     {
         storage = new();
+        
+        // add entries for each already intiailised component type id.
+        // Note: this is needed for unit testing as registered 
+        // component id's are carried over between test cases
+        // because they are static classes.
+        for(int i = 0; i < ComponentTypeId.Count; i++)
+            storage.Add(null);
+        
         this.genIndexAllocator = genIndexAllocator;
+        
         LinkEvents();
     }
 
@@ -82,8 +91,18 @@ public class ComponentRegistry : IDisposable
     /// <returns>The GenIndexList storing all the components; may return null if there the type was not registered in this component registry.</returns>
     public GenIndexList<T> Get<T>()
     {
-        Span<IGenIndexList> span = CollectionsMarshal.AsSpan(storage);   
-        return span[ComponentType<T>.GetId()] as GenIndexList<T>;
+        Span<IGenIndexList> span = CollectionsMarshal.AsSpan(storage);
+        
+        int componentId = ComponentType<T>.GetId();
+        
+        // intialise the list if it hasnt been done so already.
+        // Note: this is needed for unit testing as registered 
+        // component id's are carried over between test cases
+        // because they are static classes.
+        if(span[componentId] == null)
+            span[componentId] = new GenIndexList<T>();
+
+        return span[componentId] as GenIndexList<T>;
     }
 
     /// <summary>
