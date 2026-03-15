@@ -128,11 +128,6 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public BoundingVolumeHierarchy Bvh;
 
     /// <summary>
-    /// Gets and sets the RigidbodySystemState.
-    /// </summary>
-    public RigidBodySystemState RigidbodySystemState;
-
-    /// <summary>
     /// Gets the collision manifold.
     /// </summary>
     public CollisionManifoldNew CollisionManifold;
@@ -150,39 +145,54 @@ public sealed class SoaPhysicsSystemState : IDisposable
 
 
     /// <summary>
-    /// Gets and sets the debug stopwatch for timing a physics system fixed-update substep.
+    /// Gets and sets the stopwatch for timing a physics system fixed-update substep.
     /// </summary>
     public Stopwatch FixedUpdateSubStepStopwatch;
 
     /// <summary>
-    /// Gets and sets the debug stopwatch for timing a physics system fixed-update step.
+    /// Gets and sets the stopwatch for timing a physics system fixed-update step.
     /// </summary>
     public Stopwatch FixedUpdateStepStopwatch;
 
     /// <summary>
-    /// Gets the debug stopwatch for timing a collision intersect step.
+    /// Gets and sets the stopwatch for timing a spatial pair filtering step.
     /// </summary>
-    public Stopwatch ProcessNearColliderPairsStopwatch;
+    public Stopwatch FilterBvhIntoCollisionManifoldStopwatch;
 
     /// <summary>
-    /// Gets the debug stopwatch for timing a collision resolution step.
+    /// Gets and sets the debug stopwatch for timing a collision intersect step.
     /// </summary>
-    public Stopwatch CollisionResolutionStopwatch;
+    public Stopwatch FindColliderPairsStopwatch;
 
     /// <summary>
-    /// Gets the debug stop watch for timing a bvh reconstruction step.
+    /// Gets and sets the debug stopwatch for timing a collision resolution step.
+    /// </summary>
+    public Stopwatch ColliderCollisionResolutionStopwatch;
+
+    /// <summary>
+    /// Gets and sets the stopwatch for timing a bvh reconstruction step.
     /// </summary>
     public Stopwatch BvhReconstructionStopwatch;
 
     /// <summary>
-    /// Gets the debug stopwatch for timing a collision manifold sort step.
+    /// Gets and sets the stopwatch for timing a collision manifold sort step.
     /// </summary>
     public Stopwatch CollisionManifoldSortStopwatch;
 
     /// <summary>
-    /// Gets the debug stopwatch for syncing collider transformed shapes to their associated transforms.
+    /// Gets and sets the stopwatch for syncing collider transformed shapes to their associated transforms.
     /// </summary>
     public Stopwatch SyncCollidersToTransformsStopwatch;
+
+    /// <summary>
+    /// Gets and sets the debug stopwatch for timing a collision resolution step.
+    /// </summary>
+    public Stopwatch RigidBodyCollisionResolutionStepStopwatch;
+
+    /// <summary>
+    /// Gets and sets the debug stop watch for timing a movement step.
+    /// </summary>
+    public Stopwatch MovementStepStopwatch;
 
 
 
@@ -310,6 +320,28 @@ public sealed class SoaPhysicsSystemState : IDisposable
 
     /*******************
     
+        Header.
+    
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Gets and sets the gravity force.
+    /// </summary>
+    public float Gravity = 9.81f;
+
+    /// <summary>
+    /// Gets and sets the direction of gravity.
+    /// </summary>
+    public Vector2 GravityDirection = Vector2.Down;
+
+
+
+
+    /*******************
+    
         Disposal.
     
     ********************/
@@ -326,13 +358,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
 
 
 
-    public SoaPhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount, int maxCollisions, RigidBodySystemState rigidbodySystemState)
+    public SoaPhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount, int maxCollisions)
     {
-        if(rigidbodySystemState == null)
-            throw new ArgumentNullException($"'{nameof(PhysicsSystemState)}' cannot initialise with a null '{nameof(RigidbodySystemState)}'");
-
         // Utility.
-        RigidbodySystemState = rigidbodySystemState;
         Bvh = new();
         CollisionManifold = new(maxCollisions);
 
@@ -356,8 +384,8 @@ public sealed class SoaPhysicsSystemState : IDisposable
         // Debug diagnostic stopwatches.
         FixedUpdateSubStepStopwatch         = new();
         FixedUpdateStepStopwatch            = new();
-        ProcessNearColliderPairsStopwatch   = new();
-        CollisionResolutionStopwatch                 = new();
+        FindColliderPairsStopwatch   = new();
+        ColliderCollisionResolutionStopwatch                 = new();
         BvhReconstructionStopwatch          = new();
         CollisionManifoldSortStopwatch      = new();
         SyncCollidersToTransformsStopwatch  = new();
@@ -424,10 +452,11 @@ public sealed class SoaPhysicsSystemState : IDisposable
             return;
         
         state.IsDisposed = true;
-        GC.SuppressFinalize(state);
+        GC.SuppressFinalize(state);        
+    }
 
-        state.RigidbodySystemState?.Dispose();
-        state.RigidbodySystemState = null;
-        
+    ~SoaPhysicsSystemState()
+    {
+        Dispose(this);
     }
 }

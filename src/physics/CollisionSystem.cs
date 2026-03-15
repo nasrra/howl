@@ -282,7 +282,7 @@ public static class CollisionSystem
 
             // Narrow Phase:
             // perform an SAT check.
-            if(SAT.Intersect(
+            if(SAT.CirclesIntersect(
                 colliderA.TransformedShape,
                 colliderB.TransformedShape,
                 out float normalX,
@@ -360,7 +360,7 @@ public static class CollisionSystem
 
             // Narrow Phase:
             // perform an SAT check.
-            if(SAT.Intersect(
+            if(SAT.PolygonsIntersect(
                 verticesAX,
                 verticesAY,
                 verticesBX,
@@ -483,7 +483,7 @@ public static class CollisionSystem
             Span<float> rectangleVerticesY = VerticesYAsSpan(rectangle.TransformedShape);
             
             // pre compute centroid.
-            Centroid(
+            GetCentroid(
                 rectangleVerticesX, 
                 rectangleVerticesY, 
                 out float rectangleCentroidX,
@@ -492,7 +492,7 @@ public static class CollisionSystem
 
             // Narrow Phase:
             // perform an SAT check.
-            if(SAT.Intersect
+            if(SAT.PolygonAndCircleIntersect
             (
                 rectangleVerticesX,
                 rectangleVerticesY,

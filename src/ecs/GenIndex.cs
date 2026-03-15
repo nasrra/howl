@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Howl.ECS;
 
-public readonly struct GenIndex
+public struct GenIndex
 {
     /// <summary>
     /// Constructs an invalid GenIndex.
@@ -13,12 +13,12 @@ public readonly struct GenIndex
     /// <summary>
     /// Gets the index.
     /// </summary>
-    public readonly int Index;
+    public int Index;
 
     /// <summary>
     /// Gets the generation.
     /// </summary>
-    public readonly int Generation;
+    public int Generation;
 
     /// <summary>
     /// Constructs a GenIndex.

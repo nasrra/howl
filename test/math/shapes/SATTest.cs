@@ -23,7 +23,7 @@ public class SATTest
         circleB = new(25,25,12);
     
         Assert.False(
-            SAT.Intersect(
+            SAT.CirclesIntersect(
                 circleA,
                 circleB,
                 out normal,
@@ -45,7 +45,7 @@ public class SATTest
         circleB = new(5,5,12);
 
         Assert.True(
-            SAT.Intersect(
+            SAT.CirclesIntersect(
                 circleA,
                 circleB,
                 out normal,

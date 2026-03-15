@@ -148,7 +148,7 @@ public unsafe struct PolygonRectangle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 Centroid(in PolygonRectangle polygonRectangle)
     {
-        return ShapeUtils.Centroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle));
+        return ShapeUtils.GetCentroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle));
     }
 
     /// <summary>
@@ -160,7 +160,7 @@ public unsafe struct PolygonRectangle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void Centroid(in PolygonRectangle polygonRectangle, out float centroidX, out float centroidY)
     {
-        ShapeUtils.Centroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), out centroidX, out centroidY);
+        ShapeUtils.GetCentroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), out centroidX, out centroidY);
     }
 
 

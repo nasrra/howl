@@ -13,7 +13,10 @@ using static Howl.Math.Shapes.AABB;
 using static Howl.Collections.Buffer;
 using static Howl.Math.Shapes.ShapeUtils;
 using static Howl.Physics.Soa_Collision;
-using System.Runtime.CompilerServices;
+using static Howl.DataStructures.Soa_SpatialPair;
+using static Howl.Math.Shapes.SAT;
+using static System.Runtime.InteropServices.CollectionsMarshal;
+using System.Collections.Generic;
 
 namespace Howl.Physics;
 
@@ -28,9 +31,6 @@ public static class SoaPhysicsSystem
     public static void FixedUpdate(ComponentRegistry registry, SoaPhysicsSystemState state, float deltaTime, int subSteps)
     {
         state.FixedUpdateStepStopwatch.Restart();
-
-        RigidBodySystemState rigState = state.RigidbodySystemState;
-
         // scale delta time by the substeps.
         deltaTime /= (float)subSteps;
 
@@ -39,47 +39,51 @@ public static class SoaPhysicsSystem
             state.FixedUpdateSubStepStopwatch.Restart();
 
             // Movement Step.
-            rigState.MovementStepStopwatch.Restart();
-            rigState.MovementStepStopwatch.Stop();
+            state.MovementStepStopwatch.Restart();
+            state.MovementStepStopwatch.Stop();
 
             // Sync Colliders to Transforms Step.
             state.SyncCollidersToTransformsStopwatch.Restart();
-            SyncPhysicsBodiesToEntityTransforms(registry, state.Transforms, state.Generations);
+            SyncPhysicsBodiesToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), 
+                state.Transforms, state.Generations
+            );
             state.SyncCollidersToTransformsStopwatch.Stop();
 
             // Reconstruct Bvh.
             state.BvhReconstructionStopwatch.Restart();
-            ReconstructBvhTree(
-                state.TransformedVertices, 
-                state.TransformedRadii, 
-                state.FirstVertexIndice, 
-                state.NextVertexIndice, 
-                state.Generations, 
-                state.Flags, 
-                state.Bvh,
-                state.MaxPhysicsBodyVertexCount
+            ReconstructBvhTree(state.TransformedVertices, state.TransformedRadii, state.FirstVertexIndice, 
+                state.NextVertexIndice, state.Generations, state.Flags, state.Bvh, state.MaxPhysicsBodyVertexCount
             );
             state.BvhReconstructionStopwatch.Stop();
 
+            state.FilterBvhIntoCollisionManifoldStopwatch.Restart();
+                FilterBvhIntoCollisionManifold(        
+                    state.CollisionManifold.CircleSpatialPairs,
+                    state.CollisionManifold.PolygonSpatialPairs,
+                    state.CollisionManifold.PolygonToCircleSpatialPairs,
+                    AsSpan(state.Bvh.SpatialPairs)
+                );
+            state.FilterBvhIntoCollisionManifoldStopwatch.Stop();
+
             // Process Near Colliders.
-            state.ProcessNearColliderPairsStopwatch.Restart();
-            state.ProcessNearColliderPairsStopwatch.Stop();
+            state.FindColliderPairsStopwatch.Restart();
+            state.FindColliderPairsStopwatch.Stop();
 
             // Resolve Collider Collisions.
             // NOTE: ordering matters here, make sure to resolve 
             // collisions before sorting the collision manifold.
             // Also make sure that this is above rigidbody collision resolution.
             // this function also moves the transforms of the colliders.
-            state.CollisionResolutionStopwatch.Restart();
-            state.CollisionResolutionStopwatch.Stop();
+            state.ColliderCollisionResolutionStopwatch.Restart();
+            state.ColliderCollisionResolutionStopwatch.Stop();
 
             // Resolve RigidBody Collisions.
             // NOTE: ordering matters here, make sure to resolve 
             // collisions before sorting the collision manifold.
             // Also make sure that this is below collision resolution.
             // this function also moves the transforms of the colliders.
-            rigState.CollisionResolutionStepStopwatch.Restart();
-            rigState.CollisionResolutionStepStopwatch.Stop();
+            state.RigidBodyCollisionResolutionStepStopwatch.Restart();
+            state.RigidBodyCollisionResolutionStepStopwatch.Stop();
 
             // Sort Collision Manifold.
             // sort the collision manifold after resolution step.
@@ -100,11 +104,10 @@ public static class SoaPhysicsSystem
     /// <param name="componentRegistry">the component registry housing the entity components.</param>
     /// <param name="soaTransform">the structure-of-array transforms to mutate in relation to the entity data.</param>
     /// <param name="generation">the generations for each entry in the SOA transform's.</param>
-    public static void SyncPhysicsBodiesToEntityTransforms(ComponentRegistry componentRegistry, Soa_Transform soaTransform, Span<int> generation)
+    public static void SyncPhysicsBodiesToEntityTransforms(GenIndexList<Transform> transforms, 
+        GenIndexList<PhysicsBodyId> bodyIds, Soa_Transform soaTransform, Span<int> generation
+    )
     {
-        GenIndexList<Transform> transforms = componentRegistry.Get<Transform>();
-        GenIndexList<PhysicsBodyId> bodyIds = componentRegistry.Get<PhysicsBodyId>();
-        
         Span<DenseEntry<Transform>> denseEntries = GetDenseAsSpan(transforms);
 
         // loop through all transforms.
@@ -168,12 +171,12 @@ public static class SoaPhysicsSystem
                         TransformVector(
                             soaVertice.X[verticeIndex],
                             soaVertice.Y[verticeIndex],
-                            soaTransform.Scale.X[verticeIndex],
-                            soaTransform.Scale.Y[verticeIndex],
-                            soaTransform.Cos[verticeIndex],
-                            soaTransform.Sin[verticeIndex],
-                            soaTransform.Position.X[verticeIndex],
-                            soaTransform.Position.Y[verticeIndex],
+                            soaTransform.Scale.X[i],
+                            soaTransform.Scale.Y[i],
+                            soaTransform.Cos[i],
+                            soaTransform.Sin[i],
+                            soaTransform.Position.X[i],
+                            soaTransform.Position.Y[i],
                             out float x,
                             out float y
                         );
@@ -190,9 +193,10 @@ public static class SoaPhysicsSystem
                 }
                 else // circle shape.
                 {
+                    int vertexIndex = firstVertice[i];
                     Circle.Transform(
-                        soaVertice.X[i],
-                        soaVertice.Y[i],
+                        soaVertice.X[vertexIndex],
+                        soaVertice.Y[vertexIndex],
                         radius[i],
                         soaTransform.Scale.X[i],
                         soaTransform.Scale.Y[i],
@@ -205,8 +209,8 @@ public static class SoaPhysicsSystem
                         out float r
                     );
 
-                    soaTransformedVertice.X[i] = x;
-                    soaTransformedVertice.Y[i] = y;
+                    soaTransformedVertice.X[vertexIndex] = x;
+                    soaTransformedVertice.Y[vertexIndex] = y;
                     transformedRadius[i] = r;
                 }
             }
@@ -326,80 +330,55 @@ public static class SoaPhysicsSystem
         ConstructTree(bvh);
     }
 
-    public static void FindCollisions(
-        CollisionManifoldNew manifold,
-        Soa_Vector2 vertices,
-        Span<SpatialPair> spatialPairs,
-        Span<int> nextVertexIndices,
-        Span<float> radii,
-        int maxPolygonVerticeCount
+    /// <summary>
+    /// Filters a given span of spatial pairs into three soa spatial pair categories.
+    /// </summary>
+    /// <remark>
+    /// Note: this functions assumes that spatial pairs have user-defined flags that
+    /// can be statically casted to PhysicsBodyFlag.
+    /// </remark>
+    /// <param name="circleSpatialPairs">the soa spatial pair to append any found pairs that contain only circle physics bodies.</param>
+    /// <param name="polygonSpatialPairs">the soa spatial pair to append any found pairs that contain only polygon physics bodies.</param>
+    /// <param name="polygonToCircleSpatialPairs">the so spatial pair to append any found pairs that contain a polygon and circle body.</param>
+    /// <param name="spatialPairs">the spatial pairs to filter.</param>
+    public static void FilterBvhIntoCollisionManifold(
+        Soa_SpatialPair circleSpatialPairs,
+        Soa_SpatialPair polygonSpatialPairs,
+        Soa_SpatialPair polygonToCircleSpatialPairs,
+        Span<SpatialPair> spatialPairs
     )
     {
-        // delcarations.
-        float normalX;
-        float normalY;
-        float depth;
-        float contactPointX1;
-        float contactPointY1;
-        float contactPointX2;
-        float contactPointY2; 
-        bool colliding = false;
-        
         for(int i = 0; i < spatialPairs.Length; i++)
         {
-            // set at one as the default.
-            int contactPointsAmount = 1;
-
-            // hoisting invariance.
             ref SpatialPair pair = ref spatialPairs[i];
             PhysicsBodyFlags ownerFlag = (PhysicsBodyFlags)pair.Owner.Flag;
             PhysicsBodyFlags otherFlag = (PhysicsBodyFlags)pair.Other.Flag;
-            int ownerIndex = pair.Owner.GenIndex.Index;
-            int ownerGeneration = pair.Owner.GenIndex.Generation;
-            int otherIndex = pair.Other.GenIndex.Index; 
-            int otherGeneration = pair.Other.GenIndex.Generation;
-
-            // the resolution buffer to append the newly found collision to.
-            Soa_Collision resolutionSoa;
-
             if((ownerFlag & PhysicsBodyFlags.PolygonShape) != 0)
             {
                 if((otherFlag & PhysicsBodyFlags.PolygonShape) != 0)
                 {
-                    resolutionSoa = manifold.PolygonCollisionsToResolve;
-
-                    colliding = PolygonBodiesAreColliding(
-                        vertices,
-                        nextVertexIndices,
-                        ownerIndex,
-                        otherIndex,
-                        maxPolygonVerticeCount,
-                        out normalX,
-                        out normalY,
-                        out depth,
-                        out contactPointX1,
-                        out contactPointY1,
-                        out contactPointX2,
-                        out contactPointY2,
-                        out contactPointsAmount
+                    // polygon to polygon.
+                    AppendSpatialPair(
+                        polygonSpatialPairs, 
+                        pair.Owner.GenIndex.Index, 
+                        pair.Owner.GenIndex.Generation, 
+                        pair.Other.GenIndex.Index, 
+                        pair.Other.GenIndex.Generation,
+                        pair.Owner.Flag,
+                        pair.Other.Flag 
                     );
                 }
-                else // other is circle.
+                else // other is a circle.
                 {
-                    resolutionSoa = manifold.PolygonToCircleCollisionsToResolve;
-
-                    colliding = PolygonAndCircleBodiesAreColliding(
-                        vertices,
-                        radii,
-                        nextVertexIndices,
-                        ownerIndex, // polygon is owner.
-                        otherIndex, // circle is other.
-                        maxPolygonVerticeCount,
-                        out normalX, 
-                        out normalY,
-                        out depth,
-                        out contactPointX1,
-                        out contactPointY1
+                    // polygon to circle.
+                    AppendSpatialPair(
+                        polygonToCircleSpatialPairs, 
+                        pair.Owner.GenIndex.Index, 
+                        pair.Owner.GenIndex.Generation, 
+                        pair.Other.GenIndex.Index, 
+                        pair.Other.GenIndex.Generation,
+                        pair.Owner.Flag,
+                        pair.Other.Flag 
                     );
                 }
             }
@@ -407,266 +386,320 @@ public static class SoaPhysicsSystem
             {
                 if((otherFlag & PhysicsBodyFlags.PolygonShape) != 0)
                 {
-                    resolutionSoa = manifold.PolygonToCircleCollisionsToResolve;
-
-                    colliding = PolygonAndCircleBodiesAreColliding(
-                        vertices,
-                        radii,
-                        nextVertexIndices,
-                        otherIndex, // polygon is other.
-                        ownerIndex, // circle is owner.
-                        maxPolygonVerticeCount,
-                        out normalX, 
-                        out normalY,
-                        out depth,
-                        out contactPointX1,
-                        out contactPointY1
+                    // circle to polygon.
+                    // Note: append other first instead of owner as
+                    // other is the polygon.
+                    AppendSpatialPair(
+                        polygonToCircleSpatialPairs, 
+                        pair.Other.GenIndex.Index, 
+                        pair.Other.GenIndex.Generation,
+                        pair.Owner.GenIndex.Index, 
+                        pair.Owner.GenIndex.Generation, 
+                        pair.Other.Flag, 
+                        pair.Owner.Flag
                     );
                 }
                 else // other is circle.
                 {
-                    resolutionSoa = manifold.CircleCollisionsToResolve;
-
-                    colliding = CircleBodiesAreColliding(
-                        vertices,
-                        radii,
-                        ownerIndex, 
-                        otherIndex,
-                        out normalX,
-                        out normalY,
-                        out depth,
-                        out contactPointX1,
-                        out contactPointY1
+                    AppendSpatialPair(
+                        circleSpatialPairs, 
+                        pair.Owner.GenIndex.Index, 
+                        pair.Owner.GenIndex.Generation, 
+                        pair.Other.GenIndex.Index, 
+                        pair.Other.GenIndex.Generation,
+                        pair.Owner.Flag,
+                        pair.Other.Flag 
                     );
                 }
             }
+        }
+    }
 
-            if (colliding)
+
+    // public static void FindCollisions(BoundingVolumeHierarchy bvh, CollisionManifoldNew manifold, Soa_Vector2 vertices,
+    //     Span<float> radii
+    // )
+    // {
+    //     FindCircleCollisions(manifold.CircleCollisionsToResolve, manifold.Collisions,
+    //         AsSpan(bvh.SpatialPairs),vertices,radii);
+    // }
+
+    /// <summary>
+    /// Finds collisions in a 
+    /// </summary>
+    /// <param name="spatialPairs"></param>
+    /// <param name="vertices"></param>
+    /// <param name="radii"></param>
+    /// <param name="normalX"></param>
+    /// <param name="normalY"></param>
+    /// <param name="depth"></param>
+    /// <param name="contactPointX"></param>
+    /// <param name="contactPointY"></param>
+    public static void FindCircleCollisions(
+        Soa_Collision collisionsToResolve,
+        Soa_Collision collisions,
+        Soa_SpatialPair spatialPairs,
+        Soa_Vector2 vertices,
+        Span<float> radii,
+        Span<int> firstVertexIndices
+    )
+    {
+        // hoisting invariance.
+        Span<int> ownerIndices      = spatialPairs.OwnerGenIndices.Indices;
+        Span<int> ownerGenerations  = spatialPairs.OwnerGenIndices.Generations;
+        Span<int> otherIndices      = spatialPairs.OtherGenIndices.Indices;
+        Span<int> otherGenerations  = spatialPairs.OtherGenIndices.Generations;
+        Span<byte> ownerFlags       = spatialPairs.OwnerFlags;
+        Span<byte> otherFlags       = spatialPairs.OtherFlags;
+        Span<float> x = vertices.X;
+        Span<float> y = vertices.Y;
+        float normalX = 0;
+        float normalY = 0;
+        float depth = 0;
+        float contactPointX = 0;
+        float contactPointY = 0;
+
+        for(int i = 0; i < spatialPairs.Count; i++)
+        {
+            // retirieve data.
+            int ownerIndex              = ownerIndices[i];
+            int ownerGeneration         = ownerGenerations[i];
+            int otherIndex              = otherIndices[i];
+            int otherGeneration         = otherGenerations[i];
+            PhysicsBodyFlags ownerFlag = (PhysicsBodyFlags)ownerFlags[i];
+            PhysicsBodyFlags otherFlag = (PhysicsBodyFlags)otherFlags[i];
+            float ownerX = x[firstVertexIndices[ownerIndex]];
+            float ownerY = y[firstVertexIndices[ownerIndex]];
+            float ownerR = radii[ownerIndex];
+            float otherX = x[firstVertexIndices[otherIndex]];
+            float otherY = y[firstVertexIndices[otherIndex]];
+            float otherR = radii[otherIndex];
+
+            if(CircleBodiesAreColliding(ownerX, ownerY, ownerR, otherX, otherY, otherR, ref normalX, ref normalY, 
+                ref depth, ref contactPointX, ref contactPointY))
             {
-                // register two collisions, one for each collider.
-                
-                // Add one to the collisions to resolve and the other directly to collisions.
-                // this is done so that during the resolution step, a seperating force is 
-                // not applied twice to the same colliders.
+                RegisterCollision(collisionsToResolve, collisions,
+                    ownerIndex, ownerGeneration, otherIndex, otherGeneration, normalX, normalY, ownerX, ownerY, 
+                    otherX, otherY, depth, contactPointX, contactPointY, ownerFlag, otherFlag
+                );
+            } 
+        }
+    }
 
-                // collisions to resolve is later added back to the collision list after
-                // they have been resolved.
-                // Append(
-                //     resolutionSoa, 
-                //     ownerIndex, 
-                //     ownerGeneration, 
-                //     otherIndex,
-                //     otherGeneration,
-                //     normalX,
-                //     normalY,
-                //     ownerShapeCenterX,
-                //     ownerShapeCenterY,
-                //     otherShapeCenterX,
-                //     otherShapeCenterY,
-                //     contactPointX,
-                //     contactPointY,
-                //     depth,
-                //     ownerFlags,
-                //     otherFlags
-                // );
+    public static void FindPolygonCollisions(
+        Soa_Collision collisionsToResolve,
+        Soa_Collision collisions,
+        Soa_SpatialPair spatialPairs,
+        Soa_Vector2 vertices,
+        Span<int> firstVertexIndices,
+        Span<int> nextVertexIndices,
+        int maxPolygonVerticeCount
+    )
+    {
+        // hoisting of invariance.
+        Span<int> ownerIndices      = spatialPairs.OwnerGenIndices.Indices;
+        Span<int> ownerGenerations  = spatialPairs.OwnerGenIndices.Generations;
+        Span<int> otherIndices      = spatialPairs.OtherGenIndices.Indices;
+        Span<int> otherGenerations  = spatialPairs.OtherGenIndices.Generations;
+        Span<byte> ownerFlags       = spatialPairs.OwnerFlags;
+        Span<byte> otherFlags       = spatialPairs.OtherFlags;
+        Span<float> vertsX = vertices.X;
+        Span<float> vertsY = vertices.Y;        
+        Span<float> ownerVertsX = stackalloc float[maxPolygonVerticeCount];
+        Span<float> ownerVertsY = stackalloc float[maxPolygonVerticeCount];
+        Span<float> otherVertsX = stackalloc float[maxPolygonVerticeCount];
+        Span<float> otherVertsY = stackalloc float[maxPolygonVerticeCount];
+        float normalX = 0;
+        float normalY = 0;
+        float depth = 0;        
+        float contactPointX1 = 0;
+        float contactPointY1 = 0;
+        float contactPointX2 = 0;
+        float contactPointY2 = 0;
+        
+        int vertexCountA = 0;
+        int vertexCountB = 0;
+        int contactCount = 0;
 
-                // Append(
-                //     resolutionSoa, 
-                //     otherIndex,
-                //     otherGeneration,
-                //     ownerIndex, 
-                //     ownerGeneration, 
-                //     normalX,
-                //     normalY,
-                //     otherShapeCenterX,
-                //     otherShapeCenterY,
-                //     ownerShapeCenterX,
-                //     ownerShapeCenterY,
-                //     contactPointX,
-                //     contactPointY,
-                //     depth,
-                //     otherFlags,
-                //     ownerFlags
-                // );
+        for(int i = 0; i < spatialPairs.Count; i++)
+        {            
+            int ownerIndex              = ownerIndices[i];
+            int ownerGeneration         = ownerGenerations[i];
+            int otherIndex              = otherIndices[i];
+            int otherGeneration         = otherGenerations[i];
+            PhysicsBodyFlags ownerFlag  = (PhysicsBodyFlags)ownerFlags[i];
+            PhysicsBodyFlags otherFlag  = (PhysicsBodyFlags)otherFlags[i];
+
+            // gather polygon a vertices.
+            GetPolygonVertices(vertsX, vertsY, firstVertexIndices, nextVertexIndices, ownerVertsX, ownerVertsY, ownerIndex, ref vertexCountA);
+            GetPolygonVertices(vertsX, vertsY, firstVertexIndices, nextVertexIndices, otherVertsX, otherVertsY, otherIndex, ref vertexCountB);
+
+            if (PolygonBodiesAreColliding(ownerVertsX.Slice(0, vertexCountA), ownerVertsY.Slice(0, vertexCountA),
+                otherVertsX.Slice(0, vertexCountB), otherVertsY.Slice(0, vertexCountB),
+                ref normalX, ref normalY, ref depth, ref contactPointX1, ref contactPointY1, ref contactPointX2,
+                ref contactPointY2, ref contactCount
+            ))
+            {
+                GetCentroid(ownerVertsX, ownerVertsY, out float ownerCentroidX, out float ownerCentroidY);
+                GetCentroid(otherVertsX, otherVertsY, out float otherCentroidX, out float otherCentroidY);
+
+                switch (contactCount)
+                {
+                    case 1:
+                        RegisterCollision(collisionsToResolve, collisions, ownerIndex, ownerGeneration, 
+                            otherIndex, otherGeneration, normalX, normalY, ownerCentroidX, ownerCentroidY, 
+                            otherCentroidX, otherCentroidY, depth, contactPointX1, contactPointY1, 
+                            ownerFlag, otherFlag
+                        );
+                        break;
+                    case 2:
+                        RegisterCollision(collisionsToResolve, collisions, ownerIndex, ownerGeneration, 
+                            otherIndex, otherGeneration, normalX, normalY, ownerCentroidX, ownerCentroidY, 
+                            otherCentroidX, otherCentroidY, depth, contactPointX1, contactPointY1, 
+                            contactPointX2, contactPointY2, ownerFlag, otherFlag
+                        );
+                        break;
+                }                
             }
+        }
 
+    }
+
+    public static void FindPolygonToCircleCollisions(
+        Soa_Collision collisionsToResolve,
+        Soa_Collision collisions,
+        Soa_SpatialPair spatialPairs,
+        Soa_Vector2 vertices,
+        Span<int> firstVertexIndices,
+        Span<int> nextVertexIndices,
+        Span<float> radii,
+        int maxPolygonVerticeCount
+    )
+    {
+        // hoisting of invariance.
+        Span<int> ownerIndices      = spatialPairs.OwnerGenIndices.Indices;
+        Span<int> ownerGenerations  = spatialPairs.OwnerGenIndices.Generations;
+        Span<int> otherIndices      = spatialPairs.OtherGenIndices.Indices;
+        Span<int> otherGenerations  = spatialPairs.OtherGenIndices.Generations;
+        Span<byte> ownerFlags       = spatialPairs.OwnerFlags;
+        Span<byte> otherFlags       = spatialPairs.OtherFlags;
+        Span<float> polygonX = stackalloc float[maxPolygonVerticeCount];
+        Span<float> polygonY = stackalloc float[maxPolygonVerticeCount];
+        Span<float> verticesX = vertices.X;
+        Span<float> verticesY = vertices.Y;
+
+        // declarations:
+        float normalX = 0;
+        float normalY = 0;
+        float depth = 0;
+        float contactPointX = 0;
+        float contactPointY = 0;
+        int polygonVertexCount = 0;
+
+        for(int i = 0; i < spatialPairs.Count; i++)
+        {            
+            int ownerIndex      = ownerIndices[i];
+            int ownerGeneration = ownerGenerations[i];
+            int otherIndex      = otherIndices[i];
+            int otherGeneration = otherGenerations[i];
+            PhysicsBodyFlags ownerFlag = (PhysicsBodyFlags)ownerFlags[i];
+            PhysicsBodyFlags otherFlag = (PhysicsBodyFlags)otherFlags[i];
+
+            // get circle data.
+            float circleX = verticesX[firstVertexIndices[otherIndex]];
+            float circleY = verticesY[firstVertexIndices[otherIndex]];
+            float circleR = radii[otherIndex]; 
+
+            // get polygon data.
+            GetPolygonVertices(
+                vertices, firstVertexIndices, nextVertexIndices, polygonX, polygonY, ownerIndex, ref polygonVertexCount);
+            
+            if(PolygonAndCircleBodiesAreColliding(
+                polygonX, polygonY, circleX, circleY, circleR, 
+                ref normalX, ref normalY, ref depth, ref contactPointX, ref contactPointY
+            ))
+            {
+                GetCentroid(polygonX, polygonY, out float polygonCentroidX, out float polygonCentroidY);
+
+                RegisterCollision(collisionsToResolve, collisions,
+                    ownerIndex, ownerGeneration, otherIndex, otherGeneration, normalX, normalY, polygonCentroidX, polygonCentroidY, 
+                    circleX, circleY, depth, contactPointX, contactPointY, ownerFlag, otherFlag
+                );
+            }
         }
     }
 
     /// <summary>
-    /// Checks whether or not two circle bodies are colliding with eachother.
+    /// Gets whether or not two circle bodies are colliding with eachother.
     /// </summary>
-    /// <remarks>
-    /// Note: the 'out' variables will be garbage values when this function returns false.
-    /// </remarks>
-    /// <param name="vertices">an SoaVector2 containing the positional verticces of the circles.</param>
-    /// <param name="radii">a span containing the radii of the circles.</param>
-    /// <param name="circleAIndex">the index of circle a's positional vertex in the transformed vertice span.</param>
-    /// <param name="circleBIndex">the index of circle b's positional vertex in the transformed vertice span.</param>
-    /// <param name="normalX">the x-component of the intersection normal in relation to  circle b.</param>
-    /// <param name="normalY">the y-component of the intersection normal in relation to  circle b.</param>
-    /// <param name="depth">the depth of the intersection in relation circle b.</param>
-    /// <param name="contactPointX">the x-component of the point of contact.</param>
-    /// <param name="contactPointY">the y-component of the point of contact.</param>
-    /// <returns>true, if the two circle bodies are colliding; otherwise false.</returns>
-    public static bool CircleBodiesAreColliding(
-        Soa_Vector2 vertices,
-        Span<float> radii,
-        int circleAIndex, 
-        int circleBIndex,
-        out float normalX,
-        out float normalY,
-        out float depth,
-        out float contactPointX,
-        out float contactPointY
-    )
+    /// <param name="xA">the x-component of circle a's position vector.</param>
+    /// <param name="yA">the y-component of circle a's position vector.</param>
+    /// <param name="rA">the radius of circle a.</param>
+    /// <param name="xB">the x-component of circle b's position vector.</param>
+    /// <param name="yB">the y-component of circle b's position vector.</param>
+    /// <param name="rB">the radius of circle b.</param>
+    /// <param name="nX">a float to store the x-component of the normal vector.</param>
+    /// <param name="nY">a float to store the y-component of the normal vector.</param>
+    /// <param name="d">a float to the store the depth of the collision.</param>
+    /// <param name="cX">a float to store the x-component of the contact point vector.</param>
+    /// <param name="cY">a float to store the y-component of the contact point vector.</param>
+    /// <returns></returns>
+    public static bool CircleBodiesAreColliding(float xA, float yA, float rA, float xB, float yB, float rB, ref float nX, ref float nY, ref float d, ref float cX, ref float cY)
     {
-        
-        Span<float> x = vertices.X;
-        Span<float> y = vertices.Y;
-
-        normalX         = 0;
-        normalY         = 0;
-        depth           = 0;
-        contactPointX   = 0;
-        contactPointY   = 0;
-
-        float aX        = x[circleAIndex];
-        float aY        = y[circleAIndex];
-        float aRadius   = radii[circleAIndex];
-        float bX        = x[circleBIndex];
-        float bY        = y[circleBIndex];
-        float bRadius   = radii[circleBIndex];
-
         // get AABB of circle A.
-        Circle.GetMinMaxVectors(
-            x[circleAIndex], 
-            y[circleAIndex], 
-            radii[circleAIndex], 
-            out float aMinX,
-            out float aMinY,
-            out float aMaxX,
-            out float aMaxY
-        );
+        Circle.GetMinMaxVectors(xA, yA, rA, out float minXA, out float minYA, out float maxXA, out float maxYA);
 
         // get AABB of circle B.
-        Circle.GetMinMaxVectors(
-            x[circleBIndex], 
-            y[circleBIndex], 
-            radii[circleBIndex], 
-            out float bMinX,
-            out float bMinY,
-            out float bMaxX,
-            out float bMaxY
-        );
+        Circle.GetMinMaxVectors(xB, yB, rB, out float minXB, out float minYB, out float maxXB, out float maxYB);
 
         // Broad Phase:
-        if (Intersect(aMinX, aMinY, aMaxX, aMaxY, bMinX, bMinY, bMaxX, bMaxY) == false)
+        if (Intersect(minXA, minYA, maxXA, maxYA, minXB, minYB, maxXB, maxYB) == false)
         {
             return false;
         }
 
         // Narrow Phase:
         // perform an SAT check.
-        if(SAT.Intersect(aX, aY, aRadius, bX, bY, bRadius, out normalX, out normalY, out depth))
+        if(SAT.CirclesIntersect(xA, yA, rA, xB, yB, rB, out nX, out nY, out d))
         {
             // submit the collision with contact points if one of the colliders needs them.
-            SAT.FindContactPoints(aX, aY, aRadius, bX, bY, out contactPointX, out contactPointY);
+            SAT.FindContactPoints(xA, yA, rA, xB, yB, out cX, out cY);
             return true;
         }   
         return false;
     }
 
     /// <summary>
-    /// Checks whether or not two polygon bodies are colliding with eachother.
+    /// Gets whether or not two polygon bodies are colliding with eachother.
     /// </summary>
-    /// <remarks>
-    /// Note: the 'out' variables will be garbage values when this function returns false.
-    /// </remarks>
-    /// <param name="vertices">the SoaVector2 containing the positional verticces of the polygons.</param>
-    /// <param name="nextVertexIndices">a span containing the next index for a vertice in the vertices collection for a given vertice.</param>
-    /// <param name="aPolygonFirstVertexIndex">polygon a's first vertex index in the vertices collection.</param>
-    /// <param name="bPolygonFirstVertexIndex">polygon b's first vertex index in the vertices collection.</param>
-    /// <param name="maxPolygonVerticeCount">the max count of vertices a polygon can have.</param>
-    /// <param name="normalX">the x-component of the intersection normal in relation to  circle b.</param>
-    /// <param name="normalY">the y-component of the intersection normal in relation to  circle b.</param>
-    /// <param name="depth">the depth of the intersection in relation circle b.</param>
-    /// <param name="contactPointX1">the x-component of the first given point of contact.</param>
-    /// <param name="contactPointY1">the y-component of the first given point of contact.</param>
-    /// <param name="contactPointX2">the x-component of the second given point of contact.</param>
-    /// <param name="contactPointY2">the y-component of the second given point of contact.</param>
-    /// <param name="contactPointsAmount">the amount of contact points (0,1,2).</param>
-    /// <returns>true, it the two bodies are colliding; otherwise false.</returns>
+    /// <param name="aX">the x-components of polygon a's vertices.</param>
+    /// <param name="aY">the y-components of polygon a's vertices.</param>
+    /// <param name="bX">the x-components of polygon b's vertices.</param>
+    /// <param name="bY">the y-components of polygon b's vertices.</param>
+    /// <param name="nX">a float to store the x-component of the normal vector.</param>
+    /// <param name="nY">a float to store the y-component of the normal vector.</param>
+    /// <param name="d">a float to store the depth of the collision.</param>
+    /// <param name="cX1">a float to store the x-component of the first contact point vector.</param>
+    /// <param name="cY1">a float to store the y-component of the first contact point vector.</param>
+    /// <param name="cX2">a float to store the x-component of the second contact point vector.</param>
+    /// <param name="cY2">a float to store the y-component of the second contact point vector.</param>
+    /// <param name="contactCount">the amount of contact points (0, 1, 2).</param>
+    /// <returns>true, if the two bodies are colliding; otherwise false.</returns>
     public static bool PolygonBodiesAreColliding(
-        Soa_Vector2 vertices,
-        Span<int> nextVertexIndices,
-        int aPolygonFirstVertexIndex,
-        int bPolygonFirstVertexIndex,
-        int maxPolygonVerticeCount,
-        out float normalX,
-        out float normalY,
-        out float depth,
-        out float contactPointX1,
-        out float contactPointY1,
-        out float contactPointX2,
-        out float contactPointY2,
-        out int contactPointsAmount
+        Span<float> aX,
+        Span<float> aY,
+        Span<float> bX,
+        Span<float> bY,
+        ref float nX,
+        ref float nY,
+        ref float d,
+        ref float cX1,
+        ref float cY1,
+        ref float cX2,
+        ref float cY2,
+        ref int contactCount
     )
     {
-
-        // hoisting of invariance.
-        Span<float> xVertices = vertices.X;
-        Span<float> yVertices = vertices.Y;
-        Span<float> aX = stackalloc float[maxPolygonVerticeCount];
-        Span<float> aY = stackalloc float[maxPolygonVerticeCount];
-        Span<float> bX = stackalloc float[maxPolygonVerticeCount];
-        Span<float> bY = stackalloc float[maxPolygonVerticeCount];
-
-        int nextVerticeIndex = 0;
-        int aVertexCount = 0;
-        int bVertexCount = 0;
-
-        // decalarations.
-        normalX             = 0;
-        normalY             = 0;
-        depth               = 0;
-        contactPointX1      = 0;
-        contactPointY1      = 0;
-        contactPointX2      = 0;
-        contactPointY2      = 0;
-        contactPointsAmount = 0;
-
-
-        // gather polygon a vertices.
-        nextVerticeIndex = aPolygonFirstVertexIndex;
-        while (true)
-        {
-            // get the vertice.
-            aX[aVertexCount] = xVertices[nextVerticeIndex];
-            aY[aVertexCount] = yVertices[nextVerticeIndex];
-            aVertexCount++;
-
-            // break out when reaching the end of the circular loop.
-            nextVerticeIndex = nextVertexIndices[nextVerticeIndex];
-            if (nextVerticeIndex == aPolygonFirstVertexIndex)
-                break;
-        }
-
-        // gather polygon b vertices.
-        nextVerticeIndex = bPolygonFirstVertexIndex;
-        while (true)
-        {
-            // get the vertice.
-            bX[bVertexCount] = xVertices[nextVerticeIndex];
-            bY[bVertexCount] = yVertices[nextVerticeIndex];
-            aVertexCount++;
-
-            // break out when reaching the end of the circular loop.
-            nextVerticeIndex = nextVertexIndices[nextVerticeIndex];
-            if (nextVerticeIndex == bPolygonFirstVertexIndex)
-                break;
-        }
-
         // get the min and max vectors of polygon a and b.
         GetMinMaxVectors(aX, aY, out float aMinX, out float aMinY, out float aMaxX, out float aMaxY);
         GetMinMaxVectors(bX, bY, out float bMinX, out float bMinY, out float bMaxX, out float bMaxY);
@@ -676,18 +709,18 @@ public static class SoaPhysicsSystem
             return false;
 
         // get the centers of both polygons.
-        Centroid(aX, aY, out float aCX, out float aCY);
-        Centroid(bX, bY, out float bCX, out float bCY);
+        GetCentroid(aX, aY, out float aCX, out float aCY);
+        GetCentroid(bX, bY, out float bCX, out float bCY);
 
         // narrow phase SAT intersect check.
-        if(SAT.Intersect(aX, aY, bX, bY, aCX, aCY, bCX, bCY, out normalX, out normalY, out depth))
+        if(SAT.PolygonsIntersect(aX, aY, bX, bY, aCX, aCY, bCX, bCY, out nX, out nY, out d))
         {
             SAT.FindContactPoints(aX, aY, bX, bY, SAT.PolygonContactPointEpsilon, 
-                out contactPointX1, 
-                out contactPointY1, 
-                out contactPointX2, 
-                out contactPointY2, 
-                out contactPointsAmount
+                out cX1, 
+                out cY1, 
+                out cX2, 
+                out cY2, 
+                out contactCount
             );
 
             return true;
@@ -696,56 +729,38 @@ public static class SoaPhysicsSystem
         return false;
     }
 
+    /// <summary>
+    /// Gets whether or not a polygon can a circle are colliding.
+    /// </summary>
+    /// <param name="polygonX">the x-components of a polygon's vertices.</param>
+    /// <param name="polygonY">the y-components of a polygon's vertices.</param>
+    /// <param name="circleX">the x-component of a circles position vector.</param>
+    /// <param name="circleY">the y-component of a circles position vector.</param>
+    /// <param name="circleR">the radius of a circle.</param>
+    /// <param name="nX">the x-component of the collision normal vector.</param>
+    /// <param name="nY">the y-component of the collision normal vector.</param>
+    /// <param name="d">the depth of the collision.</param>
+    /// <param name="cPX">the x-component of the contact point vector.</param>
+    /// <param name="cPY">the y-component of the contact point vector.</param>
+    /// <returns>true, if the two bodies are colliding; otherwise false.</returns>
     public static bool PolygonAndCircleBodiesAreColliding(
-        Soa_Vector2 vertices,
-        Span<float> radii,
-        Span<int> nextVertexIndices,
-        int polygonFirstVertexIndex,
-        int circleVertexIndex, 
-        int maxPolygonVerticeCount,
-        out float normalX, 
-        out float normalY,
-        out float depth,
-        out float contactPointX,
-        out float contactPointY
+        Span<float> polygonX,
+        Span<float> polygonY,
+        float circleX,
+        float circleY,
+        float circleR,
+        ref float nX,
+        ref float nY,
+        ref float d,
+        ref float cPX,
+        ref float cPY
     )
     {
-        // decalarations.
-        Span<float> x           = vertices.X;
-        Span<float> y           = vertices.Y;
-        Span<float> polygonX    = stackalloc float[maxPolygonVerticeCount];
-        Span<float> polygonY    = stackalloc float[maxPolygonVerticeCount];
-        normalX                 = 0;
-        normalY                 = 0;
-        depth                   = 0;
-        contactPointX           = 0;
-        contactPointY           = 0;
-
-
-        // get the vertices of polygon A.
-        int polygonVertexCount = 0;
-        int nextVertexIndex = polygonFirstVertexIndex;
-        while (true)
-        {
-            // get the vertice
-            polygonX[polygonVertexCount] = x[nextVertexIndex];
-            polygonY[polygonVertexCount] = y[nextVertexIndex];
-            polygonVertexCount++;
-
-            // break out when reaching the endof the circular loop.
-            nextVertexIndex = nextVertexIndices[nextVertexIndex];
-            if(nextVertexIndex == polygonFirstVertexIndex)
-                break;
-        }
-
         // get the AABB of the circle.
-        float circleX           = x[circleVertexIndex];
-        float circleY           = y[circleVertexIndex];
-        float circleRadius      = radii[circleVertexIndex];     
         Circle.GetMinMaxVectors(
             circleX,
             circleY,
-            circleRadius,
+            circleR,
             out float circleMinX,
             out float circleMinY,
             out float circleMaxX,
@@ -766,9 +781,136 @@ public static class SoaPhysicsSystem
         if(Intersect(polygonMinX, polygonMinY, polygonMaxX, polygonMaxY, circleMinX, circleMinY, circleMaxX, circleMaxY) == false)
             return false;
 
-        SAT.FindContactPoints(polygonX, polygonY, circleX, circleY, out float xContactPoint, out float yContactPoint);
+        GetCentroid(polygonX, polygonY, out float polygonCentroidX, out float polygonCentroidY);
+
+        // narrow phase intersect check.
+        if(PolygonAndCircleIntersect(
+            polygonX, 
+            polygonY, 
+            polygonCentroidX, 
+            polygonCentroidY, 
+            circleX, 
+            circleY, 
+            circleR, 
+            circleX, 
+            circleY,
+            out nX,
+            out nY,
+            out d
+        ))
+        {
+            FindContactPoints(polygonX, polygonY, circleX, circleY, out cPX, out cPY);
+            return true;
+        }
+
 
         return false;
+    }
+
+    /// <summary>
+    /// Registers a collision with a single contact point.
+    /// </summary>
+    /// <remarks>
+    /// Note: sibling collisions are created and registered.
+    /// - collision one is owned by the 'owner' and is appended to 'collisions to resolve'
+    /// - collision to is owned by the 'other' and is appended to 'collisions'.
+    /// </remarks>
+    /// <param name="collisionsToResolve">the soa collision resolution instance to register a collision to.</param>
+    /// <param name="collisions">the soa collision instance to register a collision to.</param>
+    /// <param name="ownerIndex">the index of the 'owner'.</param>
+    /// <param name="ownerGeneration">the generation of the 'owner'.</param>
+    /// <param name="otherIndex">the index of the 'other'.</param>
+    /// <param name="otherGeneration">the generation of the 'other'.</param>
+    /// <param name="normalX">the x-component of the collision normal vector.</param>
+    /// <param name="normalY">the y-component of the collision normal vector.</param>
+    /// <param name="ownerShapeCenterX">the x-component of the 'owner' shape's center vector.</param>
+    /// <param name="ownerShapeCenterY">the y-component of the 'owner' shape's center vector.</param>
+    /// <param name="otherShapeCenterX">the x-component of the 'other' shape's center vector.</param>
+    /// <param name="otherShapeCenterY">the y-component of the 'other' shape's center vector.</param>
+    /// <param name="depth">the depth of the collision.</param>
+    /// <param name="contactPointX1">the x-component of the contact point vector.</param>
+    /// <param name="contactPointY2">the x-component of the contact point vector.</param>
+    /// <param name="ownerFlags">the physics body flags of the 'owner'.</param>
+    /// <param name="otherFlags">the physics body flags of the 'other'.</param>
+    public static void RegisterCollision(Soa_Collision collisionsToResolve, Soa_Collision collisions,
+        int ownerIndex, int ownerGeneration, int otherIndex, int otherGeneration, float normalX,
+        float normalY, float ownerShapeCenterX, float ownerShapeCenterY, float otherShapeCenterX,
+        float otherShapeCenterY, float depth, float contactPointX, float contactPointY, PhysicsBodyFlags ownerFlags,
+        PhysicsBodyFlags otherFlags
+    )
+    {                
+        // register two collisions, one for each collider.
+        
+        // Add one to the collisions to resolve and the other directly to collisions.
+        // this is done so that during the resolution step, a seperating force is 
+        // not applied twice to the same colliders.
+
+        // collisions to resolve is later added back to the collision list after
+        // they have been resolved.
+
+        AppendCollision(collisionsToResolve, ownerIndex, ownerGeneration, otherIndex, otherGeneration,
+            normalX, normalY, ownerShapeCenterX, ownerShapeCenterY, otherShapeCenterX, otherShapeCenterY,
+            contactPointX, contactPointY, depth, ownerFlags, otherFlags
+        );
+
+        AppendCollision(collisions, otherIndex, otherGeneration, ownerIndex, ownerGeneration, 
+            normalX, normalY, otherShapeCenterX, otherShapeCenterY, ownerShapeCenterX, ownerShapeCenterY, 
+            contactPointX, contactPointY, depth, otherFlags, ownerFlags
+        );
+    }
+
+    /// <summary>
+    /// Registers a collision with two contact points.
+    /// </summary>
+    /// <remarks>
+    /// Note: sibling collisions are created and registered.
+    /// - collision one is owned by the 'owner' and is appended to 'collisions to resolve'
+    /// - collision to is owned by the 'other' and is appended to 'collisions'.
+    /// </remarks>
+    /// <param name="collisionsToResolve">the soa collision resolution instance to register a collision to.</param>
+    /// <param name="collision">the soa collision instance to register a collision to.</param>
+    /// <param name="ownerIndex">the index of the 'owner'.</param>
+    /// <param name="ownerGeneration">the generation of the 'owner'.</param>
+    /// <param name="otherIndex">the index of the 'other'.</param>
+    /// <param name="otherGeneration">the generation of the 'other'.</param>
+    /// <param name="normalX">the x-component of the collision normal vector.</param>
+    /// <param name="normalY">the y-component of the collision normal vector.</param>
+    /// <param name="ownerShapeCenterX">the x-component of the 'owner' shape's center vector.</param>
+    /// <param name="ownerShapeCenterY">the y-component of the 'owner' shape's center vector.</param>
+    /// <param name="otherShapeCenterX">the x-component of the 'other' shape's center vector.</param>
+    /// <param name="otherShapeCenterY">the y-component of the 'other' shape's center vector.</param>
+    /// <param name="depth">the depth of the collision.</param>
+    /// <param name="contactPointX1">the x-component of the first contact point vector.</param>
+    /// <param name="contactPointY1">the x-component of the first contact point vector.</param>
+    /// <param name="contactPointX2">the x-component of the second contact point vector.</param>
+    /// <param name="contactPointY2">the x-component of the second contact point vector.</param>
+    /// <param name="ownerFlags">the physics body flags of the 'owner'.</param>
+    /// <param name="otherFlags">the physics body flags of the 'other'.</param>
+    public static void RegisterCollision(Soa_Collision collisionsToResolve, Soa_Collision collision,
+        int ownerIndex, int ownerGeneration, int otherIndex, int otherGeneration, float normalX,
+        float normalY, float ownerShapeCenterX, float ownerShapeCenterY, float otherShapeCenterX,
+        float otherShapeCenterY, float depth, float contactPointX1, float contactPointY1, 
+        float contactPointX2, float contactPointY2, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
+    )
+    {                
+        // register two collisions, one for each collider.
+        
+        // Add one to the collisions to resolve and the other directly to collisions.
+        // this is done so that during the resolution step, a seperating force is 
+        // not applied twice to the same colliders.
+
+        // collisions to resolve is later added back to the collision list after
+        // they have been resolved.
+
+        AppendCollision(collisionsToResolve, ownerIndex, ownerGeneration, otherIndex, otherGeneration,
+            normalX, normalY, ownerShapeCenterX, ownerShapeCenterY, otherShapeCenterX, otherShapeCenterY,
+            contactPointX1, contactPointY1, contactPointX2, contactPointY2, depth, ownerFlags, otherFlags
+        );
+
+        AppendCollision(collision, otherIndex, otherGeneration, ownerIndex, ownerGeneration, 
+            normalX, normalY, otherShapeCenterX, otherShapeCenterY, ownerShapeCenterX, ownerShapeCenterY, 
+            contactPointX1, contactPointY1, contactPointX2, contactPointY2, depth, otherFlags, ownerFlags
+        );
     }
 
 
@@ -1043,7 +1185,7 @@ public static class SoaPhysicsSystem
 
     /*******************
     
-        Circle.
+        Circle Body Allocation.
     
     ********************/
 
@@ -1058,33 +1200,39 @@ public static class SoaPhysicsSystem
     /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
     /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateCircleCollider(SoaPhysicsSystemState state, in Circle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
+    public static void AllocateCircleCollider(SoaPhysicsSystemState state, in Circle shape, 
+        bool isKinematic, bool isTrigger, ref GenIndex genIndex
+    )
     {
+        Span<float> verticesX = state.Vertices.X;
+        Span<float> verticesY = state.Vertices.Y;
+
         // handle flags.
         // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
         // set, a physics body is a circle.
-        PhysicsBodyFlags flags = PhysicsBodyFlags.None; 
+        PhysicsBodyFlags flag = PhysicsBodyFlags.None; 
 
-        SetActive(ref flags, true);
-        SetAllocated(ref flags, true);
-        SetRigidBody(ref flags, false);
-        SetHasPhysicsMaterial(ref flags, false);
-        SetTrigger(ref flags, isTrigger);
-        SetKinematic(ref flags, isKinematic);
+        SetActive(ref flag, true);
+        SetAllocated(ref flag, true);
+        SetRigidBody(ref flag, false);
+        SetHasPhysicsMaterial(ref flag, false);
+        SetTrigger(ref flag, isTrigger);
+        SetKinematic(ref flag, isKinematic);
+
+        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
 
         // apply data.
         int index = state.FreePhysicsBodyIndex.Pop();
-
-        state.Radii[index]      = shape.Radius;
-        state.Vertices.X[index] = shape.X;
-        state.Vertices.Y[index] = shape.Y;
-        state.Flags[index]      = flags;
-
-        // return gen index.
-
-        genIndex = new(index, state.Generations[index]);
+        state.Radii[index]              = shape.Radius;
+        verticesX[index]                = shape.X;
+        verticesY[index]                = shape.Y;
+        state.Flags[index]              = flag;
+        state.FirstVertexIndice[index]  = verticesFirstIndex;
 
         state.AlloctedPhysicsBodyCount++;
+
+        genIndex.Index = index;
+        genIndex.Generation = state.Generations[index];
     }
 
     /// <summary>
@@ -1109,13 +1257,16 @@ public static class SoaPhysicsSystem
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
 
+        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+
         // apply data.
         int index = state.FreePhysicsBodyIndex.Pop();
 
-        state.Radii[index]      = shape.Radius;
-        state.Vertices.X[index] = shape.X;
-        state.Vertices.Y[index] = shape.Y;
-        state.Flags[index]      = flags;
+        state.Radii[index]              = shape.Radius;
+        state.Vertices.X[index]         = shape.X;
+        state.Vertices.Y[index]         = shape.Y;
+        state.Flags[index]              = flags;
+        state.FirstVertexIndice[index]  = verticesFirstIndex;
 
         // return gen index.
 
@@ -1147,6 +1298,8 @@ public static class SoaPhysicsSystem
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
 
+        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+
         // apply data.
         int index = state.FreePhysicsBodyIndex.Pop();
 
@@ -1156,6 +1309,7 @@ public static class SoaPhysicsSystem
         state.Flags[index]              = flags;
         state.StaticFrictions[index]    = physicsMaterial.StaticFriction;
         state.KineticFrictions[index]   = physicsMaterial.KineticFriction;
+        state.FirstVertexIndice[index]  = verticesFirstIndex;
 
         // return gen index.
 
@@ -1169,7 +1323,7 @@ public static class SoaPhysicsSystem
 
     /*******************
     
-        Rectangle.
+        Rectangle Body Allocation.
     
     ********************/
 
@@ -1201,12 +1355,12 @@ public static class SoaPhysicsSystem
         PolygonRectangle polyRect = new(shape);
 
         int bodyIndex = state.FreePhysicsBodyIndex.Pop();
-        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
+        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
 
-        state.Heights[bodyIndex]        = shape.Height;
-        state.Widths[bodyIndex]         = shape.Width;
-        state.Flags[bodyIndex]          = flags;
-        state.FirstVertexIndice[bodyIndex]  = verticeFirstIndex;
+        state.Heights[bodyIndex]            = shape.Height;
+        state.Widths[bodyIndex]             = shape.Width;
+        state.Flags[bodyIndex]              = flags;
+        state.FirstVertexIndice[bodyIndex]  = verticesFirstIndex;
 
         // return gen index.
 
@@ -1240,12 +1394,12 @@ public static class SoaPhysicsSystem
         PolygonRectangle polyRect = new(shape);
 
         int bodyIndex = state.FreePhysicsBodyIndex.Pop();
-        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
+        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
 
-        state.Heights[bodyIndex]        = shape.Height;
-        state.Widths[bodyIndex]         = shape.Width;
-        state.Flags[bodyIndex]          = flags;
-        state.FirstVertexIndice[bodyIndex]  = verticeFirstIndex;
+        state.Heights[bodyIndex]            = shape.Height;
+        state.Widths[bodyIndex]             = shape.Width;
+        state.Flags[bodyIndex]              = flags;
+        state.FirstVertexIndice[bodyIndex]  = verticesFirstIndex;
 
         // return gen index.
 
@@ -1280,14 +1434,14 @@ public static class SoaPhysicsSystem
         PolygonRectangle polyRect = new(shape);
 
         int bodyIndex = state.FreePhysicsBodyIndex.Pop();
-        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticeFirstIndex, out int verticeCount);
+        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
 
-        state.Heights[bodyIndex]            = shape.Height;
-        state.Widths[bodyIndex]             = shape.Width;
-        state.Flags[bodyIndex]              = flags;
-        state.FirstVertexIndice[bodyIndex]      = verticeFirstIndex;
-        state.KineticFrictions[bodyIndex]   = physicsMaterial.KineticFriction;
-        state.StaticFrictions[bodyIndex]    = physicsMaterial.StaticFriction;
+        state.Heights[bodyIndex]                = shape.Height;
+        state.Widths[bodyIndex]                 = shape.Width;
+        state.Flags[bodyIndex]                  = flags;
+        state.FirstVertexIndice[bodyIndex]      = verticesFirstIndex;
+        state.KineticFrictions[bodyIndex]       = physicsMaterial.KineticFriction;
+        state.StaticFrictions[bodyIndex]        = physicsMaterial.StaticFriction;
 
         // return gen index.
 

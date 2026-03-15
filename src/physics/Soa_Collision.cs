@@ -70,12 +70,12 @@ public class Soa_Collision
     public bool[] TwoContactPoints;
 
     /// <summary>
-    /// Gets and sets the amount of appended collisions - starting from index 0.
+    /// Gets and sets the amount of valid entries; starting from index 0.
     /// </summary>
     public int Count;
 
     /// <summary>
-    /// Constructs a Collision.
+    /// Creates a Structure-Of-Arrays Collision instance.
     /// </summary>
     /// <param name="owner">The owner of this collision.</param>
     /// <param name="other">The other collider of this collision.</param>
@@ -122,7 +122,7 @@ public class Soa_Collision
     /// <param name="ownerFlags"></param>
     /// <param name="otherFlags"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append(
+    public static void AppendCollision(
         Soa_Collision buffer, 
         int ownerIndex, 
         int ownerGeneration, 
@@ -185,7 +185,7 @@ public class Soa_Collision
     /// <param name="ownerFlags">the flags of the owner physics body.</param>
     /// <param name="otherFlags">the flags of the other physics body.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append(
+    public static void AppendCollision(
         Soa_Collision buffer, 
         int ownerIndex, 
         int ownerGeneration, 

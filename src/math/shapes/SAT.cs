@@ -22,6 +22,18 @@ public static class SAT
     public const float InitialNormalX = 0;
     public const float InitialNormalY = 1;
 
+
+
+
+    /*******************
+    
+        Circle.
+    
+    ********************/
+
+
+
+
     /// <summary>
     /// Checks for intersection between two circles.
     /// </summary>
@@ -31,14 +43,14 @@ public static class SAT
     /// <param name="depth">The depth of the intersection in relation to the right-hand side circle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(
+    public static bool CirclesIntersect(
         in Circle lhs,
         in Circle rhs,
         out Vector2 normal,
         out float depth
     )
     {
-        bool intersects = Intersect(lhs, rhs, out float normalX, out float normalY, out depth);
+        bool intersects = CirclesIntersect(lhs, rhs, out float normalX, out float normalY, out depth);
         normal = new Vector2(normalX, normalY);
         return intersects;
     }
@@ -53,9 +65,9 @@ public static class SAT
     /// <param name="depth">the depth of the intersection in relation to the right-hand side circle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(in Circle lhs, in Circle rhs, out float normalX, out float normalY, out float depth)
+    public static bool CirclesIntersect(in Circle lhs, in Circle rhs, out float normalX, out float normalY, out float depth)
     {
-        return Intersect(lhs.X, lhs.Y, lhs.Radius, rhs.X, rhs.Y , rhs.Radius, out normalX, out normalY, out depth);
+        return CirclesIntersect(lhs.X, lhs.Y, lhs.Radius, rhs.X, rhs.Y , rhs.Radius, out normalX, out normalY, out depth);
     }
 
     /// <summary>
@@ -72,7 +84,7 @@ public static class SAT
     /// <param name="depth">the depth of the intersection in relation to the right-hand side circle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(float lhsX, float lhsY, float lhsRadius, float rhsX, float rhsY, float rhsRadius, out float normalX, out float normalY, out float depth)
+    public static bool CirclesIntersect(float lhsX, float lhsY, float lhsRadius, float rhsX, float rhsY, float rhsRadius, out float normalX, out float normalY, out float depth)
     {
         normalX = InitialNormalX;
         normalY = InitialNormalY;
@@ -100,6 +112,126 @@ public static class SAT
     }
 
     /// <summary>
+    /// Projects the edges of circle onto a given axis.
+    /// </summary>
+    /// <param name="circle">The circle to project.</param>
+    /// <param name="axisX">The x-component of the axis to project onto.</param>
+    /// <param name="axisY">The y-component of the axis to project onto.</param>
+    /// <param name="min">The minimum-edge value of the circle.</param>
+    /// <param name="max">The maximum-edge value of the circle.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ProjectCircle(
+        in Circle circle,
+        float axisX,
+        float axisY,
+        out float min,
+        out float max
+    )
+    {
+        ProjectCircle(circle.X, circle.Y, circle.Radius, axisX, axisY, out min, out max);
+    }  
+
+    /// <summary>
+    /// Projects the edges of a circle onto a given axis.
+    /// </summary>
+    /// <param name="circleX">the positional x-component of the circle.</param>
+    /// <param name="circleY">the positional y-component of the circle.</param>
+    /// <param name="circleRadius">the radius of the circle.</param>
+    /// <param name="axisX">the x-component of the axis to project onto.</param>
+    /// <param name="axisY">the y-component of the axis to project onto.</param>
+    /// <param name="min">the minimum-edge value of the circle.</param>
+    /// <param name="max">the maximum-edge value of the circle.</param>
+    public static void ProjectCircle(
+        float circleX,
+        float circleY,
+        float circleRadius,
+        float axisX,
+        float axisY,
+        out float min,
+        out float max
+    )
+    {
+        float directionAndRadiusX = axisX * circleRadius;
+        float directionAndRadiusY = axisY * circleRadius;
+
+        float vAX = circleX + directionAndRadiusX;
+        float vAY = circleY + directionAndRadiusY;
+        float vBX = circleX - directionAndRadiusX;
+        float vBY = circleY - directionAndRadiusY;
+        
+        min = Dot(vAX, vAY, axisX, axisY);
+        max = Dot(vBX, vBY, axisX, axisY);
+
+        if(min > max)
+        {
+            float temp = min;
+            min = max;
+            max = temp;
+        }
+    }
+
+    /// <summary>
+    /// Finds the contact point between two intersecting circles.
+    /// </summary>
+    /// <param name="a">circle a.</param>
+    /// <param name="b">circle b.</param>
+    /// <param name="contactPoint">The calculated contact point relative to circle a.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(in Circle a, in Circle b, out Vector2 contactPoint)
+    {
+        FindContactPoints(a, b, out float cX, out float cY);
+        contactPoint = new Vector2(cX, cY);
+    }
+
+    /// <summary>
+    /// Finds the contact point between two intersecting circles.
+    /// </summary>
+    /// <param name="a">circle a.</param>
+    /// <param name="b">circle b.</param>
+    /// <param name="cX">the x-component of the calculated contact point vector relative to circle a.</param>
+    /// <param name="cY">the y-component of the calculated contact point vector relative to circle a.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(in Circle a, in Circle b, out float cX, out float cY)
+    {
+        FindContactPoints(a.X, a.Y, a.Radius, b.X, b.Y, out cX, out cY);
+    }
+
+    /// <summary>
+    /// Finds the contact points between two circles.
+    /// </summary>
+    /// <param name="aX">the positional x-component of circle a.</param>
+    /// <param name="aY">the positional y-component of circle a.</param>
+    /// <param name="aRadius">the radius of circle a.</param>
+    /// <param name="bX">the positional x-component of circle b.</param>
+    /// <param name="bY">the positional y-component of circle b.</param>
+    /// <param name="cPX">the x-component of the contact point vector relative to circle a.</param>
+    /// <param name="cPY">the y-component of the contact point vector relative to circle a.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(float aX, float aY, float aRadius, float bX, float bY, out float cPX, out float cPY)
+    {
+        float distanceX = bX - aX;
+        float distanceY = bY - aY;
+        Normalise(distanceX, distanceY, out float directionX, out float directionY);
+        
+        // check for Nan in case the two circles are perfectly ontop of one another,
+        // as normalising a distance of zero gives a NaN.
+        cPX = float.IsNaN(directionX)? aX : aX + (directionX * aRadius);
+        cPY = float.IsNaN(directionX)? aY : aY + (directionY * aRadius); 
+    }
+
+
+
+
+    /*******************
+    
+        Polygon Rectangle.
+    
+    ********************/
+
+
+
+
+    /// <summary>
     /// Checks for intersection between two rectangles.
     /// </summary>
     /// <param name="lhs">The left-hand side rectangle.</param>
@@ -120,7 +252,7 @@ public static class SAT
         out float depth
     )   
     {
-        bool intersects = Intersect(
+        bool intersects = PolygonsIntersect(
             VerticesXAsSpan(lhs),
             VerticesYAsSpan(lhs),
             VerticesXAsSpan(rhs),
@@ -136,6 +268,18 @@ public static class SAT
         normal = new Vector2(normalX, normalY);
         return intersects;
     }
+
+
+
+
+    /*******************
+    
+        Polygons.
+    
+    ********************/
+
+
+
 
     /// <summary>
     /// Checks for an intersection between two polygons.
@@ -153,7 +297,7 @@ public static class SAT
     /// <param name="depth">The depth of the intersection in relation to the right-hand side rectangle.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     /// <exception cref="ArgumentException"></exception>
-    public static bool Intersect(
+    public static bool PolygonsIntersect(
         Span<float> lhsX,
         Span<float> lhsY,
         Span<float> rhsX,
@@ -185,7 +329,7 @@ public static class SAT
         depth = float.MaxValue;
 
 
-        if (OneWayIntersect(lhsX, lhsY, rhsX, rhsY, out foundNormalX, out foundNormalY, out foundDepth))
+        if (PolygonOneWayIntersect(lhsX, lhsY, rhsX, rhsY, out foundNormalX, out foundNormalY, out foundDepth))
         {            
             if(depth > foundDepth)
             {
@@ -199,7 +343,7 @@ public static class SAT
             return false;
         }
 
-        if (OneWayIntersect(rhsX, rhsY, lhsX, lhsY, out foundNormalX, out foundNormalY, out foundDepth))
+        if (PolygonOneWayIntersect(rhsX, rhsY, lhsX, lhsY, out foundNormalX, out foundNormalY, out foundDepth))
         {            
             if(depth > foundDepth)
             {
@@ -239,7 +383,7 @@ public static class SAT
     /// <param name="depth">The depth of the intersection in relation to polygon B.</param>
     /// <returns>true, if there is an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static bool OneWayIntersect(        
+    private static bool PolygonOneWayIntersect(        
         ReadOnlySpan<float> polygonVerticesXA, 
         ReadOnlySpan<float> polygonVerticesYA, 
         ReadOnlySpan<float> polygonVerticesXB, 
@@ -304,210 +448,6 @@ public static class SAT
     }
 
     /// <summary>
-    /// Checks whether a rectangle and a circle intersect.
-    /// </summary>
-    /// <param name="rectangle">The rectangle data.</param>
-    /// <param name="circle">The circle data.</param>
-    /// <param name="normal">The normal of the intersection in relation to the circle.</param>
-    /// <param name="depth">The depth of the intersection in relation to the circle.</param>
-    /// <returns>true, if there was an intersection; otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(in PolygonRectangle rectangle, in Circle circle, Vector2 polgonCenter, Vector2 circleCenter, out Vector2 normal, out float depth)
-    {
-        bool intersects = Intersect(
-            VerticesXAsSpan(rectangle), 
-            VerticesYAsSpan(rectangle), 
-            circle, 
-            polgonCenter.X, 
-            polgonCenter.Y, 
-            circleCenter.X, 
-            circleCenter.Y, 
-            out float normalX, 
-            out float normalY, 
-            out depth
-        );
-
-        normal = new Vector2(normalX, normalY);
-
-        return intersects;
-    }
-
-    /// <summary>
-    /// Checks whether a polygon and a circle intersect.
-    /// </summary>
-    /// <param name="polygonVerticesX">The x-components of a polygon's vertices.</param>
-    /// <param name="polygonVerticesY">The y-components of a polygon's vertices.</param>
-    /// <param name="circle">The circle data.</param>
-    /// <param name="normalX">the x-component of the intersection normal in relation to the right-hand side rectangle.</param>
-    /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side rectangle.</param>
-    /// <param name="depth">The depth of the intersection in relation to the circle.</param>
-    /// <returns>true, if there is an intersection; otherwise false.</returns>
-    /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect
-    (
-        Span<float> polygonVerticesX,
-        Span<float> polygonVerticesY,
-        in Circle circle,
-        float polygonCentroidX,
-        float polygonCentroidY,
-        float circleCenterX,
-        float circleCenterY,
-        out float normalX,
-        out float normalY,
-        out float depth
-    )
-    {
-        return Intersect(
-            polygonVerticesX,
-            polygonVerticesY,
-            polygonCentroidX,
-            polygonCentroidY,
-            circle.X,
-            circle.Y,
-            circle.Radius,
-            circleCenterX,
-            circleCenterY,
-            out normalX,
-            out normalY,
-            out depth
-        );       
-    }
-
-    /// <summary>
-    /// Checks whether a polygon and a circle intersect with eachother.
-    /// </summary>
-    /// <returns>true, if the two shapes are colliding; otherwise false.</returns>
-    public static bool Intersect(        
-        Span<float> polygonVerticesX,
-        Span<float> polygonVerticesY,
-        float polygonCentroidX,
-        float polygonCentroidY,
-        float circleX,
-        float circleY,
-        float circleRadius,
-        float circleCenterX,
-        float circleCenterY,
-        out float normalX,
-        out float normalY,
-        out float depth
-    )
-    {
-        depth = float.MaxValue;
-
-        // store normals as floats and operate on them as
-        // floats before allocating a Vector as numerical
-        // arithematic is faster.
-        normalX = InitialNormalX;
-        normalY = InitialNormalY;
-
-        float axisX;
-        float axisY;
-        float axisDepth;
-        float minA;
-        float maxA;
-        float minB;
-        float maxB;
-
-        if(polygonVerticesX.Length != polygonVerticesY.Length)
-        {
-            throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' does not equal polygonVerticesY length '{polygonVerticesY.Length}'");
-        }
-
-        for(int i = 0; i < polygonVerticesX.Length; i++)
-        {
-            int vAIndex = i;
-            int vBIndex = i+1;
-
-            // this is faster than modulo.
-            if(vBIndex >= polygonVerticesX.Length)
-                vBIndex = 0;
-
-            float xA = polygonVerticesX[vAIndex];
-            float xB = polygonVerticesX[vBIndex];
-            float yA = polygonVerticesY[vAIndex];
-            float yB = polygonVerticesY[vBIndex];
-
-            float edgeX = xB - xA; 
-            float edgeY = yB - yA; 
-
-            // the normal of the edge.
-            // note: this only works as vertices are assumed to be in clockwise winding order.
-            // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
-            axisX = -edgeY;
-            axisY = edgeX;
-        
-            // normalize (important for correct depth).
-            Normalise(axisX, axisY, out axisX, out axisY);
-
-        
-            // project all vertices onto the current edge to find the min and max values
-            // of the two rectangles along the edge.
-            ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);        
-            ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
-
-            if(minA > maxB || minB > maxA)
-            {
-                // there is separation.
-                return false;
-            }
-
-            axisDepth = MathF.Min(maxB - minA, maxA - minB);
-            if(depth > axisDepth)
-            {
-                // only assign if the newly found intersection depth is smaller.
-                depth = axisDepth;
-                normalX = axisX;
-                normalY = axisY;
-            }
-        }
-
-        int closestPointIndex = FindClosestVertexOnPolygon(circleCenterX, circleCenterY, polygonVerticesX, polygonVerticesY);
-        float closestPointX = polygonVerticesX[closestPointIndex];
-        float closestPointY = polygonVerticesY[closestPointIndex];
-
-        axisX = closestPointX - circleX;
-        axisY = closestPointY - circleY;
-        Normalise(axisX, axisY, out axisX, out axisY);
-
-        // project all vertices onto the current edge to find the min and max values
-        // of the two rectangles along the edge.
-        ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);
-        ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
-    
-        if(minA > maxB || minB > maxA)
-        {
-            // there is separation.
-            return false;
-        }
-
-        axisDepth = MathF.Min(maxB - minA, maxA - minB);
-        if(depth > axisDepth)
-        {
-            // only assign if the newly found intersection depth is smaller.
-            depth = axisDepth;
-            normalX = axisX;
-            normalY = axisY;
-        }
-
-        float distanceX = circleCenterX - polygonCentroidX;
-        float distanceY = circleCenterY - polygonCentroidY;
-
-        // when a new smaller   
-        // depth is found but in relation to rect B, not A.
-        // this is so that the resolution code will always push A out of B
-        // and not push the two into each other when a smaller depth is found when 
-        // looping through rect B.
-        if(Dot(distanceX, distanceY, normalX,  normalY) < 0)
-        {
-            normalX = -normalX;
-            normalY = -normalY;
-        }
-
-        return true;
-    }
-
-    /// <summary>
     /// projects a set of vertices onto a normalised axis.
     /// </summary>
     /// <remarks>
@@ -550,232 +490,6 @@ public static class SAT
                 max = projection;
             }
         }
-    }
-
-    /// <summary>
-    /// Projects the edges of circle onto a given axis.
-    /// </summary>
-    /// <param name="circle">The circle to project.</param>
-    /// <param name="axisX">The x-component of the axis to project onto.</param>
-    /// <param name="axisY">The y-component of the axis to project onto.</param>
-    /// <param name="min">The minimum-edge value of the circle.</param>
-    /// <param name="max">The maximum-edge value of the circle.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ProjectCircle(
-        in Circle circle,
-        float axisX,
-        float axisY,
-        out float min,
-        out float max
-    )
-    {
-        ProjectCircle(circle.X, circle.Y, circle.Radius, axisX, axisY, out min, out max);
-    }  
-
-    /// <summary>
-    /// Projects the edges of a circle onto a given axis.
-    /// </summary>
-    /// <param name="circleX">the positional x-component of the circle.</param>
-    /// <param name="circleY">the positional y-component of the circle.</param>
-    /// <param name="circleRadius">the radius of the circle.</param>
-    /// <param name="axisX">the x-component of the axis to project onto.</param>
-    /// <param name="axisY">the y-component of the axis to project onto.</param>
-    /// <param name="min">the minimum-edge value of the circle.</param>
-    /// <param name="max">the maximum-edge value of the circle.</param>
-    public static void ProjectCircle(
-        float circleX,
-        float circleY,
-        float circleRadius,
-        float axisX,
-        float axisY,
-        out float min,
-        out float max
-    )
-    {
-        float directionAndRadiusX = axisX * circleRadius;
-        float directionAndRadiusY = axisY * circleRadius;
-
-        float vAX = circleX + directionAndRadiusX;
-        float vAY = circleY + directionAndRadiusY;
-        float vBX = circleX - directionAndRadiusX;
-        float vBY = circleY - directionAndRadiusY;
-        
-        min = Dot(vAX, vAY, axisX, axisY);
-        max = Dot(vBX, vBY, axisX, axisY);
-
-        if(min > max)
-        {
-            float temp = min;
-            min = max;
-            max = temp;
-        }
-    }
-
-
-    /// <summary>
-    /// Finds the contact point between two intersecting circles.
-    /// </summary>
-    /// <param name="a">circle a.</param>
-    /// <param name="b">circle b.</param>
-    /// <param name="contactPoint">The calculated contact point relative to circle a.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(in Circle a, in Circle b, out Vector2 contactPoint)
-    {
-        FindContactPoints(a, b, out float cX, out float cY);
-        contactPoint = new Vector2(cX, cY);
-    }
-
-    /// <summary>
-    /// Finds the contact point between two intersecting circles.
-    /// </summary>
-    /// <param name="a">circle a.</param>
-    /// <param name="b">circle b.</param>
-    /// <param name="cX">the x-component of the calculated contact point vector relative to circle a.</param>
-    /// <param name="cY">the y-component of the calculated contact point vector relative to circle a.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(in Circle a, in Circle b, out float cX, out float cY)
-    {
-        FindContactPoints(a.X, a.Y, a.Radius, b.X, b.Y, out cX, out cY);
-    }
-
-    /// <summary>
-    /// Finds the contact points between two circles.
-    /// </summary>
-    /// <param name="aX">the positional x-component of circle a.</param>
-    /// <param name="aY">the positional y-component of circle a.</param>
-    /// <param name="aRadius">the radius of circle a.</param>
-    /// <param name="bX">the positional x-component of circle b.</param>
-    /// <param name="bY">the positional y-component of circle b.</param>
-    /// <param name="contactPointX">the x-component of the contact point vector relative to circle a.</param>
-    /// <param name="contactPointY">the y-component of the contact point vector relative to circle a.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(float aX, float aY, float aRadius, float bX, float bY, out float contactPointX, out float contactPointY)
-    {
-        float distanceX = bX - aX;
-        float distanceY = bY - aY;
-        Normalise(distanceX, distanceY, out float directionX, out float directionY);
-        
-        // check for Nan in case the two circles are perfectly ontop of one another,
-        // as normalising a distance of zero gives a NaN.
-        contactPointX = float.IsNaN(directionX)? aX : aX + (directionX * aRadius);
-        contactPointY = float.IsNaN(directionX)? aY : aY + (directionY * aRadius); 
-    }
-
-
-    /// <summary>
-    /// Finds the contact point between an intersecting polygon and circle.
-    /// </summary>
-    /// <param name="polygonVerticesX">the x-values of the polygon's vertices.</param>
-    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
-    /// <param name="circle">the circle.</param>
-    /// <param name="contactPoint">the contact point.</param>
-    /// <exception cref="ArgumentException">throws if the two vertice spans do not have the same length.</exception>    
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(
-        Span<float> polygonVerticesX, 
-        Span<float> polygonVerticesY, 
-        in Circle circle, 
-        out Vector2 contactPoint
-    )
-    {
-        FindContactPoints(
-            polygonVerticesX, 
-            polygonVerticesY, 
-            circle.X, 
-            circle.Y, 
-            out float contactPointX,
-            out float contactPointY
-        );
-
-        contactPoint = new(contactPointX, contactPointY);
-    }
-
-    /// <summary>
-    /// Finds the contact point between an intersecting polygon and circle.
-    /// </summary>
-    /// <param name="polygonVerticesX">the x-values of the polygon's vertices </param>
-    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
-    /// <param name="circle">the circle.</param>
-    /// <param name="contactPointX">the x-value of the calculated contact point vector.</param>
-    /// <param name="contactPointY">the y-value of the calculated contact point vector.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void FindContactPoints(
-        Span<float> polygonVerticesX, 
-        Span<float> polygonVerticesY,
-        in Circle circle, 
-        out float contactPointX, 
-        out float contactPointY
-    )
-    {
-        FindContactPoints(
-            polygonVerticesX, 
-            polygonVerticesY, 
-            circle.X, 
-            circle.Y, 
-            out contactPointX,
-            out contactPointY
-        );
-    }
-
-    /// <summary>
-    /// Finds the contact points between a polygon and a circle.
-    /// </summary>
-    /// <param name="polygonVerticesX">the x-values of the polygon's vertices.</param>
-    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
-    /// <param name="circleX">the x-value of the circle's position.</param>
-    /// <param name="circleY">the y-value of the circle's position.</param>
-    /// <param name="contactPointX">the x-value of the contact point.</param>
-    /// <param name="contactPointY">the y-value of the contact point.</param>
-    /// <exception cref="ArgumentException"></exception>
-    public static void FindContactPoints(
-        Span<float> polygonVerticesX, 
-        Span<float> polygonVerticesY, 
-        float circleX, 
-        float circleY, 
-        out float contactPointX,
-        out float contactPointY
-    )
-    {
-        if(polygonVerticesX.Length != polygonVerticesY.Length)
-            throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' is not equal to polygonVerticesY length '{polygonVerticesY.Length}'");
-
-        contactPointX = float.MaxValue;    
-        contactPointY = float.MaxValue;
-        float minDistSqrd = float.MaxValue;
-        int length = polygonVerticesX.Length;
-
-        // find the closest point for each edge of the rectangle.
-        for(int startIndex = 0; startIndex < length; startIndex++)
-        {
-            Vector2 edgeStart = new Vector2(polygonVerticesX[startIndex], polygonVerticesY[startIndex]);
-            
-            int endIndex = startIndex + 1;
-            
-            // this is faster than modulo.
-            if(endIndex >= length)
-                endIndex = 0;
-
-            Vector2 edgeEnd = new Vector2(polygonVerticesX[endIndex], polygonVerticesY[endIndex]);
-            ClosestPoint(
-                polygonVerticesX[startIndex], 
-                polygonVerticesY[startIndex],
-                polygonVerticesX[endIndex], 
-                polygonVerticesY[endIndex],
-                circleX,
-                circleY,
-                out float closestPointX,
-                out float closestPointY,
-                out float distSqrd
-            );
-
-
-            if(distSqrd < minDistSqrd)
-            {
-                minDistSqrd = distSqrd;
-                contactPointX = closestPointX;
-                contactPointY = closestPointY;
-            }
-        } 
     }
 
     /// <summary>
@@ -951,6 +665,349 @@ public static class SAT
                     contactPoint1Y = closestPointY;
                 }
             } 
+        } 
+    }
+
+
+
+
+    /*******************
+    
+        Rectangle To Circle.
+    
+    ********************/
+
+
+
+    /// <summary>
+    /// Checks whether a rectangle and a circle intersect.
+    /// </summary>
+    /// <param name="rectangle">The rectangle data.</param>
+    /// <param name="circle">The circle data.</param>
+    /// <param name="normal">The normal of the intersection in relation to the circle.</param>
+    /// <param name="depth">The depth of the intersection in relation to the circle.</param>
+    /// <returns>true, if there was an intersection; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool Intersect(in PolygonRectangle rectangle, in Circle circle, Vector2 polgonCenter, Vector2 circleCenter, out Vector2 normal, out float depth)
+    {
+        bool intersects = PolygonAndCircleIntersect(
+            VerticesXAsSpan(rectangle), 
+            VerticesYAsSpan(rectangle), 
+            circle, 
+            polgonCenter.X, 
+            polgonCenter.Y, 
+            circleCenter.X, 
+            circleCenter.Y, 
+            out float normalX, 
+            out float normalY, 
+            out depth
+        );
+
+        normal = new Vector2(normalX, normalY);
+
+        return intersects;
+    }
+
+
+
+
+    /*******************
+    
+        Polygon To Circle.
+    
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Checks whether a polygon and a circle intersect.
+    /// </summary>
+    /// <param name="polygonVerticesX">The x-components of a polygon's vertices.</param>
+    /// <param name="polygonVerticesY">The y-components of a polygon's vertices.</param>
+    /// <param name="circle">The circle data.</param>
+    /// <param name="normalX">the x-component of the intersection normal in relation to the right-hand side rectangle.</param>
+    /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side rectangle.</param>
+    /// <param name="depth">The depth of the intersection in relation to the circle.</param>
+    /// <returns>true, if there is an intersection; otherwise false.</returns>
+    /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool PolygonAndCircleIntersect
+    (
+        Span<float> polygonVerticesX,
+        Span<float> polygonVerticesY,
+        in Circle circle,
+        float polygonCentroidX,
+        float polygonCentroidY,
+        float circleCenterX,
+        float circleCenterY,
+        out float normalX,
+        out float normalY,
+        out float depth
+    )
+    {
+        return PolygonAndCircleIntersect(
+            polygonVerticesX,
+            polygonVerticesY,
+            polygonCentroidX,
+            polygonCentroidY,
+            circle.X,
+            circle.Y,
+            circle.Radius,
+            circleCenterX,
+            circleCenterY,
+            out normalX,
+            out normalY,
+            out depth
+        );       
+    }
+
+    /// <summary>
+    /// Checks whether a polygon and a circle intersect with eachother.
+    /// </summary>
+    /// <returns>true, if the two shapes are colliding; otherwise false.</returns>
+    public static bool PolygonAndCircleIntersect(        
+        Span<float> polygonVerticesX,
+        Span<float> polygonVerticesY,
+        float polygonCentroidX,
+        float polygonCentroidY,
+        float circleX,
+        float circleY,
+        float circleRadius,
+        float circleCenterX,
+        float circleCenterY,
+        out float normalX,
+        out float normalY,
+        out float depth
+    )
+    {
+        depth = float.MaxValue;
+
+        // store normals as floats and operate on them as
+        // floats before allocating a Vector as numerical
+        // arithematic is faster.
+        normalX = InitialNormalX;
+        normalY = InitialNormalY;
+
+        float axisX;
+        float axisY;
+        float axisDepth;
+        float minA;
+        float maxA;
+        float minB;
+        float maxB;
+
+        if(polygonVerticesX.Length != polygonVerticesY.Length)
+        {
+            throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' does not equal polygonVerticesY length '{polygonVerticesY.Length}'");
+        }
+
+        for(int i = 0; i < polygonVerticesX.Length; i++)
+        {
+            int vAIndex = i;
+            int vBIndex = i+1;
+
+            // this is faster than modulo.
+            if(vBIndex >= polygonVerticesX.Length)
+                vBIndex = 0;
+
+            float xA = polygonVerticesX[vAIndex];
+            float xB = polygonVerticesX[vBIndex];
+            float yA = polygonVerticesY[vAIndex];
+            float yB = polygonVerticesY[vBIndex];
+
+            float edgeX = xB - xA; 
+            float edgeY = yB - yA; 
+
+            // the normal of the edge.
+            // note: this only works as vertices are assumed to be in clockwise winding order.
+            // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
+            axisX = -edgeY;
+            axisY = edgeX;
+        
+            // normalize (important for correct depth).
+            Normalise(axisX, axisY, out axisX, out axisY);
+
+        
+            // project all vertices onto the current edge to find the min and max values
+            // of the two rectangles along the edge.
+            ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);        
+            ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
+
+            if(minA > maxB || minB > maxA)
+            {
+                // there is separation.
+                return false;
+            }
+
+            axisDepth = MathF.Min(maxB - minA, maxA - minB);
+            if(depth > axisDepth)
+            {
+                // only assign if the newly found intersection depth is smaller.
+                depth = axisDepth;
+                normalX = axisX;
+                normalY = axisY;
+            }
+        }
+
+        int closestPointIndex = FindClosestVertexOnPolygon(circleCenterX, circleCenterY, polygonVerticesX, polygonVerticesY);
+        float closestPointX = polygonVerticesX[closestPointIndex];
+        float closestPointY = polygonVerticesY[closestPointIndex];
+
+        axisX = closestPointX - circleX;
+        axisY = closestPointY - circleY;
+        Normalise(axisX, axisY, out axisX, out axisY);
+
+        // project all vertices onto the current edge to find the min and max values
+        // of the two rectangles along the edge.
+        ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);
+        ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
+    
+        if(minA > maxB || minB > maxA)
+        {
+            // there is separation.
+            return false;
+        }
+
+        axisDepth = MathF.Min(maxB - minA, maxA - minB);
+        if(depth > axisDepth)
+        {
+            // only assign if the newly found intersection depth is smaller.
+            depth = axisDepth;
+            normalX = axisX;
+            normalY = axisY;
+        }
+
+        float distanceX = circleCenterX - polygonCentroidX;
+        float distanceY = circleCenterY - polygonCentroidY;
+
+        // when a new smaller   
+        // depth is found but in relation to rect B, not A.
+        // this is so that the resolution code will always push A out of B
+        // and not push the two into each other when a smaller depth is found when 
+        // looping through rect B.
+        if(Dot(distanceX, distanceY, normalX,  normalY) < 0)
+        {
+            normalX = -normalX;
+            normalY = -normalY;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Finds the contact point between an intersecting polygon and circle.
+    /// </summary>
+    /// <param name="polygonVerticesX">the x-values of the polygon's vertices.</param>
+    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
+    /// <param name="circle">the circle.</param>
+    /// <param name="contactPoint">the contact point.</param>
+    /// <exception cref="ArgumentException">throws if the two vertice spans do not have the same length.</exception>    
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(
+        Span<float> polygonVerticesX, 
+        Span<float> polygonVerticesY, 
+        in Circle circle, 
+        out Vector2 contactPoint
+    )
+    {
+        FindContactPoints(
+            polygonVerticesX, 
+            polygonVerticesY, 
+            circle.X, 
+            circle.Y, 
+            out float contactPointX,
+            out float contactPointY
+        );
+
+        contactPoint = new(contactPointX, contactPointY);
+    }
+
+    /// <summary>
+    /// Finds the contact point between an intersecting polygon and circle.
+    /// </summary>
+    /// <param name="polygonVerticesX">the x-values of the polygon's vertices </param>
+    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
+    /// <param name="circle">the circle.</param>
+    /// <param name="contactPointX">the x-value of the calculated contact point vector.</param>
+    /// <param name="contactPointY">the y-value of the calculated contact point vector.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void FindContactPoints(
+        Span<float> polygonVerticesX, 
+        Span<float> polygonVerticesY,
+        in Circle circle, 
+        out float contactPointX, 
+        out float contactPointY
+    )
+    {
+        FindContactPoints(
+            polygonVerticesX, 
+            polygonVerticesY, 
+            circle.X, 
+            circle.Y, 
+            out contactPointX,
+            out contactPointY
+        );
+    }
+
+    /// <summary>
+    /// Finds the contact points between a polygon and a circle.
+    /// </summary>
+    /// <param name="polygonVerticesX">the x-values of the polygon's vertices.</param>
+    /// <param name="polygonVerticesY">the y-values of the polygon's vertices.</param>
+    /// <param name="circleX">the x-value of the circle's position.</param>
+    /// <param name="circleY">the y-value of the circle's position.</param>
+    /// <param name="contactPointX">the x-value of the contact point.</param>
+    /// <param name="contactPointY">the y-value of the contact point.</param>
+    /// <exception cref="ArgumentException"></exception>
+    public static void FindContactPoints(
+        Span<float> polygonVerticesX, 
+        Span<float> polygonVerticesY, 
+        float circleX, 
+        float circleY, 
+        out float contactPointX,
+        out float contactPointY
+    )
+    {
+        if(polygonVerticesX.Length != polygonVerticesY.Length)
+            throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' is not equal to polygonVerticesY length '{polygonVerticesY.Length}'");
+
+        contactPointX = float.MaxValue;    
+        contactPointY = float.MaxValue;
+        float minDistSqrd = float.MaxValue;
+        int length = polygonVerticesX.Length;
+
+        // find the closest point for each edge of the rectangle.
+        for(int startIndex = 0; startIndex < length; startIndex++)
+        {
+            Vector2 edgeStart = new Vector2(polygonVerticesX[startIndex], polygonVerticesY[startIndex]);
+            
+            int endIndex = startIndex + 1;
+            
+            // this is faster than modulo.
+            if(endIndex >= length)
+                endIndex = 0;
+
+            Vector2 edgeEnd = new Vector2(polygonVerticesX[endIndex], polygonVerticesY[endIndex]);
+            ClosestPoint(
+                polygonVerticesX[startIndex], 
+                polygonVerticesY[startIndex],
+                polygonVerticesX[endIndex], 
+                polygonVerticesY[endIndex],
+                circleX,
+                circleY,
+                out float closestPointX,
+                out float closestPointY,
+                out float distSqrd
+            );
+
+
+            if(distSqrd < minDistSqrd)
+            {
+                minDistSqrd = distSqrd;
+                contactPointX = closestPointX;
+                contactPointY = closestPointY;
+            }
         } 
     }
 }

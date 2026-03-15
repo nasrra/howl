@@ -1,9 +1,15 @@
 using Howl.ECS;
 using Howl.Math.Shapes;
 using Howl.Physics;
+using Howl.Math;
+using Howl.DataStructures;
 using static Howl.Physics.SoaPhysicsSystem;
 using static Howl.Math.Shapes.Rectangle;
-using Howl.Math;
+using static System.Runtime.InteropServices.CollectionsMarshal;
+using static Howl.Test.Physics.SoaSpatialPairHelpers;
+using static Howl.DataStructures.Soa_SpatialPair;
+using static Howl.Math.Soa_Vector2;
+using System.ComponentModel;
 
 namespace Howl.Test.Physics;
 
@@ -12,6 +18,7 @@ public class SOAPhysicsSystemTest
     int maxBodies = 10;
     int maxBodyShapeVertices = 100;
     int maxBodyShapeVerticeCount = 5;
+    int maxCollisions = 65535;
 
 
 
@@ -67,7 +74,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AddVertices_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());        
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);        
         
         // first data set test.
 
@@ -89,7 +96,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void SetTransform_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
 
         GenIndex genIndex = new GenIndex(1,0);
         float posX = -2.5f;
@@ -132,12 +139,14 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateCircleCollider_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
         
         float posX;
         float posY;
         float radius;
         Circle circle;
+        GenIndex genIndex1 = default;
+        GenIndex genIndex2 = default;
 
         // first data set test.
 
@@ -146,7 +155,7 @@ public class SOAPhysicsSystemTest
         radius = 3;
         circle = new(posX, posY, radius);
 
-        AllocateCircleCollider(state, circle, true, false, out GenIndex genIndex1);
+        AllocateCircleCollider(state, circle, true, false, ref genIndex1);
         
         Assert.Equal(0, genIndex1.Index);
         Assert.Equal(0, genIndex1.Generation);
@@ -165,7 +174,7 @@ public class SOAPhysicsSystemTest
         radius = 67;
         circle = new(posX, posY, radius);
 
-        AllocateCircleCollider(state, circle, false, true, out GenIndex genIndex2);
+        AllocateCircleCollider(state, circle, false, true, ref genIndex2);
 
         Assert.Equal(1, genIndex2.Index);
         Assert.Equal(0, genIndex2.Generation);
@@ -181,7 +190,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateCircleRigidbodyWithoutPhysicsMaterial_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
 
         float posX;
         float posY;
@@ -230,7 +239,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateCircleRigidBodyWithPhysicsMaterial_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
                 
         float posX;
         float posY;
@@ -345,7 +354,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateRectangleCollider_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
 
         float posX;
         float posY;
@@ -410,7 +419,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateRectangleRigidBodyWithoutPhysicsMaterial_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
 
         float posX;
         float posY;
@@ -476,7 +485,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateRectangleRigidBody_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
 
         float posX;
         float posY;
@@ -556,7 +565,7 @@ public class SOAPhysicsSystemTest
     public void TransformPhysicsBodyVertices_Test()
     {        
         
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
         
         // define and insert circle.
 
@@ -565,14 +574,15 @@ public class SOAPhysicsSystemTest
         float cExpectedRadius    = 9;
         Circle circle = new Circle(1,1,3);
         Transform cTransform = new Transform(new Vector2(1,3), 3, 0);
+        GenIndex cBodyGenIndex = default;
 
-        AllocateCircleCollider(state, circle, false, false, out GenIndex cBodyGenIndex);
+        AllocateCircleCollider(state, circle, false, false, ref cBodyGenIndex);
         SetTransform(state.Transforms, state.Generations, cBodyGenIndex, cTransform);
 
         // define and insert rect.
 
-        Span<float> rExpectedX = [4, 6, 6, 4];
-        Span<float> rExpectedY = [6, 6, 4, 4];
+        Span<float> rExpectedX = [5, 9, 9, 5];
+        Span<float> rExpectedY = [5, 5, 1, 1];
         Rectangle rectangle = new Rectangle(1,1,2,2);
         Transform rTransform = new Transform(new Vector2(3,3), 2, 0);
 
@@ -618,16 +628,17 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void SyncTransforms_Test()
     {
-        SoaPhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, new(), new());
+        SoaPhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
         GenIndexAllocator allocator = new();
         ComponentRegistry registry = new(allocator);
         SoaPhysicsSystem.RegisterComponents(registry);
+        GenIndex cBodyGenIndex = default;
 
         // allocate circle entity and rigidbody.
         allocator.Allocate(out GenIndex cEntityGenIndex, out _);
 
         // allocate circle rigidbody.
-        AllocateCircleCollider(state, new Circle(1,-1,1), false, true, out GenIndex cBodyGenIndex);
+        AllocateCircleCollider(state, new Circle(1,-1,1), false, true, ref cBodyGenIndex);
         GenIndexListProc.Allocate(registry.Get<PhysicsBodyId>(), cEntityGenIndex, new PhysicsBodyId(cBodyGenIndex));
 
         // set transform of circle.
@@ -652,10 +663,322 @@ public class SOAPhysicsSystemTest
         GenIndexListProc.Allocate(registry.Get<Transform>(), rEntityGenIndex, rTransform);
     
         // sync the physics engine with the transforms.
-        SyncPhysicsBodiesToEntityTransforms(registry, state.Transforms, state.Generations);
+        SyncPhysicsBodiesToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), state.Transforms, state.Generations);
 
         // ensure the data was properly set inside the state.
         AssertTransform(state, cTransform, cBodyGenIndex);    
         AssertTransform(state, rTransform, rBodyGenIndex);    
+    }
+
+    [Fact]
+    public void FilterBvhIntoCollisionManifold_Test()
+    {
+        int SoaCapacity = 10;
+
+        // data containcers.
+        List<SpatialPair> spatialPairs = new List<SpatialPair>();
+        Soa_SpatialPair circleSpatialPairs = new Soa_SpatialPair(SoaCapacity);
+        Soa_SpatialPair polygonSpatialPairs = new Soa_SpatialPair(SoaCapacity);
+        Soa_SpatialPair polygonToCircleSpatialPairs = new Soa_SpatialPair(SoaCapacity);
+
+        // spatial data.
+        PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.PolygonShape;
+        PhysicsBodyFlags circleFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;  
+        GenIndex polygonA   = new GenIndex(0,0);
+        GenIndex polygonB   = new GenIndex(1,0);
+        GenIndex circleA    = new GenIndex(2,0);
+        GenIndex circleB    = new GenIndex(3,0);
+
+        // polygon to polygon.
+        spatialPairs.Add(
+            new SpatialPair(
+                new QueryResult(polygonA,(byte)polygonFlag),
+                new QueryResult(polygonB,(byte)polygonFlag)
+            )
+        );
+
+        // circle to circle.
+        spatialPairs.Add(
+            new SpatialPair(
+                new QueryResult(circleA, (byte)circleFlag),
+                new QueryResult(circleB, (byte)circleFlag)
+            )
+        );
+
+        // polygon to circle.
+        spatialPairs.Add(
+            new SpatialPair(
+                new QueryResult(polygonA, (byte)polygonFlag),
+                new QueryResult(circleB, (byte)circleFlag)
+            )
+        );
+        spatialPairs.Add(
+            new SpatialPair(
+                new QueryResult(polygonB, (byte)polygonFlag),
+                new QueryResult(circleA, (byte)circleFlag)
+            )
+        );
+
+
+        FilterBvhIntoCollisionManifold(circleSpatialPairs, polygonSpatialPairs, polygonToCircleSpatialPairs, AsSpan(spatialPairs));
+
+        // assert circle spatial pairs.
+        Assert.Equal(1, circleSpatialPairs.Count);
+        AssertEntry(circleSpatialPairs, 0, circleA.Index, circleA.Generation, circleB.Index, circleA.Generation, 
+            (byte)circleFlag, (byte)circleFlag
+        );
+
+        // assert polygon spatial pairs.
+        Assert.Equal(1, polygonSpatialPairs.Count);        
+        AssertEntry(polygonSpatialPairs, 0, polygonA.Index, polygonA.Generation, polygonB.Index, polygonB.Generation, 
+            (byte)polygonFlag, (byte)polygonFlag
+        );
+        
+        // assert polygon to circle spatial pairs.
+        Assert.Equal(2, polygonToCircleSpatialPairs.Count);        
+        // entry 0.
+        AssertEntry(polygonToCircleSpatialPairs, 0, polygonA.Index, polygonA.Generation, circleB.Index, circleB.Generation, 
+            (byte)polygonFlag, (byte)circleFlag
+        );
+        // entry 1.
+        AssertEntry(polygonToCircleSpatialPairs, 1, polygonB.Index, polygonB.Generation, circleA.Index, circleA.Generation, 
+            (byte)polygonFlag, (byte)circleFlag
+        );
+    }
+
+    [Fact]
+    public void FindCircleCollisions_Test()
+    {
+        int soaCapacity = 10;
+        int verticesCapacity = 40;
+        Soa_Collision collisionsToResolve = new(soaCapacity);
+        Soa_Collision collisions = new(soaCapacity);
+        Soa_SpatialPair spatialPairs = new(soaCapacity);
+        Soa_Vector2 vertices = new(verticesCapacity);
+        Span<float> radii = stackalloc float[soaCapacity];
+        Span<int> firstVertices = stackalloc int[soaCapacity];
+
+        PhysicsBodyFlags flags = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;
+
+        // set gen indices.        
+        GenIndex circleA = new GenIndex(1, 0);
+        GenIndex circleB = new GenIndex(2, 0);
+        GenIndex circleC = new GenIndex(3, 0);
+
+        // set radii.
+        radii[0] = 0; // Nil Value.
+        radii[circleA.Index] = 2;
+        radii[circleB.Index] = 3;
+        radii[circleC.Index] = 4;
+
+        // set vertices.
+        AppendVector2(vertices, 0f, 0f); // Nil value.
+        AppendVector2(vertices, 0.5f, -0.5f);
+        AppendVector2(vertices, 0f, 0.5f);
+        AppendVector2(vertices, 100, -230);
+        
+        // set first vertices.
+        firstVertices[circleA.Index] = 1;
+        firstVertices[circleB.Index] = 2;
+        firstVertices[circleC.Index] = 3;
+
+        // set spatial pairs.
+        AppendSpatialPair(spatialPairs, circleA, circleB, (byte)flags, (byte)flags);
+        AppendSpatialPair(spatialPairs, circleB, circleC, (byte)flags, (byte)flags);
+
+        FindCircleCollisions(collisionsToResolve, collisions, spatialPairs, vertices, radii, firstVertices);
+        
+        // assert the collision to resolve.
+        Assert.Equal(1, collisionsToResolve.Count);
+        Assert.Equal(circleA.Index, collisionsToResolve.OwnerGenIndices.Indices[0]);
+        Assert.Equal(circleA.Generation, collisionsToResolve.OwnerGenIndices.Generations[0]);
+        Assert.Equal(circleB.Index, collisionsToResolve.OtherGenIndices.Indices[0]);
+        Assert.Equal(circleB.Generation, collisionsToResolve.OtherGenIndices.Generations[0]);
+
+        // assert the sibling collision.
+        Assert.Equal(1, collisions.Count);
+        Assert.Equal(circleB.Index, collisions.OwnerGenIndices.Indices[0]);
+        Assert.Equal(circleB.Generation, collisions.OwnerGenIndices.Generations[0]);
+        Assert.Equal(circleA.Index, collisions.OtherGenIndices.Indices[0]);
+        Assert.Equal(circleA.Generation, collisions.OtherGenIndices.Generations[0]);
+    }
+
+    [Fact]
+    public void FindPolygonCollisions_Test()
+    {
+        int soaCapacity = 10;
+        int verticesCapacity = 40;
+        int maxPolygonVerticesCount = 4;
+        Soa_Collision collisionsToResolve = new(soaCapacity);
+        Soa_Collision collisions = new(soaCapacity);
+        Soa_SpatialPair spatialPairs = new(soaCapacity);
+        Soa_Vector2 vertices = new(verticesCapacity);
+        List<int> firstVertexIndices = new List<int>();
+        List<int> nextVertexIndices = new List<int>();
+
+        PhysicsBodyFlags flags = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.PolygonShape;
+
+        // set gen indices.        
+        GenIndex polygonA = new GenIndex(1, 0);
+        GenIndex polygonB = new GenIndex(2, 0);
+        GenIndex polygonC = new GenIndex(3, 0);
+    
+        
+        // first vertex indices.
+        firstVertexIndices.Add(0); // nill.
+        firstVertexIndices.Add(1);
+        firstVertexIndices.Add(5);
+        firstVertexIndices.Add(9);
+
+        // next vertex indices.
+        nextVertexIndices.Add(0); // nill.
+        
+        // polygonA.
+        nextVertexIndices.Add(2);
+        nextVertexIndices.Add(3);
+        nextVertexIndices.Add(4);
+        nextVertexIndices.Add(1);
+
+        // polygon B.
+        nextVertexIndices.Add(6);
+        nextVertexIndices.Add(7);
+        nextVertexIndices.Add(8);
+        nextVertexIndices.Add(5);
+
+        // polygon C.
+        nextVertexIndices.Add(10);
+        nextVertexIndices.Add(11);
+        nextVertexIndices.Add(12);
+        nextVertexIndices.Add(9);
+
+        // set vertices.
+        AppendVector2(vertices, 0f, 0f); // Nil value.
+        
+        // polygon A.
+        AppendVector2(vertices, -2.5f, 2.5f);
+        AppendVector2(vertices, 0.5f, 2.5f);
+        AppendVector2(vertices, 0.5f, -2.5f);
+        AppendVector2(vertices, -2.5f, -2.5f);
+
+        // polygon B.
+        AppendVector2(vertices, -400f, 300f);
+        AppendVector2(vertices, -150f, 300f);
+        AppendVector2(vertices, -150f, 100);
+        AppendVector2(vertices, -400f, 100);
+
+        // polygon C.
+        AppendVector2(vertices, -4f, 3f);
+        AppendVector2(vertices, -1.5f, 3f);
+        AppendVector2(vertices, -1.5f, 1);
+        AppendVector2(vertices, -4f, 1);
+
+        // set spatial pairs
+        AppendSpatialPair(spatialPairs, polygonA, polygonC, (byte)flags, (byte)flags);
+        AppendSpatialPair(spatialPairs, polygonB, polygonC, (byte)flags, (byte)flags);
+
+        FindPolygonCollisions(collisionsToResolve, collisions, spatialPairs, vertices, 
+            AsSpan(firstVertexIndices), AsSpan(nextVertexIndices), maxPolygonVerticesCount
+        );
+
+        Assert.Equal(1, collisionsToResolve.Count);
+        Assert.Equal(polygonA.Index, collisionsToResolve.OwnerGenIndices.Indices[0]);
+        Assert.Equal(polygonA.Generation, collisionsToResolve.OwnerGenIndices.Generations[0]);
+        Assert.Equal(polygonC.Index, collisionsToResolve.OtherGenIndices.Indices[0]);
+        Assert.Equal(polygonC.Generation, collisionsToResolve.OtherGenIndices.Generations[0]);
+        
+        Assert.Equal(1, collisions.Count);
+        Assert.Equal(polygonC.Index, collisions.OwnerGenIndices.Indices[0]);
+        Assert.Equal(polygonC.Generation, collisions.OwnerGenIndices.Generations[0]);
+        Assert.Equal(polygonA.Index, collisions.OtherGenIndices.Indices[0]);
+        Assert.Equal(polygonA.Generation, collisions.OtherGenIndices.Generations[0]);
+    }
+
+    [Fact]
+    public void FindPolygonToCircleCollisions_Test()
+    {
+        int soaCapacity = 10;
+        int verticesCapacity = 40;
+        int maxPolygonVertexCount = 4;
+        Soa_Collision collisionsToResolve = new(soaCapacity);
+        Soa_Collision collisions = new(soaCapacity);
+        Soa_SpatialPair spatialPairs = new(soaCapacity);
+        Soa_Vector2 vertices = new(verticesCapacity);
+        List<int> firstVertexIndices = new List<int>();
+        List<int> nextVertexIndices = new List<int>();
+        Span<float> radii = stackalloc float[soaCapacity];
+
+        PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.PolygonShape;
+        PhysicsBodyFlags circleFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;
+
+        GenIndex polygonA = new GenIndex(1, 0);
+        GenIndex polygonB = new GenIndex(2, 0);
+        GenIndex circleA = new GenIndex(3, 0);
+
+        // first vertex indices.
+        firstVertexIndices.Add(0); // nill.
+        firstVertexIndices.Add(1); // polygon A.
+        firstVertexIndices.Add(5); // polygon B.
+        firstVertexIndices.Add(9); // circle A.
+
+        // next vertex indices.
+        nextVertexIndices.Add(0); // nill.
+        
+        // polygonA.
+        nextVertexIndices.Add(2);
+        nextVertexIndices.Add(3);
+        nextVertexIndices.Add(4);
+        nextVertexIndices.Add(1);
+
+        // polygon B.
+        nextVertexIndices.Add(6);
+        nextVertexIndices.Add(7);
+        nextVertexIndices.Add(8);
+        nextVertexIndices.Add(5);
+
+        // set vertices
+        AppendVector2(vertices, 0f, 0f); // Nil value.
+
+        // polygon A.
+        AppendVector2(vertices, -2.5f, 2.5f);
+        AppendVector2(vertices, 0.5f, 2.5f);
+        AppendVector2(vertices, 0.5f, -2.5f);
+        AppendVector2(vertices, -2.5f, -2.5f);
+
+        // polygon B.
+        AppendVector2(vertices, -400f, 300f);
+        AppendVector2(vertices, -150f, 300f);
+        AppendVector2(vertices, -150f, 100);
+        AppendVector2(vertices, -400f, 100);
+
+        // circle
+        AppendVector2(vertices, -300f, 100f);
+        radii[circleA.Index] = 30;
+
+        // set spatial pairs.
+        AppendSpatialPair(spatialPairs, polygonA, circleA, (byte)polygonFlag, (byte)circleFlag);
+        AppendSpatialPair(spatialPairs, polygonB, circleA, (byte)polygonFlag, (byte)circleFlag);
+    
+        FindPolygonToCircleCollisions(
+            collisionsToResolve,
+            collisions,
+            spatialPairs,
+            vertices,
+            AsSpan(firstVertexIndices),
+            AsSpan(nextVertexIndices),
+            radii,
+            maxPolygonVertexCount
+        );
+
+        Assert.Equal(1, collisionsToResolve.Count);
+        Assert.Equal(polygonB.Index, collisionsToResolve.OwnerGenIndices.Indices[0]);
+        Assert.Equal(polygonB.Generation, collisionsToResolve.OwnerGenIndices.Generations[0]);
+        Assert.Equal(circleA.Index, collisionsToResolve.OtherGenIndices.Indices[0]);
+        Assert.Equal(circleA.Generation, collisionsToResolve.OtherGenIndices.Generations[0]);
+        
+        Assert.Equal(1, collisions.Count);
+        Assert.Equal(circleA.Index, collisions.OwnerGenIndices.Indices[0]);
+        Assert.Equal(circleA.Generation, collisions.OwnerGenIndices.Generations[0]);
+        Assert.Equal(polygonB.Index, collisions.OtherGenIndices.Indices[0]);
+        Assert.Equal(polygonB.Generation, collisions.OtherGenIndices.Generations[0]);
     }
 }

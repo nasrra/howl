@@ -1,11 +1,42 @@
 using System;
 using Howl.Collections;
+using Howl.DataStructures;
 using Howl.ECS;
 using Howl.Physics;
 using static Howl.Physics.Soa_Collision;
 
 public class CollisionManifoldNew : IDisposable
 {
+
+
+
+    /*******************
+    
+        Spatial Pairs.
+    
+    ********************/
+
+
+
+
+    public Soa_SpatialPair CircleSpatialPairs;
+
+    public Soa_SpatialPair PolygonSpatialPairs;
+
+    public Soa_SpatialPair PolygonToCircleSpatialPairs;
+
+
+
+
+    /*******************
+    
+        Soa Collisions.
+    
+    ********************/
+
+
+
+
     /// <summary>
     /// Gets and sets the circle to circle collisions to resolve.
     /// </summary>
@@ -37,6 +68,10 @@ public class CollisionManifoldNew : IDisposable
     /// <param name="maxCollisions"></param>
     public CollisionManifoldNew(int maxCollisions)
     {
+        CircleSpatialPairs          = new Soa_SpatialPair(maxCollisions);
+        PolygonSpatialPairs         = new Soa_SpatialPair(maxCollisions);
+        PolygonToCircleSpatialPairs = new Soa_SpatialPair(maxCollisions);
+
         CircleCollisionsToResolve           = new Soa_Collision(maxCollisions);
         PolygonCollisionsToResolve          = new Soa_Collision(maxCollisions);
         PolygonToCircleCollisionsToResolve  = new Soa_Collision(maxCollisions);
@@ -165,6 +200,11 @@ public class CollisionManifoldNew : IDisposable
     }
 
     public void Dispose()
+    {
+        Dispose(this);
+    }
+
+    ~CollisionManifoldNew()
     {
         Dispose(this);
     }
