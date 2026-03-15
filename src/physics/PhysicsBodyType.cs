@@ -15,9 +15,9 @@ public enum PhysicsBodyFlags : byte
     None = 0,
         
     /// <summary>
-    /// Whether or not a body is a polygon.
+    /// Whether or not a body is a rectangle.
     /// </summary>
-    PolygonShape = 1<<0,
+    RectangleShape = 1<<0,
 
     /// <summary>
     /// Whether or not a physics body slot has been allocated in the physics system.
@@ -37,6 +37,7 @@ public enum PhysicsBodyFlags : byte
     /// </summary>
     Kinematic = 1<<3,
 
+    // todo: this will need to be removed.
     /// <summary>
     /// Whether or not a physics body has a physics material.
     /// </summary>

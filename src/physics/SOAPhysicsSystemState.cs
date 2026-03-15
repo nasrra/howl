@@ -84,7 +84,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// <summary>
     /// Gets and sets the first index of a physics bodies first vertex of physics body's shape.
     /// </summary>
-    public int[] FirstVertexIndice;
+    public int[] FirstVertexIndices;
 
     /// <summary>
     /// The index of the next vertex of a given shape's vertex.
@@ -93,7 +93,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Note: the next index for a given shape are stored in a circular intrusive linked list; 
     /// meaning that the next vertice index of the final vertex will be the first vertex index. 
     /// </remarks>
-    public int[] NextVertexIndice;
+    public int[] NextVertexIndices;
     
     /// <summary>
     /// The generation of a physics body id.
@@ -375,9 +375,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
         StaticFrictions         = new float[physicsBodyCount];
         KineticFrictions        = new float[physicsBodyCount];
         TransformedRadii        = new float[physicsBodyCount];
-        NextVertexIndice        = new int[physicsBodyVerticesCount];
+        NextVertexIndices        = new int[physicsBodyVerticesCount];
         Generations             = new int[physicsBodyCount];
-        FirstVertexIndice       = new int[physicsBodyCount];
+        FirstVertexIndices       = new int[physicsBodyCount];
         FreePhysicsBodyIndex    = new();
         FreeVertexIndex         = new();
 

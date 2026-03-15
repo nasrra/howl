@@ -79,7 +79,7 @@ public class SOAPhysicsSystemTest
         // first data set test.
 
         AddVertices(state, [0,1,2,3], [2,3,4,5], out int firstIndex, out int vertexCount);
-        int nextIndex = state.NextVertexIndice[firstIndex];
+        int nextIndex = state.NextVertexIndices[firstIndex];
         
         bool circular = false;
         for(int i = 0; i < vertexCount; i++)
@@ -344,7 +344,7 @@ public class SOAPhysicsSystemTest
         {
             Assert.Equal(expectedX[i], state.Vertices.X[v], precision: 1);
             Assert.Equal(expectedY[i], state.Vertices.Y[v], precision: 1);
-            v = state.NextVertexIndice[v];
+            v = state.NextVertexIndices[v];
         }
     }
 
@@ -376,7 +376,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(0, state.FirstVertexIndice[genIndex.Index]);
+        Assert.Equal(0, state.FirstVertexIndices[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.False(HasRigidBody(state, genIndex));
@@ -385,7 +385,7 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertexIndice[genIndex.Index];
+        firstVertice = state.FirstVertexIndices[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
 
         posX = 123;
@@ -400,7 +400,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.FirstVertexIndice[genIndex.Index]);
+        Assert.Equal(4, state.FirstVertexIndices[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.False(HasRigidBody(state, genIndex));
@@ -409,7 +409,7 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertexIndice[genIndex.Index];
+        firstVertice = state.FirstVertexIndices[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
     }
 
@@ -441,7 +441,7 @@ public class SOAPhysicsSystemTest
     
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(0, state.FirstVertexIndice[genIndex.Index]);
+        Assert.Equal(0, state.FirstVertexIndices[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.True(HasRigidBody(state, genIndex));
@@ -450,7 +450,7 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
         
-        firstVertice = state.FirstVertexIndice[genIndex.Index];
+        firstVertice = state.FirstVertexIndices[genIndex.Index];
 
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
 
@@ -466,7 +466,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.FirstVertexIndice[genIndex.Index]);
+        Assert.Equal(4, state.FirstVertexIndices[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.True(HasRigidBody(state, genIndex));
@@ -475,7 +475,7 @@ public class SOAPhysicsSystemTest
         Assert.False(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertexIndice[genIndex.Index];
+        firstVertice = state.FirstVertexIndices[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
     }
 
@@ -509,7 +509,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(0, state.FirstVertexIndice[genIndex.Index]);
+        Assert.Equal(0, state.FirstVertexIndices[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.True(HasRigidBody(state, genIndex));
@@ -518,7 +518,7 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertexIndice[genIndex.Index];
+        firstVertice = state.FirstVertexIndices[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
         
@@ -535,7 +535,7 @@ public class SOAPhysicsSystemTest
 
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
-        Assert.Equal(4, state.FirstVertexIndice[genIndex.Index]);
+        Assert.Equal(4, state.FirstVertexIndices[genIndex.Index]);
         Assert.True(IsActive(state, genIndex));
         Assert.True(IsAllocated(state, genIndex));
         Assert.True(HasRigidBody(state, genIndex));
@@ -544,7 +544,7 @@ public class SOAPhysicsSystemTest
         Assert.False(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
-        firstVertice = state.FirstVertexIndice[genIndex.Index];
+        firstVertice = state.FirstVertexIndices[genIndex.Index];
         AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
     }
@@ -598,8 +598,8 @@ public class SOAPhysicsSystemTest
             state.Flags, 
             state.Radii,
             state.TransformedRadii,
-            state.FirstVertexIndice,
-            state.NextVertexIndice, 
+            state.FirstVertexIndices,
+            state.NextVertexIndices, 
             0, 
             maxBodies
         );
@@ -611,7 +611,7 @@ public class SOAPhysicsSystemTest
         AssertTransform(state, cTransform, cBodyGenIndex);
 
         // assert rect.
-        int first = state.FirstVertexIndice[rBodyGenIndex.Index];
+        int first = state.FirstVertexIndices[rBodyGenIndex.Index];
         int v = first;
         int count = 0;
         while (true)
@@ -682,7 +682,7 @@ public class SOAPhysicsSystemTest
         Soa_SpatialPair polygonToCircleSpatialPairs = new Soa_SpatialPair(SoaCapacity);
 
         // spatial data.
-        PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.PolygonShape;
+        PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.RectangleShape;
         PhysicsBodyFlags circleFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;  
         GenIndex polygonA   = new GenIndex(0,0);
         GenIndex polygonB   = new GenIndex(1,0);
@@ -752,7 +752,6 @@ public class SOAPhysicsSystemTest
         int soaCapacity = 10;
         int verticesCapacity = 40;
         Soa_Collision collisionsToResolve = new(soaCapacity);
-        Soa_Collision collisions = new(soaCapacity);
         Soa_SpatialPair spatialPairs = new(soaCapacity);
         Soa_Vector2 vertices = new(verticesCapacity);
         Span<float> radii = stackalloc float[soaCapacity];
@@ -786,7 +785,7 @@ public class SOAPhysicsSystemTest
         AppendSpatialPair(spatialPairs, circleA, circleB, (byte)flags, (byte)flags);
         AppendSpatialPair(spatialPairs, circleB, circleC, (byte)flags, (byte)flags);
 
-        FindCircleCollisions(collisionsToResolve, collisions, spatialPairs, vertices, radii, firstVertices);
+        FindCircleCollisions(collisionsToResolve, spatialPairs, vertices, radii, firstVertices);
         
         // assert the collision to resolve.
         Assert.Equal(1, collisionsToResolve.Count);
@@ -794,13 +793,6 @@ public class SOAPhysicsSystemTest
         Assert.Equal(circleA.Generation, collisionsToResolve.OwnerGenIndices.Generations[0]);
         Assert.Equal(circleB.Index, collisionsToResolve.OtherGenIndices.Indices[0]);
         Assert.Equal(circleB.Generation, collisionsToResolve.OtherGenIndices.Generations[0]);
-
-        // assert the sibling collision.
-        Assert.Equal(1, collisions.Count);
-        Assert.Equal(circleB.Index, collisions.OwnerGenIndices.Indices[0]);
-        Assert.Equal(circleB.Generation, collisions.OwnerGenIndices.Generations[0]);
-        Assert.Equal(circleA.Index, collisions.OtherGenIndices.Indices[0]);
-        Assert.Equal(circleA.Generation, collisions.OtherGenIndices.Generations[0]);
     }
 
     [Fact]
@@ -810,13 +802,12 @@ public class SOAPhysicsSystemTest
         int verticesCapacity = 40;
         int maxPolygonVerticesCount = 4;
         Soa_Collision collisionsToResolve = new(soaCapacity);
-        Soa_Collision collisions = new(soaCapacity);
         Soa_SpatialPair spatialPairs = new(soaCapacity);
         Soa_Vector2 vertices = new(verticesCapacity);
         List<int> firstVertexIndices = new List<int>();
         List<int> nextVertexIndices = new List<int>();
 
-        PhysicsBodyFlags flags = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.PolygonShape;
+        PhysicsBodyFlags flags = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.RectangleShape;
 
         // set gen indices.        
         GenIndex polygonA = new GenIndex(1, 0);
@@ -876,7 +867,7 @@ public class SOAPhysicsSystemTest
         AppendSpatialPair(spatialPairs, polygonA, polygonC, (byte)flags, (byte)flags);
         AppendSpatialPair(spatialPairs, polygonB, polygonC, (byte)flags, (byte)flags);
 
-        FindPolygonCollisions(collisionsToResolve, collisions, spatialPairs, vertices, 
+        FindPolygonCollisions(collisionsToResolve, spatialPairs, vertices, 
             AsSpan(firstVertexIndices), AsSpan(nextVertexIndices), maxPolygonVerticesCount
         );
 
@@ -885,12 +876,6 @@ public class SOAPhysicsSystemTest
         Assert.Equal(polygonA.Generation, collisionsToResolve.OwnerGenIndices.Generations[0]);
         Assert.Equal(polygonC.Index, collisionsToResolve.OtherGenIndices.Indices[0]);
         Assert.Equal(polygonC.Generation, collisionsToResolve.OtherGenIndices.Generations[0]);
-        
-        Assert.Equal(1, collisions.Count);
-        Assert.Equal(polygonC.Index, collisions.OwnerGenIndices.Indices[0]);
-        Assert.Equal(polygonC.Generation, collisions.OwnerGenIndices.Generations[0]);
-        Assert.Equal(polygonA.Index, collisions.OtherGenIndices.Indices[0]);
-        Assert.Equal(polygonA.Generation, collisions.OtherGenIndices.Generations[0]);
     }
 
     [Fact]
@@ -900,14 +885,13 @@ public class SOAPhysicsSystemTest
         int verticesCapacity = 40;
         int maxPolygonVertexCount = 4;
         Soa_Collision collisionsToResolve = new(soaCapacity);
-        Soa_Collision collisions = new(soaCapacity);
         Soa_SpatialPair spatialPairs = new(soaCapacity);
         Soa_Vector2 vertices = new(verticesCapacity);
         List<int> firstVertexIndices = new List<int>();
         List<int> nextVertexIndices = new List<int>();
         Span<float> radii = stackalloc float[soaCapacity];
 
-        PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.PolygonShape;
+        PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.RectangleShape;
         PhysicsBodyFlags circleFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;
 
         GenIndex polygonA = new GenIndex(1, 0);
@@ -958,27 +942,14 @@ public class SOAPhysicsSystemTest
         AppendSpatialPair(spatialPairs, polygonA, circleA, (byte)polygonFlag, (byte)circleFlag);
         AppendSpatialPair(spatialPairs, polygonB, circleA, (byte)polygonFlag, (byte)circleFlag);
     
-        FindPolygonToCircleCollisions(
-            collisionsToResolve,
-            collisions,
-            spatialPairs,
-            vertices,
-            AsSpan(firstVertexIndices),
-            AsSpan(nextVertexIndices),
-            radii,
-            maxPolygonVertexCount
+        FindPolygonToCircleCollisions(collisionsToResolve, spatialPairs, vertices, AsSpan(firstVertexIndices),
+            AsSpan(nextVertexIndices), radii, maxPolygonVertexCount
         );
 
         Assert.Equal(1, collisionsToResolve.Count);
         Assert.Equal(polygonB.Index, collisionsToResolve.OwnerGenIndices.Indices[0]);
         Assert.Equal(polygonB.Generation, collisionsToResolve.OwnerGenIndices.Generations[0]);
         Assert.Equal(circleA.Index, collisionsToResolve.OtherGenIndices.Indices[0]);
-        Assert.Equal(circleA.Generation, collisionsToResolve.OtherGenIndices.Generations[0]);
-        
-        Assert.Equal(1, collisions.Count);
-        Assert.Equal(circleA.Index, collisions.OwnerGenIndices.Indices[0]);
-        Assert.Equal(circleA.Generation, collisions.OwnerGenIndices.Generations[0]);
-        Assert.Equal(polygonB.Index, collisions.OtherGenIndices.Indices[0]);
-        Assert.Equal(polygonB.Generation, collisions.OtherGenIndices.Generations[0]);
+        Assert.Equal(circleA.Generation, collisionsToResolve.OtherGenIndices.Generations[0]);        
     }
 }
