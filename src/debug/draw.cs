@@ -7,6 +7,7 @@ using Howl.Math.Shapes;
 using Howl.Math;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.Math.Shapes.Rectangle;
+using static Howl.Math.Math;
 
 namespace Howl.Debug;
 
@@ -105,40 +106,63 @@ public static class Draw
     /// Draws a line between to points.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
-    /// <param name="a">The point to start the line segment from.</param>
-    /// <param name="b">The point to end the line segment at.</param>
+    /// <param name="start">The point to start the line segment from.</param>
+    /// <param name="end">The point to end the line segment at.</param>
     /// <param name="thickness">The thickness of the line segment.</param>
     /// <param name="color">The color od the line segment.</param>
     /// <param name="scaleThickness">Scale the thickness by the camera zoom.</param>
     public static void Line(
         in Camera camera, 
-        Vector2 a, 
-        Vector2 b, 
+        Vector2 start, 
+        Vector2 end, 
         Colour colour, 
         float thickness = DefaultWireframeThickness, 
         bool scaleThickness = true
     )
     {
+        Line(colour, camera.Zoom, camera.Position.X, camera.Position.Y, start.X, start.Y, end.X, end.Y, thickness, scaleThickness);
+    }
+
+    public static void Line(
+        Colour colour, 
+        float cameraZoom,
+        float cameraPositionX,
+        float cameraPositionY, 
+        float startX,
+        float startY,
+        float endX,
+        float endY, 
+        float thickness = DefaultWireframeThickness,
+        bool scaleThickness = true
+    )
+    {
         if (scaleThickness)
         {
-            thickness /= camera.Zoom;
+            thickness /= cameraZoom;
         }
 
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        a.Y *= -1;
-        b.Y *= -1;
+        startY  *= -1;
+        endY    *= -1;
 
         System.Math.Clamp(thickness, float.Epsilon, float.MaxValue);
         float halfThickness = thickness * 0.5f;
 
         // note that we apply the half thickness to the direction so that the line segment
         // corners are offseted by the thickness amount.
-        Vector2 direction = (b - a).Normalise() * halfThickness;
-        Vector2 oppositeDirection = -direction;   
+        float distanceX = endX - startX;
+        float distanceY = endY - startY;
+        Normalise(distanceX, distanceY, out float directionX, out float directionY);
+        directionX *= halfThickness;
+        directionY *= halfThickness;
+        float oppositeDirectionX = -directionX;
+        float oppositeDirectionY = -directionY;
         
-        Vector2 normal = new(-direction.Y, direction.X);
-        Vector2 oppositeNormal = -normal;
+        float normalX = oppositeDirectionY;
+        float normalY = directionX;
+        float oppositeNormalX = -normalX;
+        float oppositeNormalY = -normalY;
 
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
@@ -156,17 +180,36 @@ public static class Draw
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Vector3 cameraPosition = new(camera.Position.X, -camera.Position.Y, 0);
+        Vector3 cameraPosition = new(cameraPositionX, -cameraPositionY, 0);
         Vector3 corner1 = -cameraPosition;
         Vector3 corner2 = -cameraPosition;
         Vector3 corner3 = -cameraPosition;
         Vector3 corner4 = -cameraPosition;
 
         // apply the line world coordinates.
-        corner1 += new Vector3(a + normal + oppositeDirection, 0); 
-        corner2 += new Vector3(b + normal + direction, 0); 
-        corner3 += new Vector3(b + oppositeNormal + direction, 0);
-        corner4 += new Vector3(a + oppositeNormal + oppositeDirection, 0); 
+        corner1 += new Vector3(
+            startX + normalX + oppositeDirectionX,
+            startY + normalY + oppositeDirectionY,
+            0
+        );
+
+        corner2 += new Vector3(
+            endX + normalX + directionX,
+            endY + normalY + directionY,
+            0
+        );
+
+        corner3 += new Vector3(
+            endX + oppositeNormalX + directionX,
+            endY + oppositeNormalY + directionY,
+            0
+        );
+
+        corner4 += new Vector3(
+            startX + oppositeNormalX + oppositeDirectionX,
+            startY + oppositeNormalY + oppositeDirectionY,
+            0
+        );
 
         PrimitiveVertices.Add(new(corner1, colour));
         PrimitiveVertices.Add(new(corner2, colour));
@@ -584,6 +627,68 @@ public static class Draw
         }
     }
 
+    /// <summary>
+    /// Draws a wireframe of a circle.
+    /// </summary>
+    /// <param name="camera">the camera to draw the wireframe in relation to.</param>
+    /// <param name="circle">the circle data to draw the wireframe.</param>
+    /// <param name="colour">the colour of the wireframe.</param>
+    /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
+    /// <param name="thickness">the thickness of the wireframe.</param>
+    /// <param name="scaleThickness">whether or not to scale the thickness by the camera zoom.</param>
+    public static void WireframeCircle(Camera camera, Circle circle, Colour colour,         
+        int verticeCount = DefaultCirclePointAmount, float thickness = DefaultWireframeThickness, bool scaleThickness = true
+    )
+    {
+        WireframeCircle(colour, camera.Position.X, camera.Position.Y, camera.Zoom,
+            circle.X, circle.Y, circle.Radius, thickness, verticeCount, scaleThickness
+        );
+    }
+
+    /// <summary>
+    /// Draw a wireframe of a circle.
+    /// </summary>
+    /// <param name="colour">the colour used to draw the wireframe.</param>
+    /// <param name="cameraPositionX">the x-component of the camera's positional vector.</param>
+    /// <param name="cameraPositionY">the y-component of the camera's positional vector.</param>
+    /// <param name="cameraZoom">the zoom level of the camera.</param>
+    /// <param name="circleX">the x-component of the circle's positional vector.</param>
+    /// <param name="circleY">the y-component of the circle's positional vector.</param>
+    /// <param name="circleRadius">the radius of the circle.</param>
+    /// <param name="thickness">the thickness of the wireframe.</param>
+    /// <param name="vertexCount">the amount of vertices used to draw the circle.</param>
+    /// <param name="scaleThickness">whether or not to scale the thickness by the camera zoom.</param>
+    /// <exception cref="ArgumentException"></exception>
+    public static void WireframeCircle(Colour colour, float cameraPositionX, float cameraPositionY, float cameraZoom,
+        float circleX, float circleY, float circleRadius, float thickness = DefaultWireframeThickness, 
+        int vertexCount = DefaultCirclePointAmount, bool scaleThickness = true
+    )
+    {
+        if (vertexCount < 3)
+            throw new ArgumentException($"Renderer can only draw a wireframe circle with >=3 vertices, not {vertexCount}.");
+
+        float rotation = MathF.Tau / vertexCount;
+        float sin = MathF.Sin(rotation);
+        float cos = MathF.Cos(rotation);
+
+        float startX = circleX;
+        float startY = circleY + circleRadius;
+
+        for (int i = 0; i < vertexCount; i++)
+        {
+            float relX = startX - circleX; // remove the circle position as rotation must be around the origin.
+            float relY = startY - circleY; // remove the circle position as rotation must be around the origin.
+
+            float endX = cos * relX - sin * relY + circleX; // add back the circle position at the end.
+            float endY = sin * relX + cos * relY + circleY; // add back the circle position at the end.
+
+            Line(colour, cameraZoom, cameraPositionX, cameraPositionY,
+                startX, startY, endX, endY, thickness, scaleThickness);
+
+            startX = endX;
+            startY = endY;
+        }
+    }
 
 
 

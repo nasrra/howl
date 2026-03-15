@@ -17,6 +17,7 @@ using static Howl.DataStructures.Soa_SpatialPair;
 using static Howl.Math.Shapes.SAT;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Math.Soa_Transform;
+using Howl.Graphics;
 
 namespace Howl.Physics;
 
@@ -43,11 +44,11 @@ public static class SoaPhysicsSystem
             state.MovementStepStopwatch.Stop();
 
             // Sync Colliders to Transforms Step.
-            state.SyncCollidersToTransformsStopwatch.Restart();
+            state.SyncPhysicsBodiesToEntitiesStopwatch.Restart();
             SyncPhysicsBodiesToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), 
                 state.Transforms, state.Generations
             );
-            state.SyncCollidersToTransformsStopwatch.Stop();
+            state.SyncPhysicsBodiesToEntitiesStopwatch.Stop();
 
             // Reconstruct Bvh.
             state.BvhReconstructionStopwatch.Restart();
@@ -85,6 +86,9 @@ public static class SoaPhysicsSystem
             // Also make sure that this is above rigidbody collision resolution.
             // this function also moves the transforms of the colliders.
             state.ColliderCollisionResolutionStopwatch.Restart();
+            ResolveColliderCollisions(state.CollisionManifold.CircleCollisionsToResolve, state.Transforms);
+            ResolveColliderCollisions(state.CollisionManifold.PolygonCollisionsToResolve, state.Transforms);
+            ResolveColliderCollisions(state.CollisionManifold.PolygonToCircleCollisionsToResolve, state.Transforms);
             state.ColliderCollisionResolutionStopwatch.Stop();
 
             // Resolve RigidBody Collisions.
@@ -1426,5 +1430,67 @@ public static class SoaPhysicsSystem
                 // state.CollisionManifold.CollisionsToResolve.Clear();
             }
         }
+    }
+
+
+
+
+        /*******************
+        
+            Header.
+        
+        ********************/
+
+
+
+
+        
+    /*******************
+    
+        Debug Drawing.
+    
+    ********************/
+
+
+
+    /// <summary>
+    /// Draws the branches of a bvh as a wireframe rectangle.
+    /// </summary>
+    /// <param name="registry">the component registry housing the main camera.</param>
+    /// <param name="bvh">the bvh containing the leaves to draw.</param>
+    /// <param name="colour">the colour used to draw the wireframes.</param>
+    public static void DebugDrawBvhBranches(ComponentRegistry registry, BoundingVolumeHierarchy bvh, Colour colour)
+    {
+        Span<Branch> branches = AsSpan(bvh.Branches);
+
+        for(int i = 0; i < branches.Length; i++)
+        {
+            Debug.Draw.Wireframe(
+                registry,
+                new Transform(Vector2.Zero, Vector2.One, 0),
+                new Rectangle(
+                    new Vector2(branches[i].BoundingBoxMinX, branches[i].BoundingBoxMinY), 
+                    new Vector2(branches[i].BoundingBoxMaxX, branches[i].BoundingBoxMaxY)
+                ), 
+                colour
+            );
+        }
+    }
+
+    public static void DrawCircleColliders(Soa_Transform transforms, Soa_Vector2 vertices, Span<float> radii, 
+        Span<int> firstIndices, Span<PhysicsBodyFlags> flags
+    )
+    {
+        for(int i = 0; i < flags.Length; i++)
+        {
+            ref PhysicsBodyFlags flag = ref flags[i];
+            if((flag & PhysicsBodyFlags.Allocated) == 0 || 
+                (flag & PhysicsBodyFlags.Active) == 0 || 
+                (flag & PhysicsBodyFlags.RectangleShape) != 0
+            )
+            {
+                continue;
+            }
+        }    
     }
 }

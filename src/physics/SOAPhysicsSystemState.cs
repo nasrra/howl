@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Howl.DataStructures;
+using Howl.ECS;
 using Howl.Graphics;
 using Howl.Math;
 
@@ -180,9 +181,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Stopwatch CollisionManifoldSortStopwatch;
 
     /// <summary>
-    /// Gets and sets the stopwatch for syncing collider transformed shapes to their associated transforms.
+    /// Gets and sets the stopwatch for syncing physics bodies to their associated entities.
     /// </summary>
-    public Stopwatch SyncCollidersToTransformsStopwatch;
+    public Stopwatch SyncPhysicsBodiesToEntitiesStopwatch;
 
     /// <summary>
     /// Gets and sets the debug stopwatch for timing a collision resolution step.
@@ -193,6 +194,11 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Gets and sets the debug stop watch for timing a movement step.
     /// </summary>
     public Stopwatch MovementStepStopwatch;
+
+    /// <summary>
+    /// Gets and sets the stopwatch for syncing entities to their associated physics bodies.
+    /// </summary>
+    public Stopwatch SyncEntitiesToPhysicsBodiesStopwatch;
 
 
 
@@ -382,13 +388,14 @@ public sealed class SoaPhysicsSystemState : IDisposable
         FreeVertexIndex         = new();
 
         // Debug diagnostic stopwatches.
-        FixedUpdateSubStepStopwatch         = new();
-        FixedUpdateStepStopwatch            = new();
-        FindColliderPairsStopwatch   = new();
-        ColliderCollisionResolutionStopwatch                 = new();
-        BvhReconstructionStopwatch          = new();
-        CollisionManifoldSortStopwatch      = new();
-        SyncCollidersToTransformsStopwatch  = new();
+        FixedUpdateSubStepStopwatch = new();
+        FixedUpdateStepStopwatch = new();
+        FindColliderPairsStopwatch = new();
+        ColliderCollisionResolutionStopwatch = new();
+        BvhReconstructionStopwatch = new();
+        CollisionManifoldSortStopwatch = new();
+        SyncPhysicsBodiesToEntitiesStopwatch = new();
+        SyncEntitiesToPhysicsBodiesStopwatch = new();
 
         // debug colours
         SolidColliderColour             = Colour.Green;
