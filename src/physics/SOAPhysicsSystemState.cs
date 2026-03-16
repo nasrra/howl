@@ -144,6 +144,10 @@ public sealed class SoaPhysicsSystemState : IDisposable
 
 
 
+    /// <summary>
+    /// Gets and sets the stopwatch for timing a physics system fixed-update step.
+    /// </summary>
+    public Stopwatch FixedUpdateStepStopwatch;
 
     /// <summary>
     /// Gets and sets the stopwatch for timing a physics system fixed-update substep.
@@ -151,9 +155,24 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Stopwatch FixedUpdateSubStepStopwatch;
 
     /// <summary>
-    /// Gets and sets the stopwatch for timing a physics system fixed-update step.
+    /// Gets and sets the stopwatch for syncing physics bodies to their associated entities.
     /// </summary>
-    public Stopwatch FixedUpdateStepStopwatch;
+    public Stopwatch SyncPhysicsBodiesToEntitiesStopwatch;
+
+    /// <summary>
+    /// Gets and sets the debug stop watch for timing a movement step.
+    /// </summary>
+    public Stopwatch MovementStepStopwatch;
+
+    /// <summary>
+    /// Gets and sets the stopwatch for vertices with their associated transform.
+    /// </summary>
+    public Stopwatch TrasformPhysicsBodyVerticesStopwatch;
+
+    /// <summary>
+    /// Gets and sets the stopwatch for timing a bvh reconstruction step.
+    /// </summary>
+    public Stopwatch BvhReconstructionStopwatch;
 
     /// <summary>
     /// Gets and sets the stopwatch for timing a spatial pair filtering step.
@@ -163,7 +182,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// <summary>
     /// Gets and sets the debug stopwatch for timing a collision intersect step.
     /// </summary>
-    public Stopwatch FindColliderPairsStopwatch;
+    public Stopwatch FindCollisionsStopwatch;
 
     /// <summary>
     /// Gets and sets the debug stopwatch for timing a collision resolution step.
@@ -171,39 +190,21 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Stopwatch ColliderCollisionResolutionStopwatch;
 
     /// <summary>
-    /// Gets and sets the stopwatch for timing a bvh reconstruction step.
+    /// Gets and sets the debug stopwatch for timing a collision resolution step.
     /// </summary>
-    public Stopwatch BvhReconstructionStopwatch;
+    public Stopwatch RigidBodyCollisionResolutionStepStopwatch;
 
     /// <summary>
     /// Gets and sets the stopwatch for timing a collision manifold sort step.
     /// </summary>
     public Stopwatch CollisionManifoldSortStopwatch;
 
-    /// <summary>
-    /// Gets and sets the stopwatch for syncing physics bodies to their associated entities.
-    /// </summary>
-    public Stopwatch SyncPhysicsBodiesToEntitiesStopwatch;
-
-    /// <summary>
-    /// Gets and sets the debug stopwatch for timing a collision resolution step.
-    /// </summary>
-    public Stopwatch RigidBodyCollisionResolutionStepStopwatch;
-
-    /// <summary>
-    /// Gets and sets the debug stop watch for timing a movement step.
-    /// </summary>
-    public Stopwatch MovementStepStopwatch;
 
     /// <summary>
     /// Gets and sets the stopwatch for syncing entities to their associated physics bodies.
     /// </summary>
     public Stopwatch SyncEntitiesToPhysicsBodiesStopwatch;
 
-    /// <summary>
-    /// Gets and sets the stopwatch for vertices with their associated transform.
-    /// </summary>
-    public Stopwatch TrasformPhysicsBodyVerticesStopwatch;
 
 
 
@@ -218,24 +219,24 @@ public sealed class SoaPhysicsSystemState : IDisposable
 
 
     /// <summary>
-    /// Gets and sets the debug draw colour for the solid-colliders.
+    /// Gets and sets the debug draw colour for the dynamic-bodies.
     /// </summary>
-    public Colour SolidColliderColour;
+    public Colour DynamicPhysicsBodyColour;
 
     /// <summary>
-    /// Gets and sets the debug draw colour for the trigger-colliders.
+    /// Gets and sets the debug draw colour for the trigger-bodies.
     /// </summary>
-    public Colour TriggerColliderColour;
+    public Colour TriggerPhysicsBodyColour;
 
     /// <summary>
-    /// Gets and sets the debug draw colour for kinematic-colliders.
+    /// Gets and sets the debug draw colour for kinematic-bodies.
     /// </summary>
-    public Colour KinematicColliderColour;
+    public Colour KinematicPhysicsBodyColour;
 
     /// <summary>
-    /// Gets and sets the debug draw colour for trigger colliders when triggered.
+    /// Gets and sets the debug draw colour for trigger-bodies when triggered.
     /// </summary>
-    public Colour TriggerColliderTriggeredColour;
+    public Colour TriggeredPhysicsBodyColour;
 
     /// <summary>
     /// Gets and sets the debug draw colour for AABB's.
@@ -245,12 +246,12 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// <summary>
     /// Gets and sets the fallback debug draw colour for colliders.
     /// </summary>
-    public Colour FallbackColliderColour;
+    public Colour FallbackPhysicsBodyColour;
 
     /// <summary>
     /// Gets and sets the debug draw colour for inactive colliders.
     /// </summary>
-    public Colour InactiveColliderColour;
+    public Colour InactivePhysicsBodyColour;
 
     /// <summary>
     /// Gets and sets the debug draw colour for bvh-tree leaf aabb's.
@@ -380,8 +381,8 @@ public sealed class SoaPhysicsSystemState : IDisposable
         Widths                  = new float[physicsBodyCount];
         Heights                 = new float[physicsBodyCount];
         Radii                   = new float[physicsBodyCount];
-        Vertices                = new Soa_Vector2(physicsBodyCount);
-        TransformedVertices     = new Soa_Vector2(physicsBodyCount);
+        Vertices                = new Soa_Vector2(physicsBodyVerticesCount);
+        TransformedVertices     = new Soa_Vector2(physicsBodyVerticesCount);
         Transforms              = new Soa_Transform(physicsBodyCount);
         StaticFrictions         = new float[physicsBodyCount];
         KineticFrictions        = new float[physicsBodyCount];
@@ -393,27 +394,27 @@ public sealed class SoaPhysicsSystemState : IDisposable
         FreeVertexIndex         = new();
 
         // Debug diagnostic stopwatches.
-        FixedUpdateSubStepStopwatch = new();
         FixedUpdateStepStopwatch = new();
-        FindColliderPairsStopwatch = new();
-        ColliderCollisionResolutionStopwatch = new();
-        BvhReconstructionStopwatch = new();
-        CollisionManifoldSortStopwatch = new();
+        FixedUpdateSubStepStopwatch = new();
         SyncPhysicsBodiesToEntitiesStopwatch = new();
-        SyncEntitiesToPhysicsBodiesStopwatch = new();
         MovementStepStopwatch = new();
-        FilterBvhIntoCollisionManifoldStopwatch = new();
-        RigidBodyCollisionResolutionStepStopwatch = new();
         TrasformPhysicsBodyVerticesStopwatch = new();
+        BvhReconstructionStopwatch = new();
+        FilterBvhIntoCollisionManifoldStopwatch = new();
+        FindCollisionsStopwatch = new();
+        ColliderCollisionResolutionStopwatch = new();
+        RigidBodyCollisionResolutionStepStopwatch = new();
+        CollisionManifoldSortStopwatch = new();
+        SyncEntitiesToPhysicsBodiesStopwatch = new();
 
         // debug colours
-        SolidColliderColour             = Colour.Green;
-        KinematicColliderColour         = Colour.Orange;
-        TriggerColliderColour           = Colour.LightBlue;
-        TriggerColliderTriggeredColour  = Colour.Red;
+        DynamicPhysicsBodyColour             = Colour.Green;
+        KinematicPhysicsBodyColour         = Colour.Orange;
+        TriggerPhysicsBodyColour           = Colour.LightBlue;
+        TriggeredPhysicsBodyColour  = Colour.Red;
         AABBColour                      = new Colour(Colour.Pink.R, Colour.Pink.G, Colour.Pink.B, 50);
-        FallbackColliderColour          = Colour.White;
-        InactiveColliderColour          = Colour.Black;
+        FallbackPhysicsBodyColour          = Colour.White;
+        InactivePhysicsBodyColour          = Colour.Black;
         BvhLeafAABBColour               = Colour.Purple;
         BvhBranchAABBColour             = Colour.Yellow;
         ContactPointColour              = Colour.Red;

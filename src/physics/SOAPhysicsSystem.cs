@@ -38,16 +38,16 @@ public static class SoaPhysicsSystem
         {
             state.FixedUpdateSubStepStopwatch.Restart();
 
-            // Movement Step.
-            state.MovementStepStopwatch.Restart();
-            state.MovementStepStopwatch.Stop();
-
             // Sync Colliders to Transforms Step.
             state.SyncPhysicsBodiesToEntitiesStopwatch.Restart();
             SyncPhysicsBodiesToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), 
                 state.Transforms, state.Generations
             );
             state.SyncPhysicsBodiesToEntitiesStopwatch.Stop();
+
+            // Movement Step.
+            state.MovementStepStopwatch.Restart();
+            state.MovementStepStopwatch.Stop();
 
             // transform vertices
             state.TrasformPhysicsBodyVerticesStopwatch.Restart();
@@ -64,7 +64,12 @@ public static class SoaPhysicsSystem
             );
             state.BvhReconstructionStopwatch.Stop();
 
+            // Filter bvh into collision manifold.
             state.FilterBvhIntoCollisionManifoldStopwatch.Restart();
+                // clear spatial pairs before filtering.
+                Clear(state.CollisionManifold.CircleSpatialPairs);
+                Clear(state.CollisionManifold.PolygonSpatialPairs);
+                Clear(state.CollisionManifold.PolygonToCircleSpatialPairs);
                 FilterBvhIntoCollisionManifold(        
                     state.CollisionManifold.CircleSpatialPairs,
                     state.CollisionManifold.PolygonSpatialPairs,
@@ -73,8 +78,8 @@ public static class SoaPhysicsSystem
                 );
             state.FilterBvhIntoCollisionManifoldStopwatch.Stop();
 
-            // Process Near Colliders.
-            state.FindColliderPairsStopwatch.Restart();
+            // Find collisions.
+            state.FindCollisionsStopwatch.Restart();
             FindCircleCollisions(state.CollisionManifold.CircleCollisionsToResolve, state.CollisionManifold.CircleSpatialPairs, 
                 state.TransformedVertices, state.TransformedRadii, state.FirstVertexIndices
             );
@@ -85,7 +90,7 @@ public static class SoaPhysicsSystem
                 state.CollisionManifold.PolygonToCircleSpatialPairs, state.TransformedVertices, state.FirstVertexIndices, 
                 state.NextVertexIndices, state.Radii, state.MaxPhysicsBodyVertexCount
             );
-            state.FindColliderPairsStopwatch.Stop();
+            state.FindCollisionsStopwatch.Stop();
 
             // Resolve Collider Collisions.
             // NOTE: ordering matters here, make sure to resolve 
@@ -124,12 +129,17 @@ public static class SoaPhysicsSystem
 
     public static void Draw(ComponentRegistry registry, SoaPhysicsSystemState state, float deltaTime)
     {
-        GenIndexListProc.GetDenseRef(registry.Get<Camera>(), CameraSystem.MainCameraId, out Ref<Camera> camera);
+        GetDenseRef(registry.Get<Camera>(), CameraSystem.MainCameraId, out Ref<Camera> camera);
 
         if (state.DrawColliderWireframes)
         {
-            DrawCirclePhysicsBodies(camera, state.TransformedVertices, state.TransformedRadii, state.FirstVertexIndices, state.Flags,
-                state.SolidColliderColour, state.KinematicColliderColour, state.TriggerColliderColour
+            DrawCirclePhysicsBodies(camera, state.TransformedVertices, state.TransformedRadii, state.FirstVertexIndices, 
+                state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour
+            );
+
+            DrawPolygonPhysicsBodies(camera, state.TransformedVertices, state.FirstVertexIndices, state.NextVertexIndices, 
+                state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, 
+                state.MaxPhysicsBodyVertexCount
             );
         }
     }
@@ -294,8 +304,8 @@ public static class SoaPhysicsSystem
     /// - 'next vertex indices' and 'transformed vertices' must be the same length.
     /// - 'transformed radii', 'generations', 'first vertex indices' and 'flags' must be the same length.
     /// </remarks>
-    /// <param name="transformedVertices">the transformed vertices of all physics bodies to insert into the bounding volume hierarchy.</param>
-    /// <param name="transformedRadii">the transformed radii of circle physics bodies to calculate the bounding box necessary for insertion in the bounding volume hierarchy.</param>
+    /// <param name="vertices">the vertices of all physics bodies to insert into the bounding volume hierarchy.</param>
+    /// <param name="radii">the radii of circle physics bodies to calculate the bounding box necessary for insertion in the bounding volume hierarchy.</param>
     /// <param name="firstVertexIndices">the first vertex indices for each physics body.</param>
     /// <param name="nextVertexIndices">the next vertex indices for each vertex in transform vertices.</param>
     /// <param name="generations">the generation for each physics body.</param>
@@ -303,8 +313,8 @@ public static class SoaPhysicsSystem
     /// <param name="bvh">the bounding volume hierarchy.</param>
     /// <param name="maxPhysicsBodyVertexCount">the max amount of vertices that a physics body shape can have.</param>
     public static void ReconstructBvhTree(
-        Soa_Vector2 transformedVertices, 
-        Span<float> transformedRadii,
+        Soa_Vector2 vertices, 
+        Span<float> radii,
         Span<int> firstVertexIndices, 
         Span<int> nextVertexIndices, 
         Span<int> generations,
@@ -324,6 +334,7 @@ public static class SoaPhysicsSystem
         for(int i = 0; i < flags.Length; i++)
         {
             ref PhysicsBodyFlags flag = ref flags[i];
+            ref int firstVerticeIndex = ref firstVertexIndices[i];
             if((flag & PhysicsBodyFlags.Allocated) != 0 && (flag & PhysicsBodyFlags.Active) != 0)
             {
                 float minX;
@@ -336,14 +347,13 @@ public static class SoaPhysicsSystem
 
                     // get the body's shape vertices.
                     int verticeCount = 0;
-                    int firstVerticeIndex = firstVertexIndices[i];
                     int verticeIndex = firstVerticeIndex;
                     
                     while (true)
                     {
                         // store the vertice data.
-                        x[verticeCount] = transformedVertices.X[verticeIndex];
-                        y[verticeCount] = transformedVertices.Y[verticeIndex];
+                        x[verticeCount] = vertices.X[verticeIndex];
+                        y[verticeCount] = vertices.Y[verticeIndex];
                         
                         // go to the next vertice.
                         verticeCount++;
@@ -368,9 +378,9 @@ public static class SoaPhysicsSystem
                 else // circle
                 {
                     Circle.GetMinMaxVectors(
-                        transformedVertices.X[i],
-                        transformedVertices.Y[i],
-                        transformedRadii[i],
+                        vertices.X[firstVerticeIndex],
+                        vertices.Y[firstVerticeIndex],
+                        radii[i],
                         out minX,
                         out minY,
                         out maxX,
@@ -517,18 +527,18 @@ public static class SoaPhysicsSystem
         for(int i = 0; i < spatialPairs.Count; i++)
         {
             // retirieve data.
-            int ownerIndex              = ownerIndices[i];
-            int ownerGeneration         = ownerGenerations[i];
-            int otherIndex              = otherIndices[i];
-            int otherGeneration         = otherGenerations[i];
+            ref int ownerIndex              = ref ownerIndices[i];
+            ref int ownerGeneration         = ref ownerGenerations[i];
+            ref int otherIndex              = ref otherIndices[i];
+            ref int otherGeneration         = ref otherGenerations[i];
             PhysicsBodyFlags ownerFlag = (PhysicsBodyFlags)ownerFlags[i];
             PhysicsBodyFlags otherFlag = (PhysicsBodyFlags)otherFlags[i];
-            float ownerX = x[firstVertexIndices[ownerIndex]];
-            float ownerY = y[firstVertexIndices[ownerIndex]];
-            float ownerR = radii[ownerIndex];
-            float otherX = x[firstVertexIndices[otherIndex]];
-            float otherY = y[firstVertexIndices[otherIndex]];
-            float otherR = radii[otherIndex];
+            ref float ownerX = ref x[firstVertexIndices[ownerIndex]];
+            ref float ownerY = ref y[firstVertexIndices[ownerIndex]];
+            ref float ownerR = ref radii[ownerIndex];
+            ref float otherX = ref x[firstVertexIndices[otherIndex]];
+            ref float otherY = ref y[firstVertexIndices[otherIndex]];
+            ref float otherR = ref radii[otherIndex];
 
             if(CircleBodiesAreColliding(ownerX, ownerY, ownerR, otherX, otherY, otherR, ref normalX, ref normalY, 
                 ref depth, ref contactPointX, ref contactPointY))
@@ -577,10 +587,10 @@ public static class SoaPhysicsSystem
 
         for(int i = 0; i < spatialPairs.Count; i++)
         {            
-            int ownerIndex              = ownerIndices[i];
-            int ownerGeneration         = ownerGenerations[i];
-            int otherIndex              = otherIndices[i];
-            int otherGeneration         = otherGenerations[i];
+            ref int ownerIndex              = ref ownerIndices[i];
+            ref int ownerGeneration         = ref ownerGenerations[i];
+            ref int otherIndex              = ref otherIndices[i];
+            ref int otherGeneration         = ref otherGenerations[i];
             PhysicsBodyFlags ownerFlag  = (PhysicsBodyFlags)ownerFlags[i];
             PhysicsBodyFlags otherFlag  = (PhysicsBodyFlags)otherFlags[i];
 
@@ -644,17 +654,17 @@ public static class SoaPhysicsSystem
 
         for(int i = 0; i < spatialPairs.Count; i++)
         {            
-            int ownerIndex      = ownerIndices[i];
-            int ownerGeneration = ownerGenerations[i];
-            int otherIndex      = otherIndices[i];
-            int otherGeneration = otherGenerations[i];
+            ref int ownerIndex      = ref ownerIndices[i];
+            ref int ownerGeneration = ref ownerGenerations[i];
+            ref int otherIndex      = ref otherIndices[i];
+            ref int otherGeneration = ref otherGenerations[i];
             PhysicsBodyFlags ownerFlag = (PhysicsBodyFlags)ownerFlags[i];
             PhysicsBodyFlags otherFlag = (PhysicsBodyFlags)otherFlags[i];
 
             // get circle data.
-            float circleX = verticesX[firstVertexIndices[otherIndex]];
-            float circleY = verticesY[firstVertexIndices[otherIndex]];
-            float circleR = radii[otherIndex]; 
+            ref float circleX = ref verticesX[firstVertexIndices[otherIndex]];
+            ref float circleY = ref verticesY[firstVertexIndices[otherIndex]];
+            ref float circleR = ref radii[otherIndex]; 
 
             // get polygon data.
             GetPolygonVertices(
@@ -1164,8 +1174,6 @@ public static class SoaPhysicsSystem
         // apply data.
         int index = state.FreePhysicsBodyIndex.Pop();
         state.Radii[index]              = shape.Radius;
-        verticesX[index]                = shape.X;
-        verticesY[index]                = shape.Y;
         state.Flags[index]              = flag;
         state.FirstVertexIndices[index]  = verticesFirstIndex;
 
@@ -1203,8 +1211,6 @@ public static class SoaPhysicsSystem
         int index = state.FreePhysicsBodyIndex.Pop();
 
         state.Radii[index]              = shape.Radius;
-        state.Vertices.X[index]         = shape.X;
-        state.Vertices.Y[index]         = shape.Y;
         state.Flags[index]              = flags;
         state.FirstVertexIndices[index]  = verticesFirstIndex;
 
@@ -1244,8 +1250,6 @@ public static class SoaPhysicsSystem
         int index = state.FreePhysicsBodyIndex.Pop();
 
         state.Radii[index]              = shape.Radius;
-        state.Vertices.X[index]         = shape.X;
-        state.Vertices.Y[index]         = shape.Y;
         state.Flags[index]              = flags;
         state.StaticFrictions[index]    = physicsMaterial.StaticFriction;
         state.KineticFrictions[index]   = physicsMaterial.KineticFriction;
@@ -1278,7 +1282,7 @@ public static class SoaPhysicsSystem
     /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
     /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleCollider(SoaPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
+    public static void AllocateRectangleCollider(SoaPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
     {
         // handle flags.
 
@@ -1317,7 +1321,7 @@ public static class SoaPhysicsSystem
     /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
     /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
+    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
     {
         // handle flags.
 
@@ -1357,7 +1361,7 @@ public static class SoaPhysicsSystem
     /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
     /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, in Rectangle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, out GenIndex genIndex)
+    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, in Rectangle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
     {
         // handle flags.
 
@@ -1499,6 +1503,17 @@ public static class SoaPhysicsSystem
         }
     }
 
+    /// <summary>
+    /// Draws wireframes for all circle physics bodies.
+    /// </summary>
+    /// <param name="camera">the camera to draw in relation to.</param>
+    /// <param name="vertices">the soa vector containing the vertices for the circles.</param>
+    /// <param name="radii">the radii of the circles.</param>
+    /// <param name="firstVertexIndices">the index of a circles  positional vertex in the vertices soa vector.</param>
+    /// <param name="flags">a span containing the flags of the circles to draw.</param>
+    /// <param name="dynamicColour">the colour to draw any 'dynamic' bodies with.</param>
+    /// <param name="kinematicColour">the colour to draw any 'kinematic' bodies with.</param>
+    /// <param name="triggerColour">the colour to draw any 'trigger' bodies with.</param>
     public static void DrawCirclePhysicsBodies(Camera camera, Soa_Vector2 vertices, Span<float> radii, 
         Span<int> firstVertexIndices, Span<PhysicsBodyFlags> flags, 
         Colour dynamicColour, Colour kinematicColour, Colour triggerColour
@@ -1527,7 +1542,7 @@ public static class SoaPhysicsSystem
             {
                 drawColour = triggerColour;
             }
-            else
+            else // dynamic body.
             {
                 drawColour = dynamicColour;
             }
@@ -1536,5 +1551,61 @@ public static class SoaPhysicsSystem
                 verticesX[firstVertexIndices[i]], verticesY[firstVertexIndices[i]], radii[i]
             );
         }    
+    }
+
+    /// <summary>
+    /// Draws wireframes for all polygon physics bodies.
+    /// </summary>
+    /// <param name="camera">the camera to draw in relation to.</param>
+    /// <param name="vertices">the soa vector containing the vertices for the polygons.</param>
+    /// <param name="firstVertexIndices">a span containing the index to the first vertex of a polygon in the vertices soa vector.</param>
+    /// <param name="nextVertexIndices">a span containing the index to the next vertex from a given vertex index in the vertices soa vector.</param>
+    /// <param name="flags">a span containing the flags of the polygons to draw.</param>
+    /// <param name="dynamicColour">the colour to draw 'dynamic' bodies with.</param>
+    /// <param name="kinematicColour">the colour to draw 'kinematic' bodies with.</param>
+    /// <param name="triggerColour">the colour to draw 'trigger' bodies with.</param>
+    /// <param name="maxPolygonVertexCount">the maxmimum amount of vertices a polygon physics body can have.</param>
+    public static void DrawPolygonPhysicsBodies(Camera camera, Soa_Vector2 vertices, Span<int> firstVertexIndices, 
+        Span<int> nextVertexIndices, Span<PhysicsBodyFlags> flags, 
+        Colour dynamicColour, Colour kinematicColour, Colour triggerColour, int maxPolygonVertexCount
+    )
+    {
+        Span<float> verticesX = vertices.X;
+        Span<float> verticesY = vertices.Y;
+        Colour drawColour;
+        Span<float> polygonX = stackalloc float[maxPolygonVertexCount];
+        Span<float> polygonY = stackalloc float[maxPolygonVertexCount];
+        int vertexCount = 0;
+
+        for(int i = 0; i < flags.Length; i++)
+        {
+            ref PhysicsBodyFlags flag = ref flags[i];
+
+            if((flag & PhysicsBodyFlags.Allocated) == 0 || 
+                (flag & PhysicsBodyFlags.Active) == 0 ||
+                (flag & PhysicsBodyFlags.RectangleShape) == 0)
+            {
+                continue;
+            }
+
+            if((flag & PhysicsBodyFlags.Kinematic) != 0)
+            {
+                drawColour = kinematicColour;               
+            }
+            else if ((flag & PhysicsBodyFlags.Trigger) != 0)
+            {
+                drawColour = triggerColour;                
+            }
+            else // dynamic body.
+            {
+                drawColour = dynamicColour;
+            }
+
+            GetPolygonVertices(verticesX, verticesY, firstVertexIndices, nextVertexIndices,
+                polygonX, polygonY, i, ref vertexCount
+            );
+
+            Debug.Draw.WireframePolygon(drawColour, camera, polygonX, polygonY, vertexCount);
+        }        
     }
 }

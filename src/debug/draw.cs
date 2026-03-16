@@ -8,6 +8,7 @@ using Howl.Math;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.Math.Shapes.Rectangle;
 using static Howl.Math.Math;
+using System.Runtime.CompilerServices;
 
 namespace Howl.Debug;
 
@@ -689,6 +690,61 @@ public static class Draw
             startY = endY;
         }
     }
+
+
+    /*******************
+
+        Polygon.
+
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Draws a wireframe polygon.
+    /// </summary>
+    /// <param name="colour">the colour of the wireframe.</param>
+    /// <param name="camera">the camera to draw in relation to.</param>
+    /// <param name="verticesX">the x-components of the polygon's vertices.</param>
+    /// <param name="verticesY">the y-components of the polygon's vertices.</param>
+    /// <param name="verticesCount">the count of vertices.</param>
+    /// <param name="thickness">the thickness of the wireframe.</param>
+    /// <param name="scaleThickness">whether or not to scale the thickness by the camera's zoom level.</param>
+    public static void WireframePolygon(Colour colour, Camera camera, Span<float> verticesX, Span<float> verticesY, 
+        int verticesCount, float thickness = DefaultWireframeThickness, bool scaleThickness = true
+    )
+    {
+        WireframePolygon(colour, camera.Position.X, camera.Position.Y, camera.Zoom, verticesX, verticesY, verticesCount, thickness, scaleThickness);    
+    }
+
+    /// <summary>
+    /// Draws a wireframe polygon.
+    /// </summary>
+    /// <param name="colour">the colour of the wireframe.</param>
+    /// <param name="cameraPositionX">the x-component of the camera's position vector.</param>
+    /// <param name="cameraPositionY">the y-component of the camera's position vector.</param>
+    /// <param name="cameraZoom">the zoom level of the camera.</param>
+    /// <param name="verticesX">the x-components of the polygon's vertices.</param>
+    /// <param name="verticesY">the y-components of the polygon's vertices.</param>
+    /// <param name="verticesCount">the count of vertices.</param>
+    /// <param name="thickness">the thickness of the wireframe.</param>
+    /// <param name="scaleThickness">whether or not to scale the thickness by the camera's zoom level.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void WireframePolygon(Colour colour, float cameraPositionX, float cameraPositionY, float cameraZoom,
+        Span<float> verticesX, Span<float> verticesY, int verticesCount, float thickness = DefaultWireframeThickness, bool scaleThickness = true
+    )
+    {
+        int nextIndex;
+        for(int startIndex = 0; startIndex < verticesCount; startIndex++)
+        {
+            nextIndex = (startIndex + 1) % verticesCount;
+            Line(colour, cameraZoom, cameraPositionX, cameraPositionY, verticesX[startIndex], verticesY[startIndex], 
+                verticesX[nextIndex], verticesY[nextIndex], thickness, scaleThickness
+            );
+        }
+    }
+
 
 
 
