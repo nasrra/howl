@@ -235,4 +235,9 @@ public class Soa_Collision
         throw new NotImplementedException();
     }
 
+    public static void Clear(Soa_Collision soa)
+    {
+        soa.Count = 0;
+    }
+
 }

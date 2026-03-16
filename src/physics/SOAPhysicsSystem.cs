@@ -4,7 +4,6 @@ using Howl.Math;
 using Howl.Math.Shapes;
 using Howl.Generic;
 using Howl.DataStructures;
-using Howl.Collections;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Math;
 using static Howl.ECS.GenIndexListProc;
@@ -49,6 +48,14 @@ public static class SoaPhysicsSystem
                 state.Transforms, state.Generations
             );
             state.SyncPhysicsBodiesToEntitiesStopwatch.Stop();
+
+            // transform vertices
+            state.TrasformPhysicsBodyVerticesStopwatch.Restart();
+            TransformPhysicsBodyVertices(state.Vertices, state.TransformedVertices, state.Transforms, state.Flags, 
+                state.Radii, state.TransformedRadii, state.FirstVertexIndices, state.NextVertexIndices, 
+                0, state.AlloctedPhysicsBodyCount
+            );
+            state.TrasformPhysicsBodyVerticesStopwatch.Stop();
 
             // Reconstruct Bvh.
             state.BvhReconstructionStopwatch.Restart();
@@ -106,10 +113,25 @@ public static class SoaPhysicsSystem
             state.CollisionManifoldSortStopwatch.Restart();
             state.CollisionManifoldSortStopwatch.Stop();
 
+            Clear(state.CollisionManifold.CircleCollisionsToResolve);
+            Clear(state.CollisionManifold.PolygonCollisionsToResolve);
+            Clear(state.CollisionManifold.PolygonToCircleCollisionsToResolve);
             state.FixedUpdateSubStepStopwatch.Stop();
         }
 
         state.FixedUpdateStepStopwatch.Stop();
+    }
+
+    public static void Draw(ComponentRegistry registry, SoaPhysicsSystemState state, float deltaTime)
+    {
+        GenIndexListProc.GetDenseRef(registry.Get<Camera>(), CameraSystem.MainCameraId, out Ref<Camera> camera);
+
+        if (state.DrawColliderWireframes)
+        {
+            DrawCirclePhysicsBodies(camera, state.TransformedVertices, state.TransformedRadii, state.FirstVertexIndices, state.Flags,
+                state.SolidColliderColour, state.KinematicColliderColour, state.TriggerColliderColour
+            );
+        }
     }
 
     /// <summary>
@@ -1477,10 +1499,15 @@ public static class SoaPhysicsSystem
         }
     }
 
-    public static void DrawCircleColliders(Soa_Transform transforms, Soa_Vector2 vertices, Span<float> radii, 
-        Span<int> firstIndices, Span<PhysicsBodyFlags> flags
+    public static void DrawCirclePhysicsBodies(Camera camera, Soa_Vector2 vertices, Span<float> radii, 
+        Span<int> firstVertexIndices, Span<PhysicsBodyFlags> flags, 
+        Colour dynamicColour, Colour kinematicColour, Colour triggerColour
     )
     {
+        Span<float> verticesX = vertices.X;
+        Span<float> verticesY = vertices.Y;
+        Colour drawColour;
+
         for(int i = 0; i < flags.Length; i++)
         {
             ref PhysicsBodyFlags flag = ref flags[i];
@@ -1491,6 +1518,23 @@ public static class SoaPhysicsSystem
             {
                 continue;
             }
+
+            if((flag & PhysicsBodyFlags.Kinematic) != 0)
+            {
+                drawColour = kinematicColour; 
+            }
+            else if((flag & PhysicsBodyFlags.Trigger) != 0)
+            {
+                drawColour = triggerColour;
+            }
+            else
+            {
+                drawColour = dynamicColour;
+            }
+
+            Debug.Draw.WireframeCircle(drawColour, camera.Position.X, camera.Position.Y, camera.Zoom,
+                verticesX[firstVertexIndices[i]], verticesY[firstVertexIndices[i]], radii[i]
+            );
         }    
     }
 }

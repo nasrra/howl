@@ -200,6 +200,11 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// </summary>
     public Stopwatch SyncEntitiesToPhysicsBodiesStopwatch;
 
+    /// <summary>
+    /// Gets and sets the stopwatch for vertices with their associated transform.
+    /// </summary>
+    public Stopwatch TrasformPhysicsBodyVerticesStopwatch;
+
 
 
 
@@ -396,6 +401,10 @@ public sealed class SoaPhysicsSystemState : IDisposable
         CollisionManifoldSortStopwatch = new();
         SyncPhysicsBodiesToEntitiesStopwatch = new();
         SyncEntitiesToPhysicsBodiesStopwatch = new();
+        MovementStepStopwatch = new();
+        FilterBvhIntoCollisionManifoldStopwatch = new();
+        RigidBodyCollisionResolutionStepStopwatch = new();
+        TrasformPhysicsBodyVerticesStopwatch = new();
 
         // debug colours
         SolidColliderColour             = Colour.Green;
