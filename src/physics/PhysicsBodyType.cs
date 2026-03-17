@@ -38,6 +38,7 @@ public enum PhysicsBodyFlags : byte
     Kinematic = 1<<3,
 
     // HasPhysicsMaterial = 1<<4,
+    RotationalPhysics = 1 << 4,
 
     /// <summary>
     /// Whether or not a physics body has a rigidbody.

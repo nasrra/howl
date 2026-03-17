@@ -106,15 +106,8 @@ public static class ShapeUtils
     /// <param name="y">a span to store the found polygon's vertice y-component's</param>
     /// <param name="index">the index of the polygon in the first vertex indices span.</param>
     /// <param name="vertexCount">an int to store the count of vertices found.</param
-    public static void GetPolygonVertices(
-        Span<float> verticesX, 
-        Span<float> verticesY,
-        Span<int> firstVertexIndices, 
-        Span<int> nextVertexIndices,
-        Span<float> x,
-        Span<float> y, 
-        int index, 
-        ref int vertexCount
+    public static void GetPolygonVertices(Span<float> verticesX, Span<float> verticesY, Span<int> firstVertexIndices, 
+        Span<int> nextVertexIndices, Span<float> x, Span<float> y, int index, ref int vertexCount
     ){
         vertexCount = 0;
         

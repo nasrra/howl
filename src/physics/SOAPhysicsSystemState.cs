@@ -57,6 +57,27 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Soa_Vector2 LinearVelocities;
 
     /// <summary>
+    /// Gets and sets the centroid of a physics body.
+    /// </summary>
+    public Soa_Vector2 Centroids;
+
+    /// <summary>
+    /// Gets the max of vector of a physics body's AABB. 
+    /// </summary>
+    /// <remarks>
+    /// Note: this collection is indexed by the body index; not a body's vertex indices.
+    /// </remarks>
+    public Soa_Vector2 MaxABBBVectors;
+
+    /// <summary>
+    /// Gets the min vector of a physics body's AABB.
+    /// </summary>
+    /// <remarks>
+    /// Note: this collection is indexed by the body index; not a body's vertex indices.
+    /// </remarks>
+    public Soa_Vector2 MinAABBVectors;
+
+    /// <summary>
     /// Gets and sets the angular velocity of a physics body.
     /// </summary>
     public float[] AngularVelocities;
@@ -436,6 +457,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
         Transforms                  = new Soa_Transform(physicsBodyCount);
         Forces                      = new Soa_Vector2(physicsBodyCount);
         LinearVelocities            = new Soa_Vector2(physicsBodyCount);
+        Centroids                   = new Soa_Vector2(physicsBodyCount);
+        MaxABBBVectors             = new Soa_Vector2(physicsBodyCount);
+        MinAABBVectors             = new Soa_Vector2(physicsBodyCount);
         AngularVelocities           = new float[physicsBodyCount];
         Masses                      = new float[physicsBodyCount];
         InverseMasses               = new float[physicsBodyCount];
