@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using static Howl.Math.Shapes.ShapeUtils;
 
 namespace Howl.Math;
 
@@ -76,5 +77,17 @@ public class Soa_Transform
         soa.Scale.Y[index] = transform.Scale.Y;
         soa.Sin[index] = transform.Sin;
         soa.Cos[index] = transform.Cos;
+    }
+
+    /// <summary>
+    /// Rotates a transform entry in a soa transform.
+    /// </summary>
+    /// <param name="soa">the soa transform.</param>
+    /// <param name="increment">the amount - in radians - to rotate the transform.</param>
+    /// <param name="index">the index of the transform in the soa transfom.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Rotate(Soa_Transform soa, float increment, int index)
+    {
+        RotateRadians(increment, soa.Rotation, soa.Sin, soa.Cos, index);
     }
 }

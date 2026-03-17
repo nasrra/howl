@@ -22,6 +22,11 @@ namespace Howl.Physics;
 
 public static class SoaPhysicsSystem
 {
+    public const float RectangleRotationalInertia = 0.0833333333333f;
+    public const float CircleRotationalInertia = 0.5f;
+    public const float MinBodySize = float.Epsilon;
+    public const float MaxBodySize = float.MaxValue;
+    
     public static void RegisterComponents(ComponentRegistry registry)
     {
         registry.RegisterComponent<Transform>();
@@ -45,9 +50,13 @@ public static class SoaPhysicsSystem
             );
             state.SyncPhysicsBodiesToEntitiesStopwatch.Stop();
 
-            // Movement Step.
-            state.MovementStepStopwatch.Restart();
-            state.MovementStepStopwatch.Stop();
+            // RigidBody Movement Step.
+            state.RigidBodyMovementStepStopwatch.Restart();
+            RigidBodyMovementStep(state.Transforms, state.LinearVelocities, state.Forces, 
+                state.Masses, state.Flags, state.AngularVelocities, 
+                state.GravityDirection.X, state.GravityDirection.Y, state.Gravity, deltaTime
+            );
+            state.RigidBodyMovementStepStopwatch.Stop();
 
             // transform vertices
             state.TrasformPhysicsBodyVerticesStopwatch.Restart();
@@ -123,6 +132,16 @@ public static class SoaPhysicsSystem
             Clear(state.CollisionManifold.PolygonToCircleCollisionsToResolve);
             state.FixedUpdateSubStepStopwatch.Stop();
         }
+
+        // Transform bodies by collision resolution.
+        // NOTE: this is needed at the end as the final
+        // sub-step iteration does not transform the bodies
+        // at the end of it's loop; meaning the final collision
+        // resolution wouldn't be applied.
+        TransformPhysicsBodyVertices(state.Vertices, state.TransformedVertices, state.Transforms, state.Flags, 
+            state.Radii, state.TransformedRadii, state.FirstVertexIndices, state.NextVertexIndices, 
+            0, state.AlloctedPhysicsBodyCount
+        );
 
         state.FixedUpdateStepStopwatch.Stop();
     }
@@ -202,6 +221,70 @@ public static class SoaPhysicsSystem
             
             if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Ok())
                 CopySoaToTransform(soaTransform, ref transformRef.Value, bodyId.GenIndex.Index);
+        }
+    }
+
+    /// <summary>
+    /// Performs a movement step for all physics bodies with a rigidbody.
+    /// </summary>
+    /// <param name="transforms">the soa transforms of the physics bodies.</param>
+    /// <param name="linearVelocities">the linear velocities of the physics bodies.</param>
+    /// <param name="forces">the forces to be applieed to the physics bodies.</param>
+    /// <param name="masses">the masses of the physics bodies.</param>
+    /// <param name="flags">the physics bodies flags.</param>
+    /// <param name="angularVelocities">the angular velocities of the physics bodies.</param>
+    /// <param name="gravityDirectionX">the x-component of gravity's directional vector.</param>
+    /// <param name="gravityDirectionY">the y-component of gravity's directional vector.</param>
+    /// <param name="gravity">the gravity force.</param>
+    /// <param name="deltaTime">delta time.</param>
+    public static void RigidBodyMovementStep(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
+        Span<float> masses, Span<PhysicsBodyFlags> flags, Span<float> angularVelocities, 
+        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime
+    )
+    {
+        Span<float> forcesX = forces.X;
+        Span<float> forcesY = forces.Y;
+        Span<float> linearVelocitiesX = linearVelocities.X;
+        Span<float> linearVelocitiesY = linearVelocities.Y;
+        Span<float> positionsX = transforms.Position.X;
+        Span<float> positionsY = transforms.Position.Y;
+        Span<float> rotation = transforms.Rotation;
+        Span<float> sin = transforms.Sin;
+        Span<float> cos = transforms.Cos;
+
+        float gravityLinearForceX = gravityDirectionX * gravity * deltaTime;
+        float gravityLinearForceY = gravityDirectionY * gravity * deltaTime;
+
+        for(int i = 0; i < flags.Length; i++)
+        {
+            PhysicsBodyFlags flag = (PhysicsBodyFlags)flags[i];
+            
+            if((flag & PhysicsBodyFlags.Allocated) == 0 ||
+                (flag & PhysicsBodyFlags.Active) == 0 ||
+                (flag & PhysicsBodyFlags.Kinematic) != 0 ||
+                (flag & PhysicsBodyFlags.RigidBody) == 0)
+            {
+                continue;
+            }
+
+            ref float linearVelocityX = ref linearVelocitiesX[i];
+            ref float linearVelocityY = ref linearVelocitiesY[i];
+            ref float mass = ref masses[i];
+
+            // apply gravity.
+            linearVelocityX += gravityLinearForceX;
+            linearVelocityY += gravityLinearForceY;
+
+            // force = mass * acceleration.
+            // acceleration = force / mass.
+            linearVelocityX += forcesX[i] / mass * deltaTime;
+            linearVelocityY += forcesY[i] / mass * deltaTime;
+            
+            // apply linear velocity.
+            positionsX[i] += linearVelocityX * deltaTime;
+            positionsY[i] += linearVelocityY * deltaTime;
+            Rotate(transforms, angularVelocities[i] * deltaTime, i);
+            RotateRadians(angularVelocities[i] * deltaTime, rotation, sin, cos, i);
         }
     }
 
@@ -1079,34 +1162,6 @@ public static class SoaPhysicsSystem
     }
 
     /// <summary>
-    /// Sets whether or not a physics body has a physics material.
-    /// </summary>
-    /// <param name="flags">a reference to the flags to mutate.</param>
-    /// <param name="hasPhysicsMaterial">true, to enable physics material behaviour; otherwise false.</param>
-    public static void SetHasPhysicsMaterial(ref PhysicsBodyFlags flags, bool hasPhysicsMaterial)
-    {
-        if (hasPhysicsMaterial)
-        {
-            flags |= PhysicsBodyFlags.HasPhysicsMaterial;
-        }
-        else
-        {
-            flags &= ~PhysicsBodyFlags.HasPhysicsMaterial;
-        }
-    }
-
-    /// <summary>
-    /// Gets whether or not a physics body has a physics material.
-    /// </summary>
-    /// <param name="state">the physics system state storing the body to check.</param>
-    /// <param name="genIndex">the gen index used to look up the body.</param>
-    /// <returns>true, if the body has a physics material; otherwise false.</returns>
-    public static bool HasPhysicsMaterial(SoaPhysicsSystemState state, GenIndex genIndex)
-    {
-        return (state.Flags[genIndex.Index] & PhysicsBodyFlags.HasPhysicsMaterial) != 0;
-    }
-
-    /// <summary>
     /// Sets the transform of a body in the physics simulation.
     /// </summary>
     /// <param name="soaTransform">the structure-of-array transforms to mutate and store the specified transform in.</param>
@@ -1150,13 +1205,10 @@ public static class SoaPhysicsSystem
     /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
     /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateCircleCollider(SoaPhysicsSystemState state, in Circle shape, 
+    public static void AllocateCircleCollider(SoaPhysicsSystemState state, Circle shape, 
         bool isKinematic, bool isTrigger, ref GenIndex genIndex
     )
     {
-        Span<float> verticesX = state.Vertices.X;
-        Span<float> verticesY = state.Vertices.Y;
-
         // handle flags.
         // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
         // set, a physics body is a circle.
@@ -1165,14 +1217,13 @@ public static class SoaPhysicsSystem
         SetActive(ref flag, true);
         SetAllocated(ref flag, true);
         SetRigidBody(ref flag, false);
-        SetHasPhysicsMaterial(ref flag, false);
         SetTrigger(ref flag, isTrigger);
         SetKinematic(ref flag, isKinematic);
 
+        int index = state.FreePhysicsBodyIndex.Pop();
         AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
 
         // apply data.
-        int index = state.FreePhysicsBodyIndex.Pop();
         state.Radii[index]              = shape.Radius;
         state.Flags[index]              = flag;
         state.FirstVertexIndices[index]  = verticesFirstIndex;
@@ -1184,44 +1235,6 @@ public static class SoaPhysicsSystem
     }
 
     /// <summary>
-    /// Allocates a circle rigidbody - without friction - into a physics system state.
-    /// </summary>
-    /// <param name="state">the physics system state to allocate into.</param>
-    /// <param name="shape">the shape data of the circle.</param>
-    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
-    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
-    /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateCircleRigidBody(SoaPhysicsSystemState state, in Circle shape, bool isKinematic, bool isTrigger, out GenIndex genIndex)
-    {
-        // handle flags.
-        // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
-        // set, a physics body is a circle.
-        PhysicsBodyFlags flags = PhysicsBodyFlags.None; 
-
-        SetActive(ref flags, true);
-        SetAllocated(ref flags, true);
-        SetRigidBody(ref flags, true);
-        SetHasPhysicsMaterial(ref flags, false);
-        SetTrigger(ref flags, isTrigger);
-        SetKinematic(ref flags, isKinematic);
-
-        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
-
-        // apply data.
-        int index = state.FreePhysicsBodyIndex.Pop();
-
-        state.Radii[index]              = shape.Radius;
-        state.Flags[index]              = flags;
-        state.FirstVertexIndices[index]  = verticesFirstIndex;
-
-        // return gen index.
-
-        genIndex = new(index, state.Generations[index]);
-
-        state.AlloctedPhysicsBodyCount++;
-    }
-
-    /// <summary>
     /// Allocates a circle rigidbody into a physics system state.
     /// </summary>
     /// <param name="state">the physics system state to allocate into.</param>
@@ -1230,7 +1243,7 @@ public static class SoaPhysicsSystem
     /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
     /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateCircleRigidBody(SoaPhysicsSystemState state, in Circle shape, in PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, out GenIndex genIndex)
+    public static void AllocateCircleRigidBody(SoaPhysicsSystemState state, Circle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
     {
         // handle flags.
         // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
@@ -1240,20 +1253,35 @@ public static class SoaPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
-        SetHasPhysicsMaterial(ref flags, true);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
 
         AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+        int index = state.FreePhysicsBodyIndex.Pop();
+        
+        // calculate rigidbody data.
+        float area = Circle.GetArea(shape.Radius);
+        float radiusSqrd = shape.Radius * shape.Radius;
+        float mass =  physicsMaterial.Density * area;
+        float inverseMass = mass == 0? 0 : 1f / mass;
+        float rotationalInertia = CircleRotationalInertia * mass * radiusSqrd;
+        float inverseRotationalInertia = rotationalInertia == 0? 0 : 1f / rotationalInertia;
 
         // apply data.
-        int index = state.FreePhysicsBodyIndex.Pop();
-
-        state.Radii[index]              = shape.Radius;
-        state.Flags[index]              = flags;
-        state.StaticFrictions[index]    = physicsMaterial.StaticFriction;
-        state.KineticFrictions[index]   = physicsMaterial.KineticFriction;
-        state.FirstVertexIndices[index]  = verticesFirstIndex;
+        state.Radii[index]                      = shape.Radius;
+        state.Flags[index]                      = flags;
+        state.FirstVertexIndices[index]         = verticesFirstIndex;
+        state.Areas[index]                      = area;
+        state.Masses[index]                     = mass;
+        state.InverseMasses[index]              = inverseMass;
+        state.RotationalInertia[index]          = rotationalInertia;
+        state.InverseRotationalInertia[index]   = inverseRotationalInertia;
+        state.StaticFrictions[index]            = physicsMaterial.StaticFriction;
+        state.KineticFrictions[index]           = physicsMaterial.KineticFriction;
+        state.Densities[index]                  = physicsMaterial.Density;
+        
+        // reset forces
+        ClearForcesAndVelocities(state, index);
 
         // return gen index.
 
@@ -1282,7 +1310,7 @@ public static class SoaPhysicsSystem
     /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
     /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleCollider(SoaPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
+    public static void AllocateRectangleCollider(SoaPhysicsSystemState state, Rectangle shape, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
     {
         // handle flags.
 
@@ -1290,7 +1318,6 @@ public static class SoaPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, false);
-        SetHasPhysicsMaterial(ref flags, false);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
 
@@ -1314,45 +1341,6 @@ public static class SoaPhysicsSystem
     }
 
     /// <summary>
-    /// Allocates a rectangle rigidbody - without a physics material - into a physics system state.
-    /// </summary>
-    /// <param name="state">the physics system state to allocate a physics body into.</param>
-    /// <param name="shape">the rectangle shape data of the physics body.</param>
-    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
-    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
-    /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, in Rectangle shape, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
-    {
-        // handle flags.
-
-        PhysicsBodyFlags flags = PhysicsBodyFlags.RectangleShape;
-        SetActive(ref flags, true);
-        SetAllocated(ref flags, true);
-        SetRigidBody(ref flags, true);
-        SetHasPhysicsMaterial(ref flags, false);
-        SetTrigger(ref flags, isTrigger);
-        SetKinematic(ref flags, isKinematic);
-    
-        // apply data.
-
-        PolygonRectangle polyRect = new(shape);
-
-        int bodyIndex = state.FreePhysicsBodyIndex.Pop();
-        AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
-
-        state.Heights[bodyIndex]            = shape.Height;
-        state.Widths[bodyIndex]             = shape.Width;
-        state.Flags[bodyIndex]              = flags;
-        state.FirstVertexIndices[bodyIndex]  = verticesFirstIndex;
-
-        // return gen index.
-
-        genIndex = new(bodyIndex, state.Generations[bodyIndex]);
-        
-        state.AlloctedPhysicsBodyCount++;
-    }
-
-    /// <summary>
     /// Allocates a rectangle rigidbody into a physics system state.
     /// </summary>
     /// <param name="state">the physics system state to allocate a physics body into.</param>
@@ -1361,7 +1349,7 @@ public static class SoaPhysicsSystem
     /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
     /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, in Rectangle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
+    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, Rectangle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
     {
         // handle flags.
 
@@ -1369,27 +1357,43 @@ public static class SoaPhysicsSystem
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
-        SetHasPhysicsMaterial(ref flags, true);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
     
-        // apply data.
 
         PolygonRectangle polyRect = new(shape);
 
-        int bodyIndex = state.FreePhysicsBodyIndex.Pop();
+        int index = state.FreePhysicsBodyIndex.Pop();
         AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
 
-        state.Heights[bodyIndex]                = shape.Height;
-        state.Widths[bodyIndex]                 = shape.Width;
-        state.Flags[bodyIndex]                  = flags;
-        state.FirstVertexIndices[bodyIndex]      = verticesFirstIndex;
-        state.KineticFrictions[bodyIndex]       = physicsMaterial.KineticFriction;
-        state.StaticFrictions[bodyIndex]        = physicsMaterial.StaticFriction;
+        // calculate rigidbody data.
+        float area = Rectangle.GetArea(shape.Width, shape.Height);
+        float mass = area * physicsMaterial.Density;
+        float inverseMass = mass == 0 ? 0 : 1f / mass;
+        float rotationalInertia = RectangleRotationalInertia * mass * (shape.Width * shape.Width + shape.Height * shape.Height);
+        float inverseRotationalInertia = rotationalInertia == 0 ? 0 : 1f / rotationalInertia;
+
+        // apply data.
+        state.Heights[index]                    = shape.Height;
+        state.Widths[index]                     = shape.Width;
+        state.Flags[index]                      = flags;
+        state.FirstVertexIndices[index]         = verticesFirstIndex;
+        state.Areas[index]                      = area;
+        state.Masses[index]                     = mass;
+        state.InverseMasses[index]              = inverseMass;
+        state.RotationalInertia[index]          = rotationalInertia;
+        state.InverseRotationalInertia[index]   = inverseRotationalInertia;
+        state.KineticFrictions[index]           = physicsMaterial.KineticFriction;
+        state.StaticFrictions[index]            = physicsMaterial.StaticFriction;
+        state.Densities[index]                  = physicsMaterial.Density;
+        state.Restitutions[index]               = physicsMaterial.Restitution;
+
+        // reset forces.
+        ClearForcesAndVelocities(state, index);
 
         // return gen index.
 
-        genIndex = new(bodyIndex, state.Generations[bodyIndex]);
+        genIndex = new(index, state.Generations[index]);
     
         state.AlloctedPhysicsBodyCount++;
     }
@@ -1458,15 +1462,19 @@ public static class SoaPhysicsSystem
         }
     }
 
-
-
-
-        /*******************
-        
-            Header.
-        
-        ********************/
-
+    /// <summary>
+    /// Clears all forces and velocities being applied to a rigidbody.
+    /// </summary>
+    /// <param name="state">the phsysics system state.</param>
+    /// <param name="bodyIndex">the index of the physics body to stop.</param>
+    public static void ClearForcesAndVelocities(SoaPhysicsSystemState state, int bodyIndex)
+    {
+        state.LinearVelocities.X[bodyIndex] = 0;
+        state.LinearVelocities.Y[bodyIndex] = 0;
+        state.AngularVelocities[bodyIndex] = 0;
+        state.Forces.X[bodyIndex] = 0;
+        state.Forces.Y[bodyIndex] = 0;
+    }
 
 
 

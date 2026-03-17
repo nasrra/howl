@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using static Howl.Math.Math;
 
 namespace Howl.Math.Shapes;
 
@@ -176,4 +177,26 @@ public struct Circle
             Math.NearlyEqual(a.Radius, b.Radius, epsilon);
     }
     
+    /// <summary>
+    /// Gets the area of a circle.
+    /// </summary>
+    /// <param name="radius">the radius of the circle.</param>
+    /// <returns>the area of the circle.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float GetArea(float radius)
+    {
+        return radius * radius * Pi;
+    }
+
+    /// <summary>
+    /// Gets the area of a circle.
+    /// </summary>
+    /// <param name="circle">the circle.</param>
+    /// <returns>the area of the circle.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float GetArea(ref Circle circle)
+    {
+        return GetArea(circle.Radius);
+    }
+
 }

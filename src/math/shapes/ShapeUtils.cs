@@ -181,4 +181,37 @@ public static class ShapeUtils
         int vertexCount = 0;
         GetPolygonVertices(vertices.X, vertices.Y, firstVertexIndices, nextVertexIndices, x, y, index, ref vertexCount);        
     }
+
+    /// <summary>
+    /// Rotates a radian value by a given amount.
+    /// </summary>
+    /// <param name="increment">the amount - in radians - to increment the rotational radians by.</param>
+    /// <param name="radians">the rotational radians to mutate.</param>
+    /// <param name="sin">a float to store the sin value of the new rotation.</param>
+    /// <param name="cos">a float to store the cos value of the new rotation.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void RotateRadians(float increment, ref float radians, ref float sin, ref float cos)
+    {
+        radians += increment;
+        sin = MathF.Sin(radians);
+        cos = MathF.Cos(radians);
+    }
+
+    /// <summary>
+    /// Rotates a radian value by a given amount.
+    /// </summary>
+    /// <param name="increment">the amount - in radians - to increment the rotational radians by.</param>
+    /// <param name="radians">a span containing the rotational radians to mutate.</param>
+    /// <param name="index">the index in the radians span of the value to rotate.</param>
+    /// <param name="sin">a span containing the rotational sin that will be mutated with the new sin.</param>
+    /// <param name="cos">a span containing the rotational cos that will be mutated with the new cos.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void RotateRadians(float increment, Span<float> radians, Span<float> sin, Span<float> cos, int index)
+    {
+        ref float r = ref radians[index];
+        r += increment;
+        sin[index] = MathF.Sin(r);
+        cos[index] = MathF.Cos(r);
+    }
+
 }

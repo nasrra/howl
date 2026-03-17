@@ -299,4 +299,27 @@ public struct Rectangle
             rectangle.Height * scale
         );
     }
+
+    /// <summary>
+    /// Gets the area of a rectangle.
+    /// </summary>
+    /// <param name="width">the width of the rectangle.</param>
+    /// <param name="height">the height of the rectangle.</param>
+    /// <returns>the area of the rectangle.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float GetArea(float width, float height)
+    {
+        return width * height;
+    }
+
+    /// <summary>
+    /// Gets the area of a rectangle.
+    /// </summary>
+    /// <param name="rectangle">the rectangle.</param>
+    /// <returns>the area of the rectangle.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float GetArea(ref Rectangle rectangle)
+    {
+        return GetArea(rectangle.Width, rectangle.Height);
+    }
 }

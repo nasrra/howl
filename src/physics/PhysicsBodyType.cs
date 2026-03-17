@@ -37,11 +37,7 @@ public enum PhysicsBodyFlags : byte
     /// </summary>
     Kinematic = 1<<3,
 
-    // todo: this will need to be removed.
-    /// <summary>
-    /// Whether or not a physics body has a physics material.
-    /// </summary>
-    HasPhysicsMaterial = 1<<4,
+    // HasPhysicsMaterial = 1<<4,
 
     /// <summary>
     /// Whether or not a physics body has a rigidbody.

@@ -29,45 +29,70 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public PhysicsBodyFlags[] Flags;
 
     /// <summary>
-    /// Gets and sets the vertices positions of all physics bodies.  
+    /// Gets and sets a vertex of a physics body shape.  
     /// </summary>
     /// <remarks>
-    /// Note: this is the base/untransformed value for a physics body shape vertice.
+    /// Note: this is the base/untransformed value for a physics body shape vertex.
     /// </remarks>
     public Soa_Vector2 Vertices;
     
     /// <summary>
-    /// Gets and sets the transformed vertice positions of all physics bodies.  
+    /// Gets and sets the transformed vertex position of a physics body shape.  
     /// </summary>
     public Soa_Vector2 TransformedVertices;
 
     /// <summary>
-    /// Gets and sets the transforms of all physics bodies.
+    /// Gets and sets the transform of a physics body.
     /// </summary>
     public Soa_Transform Transforms;
 
     /// <summary>
-    /// Gets and sets the widths of all physics bodies.
+    /// Gets and sets the force to be applied to a physics body on the next physics system tick.
+    /// </summary>
+    public Soa_Vector2 Forces;
+
+    /// <summary>
+    /// Gets and sets the linear velocity of a physics body.
+    /// </summary>
+    public Soa_Vector2 LinearVelocities;
+
+    /// <summary>
+    /// Gets and sets the angular velocity of a physics body.
+    /// </summary>
+    public float[] AngularVelocities;
+
+    /// <summary>
+    /// Gets and sets the mass of a physics body.
+    /// </summary>
+    public float[] Masses;
+
+    /// <summary>
+    /// Gets and sets the inverse mass of a physics body.
+    /// </summary>
+    public float[] InverseMasses;
+
+    /// <summary>
+    /// Gets and sets the width of a physics body.
     /// </summary>
     public float[] Widths;
 
     /// <summary>
-    /// Gets and sets the heights of all physics bodies.
+    /// Gets and sets the height of a physics body.
     /// </summary>
     public float[] Heights;
 
     /// <summary>
-    /// Gets and sets the radii of all physics bodies.
+    /// Gets and sets the radii of a physics body.
     /// </summary>
     public float[] Radii;
 
     /// <summary>
-    /// Gets and sets the transformed radii of all physics bodies.
+    /// Gets and sets the transformed radius of a physics body.
     /// </summary>
     public float[] TransformedRadii;    
 
     /// <summary>
-    /// Gets and sets the static friction values of all physics bodies.
+    /// Gets and sets the static friction value of a physics body.
     /// </summary>
     /// <remarks>
     /// Note: static friction resists motion before an object starts sliding.
@@ -75,20 +100,48 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public float[] StaticFrictions;
 
     /// <summary>
-    /// Gets and sets the kinetic friction value of all physics bodies.
+    /// Gets and sets the kinetic friction value of a physics body.
     /// </summary>
     /// <remarks>
     /// Note: kinetic friction is applied when an object is sliding/currently in motion.
     /// </remarks>
     public float[] KineticFrictions;
+
+    /// <summary>
+    /// Gets and sets the areas of a physics body.
+    /// </summary>
+    public float[] Areas;
+
+    /// <summary>
+    /// Gets and sets the rotational inertia of a physics body.
+    /// </summary>
+    public float[] RotationalInertia;
+
+    /// <summary>
+    /// Gets and sets the inverse rotational inertia of a physics body.
+    /// </summary>
+    public float[] InverseRotationalInertia;
+
+    /// <summary>
+    /// Gets and sets the density of a physics body.
+    /// </summary>
+    public float[] Densities;
+
+    /// <summary>
+    /// Gets and sets the restitution of a physics body.
+    /// </summary>
+    /// <remarks>
+    /// Note: restitution is how 'bouncy' a body is.
+    /// </remarks>
+    public float[] Restitutions;
     
     /// <summary>
-    /// Gets and sets the first index of a physics bodies first vertex of physics body's shape.
+    /// Gets and sets the first index of a physics body's shape's first vertex.
     /// </summary>
     public int[] FirstVertexIndices;
 
     /// <summary>
-    /// The index of the next vertex of a given shape's vertex.
+    /// The index to the next vertex from a given A physics body shape vertex's index in the vertices soa vector.
     /// </summary>
     /// <remarks>
     /// Note: the next index for a given shape are stored in a circular intrusive linked list; 
@@ -160,9 +213,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Stopwatch SyncPhysicsBodiesToEntitiesStopwatch;
 
     /// <summary>
-    /// Gets and sets the debug stop watch for timing a movement step.
+    /// Gets and sets the debug stop watch for timing a rigidbody movement step.
     /// </summary>
-    public Stopwatch MovementStepStopwatch;
+    public Stopwatch RigidBodyMovementStepStopwatch;
 
     /// <summary>
     /// Gets and sets the stopwatch for vertices with their associated transform.
@@ -377,27 +430,37 @@ public sealed class SoaPhysicsSystemState : IDisposable
         CollisionManifold = new(maxCollisions);
 
         // Physics body data.
-        Flags                   = new PhysicsBodyFlags[physicsBodyCount];
-        Widths                  = new float[physicsBodyCount];
-        Heights                 = new float[physicsBodyCount];
-        Radii                   = new float[physicsBodyCount];
-        Vertices                = new Soa_Vector2(physicsBodyVerticesCount);
-        TransformedVertices     = new Soa_Vector2(physicsBodyVerticesCount);
-        Transforms              = new Soa_Transform(physicsBodyCount);
-        StaticFrictions         = new float[physicsBodyCount];
-        KineticFrictions        = new float[physicsBodyCount];
-        TransformedRadii        = new float[physicsBodyCount];
-        NextVertexIndices        = new int[physicsBodyVerticesCount];
-        Generations             = new int[physicsBodyCount];
-        FirstVertexIndices       = new int[physicsBodyCount];
-        FreePhysicsBodyIndex    = new();
-        FreeVertexIndex         = new();
+        Flags                       = new PhysicsBodyFlags[physicsBodyCount];
+        Vertices                    = new Soa_Vector2(physicsBodyVerticesCount);
+        TransformedVertices         = new Soa_Vector2(physicsBodyVerticesCount);
+        Transforms                  = new Soa_Transform(physicsBodyCount);
+        Forces                      = new Soa_Vector2(physicsBodyCount);
+        LinearVelocities            = new Soa_Vector2(physicsBodyCount);
+        AngularVelocities           = new float[physicsBodyCount];
+        Masses                      = new float[physicsBodyCount];
+        InverseMasses               = new float[physicsBodyCount];
+        Widths                      = new float[physicsBodyCount];
+        Heights                     = new float[physicsBodyCount];
+        Radii                       = new float[physicsBodyCount];
+        TransformedRadii            = new float[physicsBodyCount];
+        StaticFrictions             = new float[physicsBodyCount];
+        KineticFrictions            = new float[physicsBodyCount];
+        Areas                       = new float[physicsBodyCount];
+        RotationalInertia           = new float[physicsBodyCount];
+        InverseRotationalInertia    = new float[physicsBodyCount];
+        Densities                   = new float[physicsBodyCount];
+        Restitutions                = new float[physicsBodyCount];
+        FirstVertexIndices          = new int[physicsBodyCount];
+        NextVertexIndices           = new int[physicsBodyVerticesCount];
+        Generations                 = new int[physicsBodyCount];
+        FreePhysicsBodyIndex        = new();
+        FreeVertexIndex             = new();
 
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();
         FixedUpdateSubStepStopwatch = new();
         SyncPhysicsBodiesToEntitiesStopwatch = new();
-        MovementStepStopwatch = new();
+        RigidBodyMovementStepStopwatch = new();
         TrasformPhysicsBodyVerticesStopwatch = new();
         BvhReconstructionStopwatch = new();
         FilterBvhIntoCollisionManifoldStopwatch = new();
