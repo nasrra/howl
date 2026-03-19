@@ -103,7 +103,7 @@ public static class SoaPhysicsSystem
             FindPolygonToCircleCollisions(state.CollisionManifold.PolygonToCircleCollisionsToResolve, 
                 state.CollisionManifold.PolygonToCircleSpatialPairs, state.TransformedVertices,
                 state.MinAABBVectors, state.MaxABBBVectors, state.Centroids, state.FirstVertexIndices,
-                state.NextVertexIndices, state.Radii, state.MaxPhysicsBodyVertexCount
+                state.NextVertexIndices, state.TransformedRadii, state.MaxPhysicsBodyVertexCount
             );
             state.FindCollisionsStopwatch.Stop();
 
@@ -124,7 +124,7 @@ public static class SoaPhysicsSystem
             // Also make sure that this is below collision resolution.
             // this function also moves the transforms of the colliders.
             state.RigidBodyCollisionResolutionStepStopwatch.Restart();
-            for(int j = 0; j < 0; j++)
+            for(int j = 0; j < 3; j++)
             {
                 Soa_Collision collisions = j switch{
                     0 => state.CollisionManifold.CircleCollisionsToResolve,
@@ -306,8 +306,7 @@ public static class SoaPhysicsSystem
             // apply linear velocity.
             positionsX[i] += linearVelocityX * deltaTime;
             positionsY[i] += linearVelocityY * deltaTime;
-            Rotate(transforms, angularVelocities[i] * deltaTime, i);
-            RotateRadians(angularVelocities[i] * deltaTime, rotation, sin, cos, i);
+            RotateRadians(angularVelocities[i] * deltaTime, ref rotation[i], ref sin[i], ref cos[i]);
         }
     }
 
@@ -1517,8 +1516,6 @@ public static class SoaPhysicsSystem
             ref float otherStaticFriction = ref staticFriction[otherIndex];
             ref float otherKineticFriction = ref kineticFriction[otherIndex];
             
-            ref bool hasTwoContactPoints = ref twoContactPoints[i];
-
             int contactCount;
             if (twoContactPoints[i])
             {
@@ -1551,7 +1548,7 @@ public static class SoaPhysicsSystem
                 // );
 
 
-                ResolveCollisionRotational(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerCentroidX, 
+                ResolveRigidBodyCollisionRotational(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerCentroidX, 
                     ref ownerCentroidY, ref otherCentroidX, ref otherCentroidY, ref ownerRestitution, ref otherRestitution, 
                     ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerLinearVelocityX, ref ownerLinearVelocityY, 
                     ref otherLinearVelocityX, ref otherLinearVelocityY, ref ownerInverseMass, ref otherInverseMass, 
@@ -1560,13 +1557,13 @@ public static class SoaPhysicsSystem
                     ref normalY, contactCount
                 );
                 
-                // ResolveFriction(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerStaticFriction, ref otherStaticFriction, 
-                //     ref ownerKineticFriction, ref otherKineticFriction, ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY,
-                //     ref otherCentroidY, ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerLinearVelocityX, 
-                //     ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, ref ownerInverseMass, 
-                //     ref otherInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref normalX, 
-                //     ref normalY, ref ownerFlag, ref otherFlag, contactCount
-                // );
+                ResolveFriction(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerStaticFriction, ref otherStaticFriction, 
+                    ref ownerKineticFriction, ref otherKineticFriction, ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY,
+                    ref otherCentroidY, ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerLinearVelocityX, 
+                    ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, ref ownerInverseMass, 
+                    ref otherInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref normalX, 
+                    ref normalY, ref ownerFlag, ref otherFlag, contactCount
+                );
             }
             else
             {
@@ -1605,7 +1602,7 @@ public static class SoaPhysicsSystem
     /// <param name="otherFlags">the physics body flags of the 'other'.</param>
     /// <param name="normalX">the x-component of the collision's normal vector.</param>
     /// <param name="normalY">the y-component of the collision's normal vector.</param>
-    public static void ResolveCollisionRotational(Span<float> impulseMagnitudes, Span<float> contactPointsX, 
+    public static void ResolveRigidBodyCollisionRotational(Span<float> impulseMagnitudes, Span<float> contactPointsX, 
         Span<float> contactPointsY, ref float ownerShapeCenterX, ref float ownerShapeCenterY, ref float otherShapeCenterX,
         ref float otherShapeCenterY, ref float ownerRestitution, ref float otherRestitution, ref float ownerAngularVelocity,
         ref float otherAngularVelocity, ref float ownerLinearVelocityX, ref float ownerLinearVelocityY, ref float otherLinearVelocityX,
@@ -1706,8 +1703,8 @@ public static class SoaPhysicsSystem
             if((ownerFlags & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlags & PhysicsBodyFlags.Trigger) == 0)
             {
                 // always apply linear force, even if there is no rotational force to apply.
-                ownerForceX += -impulseX * ownerInverseMass;
-                ownerForceY += -impulseY * ownerInverseMass;
+                ownerLinearVelocityX += -impulseX * ownerInverseMass;
+                ownerLinearVelocityY += -impulseY * ownerInverseMass;
 
                 if((ownerFlags & PhysicsBodyFlags.RotationalPhysics) != 0)
                 {
@@ -1719,8 +1716,8 @@ public static class SoaPhysicsSystem
             if((otherFlags & PhysicsBodyFlags.Kinematic) == 0 && (otherFlags & PhysicsBodyFlags.Trigger) == 0)
             {
                 // always apply linear force, even if there is no rotational force to apply.
-                otherForceX += impulseX * otherInverseMass;
-                otherForceY += impulseY * otherInverseMass;
+                otherLinearVelocityX += impulseX * otherInverseMass;
+                otherLinearVelocityY += impulseY * otherInverseMass;
 
                 if((otherFlags & PhysicsBodyFlags.RotationalPhysics) != 0)
                 {
@@ -1755,7 +1752,7 @@ public static class SoaPhysicsSystem
         float kineticFriction = 0;
 
         staticFriction = (ownerStaticFriction + otherStaticFriction) * 0.5f;
-        kineticFriction = (ownerKineticFriction + otherStaticFriction) * 0.5f;
+        kineticFriction = (ownerKineticFriction + otherKineticFriction) * 0.5f;
 
 
         // if(rigidBodyA.PhysicsMaterial.UseFriction && rigidBodyB.PhysicsMaterial.UseFriction)
