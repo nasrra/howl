@@ -62,11 +62,12 @@ public struct PhysicsMaterial
     /// </summary>
     /// <param name="kineticFriction">The amount of kinetic friction - between 0 and 1.</param>
     /// <param name="staticFriction">The amount of static friction - between kinetic friction and 1.</param>
-    public PhysicsMaterial(float staticFriction, float kineticFriction, float density)
+    public PhysicsMaterial(float staticFriction, float kineticFriction, float density, float restitution)
     {
         SetKineticFriction(ref KineticFriction, kineticFriction);
         SetStaticFriction(ref StaticFriction, ref KineticFriction, staticFriction);
         SetDensity(ref Density, density);
+        Restitution = restitution;
         UseFriction = true;
     }
 

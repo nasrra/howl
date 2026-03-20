@@ -24,20 +24,20 @@ public class Soa_Collision
     public Soa_Vector2 Normals;
 
     /// <summary>
-    /// Gets and sets the owner physics body shape center vector of a collision. 
+    /// Gets and sets the owner physics body centroid vertice of a collision. 
     /// </summary>
     /// <remarks>
     /// Note: the shape must not be transformed in any way, it must be the untransformed shape.
     /// </remarks>
-    public Soa_Vector2 OwnerShapeCenters;
+    public Soa_Vector2 OwnerCentroids;
 
     /// <summary>
-    /// Gets and sets the other physics body shape center vector of a collision. 
+    /// Gets and sets the other physics body centroid vertice of a collision. 
     /// </summary>
     /// <remarks>
     /// Note: the shape must not be transformed in any way, it must be the untransformed shape.
     /// </remarks>
-    public Soa_Vector2 OtherShapeCenters;
+    public Soa_Vector2 OtherCentroids;
 
     /// <summary>
     /// Gets and sets the first contact point of a collision.
@@ -92,8 +92,8 @@ public class Soa_Collision
         OwnerGenIndices             = new Soa_GenIndex(maxCollisions);
         OtherGenIndices             = new Soa_GenIndex(maxCollisions);
         Normals                     = new Soa_Vector2(maxCollisions);
-        OwnerShapeCenters           = new Soa_Vector2(maxCollisions);
-        OtherShapeCenters           = new Soa_Vector2(maxCollisions);
+        OwnerCentroids           = new Soa_Vector2(maxCollisions);
+        OtherCentroids           = new Soa_Vector2(maxCollisions);
         FirstContactPoints          = new Soa_Vector2(maxCollisions);
         SecondContactPoints         = new Soa_Vector2(maxCollisions);
         Depths                       = new float[maxCollisions];
@@ -122,23 +122,10 @@ public class Soa_Collision
     /// <param name="ownerFlags"></param>
     /// <param name="otherFlags"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendCollision(
-        Soa_Collision buffer, 
-        int ownerIndex, 
-        int ownerGeneration, 
-        int otherIndex,
-        int otherGeneration,
-        float normalX,
-        float normalY,
-        float ownerShapeCenterX,
-        float ownerShapeCenterY,
-        float otherShapeCenterX,
-        float otherShapeCenterY,
-        float contactPointX,
-        float contactPointY,
-        float depth,
-        PhysicsBodyFlags ownerFlags,
-        PhysicsBodyFlags otherFlags
+    public static void AppendCollision(Soa_Collision buffer, int ownerIndex, int ownerGeneration, 
+        int otherIndex, int otherGeneration, float normalX, float normalY, float ownerShapeCenterX,
+        float ownerShapeCenterY, float otherShapeCenterX, float otherShapeCenterY, float contactPointX,
+        float contactPointY, float depth, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
         int count = buffer.Count;
@@ -149,10 +136,10 @@ public class Soa_Collision
         buffer.OtherGenIndices.Generations[count] = otherGeneration;
         buffer.Normals.X[count] = normalX;
         buffer.Normals.Y[count] = normalY;
-        buffer.OwnerShapeCenters.X[count] = ownerShapeCenterX;
-        buffer.OwnerShapeCenters.Y[count] = ownerShapeCenterY;
-        buffer.OtherShapeCenters.X[count] = otherShapeCenterX;
-        buffer.OtherShapeCenters.Y[count] = otherShapeCenterY;
+        buffer.OwnerCentroids.X[count] = ownerShapeCenterX;
+        buffer.OwnerCentroids.Y[count] = ownerShapeCenterY;
+        buffer.OtherCentroids.X[count] = otherShapeCenterX;
+        buffer.OtherCentroids.Y[count] = otherShapeCenterY;
         buffer.FirstContactPoints.X[count] = contactPointX;
         buffer.FirstContactPoints.Y[count] = contactPointY;
         buffer.Depths[count] = depth;
@@ -214,10 +201,10 @@ public class Soa_Collision
         buffer.OtherGenIndices.Generations[count] = otherGeneration;
         buffer.Normals.X[count] = normalX;
         buffer.Normals.Y[count] = normalY;
-        buffer.OwnerShapeCenters.X[count] = ownerShapeCenterX;
-        buffer.OwnerShapeCenters.Y[count] = ownerShapeCenterY;
-        buffer.OtherShapeCenters.X[count] = otherShapeCenterX;
-        buffer.OtherShapeCenters.Y[count] = otherShapeCenterY;
+        buffer.OwnerCentroids.X[count] = ownerShapeCenterX;
+        buffer.OwnerCentroids.Y[count] = ownerShapeCenterY;
+        buffer.OtherCentroids.X[count] = otherShapeCenterX;
+        buffer.OtherCentroids.Y[count] = otherShapeCenterY;
         buffer.FirstContactPoints.X[count] = firstContactPointX;
         buffer.FirstContactPoints.Y[count] = firstContactPointY;
         buffer.SecondContactPoints.X[count] = secondContactPointX;

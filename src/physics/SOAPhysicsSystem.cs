@@ -140,9 +140,8 @@ public static class SoaPhysicsSystem
                 if(collisions == null)
                     break;
 
-                ResolveRigidBodyCollisions(collisions, state.Transforms, state.Centroids,
-                    state.LinearVelocities, state.Forces, state.Restitutions, state.AngularVelocities, 
-                    state.InverseMasses, state.InverseRotationalInertia, state.KineticFrictions, state.StaticFrictions
+                ResolveRigidBodyCollisions(collisions, state.LinearVelocities, state.Restitutions, state.AngularVelocities, 
+                    state.InverseMasses, state.InverseRotationalInertia, state.KineticFrictions, state.StaticFrictions, state.Masses
                 );
             }
             state.RigidBodyCollisionResolutionStepStopwatch.Stop();
@@ -185,7 +184,7 @@ public static class SoaPhysicsSystem
             );
         }
 
-        if (state.DrawContactPoints)
+        if (state.DrawCollisionInformation)
         {
             for(int j = 0; j < 3; j++)
             {
@@ -199,7 +198,7 @@ public static class SoaPhysicsSystem
                 if(collisions == null)
                     break;
 
-                DrawContactPoints(camera, collisions.FirstContactPoints, collisions.SecondContactPoints, collisions.TwoContactPoints,
+                DrawCollisionInformation(camera, collisions, state.ContactPointColour, state.ContactPointColour, 
                     state.ContactPointColour, collisions.Count
                 );
             }
@@ -1483,14 +1482,12 @@ public static class SoaPhysicsSystem
         }
     }
 
-    public static void ResolveRigidBodyCollisions(Soa_Collision collisions, Soa_Transform transforms, Soa_Vector2 centroids,
-        Soa_Vector2 linearVelocities, Soa_Vector2 forces, Span<float> restitutions, Span<float> angularVelocities, 
-        Span<float> inverseMasses, Span<float> inverseRotationalInertia, Span<float> kineticFriction, Span<float> staticFriction
+    public static void ResolveRigidBodyCollisions(Soa_Collision collisions, Soa_Vector2 linearVelocities, Span<float> restitutions, 
+        Span<float> angularVelocities, Span<float> inverseMasses, Span<float> inverseRotationalInertia, Span<float> kineticFriction, 
+        Span<float> staticFriction, Span<float> mass
     )
     {
         // hoisting invariance.
-        Span<float> positionsX = transforms.Position.X;
-        Span<float> positionsY = transforms.Position.Y;
         Span<float> normalsX = collisions.Normals.X;
         Span<float> normalsY = collisions.Normals.Y;
         Span<float> depths = collisions.Depths;
@@ -1498,12 +1495,12 @@ public static class SoaPhysicsSystem
         Span<float> firstContactPointsY = collisions.FirstContactPoints.Y;
         Span<float> secondContactPointsX = collisions.SecondContactPoints.X;
         Span<float> secondContactPointsY = collisions.SecondContactPoints.Y;
-        Span<float> centroidsX = centroids.X;
-        Span<float> centroidsY = centroids.Y;
+        Span<float> ownerCentroidsX = collisions.OwnerCentroids.X;
+        Span<float> ownerCentroidsY = collisions.OwnerCentroids.Y;
+        Span<float> otherCentroidsX = collisions.OtherCentroids.X;
+        Span<float> otherCentroidsY = collisions.OtherCentroids.Y;
         Span<float> linearVelocitiesX = linearVelocities.X;
         Span<float> linearVelocitiesY = linearVelocities.Y;
-        Span<float> forcesX = forces.X;
-        Span<float> forcesY = forces.Y;
         Span<int> ownerIndices = collisions.OwnerGenIndices.Indices;
         Span<int> otherIndices = collisions.OtherGenIndices.Indices;
         Span<bool> twoContactPoints = collisions.TwoContactPoints;
@@ -1527,36 +1524,34 @@ public static class SoaPhysicsSystem
             ref float normalX = ref normalsX[i];
             ref float normalY = ref normalsY[i];
             
-            ref float ownerCentroidX = ref centroidsX[ownerIndex];
-            ref float ownerCentroidY = ref centroidsY[ownerIndex];
+            ref float ownerCentroidX = ref ownerCentroidsX[i];
+            ref float ownerCentroidY = ref ownerCentroidsY[i];
             ref float ownerRestitution = ref restitutions[ownerIndex];
             ref float ownerAngularVelocity = ref angularVelocities[ownerIndex];
             ref float ownerLinearVelocityX = ref linearVelocitiesX[ownerIndex];
             ref float ownerLinearVelocityY = ref linearVelocitiesY[ownerIndex];
             ref float ownerInverseMass = ref inverseMasses[ownerIndex];
             ref float ownerInverseRotationalInertia = ref inverseRotationalInertia[ownerIndex];
-            ref float ownerForceX = ref forcesX[ownerIndex];
-            ref float ownerForceY = ref forcesY[ownerIndex];
             ref float ownerStaticFriction = ref staticFriction[ownerIndex];
             ref float ownerKineticFriction = ref kineticFriction[ownerIndex];
+            ref float ownerMass = ref mass[ownerIndex];
 
-            ref float otherCentroidX = ref centroidsX[otherIndex];
-            ref float otherCentroidY = ref centroidsY[otherIndex];
+            ref float otherCentroidX = ref otherCentroidsX[i];
+            ref float otherCentroidY = ref otherCentroidsY[i];
             ref float otherRestitution = ref restitutions[otherIndex];
             ref float otherAngularVelocity = ref angularVelocities[otherIndex];
             ref float otherLinearVelocityX = ref linearVelocitiesX[otherIndex];
             ref float otherLinearVelocityY = ref linearVelocitiesY[otherIndex];
             ref float otherInverseMass = ref inverseMasses[otherIndex];
             ref float otherInverseRotationalInertia = ref inverseRotationalInertia[otherIndex];
-            ref float otherForceX = ref forcesX[otherIndex];
-            ref float otherForceY = ref forcesY[otherIndex];
             ref float otherStaticFriction = ref staticFriction[otherIndex];
             ref float otherKineticFriction = ref kineticFriction[otherIndex];
-            
-            int contactCount;
+            ref float otherMass = ref mass[otherIndex];
+
+            int contactPointsCount;
             if (twoContactPoints[i])
             {
-                contactCount = 2;
+                contactPointsCount = 2;
                 contactPointsX[0] = firstContactPointsX[i];
                 contactPointsX[1] = secondContactPointsX[i];
                 contactPointsY[0] = firstContactPointsY[i];
@@ -1564,7 +1559,7 @@ public static class SoaPhysicsSystem
             }
             else
             {
-                contactCount = 1;  
+                contactPointsCount = 1;  
                 contactPointsX[0] = firstContactPointsX[i];
                 contactPointsY[0] = firstContactPointsY[i];
             }
@@ -1577,23 +1572,28 @@ public static class SoaPhysicsSystem
                 //  first do that the impulse magnitudes span is
                 // filled with the correct data to perform friction resolution.
 
-                ResolveRigidBodyCollisionRotational(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerCentroidX, 
-                    ref ownerCentroidY, ref otherCentroidX, ref otherCentroidY, ref ownerRestitution, ref otherRestitution, 
-                    ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerLinearVelocityX, ref ownerLinearVelocityY, 
-                    ref otherLinearVelocityX, ref otherLinearVelocityY, ref ownerInverseMass, ref otherInverseMass, 
-                    ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref ownerForceX, 
-                    ref ownerForceY, ref otherForceX, ref otherForceY, ref ownerFlag, ref otherFlag, ref normalX, 
-                    ref normalY, contactCount
-                );
-                
-                ResolveFriction(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerStaticFriction, ref otherStaticFriction, 
-                    ref ownerKineticFriction, ref otherKineticFriction, ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY,
-                    ref otherCentroidY, ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerLinearVelocityX, 
-                    ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, ref ownerInverseMass, 
-                    ref otherInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref normalX, 
-                    ref normalY, ref ownerFlag, ref otherFlag, contactCount
-                );
-            // }
+            ResolveRigidBodyCollisionBasic(ref ownerLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityX,
+                ref otherLinearVelocityY, ref normalX, ref normalY, ref ownerRestitution, ref otherRestitution,
+                ref ownerInverseMass, ref otherInverseMass, ref ownerMass, ref otherMass,
+                ref ownerFlag, ref otherFlag
+            );
+
+            // ResolveCollisionRotational(
+            //     impulseMagnitudes, contactPointsX, contactPointsY, ref ownerRestitution, ref otherRestitution, 
+            //     ref ownerCentroidX, ref ownerCentroidY, ref otherCentroidX, ref otherCentroidY, ref ownerAngularVelocity,
+            //     ref otherAngularVelocity, ref ownerLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityX,
+            //     ref otherLinearVelocityY, ref normalX, ref normalY, ref ownerInverseMass, ref otherInverseMass,
+            //     ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref ownerFlag, ref otherFlag,
+            //     contactPointsCount
+            // );          
+
+            // ResolveFriction(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerStaticFriction, ref otherStaticFriction, 
+            //     ref ownerKineticFriction, ref otherKineticFriction, ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY,
+            //     ref otherCentroidY, ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerLinearVelocityX, 
+            //     ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, ref ownerInverseMass, 
+            //     ref otherInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref normalX, 
+            //     ref normalY, ref ownerFlag, ref otherFlag, contactPointsCount
+            // );
             // else
             // {
                 
@@ -1601,68 +1601,78 @@ public static class SoaPhysicsSystem
         }
     }
 
-    /// <summary>
-    /// Resolves a collision between two rigidbodies. 
-    /// </summary>
-    /// <param name="impulseMagnitudes">a span that will store the generated impulse magnitudes.</param>
-    /// <param name="contactPointsX">a span containing the x-components of the contact points of a collision.</param>
-    /// <param name="contactPointsY">a span containing the y-components of the contact points of a collision.</param>
-    /// <param name="ownerShapeCenterX">the x-component of the 'owner' shape's center vector.</param>
-    /// <param name="ownerShapeCenterY">the y-component of the 'owner' shape's center vector.</param>
-    /// <param name="otherShapeCenterX">the x-component of the 'other' shape's center vector.</param>
-    /// <param name="otherShapeCenterY">the y-component of the 'other' shape's center vector.</param>
-    /// <param name="ownerRestitution">the 'owner' restitution.</param>
-    /// <param name="otherRestitution">the 'other' restitution.</param>
-    /// <param name="ownerAngularVelocity">the 'owner' angular velocity to apply to the body if it has rotational physics enabled.</param>
-    /// <param name="otherAngularVelocity">the 'other' angular velocity to apply to the body if it has rotational physics enabled.</param>
-    /// <param name="ownerLinearVelocityX">the x-component of the 'owner' linear velocity vector.</param>
-    /// <param name="ownerLinearVelocityY">the y-component of the 'owner' linear velocity vector.</param>
-    /// <param name="otherLinearVelocityX">the x-component of the 'other' linear velocity vector.</param>
-    /// <param name="otherLinearVelocityY">the y-component of the 'other' linear velocity vector.</param>
-    /// <param name="ownerInverseMass">the inverse mass of the 'owner'.</param>
-    /// <param name="otherInverseMass">the inverse mass of the 'other'.</param>
-    /// <param name="ownerInverseRotationalInertia">the inverse rotational inertia of the 'owner'.</param>
-    /// <param name="otherInverseRotationalInertia">the inverse rotational inertia of the 'other'.</param>
-    /// <param name="ownerForceX">the x-component of the force vector that will be applied to the 'owner' physics body.</param>
-    /// <param name="ownerForceY">the y-component of the force vector that will be applied to the 'owner' physics body.</param>
-    /// <param name="otherForceX">the x-component of the force vector that will be applied to the 'other' physics body.</param>
-    /// <param name="otherForceY">the y-component of the force vector that will be applied to the 'other' physics body.</param>
-    /// <param name="ownerFlags">the physics body flags of the 'owner'.</param>
-    /// <param name="otherFlags">the physics body flags of the 'other'.</param>
-    /// <param name="normalX">the x-component of the collision's normal vector.</param>
-    /// <param name="normalY">the y-component of the collision's normal vector.</param>
-    public static void ResolveRigidBodyCollisionRotational(Span<float> impulseMagnitudes, Span<float> contactPointsX, 
-        Span<float> contactPointsY, ref float ownerShapeCenterX, ref float ownerShapeCenterY, ref float otherShapeCenterX,
-        ref float otherShapeCenterY, ref float ownerRestitution, ref float otherRestitution, ref float ownerAngularVelocity,
+    public static void ResolveRigidBodyCollisionBasic(ref float ownerLinearVelocityX, ref float ownerLinearVelocityY, ref float otherLinearVelocityX,
+        ref float otherLinearVelocityY, ref float normalX, ref float normalY, ref float ownerRestitution, ref float otherRestitution,
+        ref float ownerInverseMass, ref float otherInverseMass, ref float ownerMass, ref float otherMass,
+        ref PhysicsBodyFlags ownerFlag, ref PhysicsBodyFlags otherFlag
+    )
+    {
+        float relativeVelocityX = otherLinearVelocityX - ownerLinearVelocityX;
+        float relativeVelocityY = otherLinearVelocityY - ownerLinearVelocityY;
+
+        // the magnitude of the relative velocity relative to the normal
+        float magnitude = Dot(relativeVelocityX, relativeVelocityY, normalX, normalY);
+
+        if(magnitude > 0)
+        {
+            return;
+        }
+
+        float restitution = MathF.Min(ownerRestitution, otherRestitution);
+
+        // magnitude of the impulse
+        float impulseMagnitude = -(1f + restitution) * magnitude;
+        impulseMagnitude /= ownerInverseMass + otherInverseMass;
+
+        float impulseForceX;
+        float impulseForceY;
+
+        if((ownerFlag & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlag & PhysicsBodyFlags.Trigger) == 0)
+        {
+            impulseForceX = -(impulseMagnitude / ownerMass * normalX);
+            impulseForceY = -(impulseMagnitude / ownerMass * normalY);
+            ownerLinearVelocityX += impulseForceX;
+            ownerLinearVelocityY += impulseForceY;
+        }
+
+        if((otherFlag & PhysicsBodyFlags.Kinematic) == 0 && (otherFlag & PhysicsBodyFlags.Trigger) == 0)
+        {
+            impulseForceX = impulseMagnitude / otherMass * normalX;
+            impulseForceY = impulseMagnitude / otherMass * normalY;
+            otherLinearVelocityX += impulseForceX;
+            otherLinearVelocityY += impulseForceY;
+        }
+    } 
+
+    public static void ResolveCollisionRotational(
+        Span<float> impulseMagnitudes, Span<float> contactPointsX, Span<float> contactPointsY, ref float ownerRestitution, ref float otherRestitution, 
+        ref float ownerCentroidX, ref float ownerCentroidY, ref float otherCentroidX, ref float otherCentroidY, ref float ownerAngularVelocity,
         ref float otherAngularVelocity, ref float ownerLinearVelocityX, ref float ownerLinearVelocityY, ref float otherLinearVelocityX,
-        ref float otherLinearVelocityY, ref float ownerInverseMass, ref float otherInverseMass, ref float ownerInverseRotationalInertia,
-        ref float otherInverseRotationalInertia, ref float ownerForceX, ref float ownerForceY, ref float otherForceX,
-        ref float otherForceY, ref PhysicsBodyFlags ownerFlags, ref PhysicsBodyFlags otherFlags, ref float normalX,
-        ref float normalY, int contactPointCount
+        ref float otherLinearVelocityY, ref float normalX, ref float normalY, ref float ownerInverseMass, ref float otherInverseMass,
+        ref float ownerInverseRotationalInertia, ref float otherInverseRotationalInertia, ref PhysicsBodyFlags ownerFlag, ref PhysicsBodyFlags otherFlag,
+        int contactPointsCount
     )
     {             
         float restitution = MathF.Min(ownerRestitution, otherRestitution);
 
-        Span<float> impulsesX   = stackalloc float[contactPointCount];
-        Span<float> impulsesY   = stackalloc float[contactPointCount];
-        Span<float> distsAX     = stackalloc float[contactPointCount];
-        Span<float> distsAY     = stackalloc float[contactPointCount];
-        Span<float> distsBX     = stackalloc float[contactPointCount];
-        Span<float> distsBY     = stackalloc float[contactPointCount];
-
-        float contactPointX;
-        float contactPointY;
-
-        for(int j = 0; j < contactPointCount; j++)
+        int count = contactPointsCount;
+        Span<float> impulsesX   = stackalloc float[count];
+        Span<float> impulsesY   = stackalloc float[count];
+        Span<float> distsAX     = stackalloc float[count];
+        Span<float> distsAY     = stackalloc float[count];
+        Span<float> distsBX     = stackalloc float[count];
+        Span<float> distsBY     = stackalloc float[count];
+        
+        for(int j = 0; j < count; j++)
         {
-            contactPointX = contactPointsX[j];
-            contactPointY = contactPointsY[j];
+            float contactPointX = contactPointsX[j];
+            float contactPointY = contactPointsY[j];
 
             // get the angular velocity to travel in.
-            distsAX[j] = contactPointX - ownerShapeCenterX;
-            distsAY[j] = contactPointY - ownerShapeCenterY;
-            distsBX[j] = contactPointX - otherShapeCenterX;
-            distsBY[j] = contactPointY - otherShapeCenterY;            
+            distsAX[j] = contactPointX - ownerCentroidX;
+            distsAY[j] = contactPointY - ownerCentroidY;
+            distsBX[j] = contactPointX - otherCentroidX;
+            distsBY[j] = contactPointY - otherCentroidY;            
             
             float perpendicularAX = -distsAY[j];
             float perpendicularAY = distsAX[j];
@@ -1674,17 +1684,14 @@ public static class SoaPhysicsSystem
             float angularVelocityBX = perpendicularBX * otherAngularVelocity;
             float angularVelocityBY = perpendicularBY * otherAngularVelocity;
 
-            float relativeVelocityX = otherLinearVelocityX + angularVelocityBX - (ownerLinearVelocityX + angularVelocityAX);
-            float relativeVelocityY = otherLinearVelocityY + angularVelocityBY - (ownerLinearVelocityY + angularVelocityAY);
+            float relativeVelocityX = (otherLinearVelocityX + angularVelocityBX) - (ownerLinearVelocityX + angularVelocityAX);
+            float relativeVelocityY = (otherLinearVelocityY + angularVelocityBY) - (ownerLinearVelocityY + angularVelocityAY);
             
             // the magnitude of the relative velocity relative to the normal
             float magnitude = Dot(relativeVelocityX, relativeVelocityY, normalX, normalY);
 
-            if (magnitude > 0)
+            if(magnitude > 0)
             {
-                // impulseMagnitudes[j] = 0f;
-                // impulsesX[j] = 0f;
-                // impulsesY[j] = 0f;
                 continue;
             }
 
@@ -1701,7 +1708,7 @@ public static class SoaPhysicsSystem
 
             // divide by the contact point count to ensure that impulse is evenly spread 
             // across all contact points.
-            impulseMagnitude /= (float)contactPointCount;
+            impulseMagnitude /= (float)contactPointsCount;
             
             // save the impulse magnitude for later friction resolution.
             impulseMagnitudes[j] = impulseMagnitude;
@@ -1718,7 +1725,7 @@ public static class SoaPhysicsSystem
         float distBX;
         float distBY;
 
-        for(int j = 0; j < contactPointCount; j++)
+        for(int j = 0; j < count; j++)
         {                
             impulseX = impulsesX[j];
             impulseY = impulsesY[j];
@@ -1729,32 +1736,35 @@ public static class SoaPhysicsSystem
             // which means that there should be no rotation if the collision is head on.
             // but if the closer the two directions come to being perpendicular to one another,
             // the larger the angular impulse will be, causing the body to rotate.
-            if((ownerFlags & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlags & PhysicsBodyFlags.Trigger) == 0)
+            if((ownerFlag & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
             {
                 // always apply linear force, even if there is no rotational force to apply.
+
                 ownerLinearVelocityX += -impulseX * ownerInverseMass;
                 ownerLinearVelocityY += -impulseY * ownerInverseMass;
 
-                if((ownerFlags & PhysicsBodyFlags.RotationalPhysics) != 0)
+                if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
                 {
                     distAX = distsAX[j];
                     distAY = distsAY[j];
                     ownerAngularVelocity += -Cross(distAX, distAY, impulseX, impulseY) * ownerInverseRotationalInertia;
                 }
-            }
-            if((otherFlags & PhysicsBodyFlags.Kinematic) == 0 && (otherFlags & PhysicsBodyFlags.Trigger) == 0)
+            }   
+            if((otherFlag & PhysicsBodyFlags.Kinematic) == 0 && (otherFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
             {
                 // always apply linear force, even if there is no rotational force to apply.
+
                 otherLinearVelocityX += impulseX * otherInverseMass;
                 otherLinearVelocityY += impulseY * otherInverseMass;
 
-                if((otherFlags & PhysicsBodyFlags.RotationalPhysics) != 0)
+                if((otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
                 {
                     distBX = distsBX[j];
                     distBY = distsBY[j];
                     otherAngularVelocity += Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
+
                 }
-            }   
+            }
         }
     }
 
@@ -2059,23 +2069,76 @@ public static class SoaPhysicsSystem
         }        
     }
 
-    public static void DrawContactPoints(Camera camera, Soa_Vector2 firstContactPoints, Soa_Vector2 secondContactPoints, Span<bool> twoContactPoints,
-        Colour colour, int count
+    public static void DrawCollisionInformation(Camera camera, Soa_Collision collisions, Colour centroidColour, Colour contactPointColour, 
+        Colour normalColour, int count
     )
     {
         // hoisitng invariance.
-        Span<float> firstContactPointsX = firstContactPoints.X;
-        Span<float> firstContactPointsY = firstContactPoints.Y;
-        Span<float> secondContactPointsX = secondContactPoints.X;
-        Span<float> secondContactPointsY = secondContactPoints.Y;
-        
+        Span<float> firstContactPointsX = collisions.FirstContactPoints.X;
+        Span<float> firstContactPointsY = collisions.FirstContactPoints.Y;
+        Span<float> secondContactPointsX = collisions.SecondContactPoints.X;
+        Span<float> secondContactPointsY = collisions.SecondContactPoints.Y;
+        Span<float> normalsX = collisions.Normals.X;
+        Span<float> normalsY = collisions.Normals.Y;
+        Span<float> ownerCentroidsX = collisions.OwnerCentroids.X;
+        Span<float> ownerCentroidsY = collisions.OwnerCentroids.Y;
+        Span<float> otherCentroidsX = collisions.OtherCentroids.X;
+        Span<float> otherCentroidsY = collisions.OtherCentroids.Y;
+        Span<bool> twoContactPoints = collisions.TwoContactPoints;
+
+
+        float contactPointX;
+        float contactPointY;
+        float normalX;
+        float normalY;
+        float ownerCentroidX;
+        float ownerCentroidY;
+
+        float otherCentroidX;
+        float otherCentroidY;
+
         for(int i = 0; i < count; i++)
         {
-            Debug.Draw.WireframeCircle(camera, new Circle(firstContactPointsX[i], firstContactPointsY[i], 0.1f), colour);
+            // get normal data.
+            normalX = normalsX[i];
+            normalY = normalsY[i];
+            
+            // get contact point 1 data.
+            contactPointX = firstContactPointsX[i];
+            contactPointY = firstContactPointsY[i];
+            
+            // get centroid data.
+            ownerCentroidX = ownerCentroidsX[i];
+            ownerCentroidY = ownerCentroidsY[i];
+            otherCentroidX = otherCentroidsX[i];
+            otherCentroidY = otherCentroidsY[i];
+
+            // draw centroids.
+            Debug.Draw.WireframeCircle(camera, new Circle(ownerCentroidX, ownerCentroidY, 0.1f), centroidColour);
+            Debug.Draw.WireframeCircle(camera, new Circle(otherCentroidX, otherCentroidY, 0.1f), centroidColour);
+
+            // draw contact point 1.
+            Debug.Draw.WireframeCircle(camera, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour);
+            
+            // draw normal from contact point. 
+            Debug.Draw.Line(normalColour, camera.Zoom, camera.Position.X, camera.Position.Y, 
+                contactPointX, contactPointY, contactPointX + normalX, contactPointY + normalY
+            );
+
             if (twoContactPoints[i])
             {
-                Debug.Draw.WireframeCircle(camera, new Circle(secondContactPointsX[i], secondContactPointsY[i], 0.1f), colour);                
-            }    
+                // get contact point 2.
+                contactPointX = secondContactPointsX[i];
+                contactPointY = secondContactPointsY[i];
+
+                // draw contact point 2.
+                Debug.Draw.WireframeCircle(camera, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour);
+                
+                // draw normal from contact point.
+                Debug.Draw.Line(normalColour, camera.Zoom, camera.Position.X, camera.Position.Y, 
+                    contactPointX, contactPointY, contactPointX + normalX, contactPointY + normalY
+                );
+            }
         }
     }
 

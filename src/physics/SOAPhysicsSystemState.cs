@@ -417,9 +417,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public bool DrawBvhBranches;
 
     /// <summary>
-    /// Gets and sets whether or not to draw contact points.
+    /// Gets and sets whether or not to draw collision information.
     /// </summary>
-    public bool DrawContactPoints;
+    public bool DrawCollisionInformation;
 
     /// <summary>
     /// Gets and sets whether or not to draw linear velocities for each body.
