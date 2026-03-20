@@ -98,9 +98,19 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public float[] Widths;
 
     /// <summary>
+    /// Gets and sets the transformed width of a physics body.
+    /// </summary>
+    public float[] TransformedWidths;
+
+    /// <summary>
     /// Gets and sets the height of a physics body.
     /// </summary>
     public float[] Heights;
+
+    /// <summary>
+    /// Gets and sets the transformed height of a physics body.
+    /// </summary>
+    public float[] TransformedHeights;
 
     /// <summary>
     /// Gets and sets the radii of a physics body.
@@ -127,11 +137,6 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Note: kinetic friction is applied when an object is sliding/currently in motion.
     /// </remarks>
     public float[] KineticFrictions;
-
-    /// <summary>
-    /// Gets and sets the areas of a physics body.
-    /// </summary>
-    public float[] Areas;
 
     /// <summary>
     /// Gets and sets the rotational inertia of a physics body.
@@ -231,7 +236,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// <summary>
     /// Gets and sets the stopwatch for syncing physics bodies to their associated entities.
     /// </summary>
-    public Stopwatch SyncPhysicsBodiesToEntitiesStopwatch;
+    public Stopwatch SyncTransformsToEntitiesStopwatch;
 
     /// <summary>
     /// Gets and sets the debug stop watch for timing a rigidbody movement step.
@@ -239,9 +244,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Stopwatch RigidBodyMovementStepStopwatch;
 
     /// <summary>
-    /// Gets and sets the stopwatch for vertices with their associated transform.
+    /// Gets and sets the stopwatch for transforming physics bodies.
     /// </summary>
-    public Stopwatch TrasformPhysicsBodyVerticesStopwatch;
+    public Stopwatch TransformPhysicsBodiesStopwatch;
 
     /// <summary>
     /// Gets and sets the stopwatch for timing a bvh reconstruction step.
@@ -356,6 +361,19 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Gets and sets the debug draw colour for centroids. 
     /// </summary>
     public Colour CentroidColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for a collision owner.
+    /// </summary>
+    public Colour CollisionOwnerColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for a collision other.
+    /// </summary>
+    public Colour CollisionOtherColour;
+
+    /// Gets and sets the debug draw colour for a normal vector.
+    public Colour NormalColour;
 
 
 
@@ -501,12 +519,13 @@ public sealed class SoaPhysicsSystemState : IDisposable
         Masses                      = new float[physicsBodyCount];
         InverseMasses               = new float[physicsBodyCount];
         Widths                      = new float[physicsBodyCount];
+        TransformedWidths           = new float[physicsBodyCount];
         Heights                     = new float[physicsBodyCount];
+        TransformedHeights          = new float[physicsBodyCount];
         Radii                       = new float[physicsBodyCount];
         TransformedRadii            = new float[physicsBodyCount];
         StaticFrictions             = new float[physicsBodyCount];
         KineticFrictions            = new float[physicsBodyCount];
-        Areas                       = new float[physicsBodyCount];
         RotationalInertia           = new float[physicsBodyCount];
         InverseRotationalInertia    = new float[physicsBodyCount];
         Densities                   = new float[physicsBodyCount];
@@ -520,9 +539,9 @@ public sealed class SoaPhysicsSystemState : IDisposable
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();
         FixedUpdateSubStepStopwatch = new();
-        SyncPhysicsBodiesToEntitiesStopwatch = new();
+        SyncTransformsToEntitiesStopwatch = new();
         RigidBodyMovementStepStopwatch = new();
-        TrasformPhysicsBodyVerticesStopwatch = new();
+        TransformPhysicsBodiesStopwatch = new();
         BvhReconstructionStopwatch = new();
         FilterBvhIntoCollisionManifoldStopwatch = new();
         FindCollisionsStopwatch = new();
@@ -545,6 +564,10 @@ public sealed class SoaPhysicsSystemState : IDisposable
         LinearVelocityColour            = Colour.White;
         PositionColour                  = Colour.White;
         CentroidColour                  = Colour.White;
+        CollisionOwnerColour            = Colour.Green;
+        CollisionOtherColour            = Colour.LightBlue;
+        NormalColour                    = Colour.Red;
+
 
         // Counters.
         MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;

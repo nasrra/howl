@@ -558,7 +558,7 @@ public class SOAPhysicsSystemTest
         GenIndexListProc.Allocate(registry.Get<Transform>(), rEntityGenIndex, rTransform);
     
         // sync the physics engine with the transforms.
-        SyncPhysicsBodiesToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), state.Transforms, state.Generations);
+        SyncTransformsToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), state.Transforms, state.Generations);
 
         // ensure the data was properly set inside the state.
         AssertEqualsSoaTransformEntry(state.Transforms, ref cTransform, cBodyGenIndex.Index, 4);    
