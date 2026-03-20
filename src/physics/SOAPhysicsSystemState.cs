@@ -342,6 +342,21 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// </summary>
     public Colour ContactPointColour;
 
+    /// <summary>
+    /// Gets and sets the debug draw colour for linear velocities.
+    /// </summary>
+    public Colour LinearVelocityColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for positions.
+    /// </summary>
+    public Colour PositionColour;
+
+    /// <summary>
+    /// Gets and sets the debug draw colour for centroids. 
+    /// </summary>
+    public Colour CentroidColour;
+
 
 
 
@@ -368,6 +383,11 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// lower then its stored value.
     /// </remarks>
     public int MaxPhysicsBodyVertexCount;
+
+    /// <summary>
+    /// Gets and sets the max physics body count of this physics system state.
+    /// </summary>
+    public int MaxPhysicsBodyCount;
 
 
 
@@ -400,6 +420,21 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Gets and sets whether or not to draw contact points.
     /// </summary>
     public bool DrawContactPoints;
+
+    /// <summary>
+    /// Gets and sets whether or not to draw linear velocities for each body.
+    /// </summary>
+    public bool DrawLinearVelocities;
+
+    /// <summary>
+    /// Gets and sets whether or not to draw positions for each body.
+    /// </summary>
+    public bool DrawPositions;
+
+    /// <summary>
+    /// Gets and sets whether or not to draw centroids for each body.
+    /// </summary>
+    public bool DrawCentroids;
 
 
 
@@ -446,6 +481,8 @@ public sealed class SoaPhysicsSystemState : IDisposable
 
     public SoaPhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount, int maxCollisions)
     {
+        MaxPhysicsBodyCount = physicsBodyCount;
+
         // Utility.
         Bvh = new();
         CollisionManifold = new(maxCollisions);
@@ -495,16 +532,19 @@ public sealed class SoaPhysicsSystemState : IDisposable
         SyncEntitiesToPhysicsBodiesStopwatch = new();
 
         // debug colours
-        DynamicPhysicsBodyColour             = Colour.Green;
-        KinematicPhysicsBodyColour         = Colour.Orange;
-        TriggerPhysicsBodyColour           = Colour.LightBlue;
-        TriggeredPhysicsBodyColour  = Colour.Red;
+        DynamicPhysicsBodyColour        = Colour.Green;
+        KinematicPhysicsBodyColour      = Colour.Orange;
+        TriggerPhysicsBodyColour        = Colour.LightBlue;
+        TriggeredPhysicsBodyColour      = Colour.Red;
         AABBColour                      = new Colour(Colour.Pink.R, Colour.Pink.G, Colour.Pink.B, 50);
-        FallbackPhysicsBodyColour          = Colour.White;
-        InactivePhysicsBodyColour          = Colour.Black;
+        FallbackPhysicsBodyColour       = Colour.White;
+        InactivePhysicsBodyColour       = Colour.Black;
         BvhLeafAABBColour               = Colour.Purple;
         BvhBranchAABBColour             = Colour.Yellow;
         ContactPointColour              = Colour.Red;
+        LinearVelocityColour            = Colour.White;
+        PositionColour                  = Colour.White;
+        CentroidColour                  = Colour.White;
 
         // Counters.
         MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;

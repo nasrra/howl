@@ -46,6 +46,10 @@ public static class SoaPhysicsSystem
         {
             state.FixedUpdateSubStepStopwatch.Restart();
 
+            Clear(state.CollisionManifold.CircleCollisionsToResolve);
+            Clear(state.CollisionManifold.PolygonCollisionsToResolve);
+            Clear(state.CollisionManifold.PolygonToCircleCollisionsToResolve);
+
             // Sync Colliders to Transforms Step.
             state.SyncPhysicsBodiesToEntitiesStopwatch.Restart();
             SyncPhysicsBodiesToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), 
@@ -149,10 +153,6 @@ public static class SoaPhysicsSystem
             // using a GenIndex work outside of this function.
             state.CollisionManifoldSortStopwatch.Restart();
             state.CollisionManifoldSortStopwatch.Stop();
-
-            Clear(state.CollisionManifold.CircleCollisionsToResolve);
-            Clear(state.CollisionManifold.PolygonCollisionsToResolve);
-            Clear(state.CollisionManifold.PolygonToCircleCollisionsToResolve);
             state.FixedUpdateSubStepStopwatch.Stop();
         }
 
@@ -183,6 +183,43 @@ public static class SoaPhysicsSystem
                 state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, 
                 state.MaxPhysicsBodyVertexCount
             );
+        }
+
+        if (state.DrawContactPoints)
+        {
+            for(int j = 0; j < 3; j++)
+            {
+                Soa_Collision collisions = j switch{
+                    0 => state.CollisionManifold.CircleCollisionsToResolve,
+                    1 => state.CollisionManifold.PolygonCollisionsToResolve,
+                    2 => state.CollisionManifold.PolygonToCircleCollisionsToResolve,
+                    _ => null
+                };
+
+                if(collisions == null)
+                    break;
+
+                DrawContactPoints(camera, collisions.FirstContactPoints, collisions.SecondContactPoints, collisions.TwoContactPoints,
+                    state.ContactPointColour, collisions.Count
+                );
+            }
+        }
+
+        if (state.DrawLinearVelocities)
+        {
+            DrawLinearVelocities(camera, state.LinearVelocities, state.Centroids, state.Flags, state.LinearVelocityColour, 
+                state.MaxPhysicsBodyCount
+            );
+        }
+
+        if (state.DrawPositions)
+        {
+            DrawPositions(camera, state.Transforms.Position, state.Flags, state.PositionColour, state.MaxPhysicsBodyCount);
+        }
+
+        if (state.DrawCentroids)
+        {
+            DrawCentroids(camera, state.Centroids, state.Flags, state.CentroidColour, state.MaxPhysicsBodyCount);
         }
     }
 
@@ -1775,7 +1812,7 @@ public static class SoaPhysicsSystem
             float tangentX = relativeVelocityX - relativeDotNormal * normalX;
             float tangentY = relativeVelocityY - relativeDotNormal * normalY;
 
-            if(NearlyEqual(tangentX, 0, 1e-8f) || NearlyEqual(tangentX, 0, 1e-8f))
+            if(NearlyEqual(tangentX, 0, 1e-8f) || NearlyEqual(tangentY, 0, 1e-8f))
             {
                 continue;
             }
@@ -2020,5 +2057,94 @@ public static class SoaPhysicsSystem
 
             Debug.Draw.WireframePolygon(drawColour, camera, polygonX, polygonY, vertexCount);
         }        
+    }
+
+    public static void DrawContactPoints(Camera camera, Soa_Vector2 firstContactPoints, Soa_Vector2 secondContactPoints, Span<bool> twoContactPoints,
+        Colour colour, int count
+    )
+    {
+        // hoisitng invariance.
+        Span<float> firstContactPointsX = firstContactPoints.X;
+        Span<float> firstContactPointsY = firstContactPoints.Y;
+        Span<float> secondContactPointsX = secondContactPoints.X;
+        Span<float> secondContactPointsY = secondContactPoints.Y;
+        
+        for(int i = 0; i < count; i++)
+        {
+            Debug.Draw.WireframeCircle(camera, new Circle(firstContactPointsX[i], firstContactPointsY[i], 0.1f), colour);
+            if (twoContactPoints[i])
+            {
+                Debug.Draw.WireframeCircle(camera, new Circle(secondContactPointsX[i], secondContactPointsY[i], 0.1f), colour);                
+            }    
+        }
+    }
+
+    public static void DrawLinearVelocities(Camera camera, Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, Colour colour, 
+        int count
+    )
+    {
+        // hoisting invariance.
+        Span<float> linearVelocitiesX = linearVelocities.X;
+        Span<float> linearVelocitiesY = linearVelocities.Y;
+        Span<float> centroidsX = centroids.X;
+        Span<float> centroidsY = centroids.Y;
+
+        for(int i = 0; i < count; i++)
+        {
+            ref PhysicsBodyFlags flag = ref flags[i];
+            if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.Active) == 0)
+            {
+                continue;
+            }
+
+            float startX = centroidsX[i];
+            float startY = centroidsY[i];
+            float endX = startX + linearVelocitiesX[i];
+            float endY = startY + linearVelocitiesY[i];
+
+            Debug.Draw.Line(colour, camera.Zoom, camera.Position.X, camera.Position.Y,
+                startX, startY, endX, endY
+            );
+        }
+    }
+
+    public static void DrawPositions(Camera camera, Soa_Vector2 positions, Span<PhysicsBodyFlags> flags, Colour colour, int count)
+    {
+        // hoisting invariance.
+        Span<float> positionsX = positions.X;
+        Span<float> positionsY = positions.Y;
+
+        for(int i = 0; i < count; i++)
+        {
+            ref PhysicsBodyFlags flag = ref flags[i];
+            if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.Active) == 0)
+            {
+                continue;
+            }
+
+            Debug.Draw.WireframeCircle(colour, camera.Position.X, camera.Position.Y, camera.Zoom,
+                positionsX[i], positionsY[i], 0.1f
+            );
+        }
+    }
+
+    public static void DrawCentroids(Camera camera, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, Colour colour, int count)
+    {
+        // hoisting invariance.
+        Span<float> centroidsX = centroids.X;
+        Span<float> centroidsY = centroids.Y;
+
+        for(int i = 0 ; i < count; i++)
+        {
+            ref PhysicsBodyFlags flag = ref flags[i];
+            if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.Active) == 0)
+            {
+                continue;
+            }
+
+            Debug.Draw.WireframeCircle(colour, camera.Position.X, camera.Position.Y, camera.Zoom,
+                centroidsX[i], centroidsY[i], 0.1f
+            );
+        }
     }
 }
