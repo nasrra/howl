@@ -1534,19 +1534,11 @@ public static class SoaPhysicsSystem
 
             // friction and rotational resolution are tightly coupled with eachother.
             // do not remove them from eachother.
-            if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0 || (otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
-            {
+            // if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0 || (otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+            // {
                 // note: order matters here, do collision resolution
                 //  first do that the impulse magnitudes span is
                 // filled with the correct data to perform friction resolution.
-                // ResolveCollisionRotational(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerCentroidX, ref ownerCentroidY, 
-                //     ref otherCentroidX, ref otherCentroidY, ref ownerRestitution, ref otherRestitution, ref ownerAngularVelocity, 
-                //     ref otherAngularVelocity, ref ownerLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityX, 
-                //     ref otherLinearVelocityY, ref ownerInverseMass, ref otherInverseMass, ref ownerInverseRotationalInertia,
-                //     ref otherInverseRotationalInertia, ref ownerForceX, ref ownerForceY, ref otherForceX, ref otherForceY, 
-                //     ref ownerFlag, ref otherFlag, ref normalX, ref normalY, contactCount
-                // );
-
 
                 ResolveRigidBodyCollisionRotational(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerCentroidX, 
                     ref ownerCentroidY, ref otherCentroidX, ref otherCentroidY, ref ownerRestitution, ref otherRestitution, 
@@ -1564,11 +1556,11 @@ public static class SoaPhysicsSystem
                     ref otherInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref normalX, 
                     ref normalY, ref ownerFlag, ref otherFlag, contactCount
                 );
-            }
-            else
-            {
+            // }
+            // else
+            // {
                 
-            }
+            // }
         }
     }
 
@@ -1753,23 +1745,6 @@ public static class SoaPhysicsSystem
 
         staticFriction = (ownerStaticFriction + otherStaticFriction) * 0.5f;
         kineticFriction = (ownerKineticFriction + otherKineticFriction) * 0.5f;
-
-
-        // if(rigidBodyA.PhysicsMaterial.UseFriction && rigidBodyB.PhysicsMaterial.UseFriction)
-        // {
-        //     staticFriction = (rigidBodyA.PhysicsMaterial.StaticFriction + rigidBodyB.PhysicsMaterial.StaticFriction) * 0.5f;
-        //     kineticFriction = (rigidBodyA.PhysicsMaterial.KineticFriction + rigidBodyB.PhysicsMaterial.StaticFriction) * 0.5f;
-        // }
-        // else if (rigidBodyA.PhysicsMaterial.UseFriction)
-        // {
-        //     staticFriction = rigidBodyA.PhysicsMaterial.StaticFriction;
-        //     kineticFriction = rigidBodyA.PhysicsMaterial.KineticFriction;           
-        // }
-        // else if (rigidBodyB.PhysicsMaterial.UseFriction)
-        // {
-        //     staticFriction = rigidBodyB.PhysicsMaterial.StaticFriction;
-        //     kineticFriction = rigidBodyB.PhysicsMaterial.KineticFriction;            
-        // }
         
         for(int j = 0; j < contactPointCount; j++)
         {
@@ -1882,8 +1857,12 @@ public static class SoaPhysicsSystem
                 {
                     distBX = distsBX[j];
                     distBY = distsBY[j];
+                    // if((otherFlag & PhysicsBodyFlags.RectangleShape) == 0)
+                    // {
+                    //     System.Diagnostics.Debug.WriteLine($"{otherAngularVelocity} {Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia}");         
+                    // }
                     otherAngularVelocity += Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
-                }                
+                }       
             }   
         } 
     }

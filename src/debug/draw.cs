@@ -124,16 +124,8 @@ public static class Draw
         Line(colour, camera.Zoom, camera.Position.X, camera.Position.Y, start.X, start.Y, end.X, end.Y, thickness, scaleThickness);
     }
 
-    public static void Line(
-        Colour colour, 
-        float cameraZoom,
-        float cameraPositionX,
-        float cameraPositionY, 
-        float startX,
-        float startY,
-        float endX,
-        float endY, 
-        float thickness = DefaultWireframeThickness,
+    public static void Line(Colour colour, float cameraZoom, float cameraPositionX, float cameraPositionY, 
+        float startX, float startY, float endX, float endY, float thickness = DefaultWireframeThickness,
         bool scaleThickness = true
     )
     {
