@@ -5,6 +5,7 @@ using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Math;
 using static Howl.Math.Shapes.ShapeUtils;
+using System.Numerics;
 
 namespace Howl.Math.Shapes;
 
@@ -371,23 +372,12 @@ public static class SAT
         return true;
     }
 
-    /// <summary>
-    /// Checks for intersection from polygon A to polygon B, but not the vice versa.
-    /// </summary>
-    /// <param name="polygonVerticesXA">the x-components of polygonA's vertices.</param>
-    /// <param name="polygonVerticesYA">the y-components of polygonA's vertices.</param>
-    /// <param name="polygonVerticesXB">the x-components of polygonB's vertices.</param>
-    /// <param name="poylgonVerticesYB">the y-components of polygonB's vertices.</param>
-    /// <param name="normalX">the x-component of the intersection normal in relation to the right-hand side rectangle.</param>
-    /// <param name="normalY">the y-component of the intersection normal in relation to the right-hand side rectangle.</param>
-    /// <param name="depth">The depth of the intersection in relation to polygon B.</param>
-    /// <returns>true, if there is an intersection; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static bool PolygonOneWayIntersect(        
+    public static bool PolygonOneWayIntersect(        
         ReadOnlySpan<float> polygonVerticesXA, 
         ReadOnlySpan<float> polygonVerticesYA, 
         ReadOnlySpan<float> polygonVerticesXB, 
-        ReadOnlySpan<float> poylgonVerticesYB, 
+        ReadOnlySpan<float> polygonVerticesYB, 
         out float normalX,
         out float normalY,
         out float depth
@@ -395,54 +385,54 @@ public static class SAT
     {
         depth = float.MaxValue;
         normalX = 0;
-        normalY = 1; // note: the default normal is up.
+        normalY = 0;
+
+        float minMagSqrd = float.MaxValue;
+        float minDepthSqrd = float.MaxValue;
+        float minAxisDepth = float.MaxValue;
+        float minAxisX = float.MaxValue;
+        float minAxisY = float.MaxValue;
 
         for(int i = 0; i < polygonVerticesXA.Length; i++)
         {
-            int vAIndex = i;
-            int vBIndex = i+1;
-            
-            // this is faster than modulo.
-            if(vBIndex >= polygonVerticesXA.Length)
-                vBIndex = 0;
+            int vBIndex = (i + 1 == polygonVerticesXA.Length) ? 0 : i + 1;
 
-            float xA = polygonVerticesXA[vAIndex];
-            float xB = polygonVerticesXA[vBIndex];
-            float yA = polygonVerticesYA[vAIndex];
-            float yB = polygonVerticesYA[vBIndex];
+            // edge.
+            float axisX = -(polygonVerticesYA[vBIndex] - polygonVerticesYA[i]);
+            float axisY = polygonVerticesXA[vBIndex] - polygonVerticesXA[i];
 
-            float edgeX = xB - xA; 
-            float edgeY = yB - yA;
-
-            // the normal of the edge.
-            // note: this only works as vertices are assumed to be in clockwise winding order.
-            // change to new Vector2(edge.Y, -edge.X); if anti-clockwise.
-            float axisX = -edgeY;
-            float axisY = edgeX;
-        
-            // normalize (important for correct depth).
-            Normalise(axisX, axisY, out axisX, out axisY);
-
-            // project all vertices onto the current edge to find the min and max values
-            // of the two rectangles along the edge.
+            // project using axis.
             ProjectPolygon(polygonVerticesXA, polygonVerticesYA, axisX, axisY, out float minA, out float maxA);
-            ProjectPolygon(polygonVerticesXB, poylgonVerticesYB, axisX, axisY, out float minB, out float maxB);
-        
-            if(minA > maxB || minB > maxA)
+            ProjectPolygon(polygonVerticesXB, polygonVerticesYB, axisX, axisY, out float minB, out float maxB);
+
+            if(minA >= maxB || minB >= maxA)
             {
-                // there is separation.
-                return false;
+                return false; // Separation found.
             }
 
-            float axisDepth = MathF.Min(maxB - minA, maxA - minB);
-            if(depth > axisDepth)
+            // Calculate overlap in "scaled space"
+            float axisDepth = Min(maxB - minA, maxA - minB);
+
+            // to compare depths correctly, the squared length of the axis is needed.
+            float magSqrd = axisX * axisX + axisY * axisY;
+
+            float axisDepthSqrd = axisDepth * axisDepth;
+
+            // check if this is the minimum translation distance.
+            if(minDepthSqrd * magSqrd > axisDepthSqrd)
             {
-                // only assign if the newly found intersection depth is smaller.
-                depth = axisDepth;
-                normalX = axisX;
-                normalY = axisY;
+                minDepthSqrd = axisDepthSqrd / magSqrd; // store relative squared depth.
+                minAxisX = axisX;
+                minAxisY = axisY;
+                minAxisDepth = axisDepth;
+                minMagSqrd = magSqrd;
             }
         }
+
+        float mag = MathF.Sqrt(minMagSqrd);
+        depth = minAxisDepth / mag; // Only one sqrt if this is the new minimum translation distance.
+        normalX = minAxisX / mag;
+        normalY = minAxisY / mag;
 
         return true;
     }
