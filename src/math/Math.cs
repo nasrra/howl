@@ -303,11 +303,41 @@ public static class Math
     /// </summary>
     /// <param name="lhsX">The x-component of the left-hand side point.</param>
     /// <param name="lhsY">The y-component of the left-hand side point.</param>
-    /// <param name="rhsX">The x-component of the left-hand side point.</param>
-    /// <param name="rhsY">The y-component of the left-hand side point.</param>
+    /// <param name="rhsX">The x-component of the right-hand side point.</param>
+    /// <param name="rhsY">The y-component of the right-hand side point.</param>
     /// <returns>The dot product.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float Dot(float lhsX, float lhsY, float rhsX, float rhsY)
+    {
+        return (lhsX * rhsX) + (lhsY * rhsY);
+    }
+
+    /// <summary>
+    /// Calculates multiple 2D dot products using vertical SIMD.
+    /// </summary>
+    /// <param name="lhsX">The x-component of the left-hand side point.</param>
+    /// <param name="lhsY">The y-component of the left-hand side point.</param>
+    /// <param name="rhsX">The x-component of the right-hand side point.</param>
+    /// <param name="rhsY">The y-component of the right-hand side point.</param>
+    /// <returns>A vector where each lane is the resultant dot product.</returns>
+    public static System.Numerics.Vector<float> Dot(System.Numerics.Vector<float> lhsX, System.Numerics.Vector<float> lhsY, 
+        System.Numerics.Vector<float> rhsX, System.Numerics.Vector<float> rhsY
+    )
+    {
+        return (lhsX * rhsX) + (lhsY * rhsY);
+    }
+
+    /// <summary>
+    /// Calculates multiple 2D dot products using vertical SIMD.
+    /// </summary>
+    /// <param name="lhsX">The x-component of the left-hand side point.</param>
+    /// <param name="lhsY">The y-component of the left-hand side point.</param>
+    /// <param name="rhsX">The x-component of the right-hand side point.</param>
+    /// <param name="rhsY">The y-component of the right-hand side point.</param>
+    /// <returns>A vector where each lane is the resultant dot product.</returns>
+    public static System.Runtime.Intrinsics.Vector128<float> Dot(System.Runtime.Intrinsics.Vector128<float> lhsX, System.Runtime.Intrinsics.Vector128<float> lhsY, 
+        System.Runtime.Intrinsics.Vector128<float> rhsX, System.Runtime.Intrinsics.Vector128<float> rhsY
+    )
     {
         return (lhsX * rhsX) + (lhsY * rhsY);
     }

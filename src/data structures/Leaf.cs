@@ -40,7 +40,7 @@ public struct Leaf
     /// <summary>
     /// Gets any user-defined flags to distinguish the gen.
     /// </summary>
-    public readonly byte Flag;
+    public readonly int Flag;
 
     /// <summary>
     /// Constructs an leaf.
@@ -48,7 +48,7 @@ public struct Leaf
     /// <param name="aabb">The aabb.</param>
     /// <param name="genIndex">The gen index of the data to associate with this leaf.</param>
     /// <param name="flag">any user-defined flags to distinguish this leaf.</param>
-    public Leaf(AABB aabb, GenIndex genIndex, byte flag)
+    public Leaf(AABB aabb, GenIndex genIndex, int flag)
     : this(aabb.MinX, aabb.MinY, aabb.MaxX, aabb.MaxY, genIndex.Index, genIndex.Generation, flag)
     {}
 
@@ -62,7 +62,7 @@ public struct Leaf
     /// <param name="index">the index of the gen index of the data to associate with this leaf.</param>
     /// <param name="generation">the generation of the gen index of the data to associate with this leaf.</param>
     /// <param name="flag">any-user-defined flags to distinguish this leaf.</param>
-    public Leaf(float minX, float minY, float maxX, float maxY, int index, int generation, byte flag)
+    public Leaf(float minX, float minY, float maxX, float maxY, int index, int generation, int flag)
     {
         BoundingBoxMinX = minX;
         BoundingBoxMinY = minY;

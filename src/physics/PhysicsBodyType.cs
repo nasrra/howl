@@ -10,7 +10,7 @@ namespace Howl.Physics;
 /// - is of a circle shape.
 /// </remarks>
 [Flags]
-public enum PhysicsBodyFlags : byte
+public enum PhysicsBodyFlags : int
 {
     None = 0,
         

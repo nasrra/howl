@@ -19,6 +19,7 @@ using static Howl.Math.Soa_Transform;
 using Howl.Graphics;
 using System.Runtime.CompilerServices;
 using System.Collections;
+using System.Runtime.InteropServices;
 
 namespace Howl.Physics;
 
@@ -68,7 +69,7 @@ public static class SoaPhysicsSystem
 
             // RigidBody Movement Step.
             state.RigidBodyMovementStepStopwatch.Restart();
-            RigidBodyMovementStep(state.Transforms, state.LinearVelocities, state.Forces, 
+            RigidBodyMovementStep_Sisd(state.Transforms, state.LinearVelocities, state.Forces, 
                 state.Masses, state.Flags, state.AngularVelocities, 
                 state.GravityDirection.X, state.GravityDirection.Y, state.Gravity, deltaTime
             );
@@ -306,7 +307,7 @@ public static class SoaPhysicsSystem
     /// <param name="gravityDirectionY">the y-component of gravity's directional vector.</param>
     /// <param name="gravity">the gravity force.</param>
     /// <param name="deltaTime">delta time.</param>
-    public static void RigidBodyMovementStep(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
+    public static void RigidBodyMovementStep_Sisd(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
         Span<float> masses, Span<PhysicsBodyFlags> flags, Span<float> angularVelocities, 
         float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime
     )
@@ -685,7 +686,7 @@ public static class SoaPhysicsSystem
                         maxY,
                         i,
                         generations[i],
-                        (byte)flag // this is okay as PhysicsBodyFlags is a byte under the hood.
+                        (int)flag // this is okay as PhysicsBodyFlags is a int under the hood.
                     )
                 );
             }
@@ -800,8 +801,8 @@ public static class SoaPhysicsSystem
         Span<int> ownerGenerations  = spatialPairs.OwnerGenIndices.Generations;
         Span<int> otherIndices      = spatialPairs.OtherGenIndices.Indices;
         Span<int> otherGenerations  = spatialPairs.OtherGenIndices.Generations;
-        Span<byte> ownerFlags       = spatialPairs.OwnerFlags;
-        Span<byte> otherFlags       = spatialPairs.OtherFlags;
+        Span<int> ownerFlags       = spatialPairs.OwnerFlags;
+        Span<int> otherFlags       = spatialPairs.OtherFlags;
         Span<float> minAABBVectorX  = minAABBVectors.X;
         Span<float> minAABBVectorY  = minAABBVectors.Y;
         Span<float> maxAABBVectorX  = maxAABBVectors.X;
@@ -867,8 +868,8 @@ public static class SoaPhysicsSystem
         Span<int> ownerGenerations  = spatialPairs.OwnerGenIndices.Generations;
         Span<int> otherIndices      = spatialPairs.OtherGenIndices.Indices;
         Span<int> otherGenerations  = spatialPairs.OtherGenIndices.Generations;
-        Span<byte> ownerFlags       = spatialPairs.OwnerFlags;
-        Span<byte> otherFlags       = spatialPairs.OtherFlags;
+        Span<int> ownerFlags       = spatialPairs.OwnerFlags;
+        Span<int> otherFlags       = spatialPairs.OtherFlags;
         Span<float> vertsX          = vertices.X;
         Span<float> vertsY          = vertices.Y;
         Span<float> minAABBVectorsX = minAABBVectors.X;
@@ -972,8 +973,8 @@ public static class SoaPhysicsSystem
         Span<float> maxAABBVectorsY = maxAABBVectors.Y;
         Span<float> centroidsX      = centroids.X;
         Span<float> centroidsY      = centroids.Y;
-        Span<byte> ownerFlags       = spatialPairs.OwnerFlags;
-        Span<byte> otherFlags       = spatialPairs.OtherFlags;
+        Span<int> ownerFlags       = spatialPairs.OwnerFlags;
+        Span<int> otherFlags       = spatialPairs.OtherFlags;
 
         // declarations:
         float normalX = 0;

@@ -6,6 +6,8 @@ using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Math;
 using static Howl.Math.Shapes.ShapeUtils;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 
 namespace Howl.Math.Shapes;
 
@@ -373,14 +375,9 @@ public static class SAT
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool PolygonOneWayIntersect(        
-        ReadOnlySpan<float> polygonVerticesXA, 
-        ReadOnlySpan<float> polygonVerticesYA, 
-        ReadOnlySpan<float> polygonVerticesXB, 
-        ReadOnlySpan<float> polygonVerticesYB, 
-        out float normalX,
-        out float normalY,
-        out float depth
+    public static bool PolygonOneWayIntersect(Span<float> polygonVerticesXA, Span<float> polygonVerticesYA, 
+        Span<float> polygonVerticesXB, Span<float> polygonVerticesYB, 
+        out float normalX, out float normalY, out float depth
     )
     {
         depth = float.MaxValue;
@@ -393,6 +390,11 @@ public static class SAT
         float minAxisX = float.MaxValue;
         float minAxisY = float.MaxValue;
 
+        float minEdgeA = float.MaxValue;
+        float minEdgeB = float.MaxValue;
+        float maxEdgeA = float.MinValue;
+        float maxEdgeB = float.MinValue;
+
         for(int i = 0; i < polygonVerticesXA.Length; i++)
         {
             int vBIndex = (i + 1 == polygonVerticesXA.Length) ? 0 : i + 1;
@@ -402,16 +404,19 @@ public static class SAT
             float axisY = polygonVerticesXA[vBIndex] - polygonVerticesXA[i];
 
             // project using axis.
-            ProjectPolygon(polygonVerticesXA, polygonVerticesYA, axisX, axisY, out float minA, out float maxA);
-            ProjectPolygon(polygonVerticesXB, polygonVerticesYB, axisX, axisY, out float minB, out float maxB);
+            // ProjectPolygon_Simd(polygonVerticesXA, polygonVerticesYA, axisX, axisY, polygonVerticesXA.Length, ref minEdgeA, ref maxEdgeA);        
+            // ProjectPolygon_Simd(polygonVerticesXB, polygonVerticesYB, axisX, axisY, polygonVerticesXB.Length, ref minEdgeB, ref maxEdgeB);        
+            ProjectPolygon_Sisd(polygonVerticesXA, polygonVerticesYA, axisX, axisY, polygonVerticesXA.Length, ref minEdgeA, ref maxEdgeA);        
+            ProjectPolygon_Sisd(polygonVerticesXB, polygonVerticesYB, axisX, axisY, polygonVerticesXB.Length, ref minEdgeB, ref maxEdgeB);        
 
-            if(minA >= maxB || minB >= maxA)
+
+            if(minEdgeA >= maxEdgeB || minEdgeB >= maxEdgeA)
             {
                 return false; // Separation found.
             }
 
             // Calculate overlap in "scaled space"
-            float axisDepth = Min(maxB - minA, maxA - minB);
+            float axisDepth = Min(maxEdgeB - minEdgeA, maxEdgeA - minEdgeB);
 
             // to compare depths correctly, the squared length of the axis is needed.
             float magSqrd = axisX * axisX + axisY * axisY;
@@ -450,24 +455,14 @@ public static class SAT
     /// <param name="max">the maximum edge-value of the polygon.</param>
     /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void ProjectPolygon(
-        ReadOnlySpan<float> verticesX, 
-        ReadOnlySpan<float> verticesY,
-        float axisX,
-        float axisY, 
-        out float min, 
-        out float max
+    public static void ProjectPolygon_Sisd(Span<float> verticesX, Span<float> verticesY, float axisX, float axisY, 
+        int vertexCount, ref float min, ref float max
     )
     {
         min = float.MaxValue;
         max = float.MinValue;
 
-        if(verticesX.Length != verticesY.Length)
-        {
-            throw new ArgumentException($"verticesX length '{verticesX.Length}' is not equal verticesY length '{verticesY.Length}'");
-        }
-
-        for(int i = 0; i < verticesX.Length; i++)
+        for(int i = 0; i < vertexCount; i++)
         {
             float projection = Dot(verticesX[i], verticesY[i], axisX, axisY);
 
@@ -479,6 +474,76 @@ public static class SAT
             {
                 max = projection;
             }
+        }
+    }
+
+    /// <summary>
+    /// Projects a set of vertices onto a normalised axis.
+    /// </summary>
+    /// <param name="verticesX">the x-components of a polygons vertices.</param>
+    /// <param name="verticesY">the y-components of a polygons vertices.</param>
+    /// <param name="axisX">the x-component of the axis vector to project onto.</param>
+    /// <param name="axisY">the y-component of the axis vector to project onto.</param>
+    /// <param name="vertexCount">the count of vertices.</param>
+    /// <param name="minEdge">a float to store the minimum found edge-value of the polygon.</param>
+    /// <param name="maxEdge">a float to store the maximum found edge-vclue of the polygon.</param>
+    public static void ProjectPolygon_Simd(Span<float> verticesX, Span<float> verticesY, float axisX, float axisY, int vertexCount, 
+        ref float minEdge, ref float maxEdge
+    )
+    {
+        int i = 0;
+        int simSize = Vector128<float>.Count;
+        
+        ref float xRef = ref MemoryMarshal.GetReference(verticesX);
+        ref float yRef = ref MemoryMarshal.GetReference(verticesY); 
+
+        Vector128<float> vX;
+        Vector128<float> vY;
+        Vector128<float> vAxisX = Vector128.Create(axisX);
+        Vector128<float> vAxisY = Vector128.Create(axisY);
+        Vector128<float> minProjections = Vector128.Create(float.MaxValue);
+        Vector128<float> maxProjections = Vector128.Create(float.MinValue);
+        Vector128<float> projections;
+        float projection = float.MaxValue;
+        minEdge = float.MaxValue;
+        maxEdge = float.MinValue;
+
+        // body.
+        for(; i <= vertexCount - simSize; i+= simSize)
+        {
+            vX = Vector128.LoadUnsafe(ref xRef, (uint)i);
+            vY = Vector128.LoadUnsafe(ref yRef, (uint)i);
+            projections = Dot(vX,vY, vAxisX, vAxisY);
+            minProjections = Vector128.Min(projections, minProjections);
+            maxProjections = Vector128.Max(projections, maxProjections);
+        }
+        
+        // tail.
+        for(; i < vertexCount; i++)
+        {
+            projection = Dot(verticesX[i], verticesY[i], axisX, axisY);
+
+            if(projection < minEdge)
+            {
+                minEdge = projection;
+            }
+            if(projection > maxEdge)
+            {
+                maxEdge = projection;
+            }
+        }
+
+        // final projection.
+        for(int j = 0; j < simSize; j++)
+        {
+            if(minProjections[j] < minEdge)
+            {
+                minEdge = minProjections[j];
+            }
+            if(maxProjections[j] > maxEdge)
+            {
+                maxEdge = maxProjections[j];
+            }            
         }
     }
 
@@ -782,8 +847,8 @@ public static class SAT
         float axisX;
         float axisY;
         float axisDepth;
-        float minA;
-        float maxA;
+        float minA = float.MaxValue;
+        float maxA = float.MaxValue;
         float minB;
         float maxB;
 
@@ -821,7 +886,7 @@ public static class SAT
         
             // project all vertices onto the current edge to find the min and max values
             // of the two rectangles along the edge.
-            ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);        
+            ProjectPolygon_Simd(polygonVerticesX, polygonVerticesY, axisX, axisY, polygonVerticesX.Length, ref minA, ref maxA);        
             ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
 
             if(minA > maxB || minB > maxA)
@@ -850,7 +915,7 @@ public static class SAT
 
         // project all vertices onto the current edge to find the min and max values
         // of the two rectangles along the edge.
-        ProjectPolygon(polygonVerticesX, polygonVerticesY, axisX, axisY, out minA, out maxA);
+        ProjectPolygon_Simd(polygonVerticesX, polygonVerticesY, axisX, axisY, polygonVerticesX.Length, ref minA, ref maxA);        
         ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
     
         if(minA > maxB || minB > maxA)

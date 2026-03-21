@@ -18,12 +18,12 @@ public class Soa_SpatialPair
     /// <summary>
     /// Gets and sets any user-defined flags to distinguish an 'owner' gen index.
     /// </summary>
-    public byte[] OwnerFlags;
+    public int[] OwnerFlags;
 
     /// <summary>
     /// Gets and sets any user defined flags to distinguish an 'other' gen index.
     /// </summary>
-    public byte[] OtherFlags;
+    public int[] OtherFlags;
 
     /// <summary>
     /// Gets and sets the count of valid entries in the backing arrays; starting from index 0.
@@ -38,8 +38,8 @@ public class Soa_SpatialPair
     {
         OwnerGenIndices = new(capacity);
         OtherGenIndices = new(capacity);
-        OwnerFlags = new byte[capacity];
-        OtherFlags = new byte[capacity];
+        OwnerFlags = new int[capacity];
+        OtherFlags = new int[capacity];
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ public class Soa_SpatialPair
     /// <param name="ownerFlags">the user-defined flags of the 'owner'.</param>
     /// <param name="otherFlags">the user-defined flags of the 'other'.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendSpatialPair(Soa_SpatialPair soa, int ownerIndex, int ownerGeneration, int otherIndex, int otherGeneration, byte ownerFlags, byte otherFlags)
+    public static void AppendSpatialPair(Soa_SpatialPair soa, int ownerIndex, int ownerGeneration, int otherIndex, int otherGeneration, int ownerFlags, int otherFlags)
     {
         int count = soa.Count;
         
