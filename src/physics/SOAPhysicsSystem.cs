@@ -1655,16 +1655,7 @@ public static class SoaPhysicsSystem
             //     ref otherLinearVelocityY, ref normalX, ref normalY, ref ownerRestitution, ref otherRestitution,
             //     ref ownerInverseMass, ref otherInverseMass, ref ownerMass, ref otherMass,
             //     ref ownerFlag, ref otherFlag
-            // );
-
-            // ResolveCollisionRotational(
-            //     impulseMagnitudes, contactPointsX, contactPointsY, ref ownerRestitution, ref otherRestitution, 
-            //     ref ownerCentroidX, ref ownerCentroidY, ref otherCentroidX, ref otherCentroidY, ref ownerAngularVelocity,
-            //     ref otherAngularVelocity, ref ownerLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityX,
-            //     ref otherLinearVelocityY, ref normalX, ref normalY, ref ownerInverseMass, ref otherInverseMass,
-            //     ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref ownerFlag, ref otherFlag,
-            //     contactPointsCount
-            // );          
+            // );       
 
             ResolveRigidBodyCollisionRotational(
                 impulseMagnitudes, 
@@ -1691,20 +1682,14 @@ public static class SoaPhysicsSystem
                 ref ownerFlag, 
                 ref otherFlag,
                 contactPointsCount
-            );          
+            );  
 
-
-            ResolveFriction(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerStaticFriction, ref otherStaticFriction, 
-                ref ownerKineticFriction, ref otherKineticFriction, ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY,
-                ref otherCentroidY, ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerLinearVelocityX, 
-                ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, ref ownerInverseMass, 
-                ref otherInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref normalX, 
+            ResolveRigidBodyFriction(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerStaticFriction, ref otherStaticFriction, ref ownerKineticFriction,
+                ref otherKineticFriction, ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY, ref otherCentroidY, ref ownerAngularVelocity, 
+                ref otherAngularVelocity, ref ownerLinearVelocityX, ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, 
+                ref ownerInverseMass, ref otherInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref normalX, 
                 ref normalY, ref ownerFlag, ref otherFlag, contactPointsCount
             );
-            // else
-            // {
-                
-            // }
         }
     }
 
@@ -1875,7 +1860,7 @@ public static class SoaPhysicsSystem
         }
     }
 
-    public static void ResolveFriction(Span<float> collisionResolutionImpulseMagnitudes, Span<float> contactPointsX,
+    public static void ResolveRigidBodyFriction(Span<float> collisionResolutionImpulseMagnitudes, Span<float> contactPointsX,
         Span<float> contactPointsY, ref float ownerStaticFriction, ref float otherStaticFriction, ref float ownerKineticFriction,
         ref float otherKineticFriction, ref float ownerCentroidX, ref float otherCentroidX, ref float ownerCentroidY,
         ref float otherCentroidY, ref float ownerAngularVelocity, ref float otherAngularVelocity, 
@@ -1921,8 +1906,8 @@ public static class SoaPhysicsSystem
             float angularVelocityBX = perpendicularBX * otherAngularVelocity;
             float angularVelocityBY = perpendicularBY * otherAngularVelocity;
 
-            float relativeVelocityX = otherLinearVelocityX + angularVelocityBX - (ownerLinearVelocityX + angularVelocityAX);
-            float relativeVelocityY = otherLinearVelocityY + angularVelocityBY - (ownerLinearVelocityY + angularVelocityAY);
+            float relativeVelocityX = (otherLinearVelocityX + angularVelocityBX) - (ownerLinearVelocityX + angularVelocityAX);
+            float relativeVelocityY = (otherLinearVelocityY + angularVelocityBY) - (ownerLinearVelocityY + angularVelocityAY);
 
             // this is the direction the body is travelling in along the contact point surface.
             float relativeDotNormal = Dot(relativeVelocityX, relativeVelocityY, normalX, normalY);
@@ -1943,30 +1928,24 @@ public static class SoaPhysicsSystem
                 (perpADotTangent * perpADotTangent) * ownerInverseRotationalInertia +
                 (perpBDotTangent * perpBDotTangent) * otherInverseRotationalInertia;
 
-            // magnitude of the impulse.
-            // note: a uniary operate is applied to the dot product so that the friction 
-            // impulse is applied in the opposite direction this body is traveling.
-            float impulseMagnitude = -Dot(relativeVelocityX, relativeVelocityY, tangentX, tangentY);
-            impulseMagnitude /= denominator;
+            // Calculate the DESIRED friction magnitude to stop all sliding.
+            float frictionImpulseMag = -Dot(relativeVelocityX, relativeVelocityY, tangentX, tangentY) / denominator;
 
-            // divide by the contact point count to ensure that impulse is evenly spread 
-            // across all contact points.
-            impulseMagnitude /= (float)contactPointCount;
+            // Coulomb's Law:
+            // Limit that desire by the static friction. 
+            float maxFriction = collisionResolutionImpulseMagnitudes[j] * staticFriction;
 
-            float collisionImpulseMagnitude = collisionResolutionImpulseMagnitudes[j];
-
-            // Coulomb's law states that fricction is proportional to how hard
-            // to objects are being pressed together.
-            if(Abs(impulseMagnitude) <= collisionImpulseMagnitude * staticFriction)
+            // the the desired friction amount is greater than static friction
+            // that means that the object should be sliding with kinetic friction.
+            if (Abs(frictionImpulseMag) > maxFriction)
             {
-                impulsesX[j] = impulseMagnitude * tangentX;
-                impulsesY[j] = impulseMagnitude * tangentY;
+                // Note: We multiply by the SIGN of frictionImpulseMag to keep the direction correct.
+                frictionImpulseMag = (collisionResolutionImpulseMagnitudes[j] * kineticFriction) * MathF.Sign(frictionImpulseMag);
             }
-            else
-            {
-                impulsesX[j] = -collisionImpulseMagnitude * tangentX * kineticFriction; 
-                impulsesY[j] = -collisionImpulseMagnitude * tangentY * kineticFriction; 
-            }
+
+            // Apply the capped magnitude to the tangent vector
+            impulsesX[j] = frictionImpulseMag * tangentX;
+            impulsesY[j] = frictionImpulseMag * tangentY;
         }
 
         // keep these outside the for loop so they dont allocate each time.
