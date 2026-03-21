@@ -102,7 +102,7 @@ public struct Circle
     /// Constructs a circle based on a circle, with its radius scaled by a vector.
     /// </summary>
     /// <remarks>
-    /// Note: radius is scaled by the largest component in the scaling vector.
+    /// The radius is scaled by the largest component in the scaling vector.
     /// </remarks>
     /// <param name="circle">the circle to scale.</param>
     /// <param name="scale">the scaling vector.</param>
@@ -110,6 +110,37 @@ public struct Circle
     public static Circle Scale(in Circle circle, Vector2 scale)
     {
         return new Circle(circle.X, circle.Y, circle.Radius * Math.Max(scale.X, scale.Y));
+    }
+
+    /// <summary>
+    /// Scales a circle's radius by a scaling vector.
+    /// </summary>
+    /// <remarks>
+    /// The radius is scaled by the largest component in the scaling vector.
+    /// </remarks>
+    /// <param name="radius">the radius of the circle.</param>
+    /// <param name="scale">the scaling vector.</param>
+    /// <returns>the scaled radius.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float ScaleRadius(float radius, Vector2 scale)
+    {
+        return ScaleRadius(radius, scale.X, scale.Y);
+    }
+
+    /// <summary>
+    /// Scales a circle's radius by a scaling vector.
+    /// </summary>
+    /// <remarks>
+    /// The radius is scaled by the largest component in the scaling vector.
+    /// </remarks>
+    /// <param name="radius">the radius of the circle.</param>
+    /// <param name="scaleX">the x-component of the scaling vector.</param>
+    /// <param name="scaleY">the y-component of the scaling vector.</param>
+    /// <returns>the scaled radius value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float ScaleRadius(float radius, float scaleX, float scaleY)
+    {
+        return radius *= Max(scaleX, scaleY);
     }
 
     /// <summary>

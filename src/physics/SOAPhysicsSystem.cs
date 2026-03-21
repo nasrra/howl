@@ -39,6 +39,21 @@ public static class SoaPhysicsSystem
     public static void FixedUpdate(ComponentRegistry registry, SoaPhysicsSystemState state, float deltaTime, int subSteps)
     {
         state.FixedUpdateStepStopwatch.Restart();
+
+        // Sync Colliders to Transforms Step.
+        state.SyncTransformsToEntitiesStopwatch.Restart();
+        SyncTransformsToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), 
+            state.Transforms, state.Generations
+        );
+        state.SyncTransformsToEntitiesStopwatch.Stop();
+
+        state.IntegrateBodyPropertiesStopwatch.Restart();
+        IntegrateBodyProperties(state.Transforms.Scale.X, state.Transforms.Scale.Y, state.Masses, state.InverseMasses, 
+            state.RotationalInertia, state.InverseRotationalInertia, state.Densities, state.LocalRadii, state.WorldRadii, 
+            state.LocalWidths, state.LocalHeights, state.Flags
+        );
+        state.IntegrateBodyPropertiesStopwatch.Stop();
+
         // scale delta time by the substeps.
         deltaTime /= (float)subSteps;
 
@@ -50,12 +65,6 @@ public static class SoaPhysicsSystem
             Clear(state.CollisionManifold.PolygonCollisionsToResolve);
             Clear(state.CollisionManifold.PolygonToCircleCollisionsToResolve);
 
-            // Sync Colliders to Transforms Step.
-            state.SyncTransformsToEntitiesStopwatch.Restart();
-            SyncTransformsToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), 
-                state.Transforms, state.Generations
-            );
-            state.SyncTransformsToEntitiesStopwatch.Stop();
 
             // RigidBody Movement Step.
             state.RigidBodyMovementStepStopwatch.Restart();
@@ -65,24 +74,18 @@ public static class SoaPhysicsSystem
             );
             state.RigidBodyMovementStepStopwatch.Stop();
 
-            // transform vertices
+            // transform physics bodies
             state.TransformPhysicsBodiesStopwatch.Restart();
-            // TransformPhysicsBodies(state.Centroids, state.MinAABBVectors, state.MaxABBBVectors, state.Vertices, state.TransformedVertices, state.Transforms, state.Flags, 
-            //     state.Radii, state.TransformedRadii, state.FirstVertexIndices, state.NextVertexIndices, 
-            //     state.MaxPhysicsBodyVertexCount, 0, state.AlloctedPhysicsBodyCount
-            // );
-
-            TransformPhysicsBodies(state.Centroids, state.MinAABBVectors, state.MaxABBBVectors, state.Vertices, 
-                state.TransformedVertices, state.Transforms, state.Flags, state.Radii, state.TransformedRadii, 
-                state.Widths, state.TransformedWidths, state.Heights, state.TransformedHeights, state.FirstVertexIndices, state.NextVertexIndices,
-                state.Masses, state.InverseMasses, state.RotationalInertia, state.InverseRotationalInertia,
-                state.Densities, state.MaxPhysicsBodyVertexCount, 0, state.AlloctedPhysicsBodyCount
+            TransformPhysicsBodies(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
+                state.LocalVertices, state.WorldVertices, state.Transforms, state.Flags, 
+                state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.FirstVertexIndices, state.NextVertexIndices,
+                state.MaxPhysicsBodyVertexCount, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
             );
             state.TransformPhysicsBodiesStopwatch.Stop();
 
             // Reconstruct Bvh.
             state.BvhReconstructionStopwatch.Restart();
-            ReconstructBvhTree(state.TransformedVertices, state.TransformedRadii, state.FirstVertexIndices, 
+            ReconstructBvhTree(state.WorldVertices, state.WorldRadii, state.FirstVertexIndices, 
                 state.NextVertexIndices, state.Generations, state.Flags, state.Bvh, state.MaxPhysicsBodyVertexCount
             );
             state.BvhReconstructionStopwatch.Stop();
@@ -104,17 +107,17 @@ public static class SoaPhysicsSystem
             // Find collisions.
             state.FindCollisionsStopwatch.Restart();
             FindCircleCollisions(state.CollisionManifold.CircleCollisionsToResolve, state.CollisionManifold.CircleSpatialPairs,
-                state.TransformedVertices, state.MinAABBVectors, state.MaxABBBVectors, state.TransformedRadii,
+                state.WorldVertices, state.MinAABBVertices, state.MaxAABBVertices, state.WorldRadii,
                 state.FirstVertexIndices
             );
             FindPolygonCollisions(state.CollisionManifold.PolygonCollisionsToResolve, state.CollisionManifold.PolygonSpatialPairs,
-                state.TransformedVertices, state.MinAABBVectors, state.MaxABBBVectors, state.Centroids,
+                state.WorldVertices, state.MinAABBVertices, state.MaxAABBVertices, state.Centroids,
                 state.FirstVertexIndices, state.NextVertexIndices, state.MaxPhysicsBodyVertexCount
             );
             FindPolygonToCircleCollisions(state.CollisionManifold.PolygonToCircleCollisionsToResolve, 
-                state.CollisionManifold.PolygonToCircleSpatialPairs, state.TransformedVertices,
-                state.MinAABBVectors, state.MaxABBBVectors, state.Centroids, state.FirstVertexIndices,
-                state.NextVertexIndices, state.TransformedRadii, state.MaxPhysicsBodyVertexCount
+                state.CollisionManifold.PolygonToCircleSpatialPairs, state.WorldVertices,
+                state.MinAABBVertices, state.MaxAABBVertices, state.Centroids, state.FirstVertexIndices,
+                state.NextVertexIndices, state.WorldRadii, state.MaxPhysicsBodyVertexCount
             );
             state.FindCollisionsStopwatch.Stop();
 
@@ -167,11 +170,10 @@ public static class SoaPhysicsSystem
         // sub-step iteration does not transform the bodies
         // at the end of it's loop; meaning the final collision
         // resolution wouldn't be applied.
-        TransformPhysicsBodies(state.Centroids, state.MinAABBVectors, state.MaxABBBVectors, state.Vertices, 
-            state.TransformedVertices, state.Transforms, state.Flags, state.Radii, state.TransformedRadii, 
-            state.Widths, state.TransformedWidths, state.Heights, state.TransformedHeights, state.FirstVertexIndices, state.NextVertexIndices,
-            state.Masses, state.InverseMasses, state.RotationalInertia, state.InverseRotationalInertia,
-            state.Densities, state.MaxPhysicsBodyVertexCount, 0, state.AlloctedPhysicsBodyCount
+        TransformPhysicsBodies(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
+            state.LocalVertices, state.WorldVertices, state.Transforms, state.Flags, 
+            state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.FirstVertexIndices, state.NextVertexIndices,
+            state.MaxPhysicsBodyVertexCount, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
         );
         state.FixedUpdateStepStopwatch.Stop();
     }
@@ -182,11 +184,11 @@ public static class SoaPhysicsSystem
 
         if (state.DrawColliderWireframes)
         {
-            DrawCirclePhysicsBodies(camera, state.TransformedVertices, state.TransformedRadii, state.FirstVertexIndices, 
+            DrawCirclePhysicsBodies(camera, state.WorldVertices, state.WorldRadii, state.FirstVertexIndices, 
                 state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour
             );
 
-            DrawPolygonPhysicsBodies(camera, state.TransformedVertices, state.FirstVertexIndices, state.NextVertexIndices, 
+            DrawPolygonPhysicsBodies(camera, state.WorldVertices, state.FirstVertexIndices, state.NextVertexIndices, 
                 state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, 
                 state.MaxPhysicsBodyVertexCount
             );
@@ -364,54 +366,66 @@ public static class SoaPhysicsSystem
     }
 
     /// <summary>
-    /// Transforms all active and allocated physics bodies by their stored transforms.
+    /// Transforms <c>InUse<c/> physics bodies local-space vertices by their world-space transforms.
     /// </summary>
-    /// <param name="soaVertice">a structure-of-array vector2 containing the vertices to transform.</param>
-    /// <param name="transformedVertices">a structure-of-array vector2 that will be mutated and store the transformed vertices.</param>
-    /// <param name="transforms">a structure-of-array transform containing the associated transforms for each physics body.</param>
-    /// <param name="flags">the flags for each physics body.</param>
-    /// <param name="radii">the radius for each physics body.</param>
-    /// <param name="transformedRadii">the transformed radius for each physics body.</param>
-    /// <param name="firstVertice">the first vertice for each physics body shape.</param>
-    /// <param name="nextVertice">an array that stores the next vertice in relation to the soaVertice array.</param>
-    /// <param name="startIndex">the starting physics body index to transform.</param>
-    /// <param name="length">the amount of bodies after the start index to transform.</param>
-    public static void TransformPhysicsBodies(Soa_Vector2 centroids, Soa_Vector2 minAABBVectors, Soa_Vector2 maxAABBVectors,
-        Soa_Vector2 vertices, Soa_Vector2 transformedVertices, Soa_Transform transforms, Span<PhysicsBodyFlags> flags, 
-        Span<float> radii, Span<float> transformedRadii, Span<float> widths, Span<float> transformedWidths, 
-        Span<float> heights, Span<float> transformedHeights, Span<int> firstVertice, Span<int> nextVertice,
-        Span<float> masses, Span<float> inverseMasses, Span<float> rotationalInertia, Span<float> inverseRotationalInertia,
-        Span<float> densitites, int polygonMaxVertices, int startIndex, int length
+    /// <param name="centroids">a span to store the generated centroid values of all physics bodies.</param>
+    /// <param name="minAABBVertices">a span to store the generated mininum vertice values of all physics bodies AABB's.</param>
+    /// <param name="maxAABBVertices">a span to store the generated maximum vertice values of all physics bodies AABB's.</param>
+    /// <param name="localVertices">the local-space vertices of all physics bodies.</param>
+    /// <param name="worldVertices">a span to store the generated world-space vertex values of all physics bodies.</param>
+    /// <param name="transforms">the world-space transforms of all physics bodies.</param>
+    /// <param name="flags">the flags of all physics bodies.</param>
+    /// <param name="worldRadii">the world-space radius values of all phsyics bodies.</param>
+    /// <param name="localWidths">the local-space width values of all physics bodies.</param>
+    /// <param name="localHeights">the local-space height values of all physics bodies.</param>
+    /// <param name="firstVertexIndices">the indices in the vertices span that point to the first vertex of a given physics body.</param>
+    /// <param name="nextVertexIndices">the indices in the vertices span that point to the next vertex of a given vertex index.</param>
+    /// <param name="maxPhysicsBodyVertexCount">the max amount of vertices a physics body can have.</param>
+    /// <param name="maxPhysicsBodyCount">the max amount of physics bodies that can be stored.</param>
+    /// <param name="physicsBodyCount">the current amount of allocated physics bodies.</param>
+    public static void TransformPhysicsBodies(Soa_Vector2 centroids, Soa_Vector2 minAABBVertices, Soa_Vector2 maxAABBVertices,
+        Soa_Vector2 localVertices, Soa_Vector2 worldVertices, Soa_Transform transforms, Span<PhysicsBodyFlags> flags, 
+        Span<float> localRadii, Span<float> worldRadii, Span<float> localWidths, Span<float> localHeights, Span<int> firstVertexIndices, 
+        Span<int> nextVertexIndices, int polygonMaxVertices, int maxPhysicsBodyCount, int physicsBodyCount
     )
     {
         // hoisting invariance.
-        Span<float> verticesX = vertices.X;
-        Span<float> verticesY = vertices.Y;
-        Span<float> transformedVerticesX = transformedVertices.X;
-        Span<float> transformedVerticesY = transformedVertices.Y;
+        Span<float> verticesX = localVertices.X;
+        Span<float> verticesY = localVertices.Y;
+        Span<float> transformedVerticesX = worldVertices.X;
+        Span<float> transformedVerticesY = worldVertices.Y;
         Span<float> centroidsX = centroids.X;
         Span<float> centroidsY = centroids.Y;
-        Span<float> minAABBVectorsX = minAABBVectors.X;
-        Span<float> minAABBVectorsY = minAABBVectors.Y;
-        Span<float> maxAABBVectorsX = maxAABBVectors.X;
-        Span<float> maxAABBVectorsY = maxAABBVectors.Y;
+        Span<float> minAABBVectorsX = minAABBVertices.X;
+        Span<float> minAABBVectorsY = minAABBVertices.Y;
+        Span<float> maxAABBVectorsX = maxAABBVertices.X;
+        Span<float> maxAABBVectorsY = maxAABBVertices.Y;
         Span<float> scalesX = transforms.Scale.X;
         Span<float> scalesY = transforms.Scale.Y;
         Span<float> cos = transforms.Cos;
         Span<float> sin = transforms.Sin;
-        Span<float> positionX = transforms.Position.X;
-        Span<float> positionY = transforms.Position.Y;
+        Span<float> positionsX = transforms.Position.X;
+        Span<float> positionsY = transforms.Position.Y;
 
         Span<float> polygonTransformedVerticesX = stackalloc float[polygonMaxVertices];
         Span<float> polygonTransformedVerticesY = stackalloc float[polygonMaxVertices];
         int polygonTransformedVerticesCount = 0;
 
-        for(int i = startIndex; i < length; i++)
+        int physicsBodiesProcessed = 0;
+
+        for(int i = 0; i < maxPhysicsBodyCount; i++)
         {
             PhysicsBodyFlags flag = flags[i];
             
             // if the physics body had been allocated and is active.
-            if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.Active) == 0)
+            if((flag & PhysicsBodyFlags.Allocated) == 0)
+            {
+                continue;
+            }
+
+            physicsBodiesProcessed++;
+
+            if((flag & PhysicsBodyFlags.Active) == 0)
             {
                 continue;
             }
@@ -422,14 +436,14 @@ public static class SoaPhysicsSystem
 
             if((flag & PhysicsBodyFlags.RectangleShape) != 0)
             {
-                int first = firstVertice[i]; 
+                int first = firstVertexIndices[i]; 
                 int verticeIndex = first;
                 while (true)
                 {
 
                     // transform the base/un-transformed vertice.
                     TransformVector(verticesX[verticeIndex], verticesY[verticeIndex], scaleX, scaleY,
-                        cos[i], sin[i], positionX[i], positionY[i], out float x, out float y
+                        cos[i], sin[i], positionsX[i], positionsY[i], out float x, out float y
                     );
 
                     // mutate the transformed vertices array.
@@ -441,7 +455,7 @@ public static class SoaPhysicsSystem
                     polygonTransformedVerticesY[polygonTransformedVerticesCount] = y;
                     polygonTransformedVerticesCount++;
 
-                    verticeIndex = nextVertice[verticeIndex];
+                    verticeIndex = nextVertexIndices[verticeIndex];
 
                     if (verticeIndex == first)
                         break;
@@ -455,59 +469,116 @@ public static class SoaPhysicsSystem
                     out minAABBVectorsX[i], out minAABBVectorsY[i], out maxAABBVectorsX[i], out maxAABBVectorsY[i]
                 );
 
-                // transform width and height.
-                float height = heights[i] * scaleY;
-                transformedHeights[i] = height;
-                float width = widths[i] * scaleX;
-                transformedWidths[i] = width;
-
-                if((flag & PhysicsBodyFlags.RigidBody) != 0)
-                {
-                    
-                    float mass = CalculateRectangleMass(width, height, densitites[i]); 
-                    masses[i] = mass;
-                    inverseMasses[i] = mass == 0? 0 : 1f/mass;
-
-                    float rI = CalculateRectangleRotationalInertia(width, height, mass);
-                    rotationalInertia[i] = rI;
-                    inverseRotationalInertia[i] = rI == 0? 0 : 1f/rI;
-                }
-
                 // reset for next iteration.
                 polygonTransformedVerticesCount = 0; 
             }
             else // circle shape.
             {
-                int vertexIndex = firstVertice[i];
-                Circle.Transform(verticesX[vertexIndex], verticesY[vertexIndex], radii[i], scalesX[i], scalesY[i],
-                    cos[i], sin[i], transforms.Position.X[i], transforms.Position.Y[i], out float x, out float y,
-                    out float r
-                );
-
+                int vertexIndex = firstVertexIndices[i];
+                TransformVector(verticesX[vertexIndex],verticesY[vertexIndex],scaleX, scaleY, cos[i], sin[i], positionsX[i], positionsY[i], out float x, out float y);
                 transformedVerticesX[vertexIndex] = x;
                 transformedVerticesY[vertexIndex] = y;
-                transformedRadii[i] = r;
 
                 // set the new centroid.
                 centroidsX[i] = x;
                 centroidsY[i] = y;
 
                 // set the new min and max vectors. 
-                Circle.GetMinMaxVectors(x, y, r, 
+                Circle.GetMinMaxVectors(x, y, worldRadii[i], 
                     out minAABBVectorsX[i], out minAABBVectorsY[i], out maxAABBVectorsX[i], out maxAABBVectorsY[i]
                 );
+            }
 
-                if((flag & PhysicsBodyFlags.RigidBody) != 0)
-                {
-                    float mass = CalculateCircleMass(r, densitites[i]);
+            if(physicsBodiesProcessed >= physicsBodyCount)
+            {
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Re-calculates rigidbody data and world-space dimensions based on current scales.    
+    /// </summary>
+    /// <remarks>
+    /// All provided spans must be indexed by a valid <c>PhysicsBodyId</c>:
+    /// <list type="bullet">
+    /// <item><description><paramref name="scalesX"/> / <paramref name="scalesY"/></description></item>
+    /// <item><description><paramref name="masses"/> / <paramref name="inverseMasses"/></description></item>
+    /// <item><description><paramref name="rotationalInertia"/> / <paramref name="inverseRotationalInertia"/></description></item>
+    /// <item><description><paramref name="flags"/></description></item>
+    /// </list>
+    /// </remarks>
+    /// <param name="scalesX">the x-component's of all physics bodies scaling vectors.</param>
+    /// <param name="scalesY">the y-component's of all physics bodies scaling vectors.</param>
+    /// <param name="masses">a span to store the generated mass values of all physics bodies.</param>
+    /// <param name="inverseMasses">a span to store the generated inverse mass values of all physics bodies.</param>
+    /// <param name="rotationalInertia">a span to store the generated rotational intertia values of all physics bodies.</param>
+    /// <param name="inverseRotationalInertia">a span to store the generated inverse rotational inertia values of all physics bodies.</param>
+    /// <param name="densities">the densities of all physics bodies.</param>
+    /// <param name="radii">the local-space radii of all physics bodies.</param>
+    /// <param name="transformedRadii">a span to store the generated transformed radius values of all physics bodies.</param>
+    /// <param name="widths">the local-space width values of all physics bodies.</param>
+    /// <param name="heights">the local-space height values of all physics bodies.</param>
+    /// <param name="flags">the flags of all physics bodies</param>
+    public static void IntegrateBodyProperties(Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
+        Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> radii, Span<float> transformedRadii, 
+        Span<float> widths, Span<float> heights, Span<PhysicsBodyFlags> flags
+    )
+    {
+        float width;
+        float height;
+        float radius;
+        float scaleX;
+        float scaleY;
+        bool isRigid;
+
+        for(int i = 0; i < flags.Length; i++)
+        {
+            ref PhysicsBodyFlags flag = ref flags[i];
+            if((flag & PhysicsBodyFlags.InUse) == 0)
+            {
+                continue;
+            }
+
+            scaleX = scalesX[i];
+            scaleY = scalesY[i];
+            isRigid = (flag & PhysicsBodyFlags.RigidBody) != 0; 
+
+            if((flag & PhysicsBodyFlags.RectangleShape) != 0)
+            {
+                // set rigidbody data if it is enabled.
+                if(isRigid)
+                {                    
+                    height = heights[i] * scaleY;
+                    width = widths[i] * scaleX;
+
+                    float mass = CalculateRectangleMass(width, height, densities[i]); 
+                    masses[i] = mass;
+                    inverseMasses[i] = mass == 0? 0 : 1f/mass;
+
+                    float inertia = CalculateRectangleRotationalInertia(width, height, mass);
+                    rotationalInertia[i] = inertia;
+                    inverseRotationalInertia[i] = inertia == 0? 0 : 1f/inertia;
+                }
+            }
+            else // circle shape
+            {
+                radius = Circle.ScaleRadius(radii[i], scaleX, scaleY);
+                transformedRadii[i] = radius;
+
+                // set rigidbody data if it is enabled.
+                if(isRigid)
+                {                    
+                    float mass = CalculateCircleMass(radius, densities[i]);
                     masses[i] = mass;
                     inverseMasses[i] = mass==0? 0 : 1f/mass;
 
-                    float rI = CalculateCircleRotationalInertia(r, mass);
+                    float rI = CalculateCircleRotationalInertia(radius, mass);
                     rotationalInertia[i] = rI;
                     inverseRotationalInertia[i] = rI == 0? 0f : 1f/rI;
                 }
             }
+
         }
     }
 
@@ -1048,16 +1119,16 @@ public static class SoaPhysicsSystem
         firstIndex = state.FreeVertexIndex.Pop();
         int previousIndex;
         int index = firstIndex;
-        state.Vertices.X[index] = verticesX[0];
-        state.Vertices.Y[index] = verticesY[0];
+        state.LocalVertices.X[index] = verticesX[0];
+        state.LocalVertices.Y[index] = verticesY[0];
 
         // add the rest of them.
         for(int i = 1; i < vertexCount; i++)
         {
             previousIndex = index;
             index = state.FreeVertexIndex.Pop();
-            state.Vertices.X[index] = verticesX[i];
-            state.Vertices.Y[index] = verticesY[i];
+            state.LocalVertices.X[index] = verticesX[i];
+            state.LocalVertices.Y[index] = verticesY[i];
             state.NextVertexIndices[previousIndex] = index;
         }
 
@@ -1348,7 +1419,7 @@ public static class SoaPhysicsSystem
         AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
 
         // apply data.
-        state.Radii[index]              = shape.Radius;
+        state.LocalRadii[index]              = shape.Radius;
         state.Flags[index]              = flag;
         state.FirstVertexIndices[index]  = verticesFirstIndex;
 
@@ -1384,7 +1455,7 @@ public static class SoaPhysicsSystem
         int index = state.FreePhysicsBodyIndex.Pop();
 
         // apply data.
-        state.Radii[index]                      = shape.Radius;
+        state.LocalRadii[index]                      = shape.Radius;
         state.Flags[index]                      = flags;
         state.FirstVertexIndices[index]         = verticesFirstIndex;
         state.StaticFrictions[index]            = physicsMaterial.StaticFriction;
@@ -1439,8 +1510,8 @@ public static class SoaPhysicsSystem
         int bodyIndex = state.FreePhysicsBodyIndex.Pop();
         AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
 
-        state.Heights[bodyIndex]            = shape.Height;
-        state.Widths[bodyIndex]             = shape.Width;
+        state.LocalHeights[bodyIndex]            = shape.Height;
+        state.LocalWidths[bodyIndex]             = shape.Width;
         state.Flags[bodyIndex]              = flags;
         state.FirstVertexIndices[bodyIndex]  = verticesFirstIndex;
 
@@ -1478,8 +1549,8 @@ public static class SoaPhysicsSystem
         AddVertices(state, VerticesXAsSpan(polyRect), VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
 
         // apply data.
-        state.Heights[index]                    = shape.Height;
-        state.Widths[index]                     = shape.Width;
+        state.LocalHeights[index]                    = shape.Height;
+        state.LocalWidths[index]                     = shape.Width;
         state.Flags[index]                      = flags;
         state.FirstVertexIndices[index]         = verticesFirstIndex;
         state.KineticFrictions[index]           = physicsMaterial.KineticFriction;

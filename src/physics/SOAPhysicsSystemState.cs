@@ -24,26 +24,35 @@ public sealed class SoaPhysicsSystemState : IDisposable
 
 
     /// <summary>
-    /// Gets and sets the type flags of all physics bodies.
+    /// The type flags for all physics bodies.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public PhysicsBodyFlags[] Flags;
 
     /// <summary>
-    /// Gets and sets a vertex of a physics body shape.  
+    /// The local-space vertices for all physics bodies.
     /// </summary>
     /// <remarks>
-    /// Note: this is the base/untransformed value for a physics body shape vertex.
+    /// Use a <c>vertexIndex</c> integer to access elements.
     /// </remarks>
-    public Soa_Vector2 Vertices;
+    public Soa_Vector2 LocalVertices;
     
     /// <summary>
-    /// Gets and sets the transformed vertex position of a physics body shape.  
+    /// The world-space vertices for all physics bodies.  
     /// </summary>
-    public Soa_Vector2 TransformedVertices;
+    /// <remarks>
+    /// Use a <c>vertexIndex</c> integer to access elements.
+    /// </remarks>
+    public Soa_Vector2 WorldVertices;
 
     /// <summary>
-    /// Gets and sets the transform of a physics body.
+    /// The local to world-space transforms for all physics bodies.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public Soa_Transform Transforms;
 
     /// <summary>
@@ -67,7 +76,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// <remarks>
     /// Note: this collection is indexed by the body index; not a body's vertex indices.
     /// </remarks>
-    public Soa_Vector2 MaxABBBVectors;
+    public Soa_Vector2 MaxAABBVertices;
 
     /// <summary>
     /// Gets the min vector of a physics body's AABB.
@@ -75,7 +84,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// <remarks>
     /// Note: this collection is indexed by the body index; not a body's vertex indices.
     /// </remarks>
-    public Soa_Vector2 MinAABBVectors;
+    public Soa_Vector2 MinAABBVertices;
 
     /// <summary>
     /// Gets and sets the angular velocity of a physics body.
@@ -83,44 +92,54 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public float[] AngularVelocities;
 
     /// <summary>
-    /// Gets and sets the mass of a physics body.
+    /// The mass values of all physics bodies.
     /// </summary>
+    /// <remarks>
+    /// Mass is relative to world-space. Use <c>physicsBodyIndex</c> integer to access elements
+    /// </remarks>
     public float[] Masses;
 
     /// <summary>
-    /// Gets and sets the inverse mass of a physics body.
+    /// The inverse mass values of all physics bodies.
     /// </summary>
+    /// <remarks>
+    /// Inverse mass is relative to world-space. Use <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public float[] InverseMasses;
 
     /// <summary>
-    /// Gets and sets the width of a physics body.
+    /// The local-space width values for all physics bodies.
     /// </summary>
-    public float[] Widths;
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
+    public float[] LocalWidths;
 
     /// <summary>
-    /// Gets and sets the transformed width of a physics body.
+    /// The local-space height values for all physics bodies in the system.
     /// </summary>
-    public float[] TransformedWidths;
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
+    public float[] LocalHeights;
 
     /// <summary>
-    /// Gets and sets the height of a physics body.
+    /// The local-space radius values for all physics bodies.
     /// </summary>
-    public float[] Heights;
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
+    public float[] LocalRadii;
 
     /// <summary>
-    /// Gets and sets the transformed height of a physics body.
+    /// The world-space radius values for all physics bodies.
     /// </summary>
-    public float[] TransformedHeights;
-
-    /// <summary>
-    /// Gets and sets the radii of a physics body.
-    /// </summary>
-    public float[] Radii;
-
-    /// <summary>
-    /// Gets and sets the transformed radius of a physics body.
-    /// </summary>
-    public float[] TransformedRadii;    
+    /// <remarks>
+    /// This value is updated during the integrate physics bodies step of the physics simulation 
+    /// to reflect the current scale of te body in world-space.
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
+    public float[] WorldRadii;
 
     /// <summary>
     /// Gets and sets the static friction value of a physics body.
@@ -139,18 +158,27 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public float[] KineticFrictions;
 
     /// <summary>
-    /// Gets and sets the rotational inertia of a physics body.
+    /// The rotational inertia  values of all physics bodies.
     /// </summary>
+    /// <remarks>
+    /// Rotational inertia is relative to world-space. Use <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public float[] RotationalInertia;
 
     /// <summary>
     /// Gets and sets the inverse rotational inertia of a physics body.
     /// </summary>
+    /// <remarks>
+    /// Inverse rotational intertia is relative to world-space. Use <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public float[] InverseRotationalInertia;
 
     /// <summary>
-    /// Gets and sets the density of a physics body.
+    /// The density values of all physics bodies.
     /// </summary>
+    /// <remarks>
+    /// Use <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public float[] Densities;
 
     /// <summary>
@@ -162,16 +190,18 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public float[] Restitutions;
     
     /// <summary>
-    /// Gets and sets the first index of a physics body's shape's first vertex.
+    /// The indices in the vertices collection that point to the first vertex of a given physics body.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public int[] FirstVertexIndices;
 
     /// <summary>
-    /// The index to the next vertex from a given A physics body shape vertex's index in the vertices soa vector.
+    /// the indices in the vertices vertices collection that point to the next vertex of a given vertex index..
     /// </summary>
     /// <remarks>
-    /// Note: the next index for a given shape are stored in a circular intrusive linked list; 
-    /// meaning that the next vertice index of the final vertex will be the first vertex index. 
+    /// Use a <c>vertexIndex</c> integer to access elements.
     /// </remarks>
     public int[] NextVertexIndices;
     
@@ -237,6 +267,11 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Gets and sets the stopwatch for syncing physics bodies to their associated entities.
     /// </summary>
     public Stopwatch SyncTransformsToEntitiesStopwatch;
+
+    /// <summary>
+    /// The diagnostic stopwatch for the IntegrateBodyProperties step.
+    /// </summary>
+    public Stopwatch IntegrateBodyPropertiesStopwatch;
 
     /// <summary>
     /// Gets and sets the debug stop watch for timing a rigidbody movement step.
@@ -507,23 +542,21 @@ public sealed class SoaPhysicsSystemState : IDisposable
 
         // Physics body data.
         Flags                       = new PhysicsBodyFlags[physicsBodyCount];
-        Vertices                    = new Soa_Vector2(physicsBodyVerticesCount);
-        TransformedVertices         = new Soa_Vector2(physicsBodyVerticesCount);
+        LocalVertices                    = new Soa_Vector2(physicsBodyVerticesCount);
+        WorldVertices         = new Soa_Vector2(physicsBodyVerticesCount);
         Transforms                  = new Soa_Transform(physicsBodyCount);
         Forces                      = new Soa_Vector2(physicsBodyCount);
         LinearVelocities            = new Soa_Vector2(physicsBodyCount);
         Centroids                   = new Soa_Vector2(physicsBodyCount);
-        MaxABBBVectors             = new Soa_Vector2(physicsBodyCount);
-        MinAABBVectors             = new Soa_Vector2(physicsBodyCount);
+        MaxAABBVertices             = new Soa_Vector2(physicsBodyCount);
+        MinAABBVertices             = new Soa_Vector2(physicsBodyCount);
         AngularVelocities           = new float[physicsBodyCount];
         Masses                      = new float[physicsBodyCount];
         InverseMasses               = new float[physicsBodyCount];
-        Widths                      = new float[physicsBodyCount];
-        TransformedWidths           = new float[physicsBodyCount];
-        Heights                     = new float[physicsBodyCount];
-        TransformedHeights          = new float[physicsBodyCount];
-        Radii                       = new float[physicsBodyCount];
-        TransformedRadii            = new float[physicsBodyCount];
+        LocalWidths                      = new float[physicsBodyCount];
+        LocalHeights                     = new float[physicsBodyCount];
+        LocalRadii                       = new float[physicsBodyCount];
+        WorldRadii            = new float[physicsBodyCount];
         StaticFrictions             = new float[physicsBodyCount];
         KineticFrictions            = new float[physicsBodyCount];
         RotationalInertia           = new float[physicsBodyCount];
@@ -540,6 +573,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
         FixedUpdateStepStopwatch = new();
         FixedUpdateSubStepStopwatch = new();
         SyncTransformsToEntitiesStopwatch = new();
+        IntegrateBodyPropertiesStopwatch = new();
         RigidBodyMovementStepStopwatch = new();
         TransformPhysicsBodiesStopwatch = new();
         BvhReconstructionStopwatch = new();

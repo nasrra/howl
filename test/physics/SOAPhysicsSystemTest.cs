@@ -275,8 +275,8 @@ public class SOAPhysicsSystemTest
         int v = firstVerticeIndex;
         for (int i = 0; i < 4; i++)
         {
-            Assert.Equal(expectedX[i], state.Vertices.X[v], precision: 1);
-            Assert.Equal(expectedY[i], state.Vertices.Y[v], precision: 1);
+            Assert.Equal(expectedX[i], state.LocalVertices.X[v], precision: 1);
+            Assert.Equal(expectedY[i], state.LocalVertices.Y[v], precision: 1);
             v = state.NextVertexIndices[v];
         }
     }
@@ -456,12 +456,12 @@ public class SOAPhysicsSystemTest
         // transform the shapes.
 
         TransformPhysicsBodyVertices(
-            state.Vertices,
-            state.TransformedVertices,
+            state.LocalVertices,
+            state.WorldVertices,
             state.Transforms,
             state.Flags, 
-            state.Radii,
-            state.TransformedRadii,
+            state.LocalRadii,
+            state.WorldRadii,
             state.FirstVertexIndices,
             state.NextVertexIndices, 
             0, 
@@ -469,9 +469,9 @@ public class SOAPhysicsSystemTest
         );
 
         // assert circle.        
-        Assert.Equal(cExpectedX,           state.TransformedVertices.X[cBodyGenIndex.Index],   precision: 1);
-        Assert.Equal(cExpectedY,           state.TransformedVertices.Y[cBodyGenIndex.Index],   precision: 1);
-        Assert.Equal(cExpectedRadius,      state.TransformedRadii[cBodyGenIndex.Index],        precision: 1);
+        Assert.Equal(cExpectedX,           state.WorldVertices.X[cBodyGenIndex.Index],   precision: 1);
+        Assert.Equal(cExpectedY,           state.WorldVertices.Y[cBodyGenIndex.Index],   precision: 1);
+        Assert.Equal(cExpectedRadius,      state.WorldRadii[cBodyGenIndex.Index],        precision: 1);
         AssertEqualsSoaTransformEntry(state.Transforms, ref cTransform, cBodyGenIndex.Index, 4);
 
         // assert rect.
@@ -480,8 +480,8 @@ public class SOAPhysicsSystemTest
         int count = 0;
         while (true)
         {
-            Assert.Equal(rExpectedX[count], state.TransformedVertices.X[v], precision: 1);
-            Assert.Equal(rExpectedY[count], state.TransformedVertices.Y[v], precision: 1);
+            Assert.Equal(rExpectedX[count], state.WorldVertices.X[v], precision: 1);
+            Assert.Equal(rExpectedY[count], state.WorldVertices.Y[v], precision: 1);
             count++;
             if(v==first)
                 break;
