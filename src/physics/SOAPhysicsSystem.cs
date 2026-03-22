@@ -459,7 +459,6 @@ public static class SoaPhysicsSystem
         Span<float> linearVelocitiesY = linearVelocities.Y;
         Span<float> positionsX = transforms.Position.X;
         Span<float> positionsY = transforms.Position.Y;
-        Span<float> rotation = transforms.Rotation;
         Span<float> sin = transforms.Sin;
         Span<float> cos = transforms.Cos;
 
@@ -503,7 +502,7 @@ public static class SoaPhysicsSystem
             // apply linear velocity.
             positionsX[i] += linearVelocityX * deltaTime;
             positionsY[i] += linearVelocityY * deltaTime;
-            RotateRadians(angularVelocities[i] * deltaTime, ref rotation[i], ref sin[i], ref cos[i]);
+            RotorMultiply(sin[i], cos[i], angularVelocities[i] * deltaTime ,ref sin[i], ref cos[i]);
         }
     }
 
@@ -1328,7 +1327,7 @@ public static class SoaPhysicsSystem
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float CalculateRectangleRotationalInertia(float width, float height, float mass)
     {
-        return RectangleRotationalInertia * mass * (width * width) * (height * height);
+        return RectangleRotationalInertia * mass * ((width * width) + (height * height));
     }
 
 
@@ -1515,7 +1514,6 @@ public static class SoaPhysicsSystem
         soaTransform.Position.Y[genIndex.Index]  = transform.Position.Y;
         soaTransform.Scale.X[genIndex.Index]     = transform.Scale.X;
         soaTransform.Scale.Y[genIndex.Index]     = transform.Scale.Y;
-        soaTransform.Rotation[genIndex.Index]    = transform.Rotation;
         soaTransform.Cos[genIndex.Index]         = transform.Cos;
         soaTransform.Sin[genIndex.Index]         = transform.Sin;
 
@@ -2127,10 +2125,8 @@ public static class SoaPhysicsSystem
             float tangentX = relativeVelocityX - relativeDotNormal * normalX;
             float tangentY = relativeVelocityY - relativeDotNormal * normalY;
 
-            if(NearlyEqual(tangentX, 0, 1e-8f) || NearlyEqual(tangentY, 0, 1e-8f))
-            {
+            if(NearlyEqual((tangentX * tangentX) + (tangentY * tangentY), 0, 1e-12f))
                 continue;
-            }
 
             Normalise(tangentX, tangentY, out tangentX, out tangentY);
 
@@ -2203,10 +2199,6 @@ public static class SoaPhysicsSystem
                 {
                     distBX = distsBX[j];
                     distBY = distsBY[j];
-                    // if((otherFlag & PhysicsBodyFlags.RectangleShape) == 0)
-                    // {
-                    //     System.Diagnostics.Debug.WriteLine($"{otherAngularVelocity} {Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia}");         
-                    // }
                     otherAngularVelocity += Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
                 }       
             }   

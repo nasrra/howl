@@ -16,11 +16,6 @@ public class Soa_Transform
     public Soa_Vector2 Scale;
 
     /// <summary>
-    /// Gets and sets the rotational values.
-    /// </summary>
-    public float[] Rotation;
-
-    /// <summary>
     /// Gets and sets the Sin value of a rotation.
     /// </summary>
     public float[] Sin;
@@ -38,7 +33,6 @@ public class Soa_Transform
     {
         Position    = new(length);
         Scale       = new(length);
-        Rotation    = new float[length];
         Sin         = new float[length];
         Cos         = new float[length];
     }
@@ -54,7 +48,6 @@ public class Soa_Transform
     {
         transform.Position.X = soa.Position.X[index];
         transform.Position.Y = soa.Position.Y[index];
-        transform.Rotation = soa.Rotation[index];
         transform.Scale.X = soa.Scale.X[index];
         transform.Scale.Y = soa.Scale.Y[index];
         transform.Sin = soa.Sin[index];
@@ -72,22 +65,9 @@ public class Soa_Transform
     {
         soa.Position.X[index] = transform.Position.X;
         soa.Position.Y[index] = transform.Position.Y;
-        soa.Rotation[index] = transform.Rotation;
         soa.Scale.X[index] = transform.Scale.X;
         soa.Scale.Y[index] = transform.Scale.Y;
         soa.Sin[index] = transform.Sin;
         soa.Cos[index] = transform.Cos;
-    }
-
-    /// <summary>
-    /// Rotates a transform entry in a soa transform.
-    /// </summary>
-    /// <param name="soa">the soa transform.</param>
-    /// <param name="increment">the amount - in radians - to rotate the transform.</param>
-    /// <param name="index">the index of the transform in the soa transfom.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Rotate(Soa_Transform soa, float increment, int index)
-    {
-        RotateRadians(increment, soa.Rotation, soa.Sin, soa.Cos, index);
     }
 }
