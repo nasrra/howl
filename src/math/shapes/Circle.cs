@@ -230,4 +230,15 @@ public struct Circle
         return GetArea(circle.Radius);
     }
 
+    /// <summary>
+    /// Vectorised calculation of circles radii.
+    /// </summary>
+    /// <param name="radius">a vector of circle radii.</param>
+    /// <returns>the area values of the circles.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static System.Numerics.Vector<float> GetArea(System.Numerics.Vector<float> radius)
+    {
+        return radius * radius * MathV.Pi;
+    }
+
 }

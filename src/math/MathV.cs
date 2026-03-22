@@ -5,9 +5,9 @@ namespace Howl.Math;
 
 public static class MathV
 {
-
-    public static Vector<float> vOneSixth = new Vector<float>(1.0f / 6.0f);
-    public static Vector<float> vOneTwentyFourth = new Vector<float>(1.0f / 24.0f);
+    public static readonly Vector<float> Pi = new Vector<float>(Math.Pi);
+    public static readonly Vector<float> OneSixth = new Vector<float>(1.0f / 6.0f);
+    public static readonly Vector<float> OneTwentyFourth = new Vector<float>(1.0f / 24.0f);
     
     /// <summary>
     /// Vectorized rotation update using complex number multiplication (rotors)
@@ -34,8 +34,8 @@ public static class MathV
         Vector<float> thetaSq = theta * theta;
 
         // Get Sin/Cos of theta (Small Angle Approximation)
-        Vector<float> sinDelta = theta * (Vector<float>.One - (thetaSq * vOneSixth));
-        Vector<float> cosDelta = Vector<float>.One - (thetaSq * 0.5f) + (thetaSq * thetaSq * vOneTwentyFourth);
+        Vector<float> sinDelta = theta * (Vector<float>.One - (thetaSq * OneSixth));
+        Vector<float> cosDelta = Vector<float>.One - (thetaSq * 0.5f) + (thetaSq * thetaSq * OneTwentyFourth);
 
         // Complex Multiplication (identity math)
         // next sin = sin(a)cos(b) + cos(a)sin(b)

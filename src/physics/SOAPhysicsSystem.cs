@@ -32,7 +32,10 @@ public static class SoaPhysicsSystem
     public const float MinBodySize = float.Epsilon;
     public const float MaxBodySize = float.MaxValue;
     public const int MaxCollisionContactPoints = 2;
-    
+
+    public static readonly Vector<float> VectorRectangleRotationalInertia = new(RectangleRotationalInertia);
+    public static readonly Vector<float> VectorCircleRotationalInertia = new(CircleRotationalInertia);
+
     public static void RegisterComponents(ComponentRegistry registry)
     {
         registry.RegisterComponent<Transform>();
@@ -53,7 +56,7 @@ public static class SoaPhysicsSystem
         state.IntegrateBodyPropertiesStopwatch.Restart();
         IntegrateBodyProperties(state.Transforms.Scale.X, state.Transforms.Scale.Y, state.Masses, state.InverseMasses, 
             state.RotationalInertia, state.InverseRotationalInertia, state.Densities, state.LocalRadii, state.WorldRadii, 
-            state.LocalWidths, state.LocalHeights, state.Flags
+            state.LocalWidths, state.LocalHeights, state.Flags, state.MaxPhysicsBodyCount
         );
         state.IntegrateBodyPropertiesStopwatch.Stop();
 
@@ -299,6 +302,16 @@ public static class SoaPhysicsSystem
     /// <summary>
     /// Performs a movement step for all physics bodies with a rigidbody.
     /// </summary>
+    /// <remarks>
+    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
+    /// <list type="bullet">
+    /// <item><description><paramref name="transforms"/>
+    /// <item><description><paramref name="linearVelocities"/>
+    /// <item><description><paramref name="masses"/>
+    /// <item><description><paramref name="angularVelocities"/>
+    /// <item><description><paramref name="flags"/></description></item>
+    /// </list>
+    /// </remarks>
     /// <param name="transforms">the world-space transforms for all physics bodies.</param>
     /// <param name="linearVelocities">the linear velocity values for all physics bodies.</param>
     /// <param name="forces">the force values for all physics bodies.</param>
@@ -323,6 +336,16 @@ public static class SoaPhysicsSystem
     /// <summary>
     /// Performs a movement step for all physics bodies with a rigidbody.
     /// </summary>
+    /// <remarks>
+    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
+    /// <list type="bullet">
+    /// <item><description><paramref name="transforms"/>
+    /// <item><description><paramref name="linearVelocities"/>
+    /// <item><description><paramref name="masses"/>
+    /// <item><description><paramref name="angularVelocities"/>
+    /// <item><description><paramref name="flags"/></description></item>
+    /// </list>
+    /// </remarks>
     /// <param name="transforms">the world-space transforms for all physics bodies.</param>
     /// <param name="linearVelocities">the linear velocity values for all physics bodies.</param>
     /// <param name="forces">the force values for all physics bodies.</param>
@@ -436,6 +459,16 @@ public static class SoaPhysicsSystem
     /// <summary>
     /// Performs a movement step for all physics bodies with a rigidbody.
     /// </summary>
+    /// <remarks>
+    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
+    /// <list type="bullet">
+    /// <item><description><paramref name="transforms"/>
+    /// <item><description><paramref name="linearVelocities"/>
+    /// <item><description><paramref name="masses"/>
+    /// <item><description><paramref name="angularVelocities"/>
+    /// <item><description><paramref name="flags"/></description></item>
+    /// </list>
+    /// </remarks>
     /// <param name="transforms">the world-space transforms for all physics bodies.</param>
     /// <param name="linearVelocities">the linear velocity values for all physics bodies.</param>
     /// <param name="forces">the force values for all physics bodies.</param>
@@ -637,11 +670,21 @@ public static class SoaPhysicsSystem
         }
     }
 
+
+
+
+
+    /*******************
+    
+        Integrate Body Properties.
+    
+    ********************/
+
     /// <summary>
-    /// Re-calculates rigidbody data and world-space dimensions based on current scales.    
+    /// Calculates world-space dimensions and rigidbody data for physics bodies.
     /// </summary>
     /// <remarks>
-    /// All provided spans must be indexed by a valid <c>PhysicsBodyId</c>:
+    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
     /// <list type="bullet">
     /// <item><description><paramref name="scalesX"/> / <paramref name="scalesY"/></description></item>
     /// <item><description><paramref name="masses"/> / <paramref name="inverseMasses"/></description></item>
@@ -650,20 +693,265 @@ public static class SoaPhysicsSystem
     /// </list>
     /// </remarks>
     /// <param name="scalesX">the x-component's of all physics bodies scaling vectors.</param>
-    /// <param name="scalesY">the y-component's of all physics bodies scaling vectors.</param>
-    /// <param name="masses">a span to store the generated mass values of all physics bodies.</param>
-    /// <param name="inverseMasses">a span to store the generated inverse mass values of all physics bodies.</param>
-    /// <param name="rotationalInertia">a span to store the generated rotational intertia values of all physics bodies.</param>
-    /// <param name="inverseRotationalInertia">a span to store the generated inverse rotational inertia values of all physics bodies.</param>
+    /// <param name="scalesY">the y-component's of all physic bodies scaling vectors.</param>
+    /// <param name="masses">output for mass values.</param>
+    /// <param name="inverseMasses">output for inverse mass values.</param>
+    /// <param name="rotationalInertia">output for rotational inertia values.</param>
+    /// <param name="inverseRotationalInertia">output for inverse rotational inertia values.</param>
     /// <param name="densities">the densities of all physics bodies.</param>
-    /// <param name="radii">the local-space radii of all physics bodies.</param>
-    /// <param name="transformedRadii">a span to store the generated transformed radius values of all physics bodies.</param>
-    /// <param name="widths">the local-space width values of all physics bodies.</param>
-    /// <param name="heights">the local-space height values of all physics bodies.</param>
-    /// <param name="flags">the flags of all physics bodies</param>
+    /// <param name="localRadii">the local-space radii of all physics bodies.</param>
+    /// <param name="worldRadii">output for world-space radii of all physics bodies.</param>
+    /// <param name="localWidths">the local-space widths of all physics bodies.</param>
+    /// <param name="localHeights">the local-space heights of all physics bodies.</param>
+    /// <param name="flags">the flags of all physics bodies.</param>
+    /// <param name="maxPhysicsBodyCount">the maximium amount of physics bodies.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void IntegrateBodyProperties(Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
-        Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> radii, Span<float> transformedRadii, 
-        Span<float> widths, Span<float> heights, Span<PhysicsBodyFlags> flags
+        Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> localRadii, Span<float> worldRadii, 
+        Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags, int maxPhysicsBodyCount)
+    {
+        IntegrateBodyProperties_Simd(scalesX, scalesY, masses, inverseMasses, 
+            rotationalInertia, inverseRotationalInertia, densities, localRadii, worldRadii, 
+            localWidths, localHeights, flags, maxPhysicsBodyCount
+        );
+    }
+
+    /// <summary>
+    /// Calculates world-space dimensions and rigidbody data for physics bodies.
+    /// </summary>
+    /// <remarks>
+    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
+    /// <list type="bullet">
+    /// <item><description><paramref name="scalesX"/> / <paramref name="scalesY"/></description></item>
+    /// <item><description><paramref name="masses"/> / <paramref name="inverseMasses"/></description></item>
+    /// <item><description><paramref name="rotationalInertia"/> / <paramref name="inverseRotationalInertia"/></description></item>
+    /// <item><description><paramref name="flags"/></description></item>
+    /// </list>
+    /// </remarks>
+    /// <param name="scalesX">the x-component's of all physics bodies scaling vectors.</param>
+    /// <param name="scalesY">the y-component's of all physic bodies scaling vectors.</param>
+    /// <param name="masses">output for mass values.</param>
+    /// <param name="inverseMasses">output for inverse mass values.</param>
+    /// <param name="rotationalInertia">output for rotational inertia values.</param>
+    /// <param name="inverseRotationalInertia">output for inverse rotational inertia values.</param>
+    /// <param name="densities">the densities of all physics bodies.</param>
+    /// <param name="localRadii">the local-space radii of all physics bodies.</param>
+    /// <param name="worldRadii">output for world-space radii of all physics bodies.</param>
+    /// <param name="localWidths">the local-space widths of all physics bodies.</param>
+    /// <param name="localHeights">the local-space heights of all physics bodies.</param>
+    /// <param name="flags">the flags of all physics bodies.</param>
+    /// <param name="maxPhysicsBodyCount">the maximium amount of physics bodies.</param>
+    public static void IntegrateBodyProperties_Simd(Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
+        Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> localRadii, Span<float> worldRadii, 
+        Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags, int maxPhysicsBodyCount
+    )
+    {
+        int simdSize = Vector<float>.Count;
+
+        PhysicsBodyFlags RectangleRigidBodyFlags = PhysicsBodyFlags.InUse | PhysicsBodyFlags.RigidBody | PhysicsBodyFlags.RectangleShape;
+        PhysicsBodyFlags CircleRigidBodyFlags    = PhysicsBodyFlags.InUse | PhysicsBodyFlags.RigidBody;
+        PhysicsBodyFlags CirclePhysicsBodyFlags  = PhysicsBodyFlags.InUse;
+        PhysicsBodyFlags NotCircleShapeFlags     = PhysicsBodyFlags.RectangleShape;
+
+        Vector<int> vRectangleRigidBodyFlags = new((int)RectangleRigidBodyFlags);
+        Vector<int> vCircleleRigidBodyFlags = new((int)CircleRigidBodyFlags);
+        Vector<int> vCirclePhysicsBodyFlags = new((int)CirclePhysicsBodyFlags);
+        Vector<int> vNotCircleShapeFlags = new((int)NotCircleShapeFlags);
+
+        int i = 0;
+        for(; i <= maxPhysicsBodyCount - simdSize; i += simdSize)
+        {
+            ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
+            Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
+
+            Vector<int> flagMask = Vector.Equals(vFlags & vRectangleRigidBodyFlags, vRectangleRigidBodyFlags);
+
+            // short circuit if the entire mask is zero.
+            // all bodies in this chunk dont have the required flags.
+            if (Vector.EqualsAll(flagMask, Vector<int>.Zero))
+            {
+                continue;
+            }
+
+            // load data.
+            Vector<float> vScaleX = Vector.LoadUnsafe(ref scalesX[i]);
+            Vector<float> vScaleY = Vector.LoadUnsafe(ref scalesY[i]);
+            Vector<float> vHeight = Vector.LoadUnsafe(ref localHeights[i]);
+            Vector<float> vWidth = Vector.LoadUnsafe(ref localWidths[i]);
+            Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
+            Vector<float> vInvMass = Vector.LoadUnsafe(ref inverseMasses[i]);
+            Vector<float> vRotInertia = Vector.LoadUnsafe(ref rotationalInertia[i]);
+            Vector<float> vInvRotInertia = Vector.LoadUnsafe(ref inverseRotationalInertia[i]);
+            Vector<float> vDensity = Vector.LoadUnsafe(ref densities[i]);
+
+            // calculate world-space dimensions.
+            Vector<float> newHeight = vHeight * vScaleY;
+            Vector<float> newWidth = vWidth * vScaleX;
+
+            // calculate the new mass.
+            Vector<float> newMass = CalculateRectangleMass(newWidth, newHeight, vDensity);
+
+            // create a mask to ensure mass values are above zero.
+            Vector<int> massMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
+
+            // calculate new inv mass.
+            Vector<float> newInvMass = Vector<float>.One / newMass;
+
+            // set the new mass values.
+            // Note: use the mass mask to remove any NaN's as a result of divide by zero.
+            newMass = Vector.ConditionalSelect(massMask, newMass, vMass);
+            newInvMass = Vector.ConditionalSelect(massMask, newInvMass, vInvMass);
+        
+            Vector<float> newRotInertia = CalculateRectangleRotationalInertia(newWidth, newHeight, newMass);
+            
+            // create a mask to ensure inerta values are above zero.
+            Vector<int> inertiaMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
+
+            // calculate new inverse inertia values.
+            Vector<float> newInvRotInertia = Vector<float>.One / newRotInertia;
+
+            // set the new inertia values.
+            // Note: use the mass mask to remove any NaN's as a result of divide by zero.
+            newRotInertia = Vector.ConditionalSelect(inertiaMask, newRotInertia, vRotInertia);
+            newInvRotInertia = Vector.ConditionalSelect(inertiaMask, newInvRotInertia, vInvRotInertia);
+
+            // conditional select (only keep results for valid flags)
+            vMass = Vector.ConditionalSelect(flagMask, newMass, vMass);
+            vInvMass = Vector.ConditionalSelect(flagMask, newInvMass, vInvMass);
+            vRotInertia = Vector.ConditionalSelect(flagMask, newRotInertia, vRotInertia);
+            vInvRotInertia = Vector.ConditionalSelect(flagMask, newInvRotInertia, vInvRotInertia);
+
+            // store values.
+            vMass.StoreUnsafe(ref masses[i]);
+            vInvMass.StoreUnsafe(ref inverseMasses[i]);
+            vRotInertia.StoreUnsafe(ref rotationalInertia[i]);
+            vInvRotInertia.StoreUnsafe(ref inverseRotationalInertia[i]);
+        }
+
+        i = 0;
+        for(; i <= maxPhysicsBodyCount - simdSize; i += simdSize)
+        {
+            ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
+            Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
+
+            Vector<int> isCircleBodyMask = Vector.Equals(vFlags & vCirclePhysicsBodyFlags, vCirclePhysicsBodyFlags);
+            Vector<int> notCircleBodyMask = Vector.Equals(vFlags & vNotCircleShapeFlags, Vector<int>.Zero);
+            Vector<int> mask = isCircleBodyMask & notCircleBodyMask;
+
+            // short circuit if there are no circle physics bodies.
+            if (Vector.EqualsAll(mask, Vector<int>.Zero))
+            {
+                continue;
+            }
+
+            // load data.
+            Vector<float> vRadii = Vector.LoadUnsafe(ref localRadii[i]);
+            Vector<float> vScaleX = Vector.LoadUnsafe(ref scalesX[i]);
+            Vector<float> vScaleY = Vector.LoadUnsafe(ref scalesY[i]);
+
+            // choose the largest scale.
+            Vector<float> vScale = Vector.ConditionalSelect(Vector.GreaterThan(vScaleX, vScaleY), vScaleX, vScaleY);
+        
+            // transform local to world.
+            Vector<float> vNewRadii = vRadii * vScale;
+
+            // apply the radius transformation only to circles.
+            vRadii = Vector.ConditionalSelect(mask, vNewRadii, vRadii);
+
+            // store data.
+            vRadii.StoreUnsafe(ref worldRadii[i]);
+            
+            Vector<int> isCircleRigidMask = Vector.Equals(vFlags & vCircleleRigidBodyFlags, vCircleleRigidBodyFlags);
+            mask = isCircleRigidMask & notCircleBodyMask;
+
+            // short circuit if there are not circle rigidbodies.
+            if(Vector.EqualsAll(mask, Vector<int>.Zero))
+            {
+                continue;
+            }
+
+            Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
+            Vector<float> vInvMass = Vector.LoadUnsafe(ref inverseMasses[i]);
+            Vector<float> vRotInertia = Vector.LoadUnsafe(ref rotationalInertia[i]);
+            Vector<float> vInvRotInertia = Vector.LoadUnsafe(ref inverseRotationalInertia[i]);
+            Vector<float> vDensity = Vector.LoadUnsafe(ref densities[i]);
+
+            // calculate the new mass.
+            Vector<float> newMass = CalculateCircleMass(vRadii, vDensity);
+
+            // create a mask to ensure mass values are above zero.
+            Vector<int> massMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
+
+            // calculate new inv mass.
+            Vector<float> newInvMass = Vector<float>.One / newMass;
+
+            // set the new mass values.
+            // Note: use the mass mask to remove any NaN's as a result of divide by zero.
+            newMass = Vector.ConditionalSelect(massMask, newMass, vMass);
+            newInvMass = Vector.ConditionalSelect(massMask, newInvMass, vInvMass);
+        
+            Vector<float> newRotInertia = CalculateCircleRotationalInertia(vRadii, newMass);
+            
+            // create a mask to ensure inerta values are above zero.
+            Vector<int> inertiaMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
+
+            // calculate new inverse inertia values.
+            Vector<float> newInvRotInertia = Vector<float>.One / newRotInertia;
+
+            // set the new inertia values.
+            // Note: use the mass mask to remove any NaN's as a result of divide by zero.
+            newRotInertia = Vector.ConditionalSelect(inertiaMask, newRotInertia, vRotInertia);
+            newInvRotInertia = Vector.ConditionalSelect(inertiaMask, newInvRotInertia, vInvRotInertia);
+
+            // conditional select (only keep results for valid flags)
+            vMass = Vector.ConditionalSelect(mask, newMass, vMass);
+            vInvMass = Vector.ConditionalSelect(mask, newInvMass, vInvMass);
+            vRotInertia = Vector.ConditionalSelect(mask, newRotInertia, vRotInertia);
+            vInvRotInertia = Vector.ConditionalSelect(mask, newInvRotInertia, vInvRotInertia);  
+
+            // store values.
+            vMass.StoreUnsafe(ref masses[i]);
+            vInvMass.StoreUnsafe(ref inverseMasses[i]);
+            vRotInertia.StoreUnsafe(ref rotationalInertia[i]);
+            vInvRotInertia.StoreUnsafe(ref inverseRotationalInertia[i]);
+        }
+
+        // tail end.
+        IntegrateBodyProperties_Sisd(scalesX, scalesY, masses, inverseMasses, 
+            rotationalInertia, inverseRotationalInertia, densities, localRadii, worldRadii, 
+            localWidths, localHeights, flags, maxPhysicsBodyCount, i
+        );
+    }
+
+    /// <summary>
+    /// Calculates world-space dimensions and rigidbody data for physics bodies.
+    /// </summary>
+    /// <remarks>
+    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
+    /// <list type="bullet">
+    /// <item><description><paramref name="scalesX"/> / <paramref name="scalesY"/></description></item>
+    /// <item><description><paramref name="masses"/> / <paramref name="inverseMasses"/></description></item>
+    /// <item><description><paramref name="rotationalInertia"/> / <paramref name="inverseRotationalInertia"/></description></item>
+    /// <item><description><paramref name="flags"/></description></item>
+    /// </list>
+    /// </remarks>
+    /// <param name="scalesX">the x-component's of all physics bodies scaling vectors.</param>
+    /// <param name="scalesY">the y-component's of all physic bodies scaling vectors.</param>
+    /// <param name="masses">output for mass values.</param>
+    /// <param name="inverseMasses">output for inverse mass values.</param>
+    /// <param name="rotationalInertia">output for rotational inertia values.</param>
+    /// <param name="inverseRotationalInertia">output for inverse rotational inertia values.</param>
+    /// <param name="densities">the densities of all physics bodies.</param>
+    /// <param name="localRadii">the local-space radii of all physics bodies.</param>
+    /// <param name="worldRadii">output for world-space radii of all physics bodies.</param>
+    /// <param name="localWidths">the local-space widths of all physics bodies.</param>
+    /// <param name="localHeights">the local-space heights of all physics bodies.</param>
+    /// <param name="flags">the flags of all physics bodies.</param>
+    /// <param name="maxPhysicsBodyCount">the maximium amount of physics bodies.</param>
+    /// <param name="startIndex">the <c>physicsBodyIndex</c> to start at.</param>    
+    public static void IntegrateBodyProperties_Sisd(Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
+        Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> localRadii, Span<float> worldRadii, 
+        Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags, int maxPhysicsBodyCount, int startIndex
     )
     {
         float width;
@@ -673,7 +961,7 @@ public static class SoaPhysicsSystem
         float scaleY;
         bool isRigid;
 
-        for(int i = 0; i < flags.Length; i++)
+        for(int i = startIndex; i < maxPhysicsBodyCount; i++)
         {
             ref PhysicsBodyFlags flag = ref flags[i];
             if((flag & PhysicsBodyFlags.InUse) == 0)
@@ -690,8 +978,8 @@ public static class SoaPhysicsSystem
                 // set rigidbody data if it is enabled.
                 if(isRigid)
                 {                    
-                    height = heights[i] * scaleY;
-                    width = widths[i] * scaleX;
+                    height = localHeights[i] * scaleY;
+                    width = localWidths[i] * scaleX;
 
                     float mass = CalculateRectangleMass(width, height, densities[i]); 
                     masses[i] = mass;
@@ -704,8 +992,8 @@ public static class SoaPhysicsSystem
             }
             else // circle shape
             {
-                radius = Circle.ScaleRadius(radii[i], scaleX, scaleY);
-                transformedRadii[i] = radius;
+                radius = Circle.ScaleRadius(localRadii[i], scaleX, scaleY);
+                worldRadii[i] = radius;
 
                 // set rigidbody data if it is enabled.
                 if(isRigid)
@@ -1293,6 +1581,18 @@ public static class SoaPhysicsSystem
     }
 
     /// <summary>
+    /// Vectorised radius calculation for circles.
+    /// </summary>
+    /// <param name="radius">the radii of the shapes.</param>
+    /// <param name="mass">the mass of the shapes.</param>
+    /// <returns>the rotational inertia values.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector<float> CalculateCircleRotationalInertia(Vector<float> radius, Vector<float> mass)
+    {
+        return VectorCircleRotationalInertia * mass * (radius * radius);
+    }
+
+    /// <summary>
     /// Calculates the mass of a circle.
     /// </summary>
     /// <param name="radius">the radius of the shape.</param>
@@ -1300,6 +1600,18 @@ public static class SoaPhysicsSystem
     /// <returns>the mass value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float CalculateCircleMass(float radius, float density)
+    {
+        return density * Circle.GetArea(radius);
+    }
+
+    /// <summary>
+    /// Vectorised mass calculation for circles.
+    /// </summary>
+    /// <param name="radius">the radii of the shapes.</param>
+    /// <param name="density">the densities of the shapes.</param>
+    /// <returns>the area values of the shapes.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector<float> CalculateCircleMass(Vector<float> radius, Vector<float> density)
     {
         return density * Circle.GetArea(radius);
     }
@@ -1318,6 +1630,19 @@ public static class SoaPhysicsSystem
     } 
 
     /// <summary>
+    /// Vectorised mass calculation for rectangles.
+    /// </summary>
+    /// <param name="width">the widths of the shapes.</param>
+    /// <param name="height">the heights of the shapes.</param>
+    /// <param name="density">the densities of the shapes.</param>
+    /// <returns>the mass values of the shapes.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector<float> CalculateRectangleMass(Vector<float> width, Vector<float> height, Vector<float> density)
+    {
+        return Rectangle.GetArea(width, height) * density;
+    }
+
+    /// <summary>
     /// Calculates the rotational inertia of a rectangle.
     /// </summary>
     /// <param name="width">the width of the shape.</param>
@@ -1328,6 +1653,19 @@ public static class SoaPhysicsSystem
     public static float CalculateRectangleRotationalInertia(float width, float height, float mass)
     {
         return RectangleRotationalInertia * mass * ((width * width) + (height * height));
+    }
+
+    /// <summary>
+    /// Vectorized rotational inertia calculation for rectangles.
+    /// </summary>
+    /// <param name="width">the widths of the shapes.</param>
+    /// <param name="height">the heights of the shapes.</param>
+    /// <param name="density">the densities of the shapes.</param>
+    /// <returns>the inertia values of the shapes.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector<float> CalculateRectangleRotationalInertia(Vector<float> width, Vector<float> height, Vector<float> mass)
+    {
+        return VectorRectangleRotationalInertia * mass * ((width * width) + (height * height));
     }
 
 

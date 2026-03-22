@@ -322,4 +322,16 @@ public struct Rectangle
     {
         return GetArea(rectangle.Width, rectangle.Height);
     }
+
+    /// <summary>
+    /// Vectorized area calculation for rectangles.
+    /// </summary>
+    /// <param name="width">the width values.</param>
+    /// <param name="heigth">the height values.</param>
+    /// <returns>the area values.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static System.Numerics.Vector<float> GetArea(System.Numerics.Vector<float> width, System.Numerics.Vector<float> heigth)
+    {
+        return width * heigth;
+    }
 }
