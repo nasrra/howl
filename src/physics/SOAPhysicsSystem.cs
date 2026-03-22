@@ -20,6 +20,8 @@ using Howl.Graphics;
 using System.Runtime.CompilerServices;
 using System.Collections;
 using System.Runtime.InteropServices;
+using System.Numerics;
+using Vector2 = Howl.Math.Vector2;
 
 namespace Howl.Physics;
 
@@ -69,9 +71,9 @@ public static class SoaPhysicsSystem
 
             // RigidBody Movement Step.
             state.RigidBodyMovementStepStopwatch.Restart();
-            RigidBodyMovementStep_Sisd(state.Transforms, state.LinearVelocities, state.Forces, 
+            RigidBodyMovementStep(state.Transforms, state.LinearVelocities, state.Forces, 
                 state.Masses, state.Flags, state.AngularVelocities, 
-                state.GravityDirection.X, state.GravityDirection.Y, state.Gravity, deltaTime
+                state.GravityDirection.X, state.GravityDirection.Y, state.Gravity, deltaTime, state.MaxPhysicsBodyCount
             );
             state.RigidBodyMovementStepStopwatch.Stop();
 
@@ -297,19 +299,146 @@ public static class SoaPhysicsSystem
     /// <summary>
     /// Performs a movement step for all physics bodies with a rigidbody.
     /// </summary>
-    /// <param name="transforms">the soa transforms of the physics bodies.</param>
-    /// <param name="linearVelocities">the linear velocities of the physics bodies.</param>
-    /// <param name="forces">the forces to be applieed to the physics bodies.</param>
-    /// <param name="masses">the masses of the physics bodies.</param>
-    /// <param name="flags">the physics bodies flags.</param>
-    /// <param name="angularVelocities">the angular velocities of the physics bodies.</param>
-    /// <param name="gravityDirectionX">the x-component of gravity's directional vector.</param>
-    /// <param name="gravityDirectionY">the y-component of gravity's directional vector.</param>
+    /// <param name="transforms">the world-space transforms for all physics bodies.</param>
+    /// <param name="linearVelocities">the linear velocity values for all physics bodies.</param>
+    /// <param name="forces">the force values for all physics bodies.</param>
+    /// <param name="masses">the mass values for all physics bodies.</param>
+    /// <param name="flags">the flags for all physics bodies.</param>
+    /// <param name="angularVelocities">the angular velocity values for all physics bodies.</param>
+    /// <param name="gravityDirectionX">the x-component of the grvity direction vector.</param>
+    /// <param name="gravityDirectionY">the y-component of the gravity direction vector.</param>
     /// <param name="gravity">the gravity force.</param>
     /// <param name="deltaTime">delta time.</param>
-    public static void RigidBodyMovementStep_Sisd(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
+    /// <param name="maxBodies">the max amount of physics bodies.</param>
+    public static void RigidBodyMovementStep(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
         Span<float> masses, Span<PhysicsBodyFlags> flags, Span<float> angularVelocities, 
-        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime
+        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime, int maxPhysicsBodies
+    )
+    {
+        RigidBodyMovementStep_Simd(transforms, linearVelocities, forces, masses, flags, angularVelocities, gravityDirectionX, gravityDirectionY, 
+            gravity, deltaTime, maxPhysicsBodies
+        );
+    }
+
+    /// <summary>
+    /// Performs a movement step for all physics bodies with a rigidbody.
+    /// </summary>
+    /// <param name="transforms">the world-space transforms for all physics bodies.</param>
+    /// <param name="linearVelocities">the linear velocity values for all physics bodies.</param>
+    /// <param name="forces">the force values for all physics bodies.</param>
+    /// <param name="masses">the mass values for all physics bodies.</param>
+    /// <param name="flags">the flags for all physics bodies.</param>
+    /// <param name="angularVelocities">the angular velocity values for all physics bodies.</param>
+    /// <param name="gravityDirectionX">the x-component of the grvity direction vector.</param>
+    /// <param name="gravityDirectionY">the y-component of the gravity direction vector.</param>
+    /// <param name="gravity">the gravity force.</param>
+    /// <param name="deltaTime">delta time.</param>
+    /// <param name="maxBodies">the max amount of physics bodies.</param>
+    public static void RigidBodyMovementStep_Simd(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
+        Span<float> masses, Span<PhysicsBodyFlags> flags, Span<float> angularVelocities, 
+        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime, int maxPhysicsBodies
+    )
+    {
+        int simdSize = Vector<float>.Count;
+
+        PhysicsBodyFlags requiredFlags = PhysicsBodyFlags.Allocated | PhysicsBodyFlags.Active | PhysicsBodyFlags.RigidBody;
+        PhysicsBodyFlags forbiddenFlags = PhysicsBodyFlags.Kinematic;
+
+        Vector<int> vRequiredFlags = new Vector<int>((int)requiredFlags);
+        Vector<int> vForbiddenFlags = new Vector<int>((int)forbiddenFlags);
+        Vector<float> vDeltaTime = new Vector<float>(deltaTime);
+        Vector<float> vGravityX = new Vector<float>(gravityDirectionX * gravity * deltaTime);
+        Vector<float> vGravityY = new Vector<float>(gravityDirectionY * gravity * deltaTime);
+        Vector<float> vZero = new Vector<float>(0);
+
+        int i = 0;
+        for(; i <= maxPhysicsBodies - simdSize; i+= simdSize)
+        {
+            ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
+            Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
+            
+            // (flag & required) == required.
+            Vector<int> hasRequired = Vector.Equals(vFlags & vRequiredFlags, vRequiredFlags);
+
+            // (flag & forbidden) == 0.
+            Vector<int> doesntHaveForbidden = Vector.Equals(vFlags & vForbiddenFlags, Vector<int>.Zero);
+        
+            // combined mask.
+            Vector<int> vMask = hasRequired & doesntHaveForbidden;
+
+            // short circuit if the entire mask is zero 
+            // (all bodies in this chunk either dont have the required flags or have the forbidden flags)
+            if (vMask.Equals(Vector<int>.Zero))
+            {
+                continue;
+            }
+
+            // load data.
+            Vector<float> vLinVelX = Vector.LoadUnsafe(ref linearVelocities.X[i]);
+            Vector<float> vLinVelY = Vector.LoadUnsafe(ref linearVelocities.Y[i]);
+            Vector<float> vForceX = Vector.LoadUnsafe(ref forces.X[i]);
+            Vector<float> vForceY = Vector.LoadUnsafe(ref forces.Y[i]);
+            Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
+            Vector<float> vPosX = Vector.LoadUnsafe(ref transforms.Position.X[i]);
+            Vector<float> vPosY = Vector.LoadUnsafe(ref transforms.Position.Y[i]);
+
+            // apply gravity.
+            Vector<float> nextVelX = vLinVelX + vGravityX;
+            Vector<float> nextVelY = vLinVelY + vGravityY;
+
+            // use Vector.GreateThan to avoid div by zero if mass is zero.
+            Vector<int> massMask = Vector.GreaterThan(vMass, vZero);
+
+            // apply forces: acceleration = (f / m * deltaTime)
+            Vector<float> accelX = vForceX / vMass * vDeltaTime;
+            Vector<float> accelY = vForceY / vMass * vDeltaTime;
+
+            // only add acceleration where mass > 0 and force > 0.
+            nextVelX += Vector.ConditionalSelect(massMask & Vector.GreaterThan(vForceX, vZero), accelX, vZero);
+            nextVelY += Vector.ConditionalSelect(massMask & Vector.GreaterThan(vForceY, vZero), accelY, vZero);
+
+            // calculate new positions.
+            Vector<float> nextPosX = vPosX + (nextVelX * vDeltaTime);
+            Vector<float> nextPosY = vPosY + (nextVelY * vDeltaTime);
+
+            // conditional select (only keep results for valid flags)
+            vLinVelX = Vector.ConditionalSelect(vMask, nextVelX, vLinVelX);
+            vLinVelY = Vector.ConditionalSelect(vMask, nextVelY, vLinVelY);
+            vPosX = Vector.ConditionalSelect(vMask, nextPosX, vPosX);
+            vPosY = Vector.ConditionalSelect(vMask, nextPosY, vPosY);
+
+            // store results.
+            vLinVelX.StoreUnsafe(ref linearVelocities.X[i]);
+            vLinVelY.StoreUnsafe(ref linearVelocities.Y[i]);
+            vPosX.StoreUnsafe(ref transforms.Position.X[i]);
+            vPosY.StoreUnsafe(ref transforms.Position.Y[i]);
+        }
+ 
+        // tail end.
+        RigidBodyMovementStep_Sisd(transforms, linearVelocities, forces, 
+            masses, flags, angularVelocities,
+            gravityDirectionX, gravityDirectionY, gravity, deltaTime, maxPhysicsBodies, i
+        );
+    }
+
+    /// <summary>
+    /// Performs a movement step for all physics bodies with a rigidbody.
+    /// </summary>
+    /// <param name="transforms">the world-space transforms for all physics bodies.</param>
+    /// <param name="linearVelocities">the linear velocity values for all physics bodies.</param>
+    /// <param name="forces">the force values for all physics bodies.</param>
+    /// <param name="masses">the mass values for all physics bodies.</param>
+    /// <param name="flags">the flags for all physics bodies.</param>
+    /// <param name="angularVelocities">the angular velocity values for all physics bodies.</param>
+    /// <param name="gravityDirectionX">the x-component of the grvity direction vector.</param>
+    /// <param name="gravityDirectionY">the y-component of the gravity direction vector.</param>
+    /// <param name="gravity">the gravity force.</param>
+    /// <param name="deltaTime">delta time.</param>
+    /// <param name="maxBodies">the max amount of physics bodies.</param>
+    /// <param name="startIndex">the physics body index to start at in the loop.</param>
+    public static void RigidBodyMovementStep_Sisd(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
+        Span<float> masses, Span<PhysicsBodyFlags> flags, Span<float> angularVelocities,
+        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime, int maxBodies, int startIndex
     )
     {
         Span<float> forcesX = forces.X;
@@ -325,7 +454,7 @@ public static class SoaPhysicsSystem
         float gravityLinearForceX = gravityDirectionX * gravity;
         float gravityLinearForceY = gravityDirectionY * gravity;
 
-        for(int i = 0; i < flags.Length; i++)
+        for(int i = startIndex; i < maxBodies; i++)
         {
             PhysicsBodyFlags flag = (PhysicsBodyFlags)flags[i];
             

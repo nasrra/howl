@@ -56,13 +56,19 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Soa_Transform Transforms;
 
     /// <summary>
-    /// Gets and sets the force to be applied to a physics body on the next physics system tick.
+    /// The force values of all all physics bodies that will be applied in the rigidbody movement step.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public Soa_Vector2 Forces;
 
     /// <summary>
-    /// Gets and sets the linear velocity of a physics body.
+    /// the linear velocity values for all physics bodies.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public Soa_Vector2 LinearVelocities;
 
     /// <summary>
@@ -87,8 +93,11 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Soa_Vector2 MinAABBVertices;
 
     /// <summary>
-    /// Gets and sets the angular velocity of a physics body.
+    /// the angular velocity values for all physics bodies.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
     public float[] AngularVelocities;
 
     /// <summary>
