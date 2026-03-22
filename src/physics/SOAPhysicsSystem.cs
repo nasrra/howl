@@ -381,6 +381,9 @@ public static class SoaPhysicsSystem
             Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
             Vector<float> vPosX = Vector.LoadUnsafe(ref transforms.Position.X[i]);
             Vector<float> vPosY = Vector.LoadUnsafe(ref transforms.Position.Y[i]);
+            Vector<float> vSin = Vector.LoadUnsafe(ref transforms.Sin[i]);
+            Vector<float> vCos = Vector.LoadUnsafe(ref transforms.Cos[i]);
+            Vector<float> vAngVel = Vector.LoadUnsafe(ref angularVelocities[i]);
 
             // apply gravity.
             Vector<float> nextVelX = vLinVelX + vGravityX;
@@ -401,17 +404,26 @@ public static class SoaPhysicsSystem
             Vector<float> nextPosX = vPosX + (nextVelX * vDeltaTime);
             Vector<float> nextPosY = vPosY + (nextVelY * vDeltaTime);
 
+            // calculate new rotations.
+            Vector<float> newSin = Vector<float>.Zero;
+            Vector<float> newCos = Vector<float>.Zero;
+            MathV.RotorMultiply(vSin, vCos, vAngVel * vDeltaTime, ref newSin, ref newCos);
+
             // conditional select (only keep results for valid flags)
             vLinVelX = Vector.ConditionalSelect(vMask, nextVelX, vLinVelX);
             vLinVelY = Vector.ConditionalSelect(vMask, nextVelY, vLinVelY);
             vPosX = Vector.ConditionalSelect(vMask, nextPosX, vPosX);
             vPosY = Vector.ConditionalSelect(vMask, nextPosY, vPosY);
+            vCos = Vector.ConditionalSelect(vMask, newCos, vCos);
+            vSin = Vector.ConditionalSelect(vMask, newSin, vSin);
 
             // store results.
             vLinVelX.StoreUnsafe(ref linearVelocities.X[i]);
             vLinVelY.StoreUnsafe(ref linearVelocities.Y[i]);
             vPosX.StoreUnsafe(ref transforms.Position.X[i]);
             vPosY.StoreUnsafe(ref transforms.Position.Y[i]);
+            vCos.StoreUnsafe(ref transforms.Cos[i]);
+            vSin.StoreUnsafe(ref transforms.Sin[i]);
         }
  
         // tail end.
