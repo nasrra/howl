@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 using Howl.ECS;
 using Howl.Math.Shapes;
 
-namespace Howl.DataStructures;
+namespace Howl.DataStructures.Bvh;
 
-public class BvhLeafBuffer : IDisposable
+public class LeafBuffer : IDisposable
 {
     /// <summary>
     /// The Axis-Aligned Bounding-Boxes.
@@ -33,10 +33,10 @@ public class BvhLeafBuffer : IDisposable
     public bool Disposed;
 
     /// <summary>
-    /// Creates a new BvhLeafBuffer instance.
+    /// Creates a new LeafBuffer instance.
     /// </summary>
     /// <param name="capacity">the capacity of the backing arrays.</param>
-    public BvhLeafBuffer(int capacity)
+    public LeafBuffer(int capacity)
     {
         Aabbs = new(capacity);
         GenIndices = new(capacity);
@@ -44,7 +44,7 @@ public class BvhLeafBuffer : IDisposable
     }
 
     /// <summary>
-    /// Appends a leaf to a bvh leaf buffer.
+    /// Appends a leaf to a buffer.
     /// </summary>
     /// <param name="buffer">the buffer to append to.</param>
     /// <param name="minX">the the x-component of the aabb minimum vertex.</param>
@@ -55,7 +55,7 @@ public class BvhLeafBuffer : IDisposable
     /// <param name="generation">the generation of the data to associate with the leaf.</param>
     /// <param name="flags">the user-defined flags to associate with the leaf.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendLeaf(BvhLeafBuffer buffer, float minX, float minY, float maxX, float maxY, int index, int generation, int flags)
+    public static void AppendLeaf(LeafBuffer buffer, float minX, float minY, float maxX, float maxY, int index, int generation, int flags)
     {
         int count = buffer.Count;
         buffer.Aabbs.MinX[count] = minX;
@@ -69,11 +69,11 @@ public class BvhLeafBuffer : IDisposable
     }
 
     /// <summary>
-    /// Sets the buffer's count to zero.
+    /// Sets a buffer's count to zero.
     /// </summary>
     /// <param name="buffer">the buffer to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Clear(BvhLeafBuffer buffer)
+    public static void Clear(LeafBuffer buffer)
     {
         buffer.Count = 0;
     }
@@ -95,14 +95,14 @@ public class BvhLeafBuffer : IDisposable
         throw new NotImplementedException();
     }
 
-    public static void Dispose(BvhLeafBuffer buffer)
+    public static void Dispose(LeafBuffer buffer)
     {
         if(buffer.Disposed)
             return;
         
-        buffer.Aabbs.Dispose();
+        Soa_Aabb.Dispose(buffer.Aabbs);
         buffer.Aabbs = null;
-        buffer.GenIndices.Dispose();
+        Soa_GenIndex.Dispose(buffer.GenIndices);
         buffer.GenIndices = null;
         buffer.Flags = null;
     }

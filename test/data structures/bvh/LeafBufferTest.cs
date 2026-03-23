@@ -1,16 +1,16 @@
 using Xunit;
-using Howl.DataStructures;
-using static Howl.DataStructures.BvhLeafBuffer;
+using Howl.DataStructures.Bvh;
+using static Howl.DataStructures.Bvh.LeafBuffer;
 
-namespace Howl.Test.DataStructures;
+namespace Howl.Test.DataStructures.Bvh;
 
-public class BvhLeafBufferTest
+public class LeafBufferTest
 {
     [Fact]
     public void Constructor_Test()
     {
         int capacity = 23;
-        BvhLeafBuffer buffer = new(capacity);
+        LeafBuffer buffer = new(capacity);
         Assert.Equal(capacity, buffer.Aabbs.MaxX.Length);
         Assert.Equal(capacity, buffer.Aabbs.MaxY.Length);
         Assert.Equal(capacity, buffer.Aabbs.MinX.Length);
@@ -19,12 +19,13 @@ public class BvhLeafBufferTest
         Assert.Equal(capacity, buffer.GenIndices.Generations.Length);
         Assert.Equal(capacity, buffer.Flags.Length);
         Assert.Equal(0, buffer.Count);
+        Assert.False(buffer.Disposed);
     }
 
     [Fact]
     public void Append_Test()
     {
-        BvhLeafBuffer buffer = new(10);
+        LeafBuffer buffer = new(10);
         int j = 0;
         for(int i = 0; i < 2; i++)
         {            
@@ -36,7 +37,7 @@ public class BvhLeafBufferTest
             int generation = j += 1;
             int flags = j += 1;
             AppendLeaf(buffer, minX, minY, maxX, maxY, index, generation, flags);
-            BvhLeafBufferAssert.EntryEquals(buffer, i, minX, minY, maxX, maxY, index, generation, flags);
+            LeafBufferAssert.EntryEquals(buffer, i, minX, minY, maxX, maxY, index, generation, flags);
             Assert.Equal(i+1, buffer.Count);
         }
     }
@@ -44,7 +45,7 @@ public class BvhLeafBufferTest
     [Fact]
     public void Clear_Test()
     {
-        BvhLeafBuffer buffer = new(10);
+        LeafBuffer buffer = new(10);
         int j = 0;
         for(int i = 0; i < 2; i++)
         {            
@@ -56,7 +57,7 @@ public class BvhLeafBufferTest
             int generation = j += 1;
             int flags = j += 1;
             AppendLeaf(buffer, minX, minY, maxX, maxY, index, generation, flags);
-            BvhLeafBufferAssert.EntryEquals(buffer, i, minX, minY, maxX, maxY, index, generation, flags);
+            LeafBufferAssert.EntryEquals(buffer, i, minX, minY, maxX, maxY, index, generation, flags);
         }        
         Assert.Equal(2, buffer.Count);
         Clear(buffer);        

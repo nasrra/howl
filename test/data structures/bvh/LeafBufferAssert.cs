@@ -1,6 +1,6 @@
-using Howl.DataStructures;
+using Howl.DataStructures.Bvh;
 
-public static class BvhLeafBufferAssert
+public static class LeafBufferAssert
 {
     /// <summary>
     /// Asserts the values of a buffer entry are equal to expected values.
@@ -14,7 +14,7 @@ public static class BvhLeafBufferAssert
     /// <param name="index">the expected index value.</param>
     /// <param name="generation">the expected generation value.</param>
     /// <param name="flags">the expected flags value.</param>
-    public static void EntryEquals(BvhLeafBuffer buffer, int entryIndex, float minX, float minY, float maxX, float maxY, int index, int generation, 
+    public static void EntryEquals(LeafBuffer buffer, int entryIndex, float minX, float minY, float maxX, float maxY, int index, int generation, 
         int flags
     )
     {
