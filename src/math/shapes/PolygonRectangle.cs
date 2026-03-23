@@ -158,9 +158,9 @@ public unsafe struct PolygonRectangle
     /// <param name="centroidX">the x-component of the centroid.</param>
     /// <param name="centroidY">the y-component of the centroid.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Centroid(in PolygonRectangle polygonRectangle, out float centroidX, out float centroidY)
+    public static void Centroid(in PolygonRectangle polygonRectangle, ref float centroidX, ref float centroidY)
     {
-        ShapeUtils.GetCentroid_Old(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), out centroidX, out centroidY);
+        ShapeUtils.GetCentroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), ref centroidX, ref centroidY);
     }
 
 

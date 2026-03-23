@@ -82,7 +82,7 @@ public static class SoaPhysicsSystem
 
             // transform physics bodies
             state.TransformPhysicsBodiesStopwatch.Restart();
-            TransformPhysicsBodies(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
+            TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
                 state.LocalVertices, state.WorldVertices, state.Transforms, state.Flags, 
                 state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.FirstVertexIndices, state.NextVertexIndices,
                 state.MaxPhysicsBodyVertexCount, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
@@ -176,7 +176,7 @@ public static class SoaPhysicsSystem
         // sub-step iteration does not transform the bodies
         // at the end of it's loop; meaning the final collision
         // resolution wouldn't be applied.
-        TransformPhysicsBodies(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
+        TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
             state.LocalVertices, state.WorldVertices, state.Transforms, state.Flags, 
             state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.FirstVertexIndices, state.NextVertexIndices,
             state.MaxPhysicsBodyVertexCount, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
@@ -557,7 +557,7 @@ public static class SoaPhysicsSystem
     /// <param name="maxPhysicsBodyVertexCount">the max amount of vertices a physics body can have.</param>
     /// <param name="maxPhysicsBodyCount">the max amount of physics bodies that can be stored.</param>
     /// <param name="physicsBodyCount">the current amount of allocated physics bodies.</param>
-    public static void TransformPhysicsBodies(Soa_Vector2 centroids, Soa_Vector2 minAABBVertices, Soa_Vector2 maxAABBVertices,
+    public static void TransformPhysicsBodyVertices(Soa_Vector2 centroids, Soa_Vector2 minAABBVertices, Soa_Vector2 maxAABBVertices,
         Soa_Vector2 localVertices, Soa_Vector2 worldVertices, Soa_Transform transforms, Span<PhysicsBodyFlags> flags, 
         Span<float> localRadii, Span<float> worldRadii, Span<float> localWidths, Span<float> localHeights, Span<int> firstVertexIndices, 
         Span<int> nextVertexIndices, int polygonMaxVertices, int maxPhysicsBodyCount, int physicsBodyCount
@@ -599,68 +599,66 @@ public static class SoaPhysicsSystem
 
             physicsBodiesProcessed++;
 
-            if((flag & PhysicsBodyFlags.Active) == 0)
+            if((flag & PhysicsBodyFlags.Active) != 0)
             {
-                continue;
-            }
+                // hoisting in variance.
+                ref float scaleX = ref scalesX[i];
+                ref float scaleY = ref scalesY[i];
 
-            // hoisting in variance.
-            ref float scaleX = ref scalesX[i];
-            ref float scaleY = ref scalesY[i];
-
-            if((flag & PhysicsBodyFlags.RectangleShape) != 0)
-            {
-                int first = firstVertexIndices[i]; 
-                int verticeIndex = first;
-                while (true)
+                if((flag & PhysicsBodyFlags.RectangleShape) != 0)
                 {
+                    int first = firstVertexIndices[i]; 
+                    int verticeIndex = first;
+                    while (true)
+                    {
 
-                    // transform the base/un-transformed vertice.
-                    TransformVector(verticesX[verticeIndex], verticesY[verticeIndex], scaleX, scaleY,
-                        cos[i], sin[i], positionsX[i], positionsY[i], out float x, out float y
+                        // transform the base/un-transformed vertice.
+                        TransformVector(verticesX[verticeIndex], verticesY[verticeIndex], scaleX, scaleY,
+                            cos[i], sin[i], positionsX[i], positionsY[i], out float x, out float y
+                        );
+
+                        // mutate the transformed vertices array.
+                        transformedVerticesX[verticeIndex] = x;
+                        transformedVerticesY[verticeIndex] = y;
+
+                        // mutate local cache of vertices.
+                        polygonTransformedVerticesX[polygonTransformedVerticesCount] = x;
+                        polygonTransformedVerticesY[polygonTransformedVerticesCount] = y;
+                        polygonTransformedVerticesCount++;
+
+                        verticeIndex = nextVertexIndices[verticeIndex];
+
+                        if (verticeIndex == first)
+                            break;
+                    }
+
+                    // set the new centroid.
+                    GetCentroid(polygonTransformedVerticesX, polygonTransformedVerticesY, ref centroidsX[i], ref centroidsY[i]);
+
+                    // set the new min and max vectors.
+                    GetMinMaxVectors(polygonTransformedVerticesX, polygonTransformedVerticesY, 
+                        out minAABBVectorsX[i], out minAABBVectorsY[i], out maxAABBVectorsX[i], out maxAABBVectorsY[i]
                     );
 
-                    // mutate the transformed vertices array.
-                    transformedVerticesX[verticeIndex] = x;
-                    transformedVerticesY[verticeIndex] = y;
-
-                    // mutate local cache of vertices.
-                    polygonTransformedVerticesX[polygonTransformedVerticesCount] = x;
-                    polygonTransformedVerticesY[polygonTransformedVerticesCount] = y;
-                    polygonTransformedVerticesCount++;
-
-                    verticeIndex = nextVertexIndices[verticeIndex];
-
-                    if (verticeIndex == first)
-                        break;
+                    // reset for next iteration.
+                    polygonTransformedVerticesCount = 0; 
                 }
+                else // circle shape.
+                {
+                    int vertexIndex = firstVertexIndices[i];
+                    TransformVector(verticesX[vertexIndex],verticesY[vertexIndex],scaleX, scaleY, cos[i], sin[i], positionsX[i], positionsY[i], out float x, out float y);
+                    transformedVerticesX[vertexIndex] = x;
+                    transformedVerticesY[vertexIndex] = y;
 
-                // set the new centroid.
-                GetCentroid_New(polygonTransformedVerticesX, polygonTransformedVerticesY, ref centroidsX[i], ref centroidsY[i]);
+                    // set the new centroid.
+                    centroidsX[i] = x;
+                    centroidsY[i] = y;
 
-                // set the new min and max vectors.
-                GetMinMaxVectors(polygonTransformedVerticesX, polygonTransformedVerticesY, 
-                    out minAABBVectorsX[i], out minAABBVectorsY[i], out maxAABBVectorsX[i], out maxAABBVectorsY[i]
-                );
-
-                // reset for next iteration.
-                polygonTransformedVerticesCount = 0; 
-            }
-            else // circle shape.
-            {
-                int vertexIndex = firstVertexIndices[i];
-                TransformVector(verticesX[vertexIndex],verticesY[vertexIndex],scaleX, scaleY, cos[i], sin[i], positionsX[i], positionsY[i], out float x, out float y);
-                transformedVerticesX[vertexIndex] = x;
-                transformedVerticesY[vertexIndex] = y;
-
-                // set the new centroid.
-                centroidsX[i] = x;
-                centroidsY[i] = y;
-
-                // set the new min and max vectors. 
-                Circle.GetMinMaxVectors(x, y, worldRadii[i], 
-                    out minAABBVectorsX[i], out minAABBVectorsY[i], out maxAABBVectorsX[i], out maxAABBVectorsY[i]
-                );
+                    // set the new min and max vectors. 
+                    Circle.GetMinMaxVectors(x, y, worldRadii[i], 
+                        out minAABBVectorsX[i], out minAABBVectorsY[i], out maxAABBVectorsX[i], out maxAABBVectorsY[i]
+                    );
+                }
             }
 
             if(physicsBodiesProcessed >= physicsBodyCount)
@@ -1674,11 +1672,57 @@ public static class SoaPhysicsSystem
     /*******************
     
         Setters & Getters.
+
+        (todo): write generation checks for getting and setting data.
     
     ********************/
 
 
 
+
+    /// <summary>
+    /// Gets the static friction value of a physics body.
+    /// </summary>
+    /// <param name="state">the physics system state to query.</param>
+    /// <param name="genIndex">the gen index of the physics body.</param>
+    /// <returns>a copy of the static friction value.</returns>
+    public static float GetStaticFriction(SoaPhysicsSystemState state, GenIndex genIndex)
+    {
+        return state.StaticFrictions[genIndex.Index];
+    }
+
+    /// <summary>
+    /// Gets the kinematic friction value of a physics body.
+    /// </summary>
+    /// <param name="state">the physics system state to query.</param>
+    /// <param name="genIndex">the gen index of the physics body.</param>
+    /// <returns>a copy of the kinematic friction value.</returns>
+    public static float GetKinematicFriction(SoaPhysicsSystemState state, GenIndex genIndex)
+    {
+        return state.KineticFrictions[genIndex.Index];
+    }
+
+    /// <summary>
+    /// Gets the density value of a physics body.
+    /// </summary>
+    /// <param name="state">the physics system state to query.</param>
+    /// <param name="genIndex">the gen index of the physics body.</param>
+    /// <returns>a copy of the density value.</returns>
+    public static float GetDensity(SoaPhysicsSystemState state, GenIndex genIndex)
+    {
+        return state.Densities[genIndex.Index];
+    }
+
+    /// <summary>
+    /// Gets the restituion value of a physics body.
+    /// </summary>
+    /// <param name="state">the physics system state to query.</param>
+    /// <param name="genIndex">the gen index of the physics body.</param>
+    /// <returns>a copy of the restitution value.</returns>
+    public static float GetRestitution(SoaPhysicsSystemState state, GenIndex genIndex)
+    {
+        return state.Restitutions[genIndex.Index];
+    }
 
     /// <summary>
     /// Sets whether or not a physics body is active within a physics simulation.
@@ -1793,6 +1837,17 @@ public static class SoaPhysicsSystem
     public static bool IsTrigger(SoaPhysicsSystemState state, GenIndex genIndex)
     {
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Trigger) != 0;        
+    }
+
+    /// <summary>
+    /// Gets whether or not a physics body uses rotational physics.
+    /// </summary>
+    /// <param name="state">the physics system state to query.</param>
+    /// <param name="genIndex">the gen index of the physics body.</param>
+    /// <returns>true, if the physics body is using rotational physics; otherwise false.</returns>
+    public static bool UsesRotationalPhysics(SoaPhysicsSystemState state, GenIndex genIndex)
+    {
+        return (state.Flags[genIndex.Index] & PhysicsBodyFlags.RotationalPhysics) != 0;
     }
 
     /// <summary>
@@ -1939,7 +1994,8 @@ public static class SoaPhysicsSystem
         state.StaticFrictions[index]            = physicsMaterial.StaticFriction;
         state.KineticFrictions[index]           = physicsMaterial.KineticFriction;
         state.Densities[index]                  = physicsMaterial.Density;
-        
+        state.Restitutions[index]               = physicsMaterial.Restitution;
+
         // reset forces
         ClearForcesAndVelocities(state, index);
 

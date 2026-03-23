@@ -17,7 +17,6 @@ public static class Soa_TransformHelpers
         Assert.Equal(transform.Position.Y, soa.Position.Y[index],   precision);
         Assert.Equal(transform.Scale.X,    soa.Scale.X[index],      precision);
         Assert.Equal(transform.Scale.Y,    soa.Scale.Y[index],      precision);        
-        Assert.Equal(transform.Rotation,   soa.Rotation[index],     precision);
         Assert.Equal(transform.Cos,        soa.Cos[index],          precision);
         Assert.Equal(transform.Sin,        soa.Sin[index],          precision);
     }

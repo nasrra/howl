@@ -18,7 +18,6 @@ public class Soa_TransformTest
         Assert.Equal(capacity, soa.Position.Y.Length);
         Assert.Equal(capacity, soa.Scale.X.Length);        
         Assert.Equal(capacity, soa.Scale.Y.Length);
-        Assert.Equal(capacity, soa.Rotation.Length);
         Assert.Equal(capacity, soa.Sin.Length);        
         Assert.Equal(capacity, soa.Cos.Length);
         
@@ -28,7 +27,6 @@ public class Soa_TransformTest
             Assert.Equal(0, soa.Position.Y[i]);
             Assert.Equal(0, soa.Scale.X[i]);
             Assert.Equal(0, soa.Scale.Y[i]);
-            Assert.Equal(0, soa.Rotation[i]);
             Assert.Equal(0, soa.Sin[i]);
             Assert.Equal(0, soa.Cos[i]);
         }

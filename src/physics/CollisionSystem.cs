@@ -350,8 +350,13 @@ public static class CollisionSystem
                 return;    
             }
 
-            Centroid(colliderA.TransformedShape, out float centroidAX, out float centroidAY);
-            Centroid(colliderB.TransformedShape, out float centroidBX, out float centroidBY);
+            float centroidAX = 0;
+            float centroidAY = 0;
+            float centroidBX = 0;
+            float centroidBY = 0;
+
+            Centroid(colliderA.TransformedShape, ref centroidAX, ref centroidAY);
+            Centroid(colliderB.TransformedShape, ref centroidBX, ref centroidBY);
 
             Span<float> verticesAX = VerticesXAsSpan(colliderA.TransformedShape);
             Span<float> verticesAY = VerticesYAsSpan(colliderA.TransformedShape);
@@ -482,13 +487,11 @@ public static class CollisionSystem
             Span<float> rectangleVerticesX = VerticesXAsSpan(rectangle.TransformedShape);
             Span<float> rectangleVerticesY = VerticesYAsSpan(rectangle.TransformedShape);
             
+            float rectangleCentroidX = 0;
+            float rectangleCentroidY = 0;
+
             // pre compute centroid.
-            GetCentroid_Old(
-                rectangleVerticesX, 
-                rectangleVerticesY, 
-                out float rectangleCentroidX,
-                out float rectangleCentroidY
-            );
+            GetCentroid(rectangleVerticesX, rectangleVerticesY, ref rectangleCentroidX, ref rectangleCentroidY);
 
             // Narrow Phase:
             // perform an SAT check.
