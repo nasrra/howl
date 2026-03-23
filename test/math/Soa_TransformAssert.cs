@@ -13,11 +13,11 @@ public static class Soa_TransformAssert
     /// <param name="precision">the precision of floating point equality checks.</param>
     public static void EntryEquals(Soa_Transform soa, ref Transform transform, int index, int precision)
     {
-        Assert.Equal(transform.Position.X, soa.Position.X[index],   precision);
-        Assert.Equal(transform.Position.Y, soa.Position.Y[index],   precision);
-        Assert.Equal(transform.Scale.X,    soa.Scale.X[index],      precision);
-        Assert.Equal(transform.Scale.Y,    soa.Scale.Y[index],      precision);        
-        Assert.Equal(transform.Cos,        soa.Cos[index],          precision);
-        Assert.Equal(transform.Sin,        soa.Sin[index],          precision);
+        Assert.Equal(transform.Position.X, soa.Positions.X[index],   precision);
+        Assert.Equal(transform.Position.Y, soa.Positions.Y[index],   precision);
+        Assert.Equal(transform.Scale.X,    soa.Scales.X[index],      precision);
+        Assert.Equal(transform.Scale.Y,    soa.Scales.Y[index],      precision);        
+        Assert.Equal(transform.Cos,        soa.Coses[index],          precision);
+        Assert.Equal(transform.Sin,        soa.Sins[index],          precision);
     }
 }

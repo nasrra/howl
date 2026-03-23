@@ -52,7 +52,7 @@ public static class SoaPhysicsSystem
         state.SyncTransformsToEntitiesStopwatch.Stop();
 
         state.IntegrateBodyPropertiesStopwatch.Restart();
-        IntegrateBodyProperties(state.Transforms.Scale.X, state.Transforms.Scale.Y, state.Masses, state.InverseMasses, 
+        IntegrateBodyProperties(state.Transforms.Scales.X, state.Transforms.Scales.Y, state.Masses, state.InverseMasses, 
             state.RotationalInertia, state.InverseRotationalInertia, state.PhysicsMaterials.Density, state.LocalRadii, state.WorldRadii, 
             state.LocalWidths, state.LocalHeights, state.Flags, state.MaxPhysicsBodyCount
         );
@@ -228,7 +228,7 @@ public static class SoaPhysicsSystem
 
         if (state.DrawPositions)
         {
-            DrawPositions(camera, state.Transforms.Position, state.Flags, state.PositionColour, state.MaxPhysicsBodyCount);
+            DrawPositions(camera, state.Transforms.Positions, state.Flags, state.PositionColour, state.MaxPhysicsBodyCount);
         }
 
         if (state.DrawCentroids)
@@ -401,10 +401,10 @@ public static class SoaPhysicsSystem
             Vector<float> vForceX = Vector.LoadUnsafe(ref forces.X[i]);
             Vector<float> vForceY = Vector.LoadUnsafe(ref forces.Y[i]);
             Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
-            Vector<float> vPosX = Vector.LoadUnsafe(ref transforms.Position.X[i]);
-            Vector<float> vPosY = Vector.LoadUnsafe(ref transforms.Position.Y[i]);
-            Vector<float> vSin = Vector.LoadUnsafe(ref transforms.Sin[i]);
-            Vector<float> vCos = Vector.LoadUnsafe(ref transforms.Cos[i]);
+            Vector<float> vPosX = Vector.LoadUnsafe(ref transforms.Positions.X[i]);
+            Vector<float> vPosY = Vector.LoadUnsafe(ref transforms.Positions.Y[i]);
+            Vector<float> vSin = Vector.LoadUnsafe(ref transforms.Sins[i]);
+            Vector<float> vCos = Vector.LoadUnsafe(ref transforms.Coses[i]);
             Vector<float> vAngVel = Vector.LoadUnsafe(ref angularVelocities[i]);
 
             // apply gravity.
@@ -442,10 +442,10 @@ public static class SoaPhysicsSystem
             // store results.
             vLinVelX.StoreUnsafe(ref linearVelocities.X[i]);
             vLinVelY.StoreUnsafe(ref linearVelocities.Y[i]);
-            vPosX.StoreUnsafe(ref transforms.Position.X[i]);
-            vPosY.StoreUnsafe(ref transforms.Position.Y[i]);
-            vCos.StoreUnsafe(ref transforms.Cos[i]);
-            vSin.StoreUnsafe(ref transforms.Sin[i]);
+            vPosX.StoreUnsafe(ref transforms.Positions.X[i]);
+            vPosY.StoreUnsafe(ref transforms.Positions.Y[i]);
+            vCos.StoreUnsafe(ref transforms.Coses[i]);
+            vSin.StoreUnsafe(ref transforms.Sins[i]);
         }
  
         // tail end.
@@ -489,10 +489,10 @@ public static class SoaPhysicsSystem
         Span<float> forcesY = forces.Y;
         Span<float> linearVelocitiesX = linearVelocities.X;
         Span<float> linearVelocitiesY = linearVelocities.Y;
-        Span<float> positionsX = transforms.Position.X;
-        Span<float> positionsY = transforms.Position.Y;
-        Span<float> sin = transforms.Sin;
-        Span<float> cos = transforms.Cos;
+        Span<float> positionsX = transforms.Positions.X;
+        Span<float> positionsY = transforms.Positions.Y;
+        Span<float> sin = transforms.Sins;
+        Span<float> cos = transforms.Coses;
 
         float gravityLinearForceX = gravityDirectionX * gravity;
         float gravityLinearForceY = gravityDirectionY * gravity;
@@ -573,12 +573,12 @@ public static class SoaPhysicsSystem
         Span<float> minAABBVectorsY = minAABBVertices.Y;
         Span<float> maxAABBVectorsX = maxAABBVertices.X;
         Span<float> maxAABBVectorsY = maxAABBVertices.Y;
-        Span<float> scalesX = transforms.Scale.X;
-        Span<float> scalesY = transforms.Scale.Y;
-        Span<float> cos = transforms.Cos;
-        Span<float> sin = transforms.Sin;
-        Span<float> positionsX = transforms.Position.X;
-        Span<float> positionsY = transforms.Position.Y;
+        Span<float> scalesX = transforms.Scales.X;
+        Span<float> scalesY = transforms.Scales.Y;
+        Span<float> cos = transforms.Coses;
+        Span<float> sin = transforms.Sins;
+        Span<float> positionsX = transforms.Positions.X;
+        Span<float> positionsY = transforms.Positions.Y;
 
         Span<float> polygonTransformedVerticesX = stackalloc float[polygonMaxVertices];
         Span<float> polygonTransformedVerticesY = stackalloc float[polygonMaxVertices];
@@ -1571,8 +1571,8 @@ public static class SoaPhysicsSystem
         float depth;
         float displacementX;
         float displacementY;
-        Span<float> positionX = transforms.Position.X;
-        Span<float> positionY = transforms.Position.Y;
+        Span<float> positionX = transforms.Positions.X;
+        Span<float> positionY = transforms.Positions.Y;
         Span<float> normalX = collisions.Normals.X;
         Span<float> normalY = collisions.Normals.Y;
         Span<float> depths = collisions.Depths;

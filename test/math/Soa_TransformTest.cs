@@ -12,21 +12,21 @@ public class Soa_TransformTest
         int capacity = 10;
         Soa_Transform soa = new(capacity);
         
-        Assert.Equal(capacity, soa.Position.X.Length);
-        Assert.Equal(capacity, soa.Position.Y.Length);
-        Assert.Equal(capacity, soa.Scale.X.Length);        
-        Assert.Equal(capacity, soa.Scale.Y.Length);
-        Assert.Equal(capacity, soa.Sin.Length);        
-        Assert.Equal(capacity, soa.Cos.Length);
+        Assert.Equal(capacity, soa.Positions.X.Length);
+        Assert.Equal(capacity, soa.Positions.Y.Length);
+        Assert.Equal(capacity, soa.Scales.X.Length);        
+        Assert.Equal(capacity, soa.Scales.Y.Length);
+        Assert.Equal(capacity, soa.Sins.Length);        
+        Assert.Equal(capacity, soa.Coses.Length);
         
         for(int i = 0; i < capacity; i++)
         {
-            Assert.Equal(0, soa.Position.X[i]);
-            Assert.Equal(0, soa.Position.Y[i]);
-            Assert.Equal(0, soa.Scale.X[i]);
-            Assert.Equal(0, soa.Scale.Y[i]);
-            Assert.Equal(0, soa.Sin[i]);
-            Assert.Equal(0, soa.Cos[i]);
+            Assert.Equal(0, soa.Positions.X[i]);
+            Assert.Equal(0, soa.Positions.Y[i]);
+            Assert.Equal(0, soa.Scales.X[i]);
+            Assert.Equal(0, soa.Scales.Y[i]);
+            Assert.Equal(0, soa.Sins[i]);
+            Assert.Equal(0, soa.Coses[i]);
         }
     }
 

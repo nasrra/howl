@@ -247,12 +247,12 @@ public static class PhysicsBody
         if(generation[genIndex.Index] != genIndex.Generation)
             return false;
 
-        soaTransform.Position.X[genIndex.Index]  = transform.Position.X;
-        soaTransform.Position.Y[genIndex.Index]  = transform.Position.Y;
-        soaTransform.Scale.X[genIndex.Index]     = transform.Scale.X;
-        soaTransform.Scale.Y[genIndex.Index]     = transform.Scale.Y;
-        soaTransform.Cos[genIndex.Index]         = transform.Cos;
-        soaTransform.Sin[genIndex.Index]         = transform.Sin;
+        soaTransform.Positions.X[genIndex.Index]  = transform.Position.X;
+        soaTransform.Positions.Y[genIndex.Index]  = transform.Position.Y;
+        soaTransform.Scales.X[genIndex.Index]     = transform.Scale.X;
+        soaTransform.Scales.Y[genIndex.Index]     = transform.Scale.Y;
+        soaTransform.Coses[genIndex.Index]         = transform.Cos;
+        soaTransform.Sins[genIndex.Index]         = transform.Sin;
 
         return true;
     }

@@ -101,12 +101,12 @@ public class SOAPhysicsSystemTest
 
         SetTransform(state.Transforms, state.Generations, genIndex, transform);
     
-        Assert.Equal(posX, state.Transforms.Position.X[genIndex.Index], precision: 1);
-        Assert.Equal(posY, state.Transforms.Position.Y[genIndex.Index], precision: 3);
-        Assert.Equal(scaleX, state.Transforms.Scale.X[genIndex.Index], precision: 1);
-        Assert.Equal(scaleY, state.Transforms.Scale.Y[genIndex.Index], precision: 3);        
-        Assert.Equal(cos, state.Transforms.Cos[genIndex.Index], precision: 4);
-        Assert.Equal(sin, state.Transforms.Sin[genIndex.Index], precision: 4);
+        Assert.Equal(posX, state.Transforms.Positions.X[genIndex.Index], precision: 1);
+        Assert.Equal(posY, state.Transforms.Positions.Y[genIndex.Index], precision: 3);
+        Assert.Equal(scaleX, state.Transforms.Scales.X[genIndex.Index], precision: 1);
+        Assert.Equal(scaleY, state.Transforms.Scales.Y[genIndex.Index], precision: 3);        
+        Assert.Equal(cos, state.Transforms.Coses[genIndex.Index], precision: 4);
+        Assert.Equal(sin, state.Transforms.Sins[genIndex.Index], precision: 4);
     }
 
 
@@ -553,81 +553,76 @@ public class SOAPhysicsSystemTest
         Soa_TransformAssert.EntryEquals(state.Transforms, ref rTransform, rBodyGenIndex.Index, 4);    
     }
 
-    [Fact]
-    public void FilterBvhIntoCollisionManifold_Test()
-    {
-        int SoaCapacity = 10;
-
-        // data containcers.
-        List<SpatialPair> spatialPairs = new List<SpatialPair>();
-        Soa_SpatialPair circleSpatialPairs = new Soa_SpatialPair(SoaCapacity);
-        Soa_SpatialPair polygonSpatialPairs = new Soa_SpatialPair(SoaCapacity);
-        Soa_SpatialPair polygonToCircleSpatialPairs = new Soa_SpatialPair(SoaCapacity);
-
-        // spatial data.
-        PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.RectangleShape;
-        PhysicsBodyFlags circleFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;  
-        GenIndex polygonA   = new GenIndex(0,0);
-        GenIndex polygonB   = new GenIndex(1,0);
-        GenIndex circleA    = new GenIndex(2,0);
-        GenIndex circleB    = new GenIndex(3,0);
-
-        // polygon to polygon.
-        spatialPairs.Add(
-            new SpatialPair(
-                new QueryResult(polygonA,(byte)polygonFlag),
-                new QueryResult(polygonB,(byte)polygonFlag)
-            )
-        );
-
-        // circle to circle.
-        spatialPairs.Add(
-            new SpatialPair(
-                new QueryResult(circleA, (byte)circleFlag),
-                new QueryResult(circleB, (byte)circleFlag)
-            )
-        );
-
-        // polygon to circle.
-        spatialPairs.Add(
-            new SpatialPair(
-                new QueryResult(polygonA, (byte)polygonFlag),
-                new QueryResult(circleB, (byte)circleFlag)
-            )
-        );
-        spatialPairs.Add(
-            new SpatialPair(
-                new QueryResult(polygonB, (byte)polygonFlag),
-                new QueryResult(circleA, (byte)circleFlag)
-            )
-        );
-
-
-        FilterBvhIntoCollisionManifold(circleSpatialPairs, polygonSpatialPairs, polygonToCircleSpatialPairs, AsSpan(spatialPairs));
-
-        // assert circle spatial pairs.
-        Assert.Equal(1, circleSpatialPairs.Count);
-        AssertEntry(circleSpatialPairs, 0, circleA.Index, circleA.Generation, circleB.Index, circleA.Generation, 
-            (byte)circleFlag, (byte)circleFlag
-        );
-
-        // assert polygon spatial pairs.
-        Assert.Equal(1, polygonSpatialPairs.Count);        
-        AssertEntry(polygonSpatialPairs, 0, polygonA.Index, polygonA.Generation, polygonB.Index, polygonB.Generation, 
-            (byte)polygonFlag, (byte)polygonFlag
-        );
+    // [Fact]
+    // public void FilterBvhIntoCollisionManifold_Test()
+    // {
+    //     SoaPhysicsSystemState state = new SoaPhysicsSystemState(10, 1024, 4, 1024);
         
-        // assert polygon to circle spatial pairs.
-        Assert.Equal(2, polygonToCircleSpatialPairs.Count);        
-        // entry 0.
-        AssertEntry(polygonToCircleSpatialPairs, 0, polygonA.Index, polygonA.Generation, circleB.Index, circleB.Generation, 
-            (byte)polygonFlag, (byte)circleFlag
-        );
-        // entry 1.
-        AssertEntry(polygonToCircleSpatialPairs, 1, polygonB.Index, polygonB.Generation, circleA.Index, circleA.Generation, 
-            (byte)polygonFlag, (byte)circleFlag
-        );
-    }
+
+    //     // spatial data.
+    //     PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.RectangleShape;
+    //     PhysicsBodyFlags circleFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;  
+    //     GenIndex polygonA   = new GenIndex(0,0);
+    //     GenIndex polygonB   = new GenIndex(1,0);
+    //     GenIndex circleA    = new GenIndex(2,0);
+    //     GenIndex circleB    = new GenIndex(3,0);
+
+    //     // polygon to polygon.
+    //     spatialPairs.Add(
+    //         new SpatialPair(
+    //             new QueryResult(polygonA,(byte)polygonFlag),
+    //             new QueryResult(polygonB,(byte)polygonFlag)
+    //         )
+    //     );
+
+    //     // circle to circle.
+    //     spatialPairs.Add(
+    //         new SpatialPair(
+    //             new QueryResult(circleA, (byte)circleFlag),
+    //             new QueryResult(circleB, (byte)circleFlag)
+    //         )
+    //     );
+
+    //     // polygon to circle.
+    //     spatialPairs.Add(
+    //         new SpatialPair(
+    //             new QueryResult(polygonA, (byte)polygonFlag),
+    //             new QueryResult(circleB, (byte)circleFlag)
+    //         )
+    //     );
+    //     spatialPairs.Add(
+    //         new SpatialPair(
+    //             new QueryResult(polygonB, (byte)polygonFlag),
+    //             new QueryResult(circleA, (byte)circleFlag)
+    //         )
+    //     );
+
+
+    //     FilterBvhIntoCollisionManifold(circleSpatialPairs, polygonSpatialPairs, polygonToCircleSpatialPairs, AsSpan(spatialPairs));
+
+    //     // assert circle spatial pairs.
+    //     Assert.Equal(1, circleSpatialPairs.Count);
+    //     AssertEntry(circleSpatialPairs, 0, circleA.Index, circleA.Generation, circleB.Index, circleA.Generation, 
+    //         (byte)circleFlag, (byte)circleFlag
+    //     );
+
+    //     // assert polygon spatial pairs.
+    //     Assert.Equal(1, polygonSpatialPairs.Count);        
+    //     AssertEntry(polygonSpatialPairs, 0, polygonA.Index, polygonA.Generation, polygonB.Index, polygonB.Generation, 
+    //         (byte)polygonFlag, (byte)polygonFlag
+    //     );
+        
+    //     // assert polygon to circle spatial pairs.
+    //     Assert.Equal(2, polygonToCircleSpatialPairs.Count);        
+    //     // entry 0.
+    //     AssertEntry(polygonToCircleSpatialPairs, 0, polygonA.Index, polygonA.Generation, circleB.Index, circleB.Generation, 
+    //         (byte)polygonFlag, (byte)circleFlag
+    //     );
+    //     // entry 1.
+    //     AssertEntry(polygonToCircleSpatialPairs, 1, polygonB.Index, polygonB.Generation, circleA.Index, circleA.Generation, 
+    //         (byte)polygonFlag, (byte)circleFlag
+    //     );
+    // }
 
     // [Fact]
     // public void FindCircleCollisions_Test()

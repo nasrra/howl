@@ -8,22 +8,22 @@ public class Soa_Transform
     /// <summary>
     /// Gets and sets the positional values.
     /// </summary>
-    public Soa_Vector2 Position;
+    public Soa_Vector2 Positions;
 
     /// <summary>
     /// Gets and sets the scaling values.
     /// </summary>
-    public Soa_Vector2 Scale;
+    public Soa_Vector2 Scales;
 
     /// <summary>
     /// Gets and sets the Sin value of a rotation.
     /// </summary>
-    public float[] Sin;
+    public float[] Sins;
 
     /// <summary>
     /// Gets and sets the Cos value of a rotation.
     /// </summary>
-    public float[] Cos;
+    public float[] Coses;
 
     /// <summary>
     /// Creates a new SoaTransform instance.
@@ -31,10 +31,10 @@ public class Soa_Transform
     /// <param name="length"></param>
     public Soa_Transform(int length)
     {
-        Position    = new(length);
-        Scale       = new(length);
-        Sin         = new float[length];
-        Cos         = new float[length];
+        Positions    = new(length);
+        Scales       = new(length);
+        Sins         = new float[length];
+        Coses         = new float[length];
     }
 
     /// <summary>
@@ -46,12 +46,12 @@ public class Soa_Transform
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void CopySoaToTransform(Soa_Transform soa, ref Transform transform, int index)
     {
-        transform.Position.X = soa.Position.X[index];
-        transform.Position.Y = soa.Position.Y[index];
-        transform.Scale.X = soa.Scale.X[index];
-        transform.Scale.Y = soa.Scale.Y[index];
-        transform.Sin = soa.Sin[index];
-        transform.Cos = soa.Cos[index];
+        transform.Position.X = soa.Positions.X[index];
+        transform.Position.Y = soa.Positions.Y[index];
+        transform.Scale.X = soa.Scales.X[index];
+        transform.Scale.Y = soa.Scales.Y[index];
+        transform.Sin = soa.Sins[index];
+        transform.Cos = soa.Coses[index];
     }
 
     /// <summary>
@@ -63,11 +63,11 @@ public class Soa_Transform
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void CopyTransformToSoa(Soa_Transform soa, ref Transform transform, int index)
     {
-        soa.Position.X[index] = transform.Position.X;
-        soa.Position.Y[index] = transform.Position.Y;
-        soa.Scale.X[index] = transform.Scale.X;
-        soa.Scale.Y[index] = transform.Scale.Y;
-        soa.Sin[index] = transform.Sin;
-        soa.Cos[index] = transform.Cos;
+        soa.Positions.X[index] = transform.Position.X;
+        soa.Positions.Y[index] = transform.Position.Y;
+        soa.Scales.X[index] = transform.Scale.X;
+        soa.Scales.Y[index] = transform.Scale.Y;
+        soa.Sins[index] = transform.Sin;
+        soa.Coses[index] = transform.Cos;
     }
 }
