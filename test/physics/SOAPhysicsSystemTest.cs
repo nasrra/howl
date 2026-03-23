@@ -8,10 +8,9 @@ using static Howl.Physics.SoaPhysicsSystem;
 using static Howl.Math.Shapes.Rectangle;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Test.Physics.SoaSpatialPairHelpers;
-using static Howl.DataStructures.Soa_SpatialPair;
-using static Howl.Math.Soa_Vector2;
 using static Howl.Test.Math.Soa_TransformHelpers;
 using static Howl.Test.Math.TransformHelpers;
+using static Howl.Physics.PhysicsBody;
 
 
 namespace Howl.Test.Physics;

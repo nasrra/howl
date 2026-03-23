@@ -93,6 +93,14 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public Soa_Vector2 MinAABBVertices;
 
     /// <summary>
+    /// the physics material's for all physics bodies.
+    /// </summary>
+    /// <remarks>
+    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
+    public Soa_PhysicsMaterial PhysicsMaterials;
+
+    /// <summary>
     /// the angular velocity values for all physics bodies.
     /// </summary>
     /// <remarks>
@@ -151,22 +159,6 @@ public sealed class SoaPhysicsSystemState : IDisposable
     public float[] WorldRadii;
 
     /// <summary>
-    /// Gets and sets the static friction value of a physics body.
-    /// </summary>
-    /// <remarks>
-    /// Note: static friction resists motion before an object starts sliding.
-    /// </remarks>
-    public float[] StaticFrictions;
-
-    /// <summary>
-    /// Gets and sets the kinetic friction value of a physics body.
-    /// </summary>
-    /// <remarks>
-    /// Note: kinetic friction is applied when an object is sliding/currently in motion.
-    /// </remarks>
-    public float[] KineticFrictions;
-
-    /// <summary>
     /// The rotational inertia  values of all physics bodies.
     /// </summary>
     /// <remarks>
@@ -181,22 +173,6 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Inverse rotational intertia is relative to world-space. Use <c>physicsBodyIndex</c> integer to access elements.
     /// </remarks>
     public float[] InverseRotationalInertia;
-
-    /// <summary>
-    /// The density values of all physics bodies.
-    /// </summary>
-    /// <remarks>
-    /// Use <c>physicsBodyIndex</c> integer to access elements.
-    /// </remarks>
-    public float[] Densities;
-
-    /// <summary>
-    /// Gets and sets the restitution of a physics body.
-    /// </summary>
-    /// <remarks>
-    /// Note: restitution is how 'bouncy' a body is.
-    /// </remarks>
-    public float[] Restitutions;
     
     /// <summary>
     /// The indices in the vertices collection that point to the first vertex of a given physics body.
@@ -559,6 +535,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
         Centroids                   = new Soa_Vector2(physicsBodyCount);
         MaxAABBVertices             = new Soa_Vector2(physicsBodyCount);
         MinAABBVertices             = new Soa_Vector2(physicsBodyCount);
+        PhysicsMaterials            = new Soa_PhysicsMaterial(physicsBodyCount);
         AngularVelocities           = new float[physicsBodyCount];
         Masses                      = new float[physicsBodyCount];
         InverseMasses               = new float[physicsBodyCount];
@@ -566,12 +543,8 @@ public sealed class SoaPhysicsSystemState : IDisposable
         LocalHeights                     = new float[physicsBodyCount];
         LocalRadii                       = new float[physicsBodyCount];
         WorldRadii            = new float[physicsBodyCount];
-        StaticFrictions             = new float[physicsBodyCount];
-        KineticFrictions            = new float[physicsBodyCount];
         RotationalInertia           = new float[physicsBodyCount];
         InverseRotationalInertia    = new float[physicsBodyCount];
-        Densities                   = new float[physicsBodyCount];
-        Restitutions                = new float[physicsBodyCount];
         FirstVertexIndices          = new int[physicsBodyCount];
         NextVertexIndices           = new int[physicsBodyVerticesCount];
         Generations                 = new int[physicsBodyCount];

@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Howl.Physics;
@@ -22,7 +23,7 @@ public struct PhysicsMaterial
     /// Gets and sets the static friction value.
     /// </summary>
     /// <remarks>
-    /// Note: static friction resists motion before an object starts sliding.
+    /// Static friction is the resistance of motion before an object is sliding / is already in motion.
     /// </remarks>
     public float StaticFriction;
 
@@ -30,7 +31,7 @@ public struct PhysicsMaterial
     /// Gets and sets the kinetic friction value.
     /// </summary>
     /// <remarks>
-    /// Note: kinetic friction is applied when an object is sliding/currently in motion.
+    /// Kinetic friction is the resistance of motion when an object is sliding / within motion and in contact with another object.
     /// </remarks>
     public float KineticFriction;
 
@@ -48,11 +49,6 @@ public struct PhysicsMaterial
     public float Restitution;
 
     /// <summary>
-    /// Get and sets whether or not friction is used.
-    /// </summary>
-    public bool UseFriction;
-
-    /// <summary>
     /// Constructs a Physics Material.
     /// </summary>
     public PhysicsMaterial(){}
@@ -68,7 +64,6 @@ public struct PhysicsMaterial
         SetStaticFriction(ref StaticFriction, ref KineticFriction, staticFriction);
         SetDensity(ref Density, density);
         Restitution = restitution;
-        UseFriction = true;
     }
 
     /// <summary>

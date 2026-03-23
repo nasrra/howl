@@ -137,8 +137,7 @@ public static class RigidBodySystem
 
             // friction and rotational resolution are tightly coupled with eachother.
             // do not remove them from eachother.
-            if(rigidbodyA.PhysicsMaterial.UseFriction == true || rigidbodyB.PhysicsMaterial.UseFriction == true
-            || rigidbodyA.RotationalPhysics == true || rigidbodyB.RotationalPhysics == true)
+            if(rigidbodyA.RotationalPhysics == true || rigidbodyB.RotationalPhysics == true)
             {
                 // note: order matters here, do collision resolution
                 //  first do that the impulse magnitudes span is
@@ -364,21 +363,8 @@ public static class RigidBodySystem
         // this is faster than the actual physics way.
         float staticFriction = 0;
         float kineticFriction = 0;
-        if(rigidBodyA.PhysicsMaterial.UseFriction && rigidBodyB.PhysicsMaterial.UseFriction)
-        {
-            staticFriction = (rigidBodyA.PhysicsMaterial.StaticFriction + rigidBodyB.PhysicsMaterial.StaticFriction) * 0.5f;
-            kineticFriction = (rigidBodyA.PhysicsMaterial.KineticFriction + rigidBodyB.PhysicsMaterial.StaticFriction) * 0.5f;
-        }
-        else if (rigidBodyA.PhysicsMaterial.UseFriction)
-        {
-            staticFriction = rigidBodyA.PhysicsMaterial.StaticFriction;
-            kineticFriction = rigidBodyA.PhysicsMaterial.KineticFriction;           
-        }
-        else if (rigidBodyB.PhysicsMaterial.UseFriction)
-        {
-            staticFriction = rigidBodyB.PhysicsMaterial.StaticFriction;
-            kineticFriction = rigidBodyB.PhysicsMaterial.KineticFriction;            
-        }
+        staticFriction = (rigidBodyA.PhysicsMaterial.StaticFriction + rigidBodyB.PhysicsMaterial.StaticFriction) * 0.5f;
+        kineticFriction = (rigidBodyA.PhysicsMaterial.KineticFriction + rigidBodyB.PhysicsMaterial.StaticFriction) * 0.5f;
         
         for(int j = 0; j < collision.ContactPointsCount; j++)
         {
