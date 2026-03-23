@@ -483,7 +483,7 @@ public static class CollisionSystem
             Span<float> rectangleVerticesY = VerticesYAsSpan(rectangle.TransformedShape);
             
             // pre compute centroid.
-            GetCentroid(
+            GetCentroid_Old(
                 rectangleVerticesX, 
                 rectangleVerticesY, 
                 out float rectangleCentroidX,

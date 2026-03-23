@@ -636,7 +636,7 @@ public static class SoaPhysicsSystem
                 }
 
                 // set the new centroid.
-                GetCentroid(polygonTransformedVerticesX, polygonTransformedVerticesY, out centroidsX[i], out centroidsY[i]);
+                GetCentroid_New(polygonTransformedVerticesX, polygonTransformedVerticesY, ref centroidsX[i], ref centroidsY[i]);
 
                 // set the new min and max vectors.
                 GetMinMaxVectors(polygonTransformedVerticesX, polygonTransformedVerticesY, 

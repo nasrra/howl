@@ -61,38 +61,79 @@ public static class ShapeUtils
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector2 GetCentroid(Span<float> polygonVerticesX, Span<float> polygonVerticesY)
     {
-        GetCentroid(polygonVerticesX, polygonVerticesY, out float centroidX, out float centroidY);
-        return new Vector2(centroidX, centroidY);
+        float cX = 0;
+        float cY = 0;
+        GetCentroid(polygonVerticesX, polygonVerticesY, ref cX, ref cY);
+        return new Vector2(cX, cY);
     }
 
     /// <summary>
-    /// Calculates the centroid of a polygon.
+    /// Calculates the centroid for a convex or concave polygon (that do not self intersect) using the shoelace formula.
     /// </summary>
-    /// <param name="polygonVerticesX">The x-values of a polygon's vertices.</param>
-    /// <param name="polygonVerticesY">The y-values of a polygon's vertices.</param>
-    /// <param name="centroidX">The x-component centroid.</param>
-    /// <param name="centroidY">The y-component centroid.</param>
-    /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
-    public static void GetCentroid(Span<float> polygonVerticesX, Span<float> polygonVerticesY, out float centroidX, out float centroidY)
-    {        
-        if(polygonVerticesX.Length != polygonVerticesY.Length)
-        {
-            throw new ArgumentException($"polygonVerticesX length '{polygonVerticesX.Length}' is not equal to polygonVerticesY length {polygonVerticesY.Length}'");
-        }
+    /// <param name="x">the x-values of the shape's vertices.</param>
+    /// <param name="y">the y-values of the shape's vertices.</param>
+    /// <param name="cX">output for the x-component of the centroid vertice.</param>
+    /// <param name="cY">output for the y-component of the centroid vertice.</param>
+    public static void GetCentroid(Span<float> x, Span<float> y, ref float cX, ref float cY)
+    {
+        float area = 0;
+        float invArea = 0;
+        float tempX = 0;
+        float tempY = 0;
+        int length = x.Length;
 
-        int length = polygonVerticesX.Length;
+        float x0 = 0;
+        float y0 = 0;
+        float x1 = 0;
+        float y1 = 0;
 
-        centroidX = 0;
-        centroidY = 0;
-        
+        float crossProduct;
+
+        int nextIndex;
+        bool nextInRange;
+
         for(int i = 0; i < length; i++)
         {
-            centroidX += polygonVerticesX[i];
-            centroidY += polygonVerticesY[i];
+            nextIndex = i + 1;
+            nextInRange = nextIndex < length;
+
+            // get curernt vertex and the next one.
+            x0 = x[i];
+            y0 = y[i];
+            if (nextInRange)
+            {
+                x1 = x[nextIndex];
+                y1 = y[nextIndex];    
+            }
+            else
+            {
+                x1 = x[0];
+                y1 = y[0];    
+            }
+
+            // calculate the corss product (signed area of the triangle)
+            // this is the "Shoelace" part.
+            crossProduct = Math.Cross(x0, y0, x1, y1);
+
+            area += crossProduct;
+            tempX += (x0 + x1) * crossProduct;
+            tempY += (y0 + y1) * crossProduct;
         }
 
-        centroidX /= length;
-        centroidY /= length;
+        area *= 0.5f; // final signed area.
+
+        if(Math.Abs(area) > float.Epsilon)
+        {
+            invArea = 1f/ (area * 6.0f); 
+            cX = tempX * invArea;
+            cY = tempY * invArea;
+        }
+        else
+        {
+            // if the area is 0, the polygon is degenerate (a line or point)
+            cX = x[0];
+            cY = y[0];
+        }
     }
 
     /// <summary>
