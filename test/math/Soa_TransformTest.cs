@@ -1,6 +1,4 @@
 using static Howl.Math.Soa_Transform;
-using static Howl.Test.Math.Soa_TransformHelpers;
-using static Howl.Test.Math.TransformHelpers;
 
 using Howl.Math;
 
@@ -38,10 +36,10 @@ public class Soa_TransformTest
         Soa_Transform soa = new(10);
         Transform transform = new Transform(1,2,3,4,5,6,7);
         CopyTransformToSoa(soa, ref transform, 2);
-        AssertEqualsSoaTransformEntry(soa, ref transform, 2, 4);
+        Soa_TransformAssert.EntryEquals(soa, ref transform, 2, 4);
     }
+    
     [Fact]
-
     public void CopySoaToTransform_Test()
     {
         Soa_Transform soa = new(10);
@@ -49,6 +47,6 @@ public class Soa_TransformTest
         Transform result = default;
         CopyTransformToSoa(soa, ref expected, 2);
         CopySoaToTransform(soa, ref result, 2);
-        AssertEqualTransforms(ref expected, ref result, 4);
+        TransformAssert.Equals(ref expected, ref result, 4);
     }
 }

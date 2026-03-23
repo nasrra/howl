@@ -1,4 +1,6 @@
 using System;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using Howl.ECS;
 using Howl.Math;
 using Howl.Math.Shapes;
@@ -268,81 +270,129 @@ public static class PhysicsBody
 
 
     /// <summary>
-    /// Allocates a circle collider into a phsyics system state.
+    /// Allocates a circle collider into a physics system state.
     /// </summary>
-    /// <param name="state">The physics system state to allocate into.</param>
-    /// <param name="shape">the shape data of the circle.</param>
-    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
-    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
+    /// <param name="state">the physics system state to allocate into.</param>
+    /// <param name="shape">the local-space shape data.</param>
+    /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
+    /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
+    /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateCircleCollider(SoaPhysicsSystemState state, Circle shape, 
+    public static void AllocateCircleCollider(SoaPhysicsSystemState state, Circle shape, Transform transform, 
         bool isKinematic, bool isTrigger, ref GenIndex genIndex
     )
     {
+        int index = state.FreePhysicsBodyIndex.Pop();
+        state.AlloctedPhysicsBodyCount++;
+        genIndex.Index = index;
+        genIndex.Generation = state.Generations[index];
+
         // handle flags.
         // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
         // set, a physics body is a circle.
         PhysicsBodyFlags flag = PhysicsBodyFlags.None; 
-
         SetActive(ref flag, true);
         SetAllocated(ref flag, true);
         SetRigidBody(ref flag, false);
         SetTrigger(ref flag, isTrigger);
         SetKinematic(ref flag, isKinematic);
 
-        int index = state.FreePhysicsBodyIndex.Pop();
-        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
 
         // apply data.
-        state.LocalRadii[index]              = shape.Radius;
-        state.Flags[index]              = flag;
-        state.FirstVertexIndices[index]  = verticesFirstIndex;
-
-        state.AlloctedPhysicsBodyCount++;
-
-        genIndex.Index = index;
-        genIndex.Generation = state.Generations[index];
+        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+        SetTransform(state.Transforms, state.Generations, genIndex, transform);
+        state.LocalRadii[index]             = shape.Radius;
+        state.Flags[index]                  = flag;
+        state.FirstVertexIndices[index]     = verticesFirstIndex;
     }
 
     /// <summary>
     /// Allocates a circle rigidbody into a physics system state.
     /// </summary>
     /// <param name="state">the physics system state to allocate into.</param>
-    /// <param name="shape">the shape data of the circle.</param>
+    /// <param name="shape">the local-space shape data.</param>
     /// <param name="physicsMaterial">the physics material to apply to the physics body.</param>
-    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
-    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
+    /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
+    /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
+    /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateCircleRigidBody(SoaPhysicsSystemState state, Circle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenIndex genIndex)
+    public static void AllocateCircleRigidBody(SoaPhysicsSystemState state, Circle shape, PhysicsMaterial physicsMaterial, Transform transform,
+        bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenIndex genIndex
+    )
     {
+        int index = state.FreePhysicsBodyIndex.Pop();
+        genIndex = new(index, state.Generations[index]);
+        state.AlloctedPhysicsBodyCount++;
+
         // handle flags.
         // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
         // set, a physics body is a circle.
         PhysicsBodyFlags flags = PhysicsBodyFlags.None; 
-        
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
         SetRigidBody(ref flags, true);
         SetTrigger(ref flags, isTrigger);
         SetKinematic(ref flags, isKinematic);
         SetRotationalPhysics(ref flags, rotationalPhysics);
-        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
-        int index = state.FreePhysicsBodyIndex.Pop();
 
         // apply data.
+        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+        SetTransform(state.Transforms, state.Generations, genIndex, transform);
+        Soa_PhysicsMaterial.SetPhysicsMaterial(state.PhysicsMaterials, physicsMaterial, index);
         state.LocalRadii[index]                      = shape.Radius;
         state.Flags[index]                      = flags;
         state.FirstVertexIndices[index]         = verticesFirstIndex;
-        Soa_PhysicsMaterial.SetPhysicsMaterial(state.PhysicsMaterials, physicsMaterial, index);
 
         // reset forces
         ClearForcesAndVelocities(state, index);
+    }
 
-        // return gen index.
+    /// <summary>
+    /// Calculates the rotational inertia for a circle.
+    /// </summary>
+    /// <param name="radius">the radius of the shape.</param>
+    /// <param name="mass">the mass of the shape.</param>
+    /// <returns>the rotational inertia value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float CalculateCircleRotationalInertia(float radius, float mass)
+    {
+        return CircleRotationalInertia * mass * (radius * radius);
+    }
 
-        genIndex = new(index, state.Generations[index]);        
-        
-        state.AlloctedPhysicsBodyCount++;
+    /// <summary>
+    /// Vectorised radius calculation for circles.
+    /// </summary>
+    /// <param name="radius">the radii of the shapes.</param>
+    /// <param name="mass">the mass of the shapes.</param>
+    /// <returns>the rotational inertia values.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector<float> CalculateCircleRotationalInertia(Vector<float> radius, Vector<float> mass)
+    {
+        return VectorCircleRotationalInertia * mass * (radius * radius);
+    }
+
+    /// <summary>
+    /// Calculates the mass of a circle.
+    /// </summary>
+    /// <param name="radius">the radius of the shape.</param>
+    /// <param name="density">the density of the shape.</param>
+    /// <returns>the mass value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float CalculateCircleMass(float radius, float density)
+    {
+        return density * Circle.GetArea(radius);
+    }
+
+    /// <summary>
+    /// Vectorised mass calculation for circles.
+    /// </summary>
+    /// <param name="radius">the radii of the shapes.</param>
+    /// <param name="density">the densities of the shapes.</param>
+    /// <returns>the area values of the shapes.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector<float> CalculateCircleMass(Vector<float> radius, Vector<float> density)
+    {
+        return density * Circle.GetArea(radius);
     }
 
 
@@ -360,15 +410,21 @@ public static class PhysicsBody
     /// <summary>
     /// Allocates a rectangle collider into a physics system state.
     /// </summary>
-    /// <param name="state">the physics system state to allocate a physics body into.</param>
-    /// <param name="shape">the rectangle shape data of the physics body.</param>
-    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
-    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
+    /// <param name="state">the physics system state to allocate into.</param>
+    /// <param name="shape">the local-space shape data.</param>
+    /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
+    /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
+    /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleCollider(SoaPhysicsSystemState state, Rectangle shape, bool isKinematic, bool isTrigger, ref GenIndex genIndex)
+    public static void AllocateRectangleCollider(SoaPhysicsSystemState state, Rectangle shape, Transform transform, 
+        bool isKinematic, bool isTrigger, ref GenIndex genIndex
+    )
     {
-        // handle flags.
+        int bodyIndex = state.FreePhysicsBodyIndex.Pop();
+        genIndex = new(bodyIndex, state.Generations[bodyIndex]);    
+        state.AlloctedPhysicsBodyCount++;
 
+        // handle flags.
         PhysicsBodyFlags flags = PhysicsBodyFlags.RectangleShape;
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
@@ -379,35 +435,34 @@ public static class PhysicsBody
         // apply data.
 
         PolygonRectangle polyRect = new(shape);
-
-        int bodyIndex = state.FreePhysicsBodyIndex.Pop();
         AddVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
-
+        SetTransform(state.Transforms, state.Generations, genIndex, transform);
         state.LocalHeights[bodyIndex]            = shape.Height;
         state.LocalWidths[bodyIndex]             = shape.Width;
         state.Flags[bodyIndex]              = flags;
         state.FirstVertexIndices[bodyIndex]  = verticesFirstIndex;
 
-        // return gen index.
-
-        genIndex = new(bodyIndex, state.Generations[bodyIndex]);    
-
-        state.AlloctedPhysicsBodyCount++;
     }
 
     /// <summary>
     /// Allocates a rectangle rigidbody into a physics system state.
     /// </summary>
-    /// <param name="state">the physics system state to allocate a physics body into.</param>
-    /// <param name="shape">the rectangle shape data of the physics body.</param>
+    /// <param name="state">the physics system state to allocate into.</param>
+    /// <param name="shape">the local-space shape data.</param>
     /// <param name="physicsMaterial">the physics material to apply to the physics body.</param>
-    /// <param name="isKinematic">whether or not the physics body behvaiour is 'kinematic'.</param>
-    /// <param name="isTrigger">whether or not the physics body behvaiour is 'trigger'.</param>
+    /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
+    /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
+    /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, Rectangle shape, PhysicsMaterial physicsMaterial, bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenIndex genIndex)
+    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, Rectangle shape, PhysicsMaterial physicsMaterial, Transform transform, 
+        bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenIndex genIndex
+    )
     {
+        int index = state.FreePhysicsBodyIndex.Pop();
+        genIndex = new(index, state.Generations[index]);
+        state.AlloctedPhysicsBodyCount++;
+        
         // handle flags.
-
         PhysicsBodyFlags flags = PhysicsBodyFlags.RectangleShape;
         SetActive(ref flags, true);
         SetAllocated(ref flags, true);
@@ -416,26 +471,71 @@ public static class PhysicsBody
         SetKinematic(ref flags, isKinematic);
         SetRotationalPhysics(ref flags, rotationalPhysics);
 
-        PolygonRectangle polyRect = new(shape);
-
-        int index = state.FreePhysicsBodyIndex.Pop();
-        AddVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
-
         // apply data.
+        PolygonRectangle polyRect = new(shape);
+        Soa_PhysicsMaterial.SetPhysicsMaterial(state.PhysicsMaterials, physicsMaterial, index);
+        AddVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
+        SetTransform(state.Transforms, state.Generations, genIndex, transform);
         state.LocalHeights[index]                    = shape.Height;
         state.LocalWidths[index]                     = shape.Width;
         state.Flags[index]                      = flags;
         state.FirstVertexIndices[index]         = verticesFirstIndex;
-        Soa_PhysicsMaterial.SetPhysicsMaterial(state.PhysicsMaterials, physicsMaterial, index);
 
         // reset forces.
         ClearForcesAndVelocities(state, index);
-
-        // return gen index.
-
-        genIndex = new(index, state.Generations[index]);
-    
-        state.AlloctedPhysicsBodyCount++;
     }
+
+    /// <summary>
+    /// Calculates the mass of a rectangle.
+    /// </summary>
+    /// <param name="width">the width of the shape.</param>
+    /// <param name="height">the height of the shape.</param>
+    /// <param name="density">the density of the shape.</param>
+    /// <returns>the mass value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float CalculateRectangleMass(float width, float height, float density)
+    {
+        return Rectangle.GetArea(width, height) * density;
+    } 
+
+    /// <summary>
+    /// Vectorised mass calculation for rectangles.
+    /// </summary>
+    /// <param name="width">the widths of the shapes.</param>
+    /// <param name="height">the heights of the shapes.</param>
+    /// <param name="density">the densities of the shapes.</param>
+    /// <returns>the mass values of the shapes.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector<float> CalculateRectangleMass(Vector<float> width, Vector<float> height, Vector<float> density)
+    {
+        return Rectangle.GetArea(width, height) * density;
+    }
+
+    /// <summary>
+    /// Calculates the rotational inertia of a rectangle.
+    /// </summary>
+    /// <param name="width">the width of the shape.</param>
+    /// <param name="height">the height of the shape.</param>
+    /// <param name="mass">the mass of the shape.</param>
+    /// <returns>the rotational inertia value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static float CalculateRectangleRotationalInertia(float width, float height, float mass)
+    {
+        return RectangleRotationalInertia * mass * ((width * width) + (height * height));
+    }
+
+    /// <summary>
+    /// Vectorized rotational inertia calculation for rectangles.
+    /// </summary>
+    /// <param name="width">the widths of the shapes.</param>
+    /// <param name="height">the heights of the shapes.</param>
+    /// <param name="density">the densities of the shapes.</param>
+    /// <returns>the inertia values of the shapes.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Vector<float> CalculateRectangleRotationalInertia(Vector<float> width, Vector<float> height, Vector<float> mass)
+    {
+        return VectorRectangleRotationalInertia * mass * ((width * width) + (height * height));
+    }
+
 
 }

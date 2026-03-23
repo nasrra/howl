@@ -8,9 +8,8 @@ using static Howl.Physics.SoaPhysicsSystem;
 using static Howl.Math.Shapes.Rectangle;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Test.Physics.SoaSpatialPairHelpers;
-using static Howl.Test.Math.Soa_TransformHelpers;
-using static Howl.Test.Math.TransformHelpers;
 using static Howl.Physics.PhysicsBody;
+using Howl.Test.Math;
 
 
 namespace Howl.Test.Physics;
@@ -131,8 +130,8 @@ public class SOAPhysicsSystemTest
         float posY;
         float radius;
         Circle circle;
-        GenIndex genIndex1 = default;
-        GenIndex genIndex2 = default;
+        GenIndex genIndex = default;
+        Transform transform;
 
         // first data set test.
 
@@ -140,17 +139,17 @@ public class SOAPhysicsSystemTest
         posY = 13;
         radius = 3;
         circle = new(posX, posY, radius);
-
-        AllocateCircleCollider(state, circle, true, false, ref genIndex1);
-        
-        Assert.Equal(0, genIndex1.Index);
-        Assert.Equal(0, genIndex1.Generation);
-        Assert.True(IsActive(state, genIndex1));
-        Assert.True(IsAllocated(state, genIndex1));
-        Assert.False(HasRigidBody(state, genIndex1));
-        Assert.True(IsKinematic(state, genIndex1));
-        Assert.False(IsTrigger(state, genIndex1));
+        transform = new(1,2,3,4,5,6,7);
+        AllocateCircleCollider(state, circle, transform, true, false, ref genIndex);
+        Assert.Equal(0, genIndex.Index);
+        Assert.Equal(0, genIndex.Generation);
+        Assert.True(IsActive(state, genIndex));
+        Assert.True(IsAllocated(state, genIndex));
+        Assert.False(HasRigidBody(state, genIndex));
+        Assert.True(IsKinematic(state, genIndex));
+        Assert.False(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref transform, genIndex.Index, 4);
 
         // second data set test.
 
@@ -158,17 +157,19 @@ public class SOAPhysicsSystemTest
         posY = -54;
         radius = 67;
         circle = new(posX, posY, radius);
+        transform = new(9,8,7,6,5,4,3);
 
-        AllocateCircleCollider(state, circle, false, true, ref genIndex2);
+        AllocateCircleCollider(state, circle, transform, false, true, ref genIndex);
 
-        Assert.Equal(1, genIndex2.Index);
-        Assert.Equal(0, genIndex2.Generation);
-        Assert.True(IsActive(state, genIndex2));
-        Assert.True(IsAllocated(state, genIndex2));
-        Assert.False(HasRigidBody(state, genIndex2));
-        Assert.False(IsKinematic(state, genIndex2));
-        Assert.True(IsTrigger(state, genIndex2));
+        Assert.Equal(1, genIndex.Index);
+        Assert.Equal(0, genIndex.Generation);
+        Assert.True(IsActive(state, genIndex));
+        Assert.True(IsAllocated(state, genIndex));
+        Assert.False(HasRigidBody(state, genIndex));
+        Assert.False(IsKinematic(state, genIndex));
+        Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref transform, genIndex.Index, 4);
     }
 
     [Fact]
@@ -182,6 +183,7 @@ public class SOAPhysicsSystemTest
         PhysicsMaterial physicsMaterial;
         Circle circle;
         GenIndex genIndex = default;
+        Transform transform;
 
         // first data set test.
 
@@ -190,9 +192,9 @@ public class SOAPhysicsSystemTest
         radius = 32;
         circle = new(posX, posY, radius);
         physicsMaterial = new PhysicsMaterial(0.2f, 0.1f, 15, 0.12f);
+        transform = new(1,2,3,4,5,6,7);
 
-        AllocateCircleRigidBody(state, circle, physicsMaterial, true, false, true, ref genIndex);
-        
+        AllocateCircleRigidBody(state, circle, physicsMaterial, transform, true, false, true, ref genIndex);
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
         Assert.True(IsActive(state, genIndex));
@@ -203,6 +205,7 @@ public class SOAPhysicsSystemTest
         Assert.True(UsesRotationalPhysics(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref transform, genIndex.Index, 4);
 
 
         // second data set test.
@@ -212,9 +215,9 @@ public class SOAPhysicsSystemTest
         radius = 12;
         circle = new(posX, posY, radius);
         physicsMaterial = new PhysicsMaterial(0.9f, 0.5f, 18, 0.1f);
+        transform = new(0,9,8,7,6,5,4);
 
-        AllocateCircleRigidBody(state, circle, physicsMaterial, false, true, false, ref genIndex);
-
+        AllocateCircleRigidBody(state, circle, physicsMaterial, transform, false, true, false, ref genIndex);
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
         Assert.True(IsActive(state, genIndex));
@@ -225,6 +228,7 @@ public class SOAPhysicsSystemTest
         Assert.False(UsesRotationalPhysics(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref transform, genIndex.Index, 4);
     }
 
 
@@ -293,20 +297,21 @@ public class SOAPhysicsSystemTest
         float posY;
         float width;
         float height;
-        int firstVertice;
         Rectangle rectangle;
         GenIndex genIndex = default;
+        Transform transform;
 
+
+        // first data set test.
+        
         posX = 98;
         posY = 65;
         height = 12;
         width = 32;
         rectangle = new Rectangle(posX, posY, width, height);
-
-        // first data set test.
-
-        AllocateRectangleCollider(state, rectangle, false, true, ref genIndex);
-
+        transform = new(1,2,3,4,5,6,7);
+        AllocateRectangleCollider(state, rectangle, transform, false, true, ref genIndex);
+        
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
         Assert.Equal(0, state.FirstVertexIndices[genIndex.Index]);
@@ -316,20 +321,20 @@ public class SOAPhysicsSystemTest
         Assert.False(IsKinematic(state, genIndex));    
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
+        AssertRectangleVerticesClockwise(state, state.FirstVertexIndices[genIndex.Index], rectangle);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref transform, genIndex.Index, 4);
 
-        firstVertice = state.FirstVertexIndices[genIndex.Index];
-        AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
+
+        // second data set test.
 
         posX = 123;
         posY = -45;
         height = 98;
         width = 54;
-        rectangle = new Rectangle(posX, posY, width, height);    
-
-        // second data set test.
-
-        AllocateRectangleCollider(state, rectangle, false, true, ref genIndex);
-
+        rectangle = new Rectangle(posX, posY, width, height);
+        transform = new(0,9,8,7,6,5,4);  
+        AllocateRectangleCollider(state, rectangle, transform, false, true, ref genIndex);
+        
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
         Assert.Equal(4, state.FirstVertexIndices[genIndex.Index]);
@@ -339,9 +344,8 @@ public class SOAPhysicsSystemTest
         Assert.False(IsKinematic(state, genIndex));
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
-
-        firstVertice = state.FirstVertexIndices[genIndex.Index];
-        AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
+        AssertRectangleVerticesClockwise(state, state.FirstVertexIndices[genIndex.Index], rectangle);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref transform, genIndex.Index, 4);
     }
 
     /// <summary>
@@ -359,7 +363,8 @@ public class SOAPhysicsSystemTest
         Rectangle rectangle;
         GenIndex genIndex = default;
         PhysicsMaterial physicsMaterial;
-        int firstVertice;
+        Transform transform;
+        
         // first data set test.
 
         posX = -24;
@@ -368,8 +373,8 @@ public class SOAPhysicsSystemTest
         width = 56;
         rectangle = new Rectangle(posX, posY, width, height);
         physicsMaterial = new(0.2f, 0.1f, 0.25f, 0.5f);
-
-        AllocateRectangleRigidBody(state, rectangle, physicsMaterial, false, true, false, ref genIndex);        
+        transform = new(1,2,3,4,5,6,7);
+        AllocateRectangleRigidBody(state, rectangle, physicsMaterial, transform, false, true, false, ref genIndex);        
 
         Assert.Equal(0, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
@@ -381,9 +386,8 @@ public class SOAPhysicsSystemTest
         Assert.True(IsTrigger(state, genIndex));
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
-
-        firstVertice = state.FirstVertexIndices[genIndex.Index];
-        AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
+        AssertRectangleVerticesClockwise(state, state.FirstVertexIndices[genIndex.Index], rectangle);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref transform, genIndex.Index, 4);
         
         // second data set test.
 
@@ -393,8 +397,8 @@ public class SOAPhysicsSystemTest
         width = 43;
         rectangle = new Rectangle(posX, posY, width, height);
         physicsMaterial = new(0.64f, 0.12f, 12, 0.3f);
-
-        AllocateRectangleRigidBody(state, rectangle, physicsMaterial, true, false, true, ref genIndex);        
+        transform = new(0,9,8,7,6,5,4);
+        AllocateRectangleRigidBody(state, rectangle, physicsMaterial, transform, true, false, true, ref genIndex);        
 
         Assert.Equal(1, genIndex.Index);
         Assert.Equal(0, genIndex.Generation);
@@ -406,9 +410,8 @@ public class SOAPhysicsSystemTest
         Assert.False(IsTrigger(state, genIndex));
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
         AssertPhysicsMaterial(state, physicsMaterial, genIndex);
-
-        firstVertice = state.FirstVertexIndices[genIndex.Index];
-        AssertRectangleVerticesClockwise(state, firstVertice, rectangle);
+        AssertRectangleVerticesClockwise(state, state.FirstVertexIndices[genIndex.Index], rectangle);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref transform, genIndex.Index, 4);
     }
 
 
@@ -433,13 +436,11 @@ public class SOAPhysicsSystemTest
 
         float cExpectedX         = 4;
         float cExpectedY         = 6;
-        float cExpectedRadius    = 9;
         Circle circle = new Circle(1,1,3);
         Transform cTransform = new Transform(new Vector2(1,3), 3, 0);
         GenIndex cBodyGenIndex = default;
 
-        AllocateCircleCollider(state, circle, false, false, ref cBodyGenIndex);
-        SetTransform(state.Transforms, state.Generations, cBodyGenIndex, cTransform);
+        AllocateCircleCollider(state, circle, cTransform, false, false, ref cBodyGenIndex);
 
         // define and insert rect.
 
@@ -449,8 +450,7 @@ public class SOAPhysicsSystemTest
         Transform rTransform = new Transform(new Vector2(3,3), 2, 0);
         GenIndex rBodyGenIndex = default;
 
-        AllocateRectangleCollider(state, rectangle, false, false, ref rBodyGenIndex);
-        SetTransform(state.Transforms, state.Generations, rBodyGenIndex, rTransform);
+        AllocateRectangleCollider(state, rectangle, rTransform, false, false, ref rBodyGenIndex);
 
         // transform the shapes.
 
@@ -463,7 +463,7 @@ public class SOAPhysicsSystemTest
         // assert circle.        
         Assert.Equal(cExpectedX,           state.WorldVertices.X[cBodyGenIndex.Index],   precision: 1);
         Assert.Equal(cExpectedY,           state.WorldVertices.Y[cBodyGenIndex.Index],   precision: 1);
-        AssertEqualsSoaTransformEntry(state.Transforms, ref cTransform, cBodyGenIndex.Index, 4);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref cTransform, cBodyGenIndex.Index, 4);
 
         // assert rect.
         int first = state.FirstVertexIndices[rBodyGenIndex.Index];
@@ -477,7 +477,7 @@ public class SOAPhysicsSystemTest
             if(v==first)
                 break;
         }
-        AssertEqualsSoaTransformEntry(state.Transforms, ref rTransform, rBodyGenIndex.Index, 4);
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref rTransform, rBodyGenIndex.Index, 4);
     }
 
     [Fact]
@@ -497,17 +497,14 @@ public class SOAPhysicsSystemTest
         GenIndex bodyGenIndex = default;
 
         // allocate entity.
-        AllocateRectangleCollider(state, new Rectangle(0,0,2,2), true, false, ref bodyGenIndex);
+        AllocateRectangleCollider(state, new Rectangle(0,0,2,2), expected, true, false, ref bodyGenIndex);
         GenIndexListProc.Allocate(physicsBodyIds, entityGenIndex, new(bodyGenIndex));
         GenIndexListProc.Allocate(transforms, entityGenIndex, new Transform(1,2,3,4,5,6,7));
-
-        // set body transform to be the expected transform.
-        SetTransform(state.Transforms, state.Generations, bodyGenIndex, expected);
     
         SyncEntityTransformsToPhysicsBodies(transforms, physicsBodyIds, state.Transforms, state.Generations);
 
         GenIndexListProc.GetDenseRef(transforms, entityGenIndex, out Ref<Transform> transformRef);
-        AssertEqualTransforms(ref expected, ref transformRef.Value, 4);
+        TransformAssert.Equals(ref expected, ref transformRef.Value, 4);
     }
 
     [Fact]
@@ -523,7 +520,7 @@ public class SOAPhysicsSystemTest
         allocator.Allocate(out GenIndex cEntityGenIndex, out _);
 
         // allocate circle rigidbody.
-        AllocateCircleCollider(state, new Circle(1,-1,1), false, true, ref cBodyGenIndex);
+        AllocateCircleCollider(state, new Circle(1,-1,1), default, false, true, ref cBodyGenIndex);
         GenIndexListProc.Allocate(registry.Get<PhysicsBodyId>(), cEntityGenIndex, new PhysicsBodyId(cBodyGenIndex));
 
         // set transform of circle.
@@ -538,7 +535,7 @@ public class SOAPhysicsSystemTest
         allocator.Allocate(out GenIndex rEntityGenIndex, out _);
         
         // allocate rectangle rigidbody.
-        AllocateRectangleCollider(state, new Rectangle(-2,2, 2,2), true, false, ref rBodyGenIndex);
+        AllocateRectangleCollider(state, new Rectangle(-2,2, 2,2), default, true, false, ref rBodyGenIndex);
         GenIndexListProc.Allocate(registry.Get<PhysicsBodyId>(), rEntityGenIndex, new PhysicsBodyId(rBodyGenIndex));
     
         // allocate rectangle transform.
@@ -552,8 +549,8 @@ public class SOAPhysicsSystemTest
         SyncTransformsToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), state.Transforms, state.Generations);
 
         // ensure the data was properly set inside the state.
-        AssertEqualsSoaTransformEntry(state.Transforms, ref cTransform, cBodyGenIndex.Index, 4);    
-        AssertEqualsSoaTransformEntry(state.Transforms, ref rTransform, rBodyGenIndex.Index, 4);    
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref cTransform, cBodyGenIndex.Index, 4);    
+        Soa_TransformAssert.EntryEquals(state.Transforms, ref rTransform, rBodyGenIndex.Index, 4);    
     }
 
     [Fact]
@@ -672,10 +669,10 @@ public class SOAPhysicsSystemTest
     //     AppendSpatialPair(spatialPairs, circleB, circleC, (byte)flags, (byte)flags);
 
     //     FindCircleCollisions(collisionsToResolve, spatialPairs, vertices, radii, firstVertices);
-    //     FindCircleCollisions(collisionsToResolve, spatialPairs,
-    //         vertices, Soa_Vector2 minAABBVectors, Soa_Vector2 maxAABBVectors, radii,
-    //         firstVertexIndices
-    //     );
+    //     // FindCircleCollisions(collisionsToResolve, spatialPairs,
+    //     //     vertices, Soa_Vector2 minAABBVectors, Soa_Vector2 maxAABBVectors, radii,
+    //     //     firstVertexIndices
+    //     // );
         
     //     // assert the collision to resolve.
     //     Assert.Equal(1, collisionsToResolve.Count);

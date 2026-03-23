@@ -2,7 +2,7 @@ using Howl.Math;
 
 namespace Howl.Test.Math;
 
-public static class TransformHelpers
+public static class TransformAssert
 {
     /// <summary>
     /// Asserts that two transform structs are equals.
@@ -10,7 +10,7 @@ public static class TransformHelpers
     /// <param name="expected">the expected transform.</param>
     /// <param name="result">the resultant transform.</param>
     /// <param name="precision">the preceision to assert floating point values.</param>
-    public static void AssertEqualTransforms(ref Transform expected, ref Transform result, float precision)
+    public static void Equals(ref Transform expected, ref Transform result, float precision)
     {
         Assert.Equal(expected.Position.X, result.Position.X, precision);
         Assert.Equal(expected.Position.Y, result.Position.Y, precision);
