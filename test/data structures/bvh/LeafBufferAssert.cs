@@ -1,9 +1,11 @@
 using Howl.DataStructures.Bvh;
+using Howl.Math.Shapes;
+using Howl.Test.Math.Shapes;
 
 public static class LeafBufferAssert
 {
     /// <summary>
-    /// Asserts the values of a buffer entry are equal to expected values.
+    /// Asserts the equality of values for a buffer entry and expected values.
     /// </summary>
     /// <param name="buffer">the buffer to assert.</param>
     /// <param name="entryIndex">the index of the entry in the buffer to check equality against.</param>
@@ -14,7 +16,7 @@ public static class LeafBufferAssert
     /// <param name="index">the expected index value.</param>
     /// <param name="generation">the expected generation value.</param>
     /// <param name="flags">the expected flags value.</param>
-    public static void EntryEquals(LeafBuffer buffer, int entryIndex, float minX, float minY, float maxX, float maxY, int index, int generation, 
+    public static void EntryEqual(LeafBuffer buffer, int entryIndex, float minX, float minY, float maxX, float maxY, int index, int generation, 
         int flags
     )
     {
@@ -25,5 +27,10 @@ public static class LeafBufferAssert
         Assert.Equal(index, buffer.GenIndices.Indices[entryIndex]);
         Assert.Equal(generation, buffer.GenIndices.Generations[entryIndex]);
         Assert.Equal(flags, buffer.Flags[entryIndex]);
+    }
+
+    public static void LengthEqual(LeafBuffer buffer, int length)
+    {
+        Soa_AabbAssert.LengthEqual(buffer.Aabbs, length);
     }
 }

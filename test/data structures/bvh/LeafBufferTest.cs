@@ -37,7 +37,7 @@ public class LeafBufferTest
             int generation = j += 1;
             int flags = j += 1;
             AppendLeaf(buffer, minX, minY, maxX, maxY, index, generation, flags);
-            LeafBufferAssert.EntryEquals(buffer, i, minX, minY, maxX, maxY, index, generation, flags);
+            LeafBufferAssert.EntryEqual(buffer, i, minX, minY, maxX, maxY, index, generation, flags);
             Assert.Equal(i+1, buffer.Count);
         }
     }
@@ -57,7 +57,7 @@ public class LeafBufferTest
             int generation = j += 1;
             int flags = j += 1;
             AppendLeaf(buffer, minX, minY, maxX, maxY, index, generation, flags);
-            LeafBufferAssert.EntryEquals(buffer, i, minX, minY, maxX, maxY, index, generation, flags);
+            LeafBufferAssert.EntryEqual(buffer, i, minX, minY, maxX, maxY, index, generation, flags);
         }        
         Assert.Equal(2, buffer.Count);
         Clear(buffer);        

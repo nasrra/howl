@@ -49,6 +49,7 @@ TEST_MAP=(
     ["PhysicsSystem"]="${PHYSICS_NAMESPACE}SOAPhysicsSystemTest"
     ["SAT"]="${SHAPES_NAMESPACE}SATTest"
     ["Soa_Transform"]="${MATH_NAMESPACE}Soa_TransformTest"
+    ["SpatialPairBuffer"]="${DATA_STRUCTURES_NAMESPACE}Bvh.SpatialPairBufferTest"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"
     ["Text4096"]="${GRAPHICS_NAMESPACE}Text.Text4096Test"
     ["Transform"]="${MATH_NAMESPACE}TransformTest"
