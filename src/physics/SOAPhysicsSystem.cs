@@ -187,6 +187,11 @@ public static class SoaPhysicsSystem
     {
         GetDenseRef(registry.Get<Camera>(), CameraSystem.MainCameraId, out Ref<Camera> camera);
 
+        if(state.DrawBvhBranches)
+        {
+            BoundingVolumeHierarchy.DrawBranches(camera, state.Bvh, Colour.Yellow);
+        }
+
         if (state.DrawColliderWireframes)
         {
             DrawCirclePhysicsBodies(camera, state.WorldVertices, state.WorldRadii, state.FirstVertexIndices, 

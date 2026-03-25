@@ -729,4 +729,36 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         }
 
     }
+
+
+
+
+    /********************
+
+        Debug Drawing.
+
+    ********************/
+
+
+
+
+    public static void DrawBranches(Howl.Graphics.Camera camera, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
+    {
+        Span<Branch> branches = AsSpan(bvh.Branches);
+
+        for(int i = 0; i < branches.Length; i++)
+        {
+            Debug.Draw.Wireframe(
+                camera,
+                new Transform(Vector2.Zero, Vector2.One, 0),
+                new Rectangle(
+                    new Vector2(branches[i].BoundingBoxMinX, branches[i].BoundingBoxMinY), 
+                    new Vector2(branches[i].BoundingBoxMaxX, branches[i].BoundingBoxMaxY)
+                ), 
+                colour
+            );
+        }
+
+    }
+
 }

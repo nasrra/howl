@@ -395,6 +395,11 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// Gets and sets the debug draw colour for a normal vector.
     public Colour NormalColour;
 
+    /// <summary>
+    /// The debug draw colour of the boudning volume hierarchy's branches.
+    /// </summary>
+    public Colour BvhBranchColour;
+
 
 
 
@@ -583,6 +588,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
         CollisionOwnerColour            = Colour.Green;
         CollisionOtherColour            = Colour.LightBlue;
         NormalColour                    = Colour.Red;
+        BvhBranchColour                 = Colour.Yellow;
 
 
         // Counters.
