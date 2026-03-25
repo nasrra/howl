@@ -110,7 +110,7 @@ public class BranchBuffer : IDisposable
 
     public void Dispose()
     {
-        throw new NotImplementedException();
+        Dispose(this);
     }
 
     public static void Dispose(BranchBuffer buffer)

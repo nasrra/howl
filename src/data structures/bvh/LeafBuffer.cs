@@ -92,18 +92,27 @@ public class LeafBuffer : IDisposable
 
     public void Dispose()
     {
-        throw new NotImplementedException();
+        Dispose(this);
     }
 
     public static void Dispose(LeafBuffer buffer)
     {
         if(buffer.Disposed)
             return;
+
+        buffer.Disposed = true;
         
         Soa_Aabb.Dispose(buffer.Aabbs);
         buffer.Aabbs = null;
         Soa_GenIndex.Dispose(buffer.GenIndices);
         buffer.GenIndices = null;
         buffer.Flags = null;
+
+        GC.SuppressFinalize(buffer);
+    }
+
+    ~LeafBuffer()
+    {
+        Dispose(this);
     }
 }

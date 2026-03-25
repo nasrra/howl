@@ -30,22 +30,6 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     }
 
     /// <summary>
-    /// Appends a leaf into a bounding volume hierarchy.
-    /// </summary>
-    /// <param name="bvh">the bvh to append to.</param>
-    /// <param name="minX">the the x-component of the aabb minimum vertex.</param>
-    /// <param name="minY">the the y-component of the aabb minimum vertex.</param>
-    /// <param name="maxX">the the x-component of the aabb maximum vertex.</param>
-    /// <param name="maxY">the the y-component of the aabb maximum vertex.</param>
-    /// <param name="index">the index of the data to associate with the leaf.</param>
-    /// <param name="generation">the generation of the data to associate with the leaf.</param>
-    /// <param name="flags">the user-defined flags to associate with the leaf.</param>
-    public static void AppendLeaf(Soa_BoundingVolumeHierarchy bvh, float minX, float minY, float maxX, float maxY, int index, int generation, int flags)
-    {
-        LeafBuffer.AppendLeaf(bvh.Leaves, minX, minY, maxX, maxY, index, generation, flags);
-    }
-
-    /// <summary>
     /// Sets the count of the bounding volume hierarchy's internal arrays to zero.
     /// </summary>
     /// <param name="bvh">the bvh to clear.</param>

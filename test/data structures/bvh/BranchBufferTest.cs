@@ -41,7 +41,7 @@ public class BranchBufferTest
             int subtreeSize = j++;
             int leafCount = j++;
             AppendBranch(buffer, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount);
-            BranchBufferAssert.EntryEquals(buffer, i, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount);
+            BranchBufferAssert.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, i, buffer);
             Assert.Equal(i+1, buffer.Count);
         }
     }

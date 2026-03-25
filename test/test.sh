@@ -25,7 +25,7 @@ TEST_NAME=$1
 declare -A TEST_MAP
 TEST_MAP=(
     ["AABB"]="${SHAPES_NAMESPACE}AABBTest"
-    ["BoundingVolumeHierarchy"]="${DATA_STRUCTURES_NAMESPACE}BoundingVolumeHierarchyTest"
+    ["BoundingVolumeHierarchy"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Soa_BoundingVolumeHierarchyTest"
     ["BranchBuffer"]="${DATA_STRUCTURES_NAMESPACE}Bvh.BranchBufferTest"
     ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
     ["ComponentType"]="${ECS_NAMESPACE}ComponentTypeTest"

@@ -28,7 +28,7 @@ public class QueryResultBufferTest
             int generation = j++;
             int flags = j++;
             AppendQueryResult(buffer, index, generation, flags);
-            QueryResultBufferAssert.EntryEquals(buffer, i, index, generation, flags);
+            QueryResultBufferAssert.EntryEquals(index, generation, flags, i, buffer);
             Assert.Equal(i+1, buffer.Count);
         }
     }
@@ -44,7 +44,7 @@ public class QueryResultBufferTest
             int generation = j++;
             int flags = j++;
             AppendQueryResult(buffer, index, generation, flags);
-            QueryResultBufferAssert.EntryEquals(buffer, i, index, generation, flags);
+            QueryResultBufferAssert.EntryEquals(index, generation, flags, i, buffer);
         }
         Assert.Equal(2,buffer.Count);
         Clear(buffer);
