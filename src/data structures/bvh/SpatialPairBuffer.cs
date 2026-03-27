@@ -64,7 +64,7 @@ public class SpatialPairBuffer : IDisposable
     /// <param name="otherIndex">the index of the data associated with the spatial pair's 'other'.</param>
     /// <param name="otherGeneration">the generation of the data assocaited with the spatial pair's 'other'.</param>
     /// <param name="otherFlags">the user-defined flags of the spatial pair's 'other'.</param>
-    public static void AppendSpatialPair(SpatialPairBuffer buffer, int ownerIndex, int ownerGeneration, int ownerFlags, int otherIndex, int otherGeneration,
+    public static void Append(SpatialPairBuffer buffer, int ownerIndex, int ownerGeneration, int ownerFlags, int otherIndex, int otherGeneration,
         int otherFlags
     )
     {
@@ -117,6 +117,8 @@ public class SpatialPairBuffer : IDisposable
         buffer.OtherGenIndices = null;
         buffer.OwnerFlags = null;
         buffer.OtherFlags = null;
+        buffer.Count = 0;
+        buffer.Length = 0;
 
         GC.SuppressFinalize(buffer);
     }

@@ -1,7 +1,6 @@
 
 using Xunit;
 using Howl.DataStructures.Bvh;
-using static Howl.DataStructures.Bvh.SpatialPairBuffer;
 
 namespace Howl.Test.DataStructures.Bvh;
 
@@ -30,7 +29,7 @@ public class SpatialPairBufferTest
             int otherIndex = j += 1;
             int otherGeneration = j += 1;
             int otherFlags = j += 1;
-            AppendSpatialPair(buffer, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
+            SpatialPairBuffer.Append(buffer, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
             SpatialPairBufferAssert.EntryEqual(buffer, i, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
             Assert.Equal(i+1, buffer.Count);
         }
@@ -49,11 +48,27 @@ public class SpatialPairBufferTest
             int otherIndex = j += 1;
             int otherGeneration = j += 1;
             int otherFlags = j += 1;
-            AppendSpatialPair(buffer, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
+            SpatialPairBuffer.Append(buffer, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
             SpatialPairBufferAssert.EntryEqual(buffer, i, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
         }        
         Assert.Equal(2, buffer.Count);
-        Clear(buffer);
+        SpatialPairBuffer.Clear(buffer);
         Assert.Equal(0, buffer.Count);
+    }
+
+    [Fact]
+    public void Disposal_Test()
+    {
+        SpatialPairBuffer buffer = new(12);
+        
+        SpatialPairBuffer.Dispose(buffer);
+
+        Assert.Null(buffer.OwnerGenIndices);
+        Assert.Null(buffer.OtherGenIndices);
+        Assert.Null(buffer.OwnerFlags);
+        Assert.Null(buffer.OtherFlags);
+        Assert.Equal(0, buffer.Count);
+        Assert.Equal(0, buffer.Length);
+        Assert.True(buffer.Disposed);
     }
 }
