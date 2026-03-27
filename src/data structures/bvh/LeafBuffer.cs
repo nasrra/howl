@@ -119,6 +119,8 @@ public class LeafBuffer : IDisposable
         Soa_GenIndex.Dispose(buffer.GenIndices);
         buffer.GenIndices = null;
         buffer.Flags = null;
+        buffer.Length = 0;
+        buffer.Count = 0;
 
         GC.SuppressFinalize(buffer);
     }

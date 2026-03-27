@@ -70,4 +70,18 @@ public class LeafBufferTest
             Assert.Equal(0, buffer.Count);
         }
     }
+
+    [Fact]
+    public void Disposal_Test()
+    {
+        LeafBuffer buffer = new(12);
+        LeafBuffer.Dispose(buffer);
+        Assert.Null(buffer.Aabbs);
+        Assert.Null(buffer.GenIndices);
+        Assert.Null(buffer.Centroids);
+        Assert.Null(buffer.Flags);
+        Assert.Equal(0, buffer.Count);
+        Assert.Equal(0, buffer.Length);
+        Assert.True(buffer.Disposed);
+    }
 }
