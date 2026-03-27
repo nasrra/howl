@@ -132,6 +132,8 @@ public class BranchBuffer : IDisposable
         buffer.RightLeafIndices = null;
         buffer.SubtreeSizes = null;
         buffer.LeafCounts = null;
+        buffer.Count = 0;
+        buffer.Length = 0;
 
         GC.SuppressFinalize(buffer);
     }

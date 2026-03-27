@@ -75,4 +75,21 @@ public class BranchBufferTest
             Assert.Equal(0, buffer.Count);
         }
     }
+
+    [Fact]
+    public void Disposal_Test()
+    {
+        BranchBuffer buffer = new(12);
+        
+        BranchBuffer.Dispose(buffer);
+        
+        Assert.Null(buffer.Aabbs);
+        Assert.Null(buffer.LeftLeafIndices);
+        Assert.Null(buffer.RightLeafIndices);
+        Assert.Null(buffer.SubtreeSizes);
+        Assert.Null(buffer.LeafCounts);
+        Assert.Equal(0, buffer.Count);
+        Assert.Equal(0, buffer.Length);
+        Assert.True(buffer.Disposed);
+    }
 }
