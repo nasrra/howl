@@ -61,7 +61,7 @@ public class LeafBuffer : IDisposable
     /// <param name="generation">the generation of the data to associate with the leaf.</param>
     /// <param name="flags">the user-defined flags to associate with the leaf.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendLeaf(LeafBuffer buffer, float minX, float minY, float maxX, float maxY, int index, int generation, int flags)
+    public static void Append(LeafBuffer buffer, float minX, float minY, float maxX, float maxY, int index, int generation, int flags)
     {
         int count = buffer.Count;
         buffer.Aabbs.MinX[count] = minX;

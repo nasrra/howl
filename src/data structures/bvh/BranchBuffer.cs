@@ -71,7 +71,7 @@ public class BranchBuffer : IDisposable
     /// <param name="rightLeafIndex">the index of the right leaf.</param>
     /// <param name="subtreeSize">the subtree size.</param>
     /// <param name="leafCount">the amount of leaves attached to the branch.</param>
-    public static void AppendBranch(BranchBuffer buffer, float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex, 
+    public static void Append(BranchBuffer buffer, float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex, 
         int subtreeSize, int leafCount
     )
     {
