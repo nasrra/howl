@@ -29,7 +29,7 @@ public class BoundingVolumeHierarchyTest
     {
         BoundingVolumeHierarchy bvh = new();
         
-        AABB aabb = new AABB(0,0,12,12);
+        Aabb aabb = new Aabb(0,0,12,12);
         GenIndex genIndex = new GenIndex(1,2);
 
         byte flag = 1;
@@ -52,12 +52,12 @@ public class BoundingVolumeHierarchyTest
     {
         BoundingVolumeHierarchy bvh = new();
 
-        AABB aabb;
+        Aabb aabb;
         GenIndex genIndex;
         byte flag;
         Leaf leaf;
 
-        aabb = new AABB(0,0,12,12);
+        aabb = new Aabb(0,0,12,12);
         genIndex = new GenIndex(2,4);
         flag = 3;
 
@@ -65,7 +65,7 @@ public class BoundingVolumeHierarchyTest
         {
             for(int y = 0; y < 20; y++)
             {
-                aabb = new AABB(x-1,y-1,x,y);
+                aabb = new Aabb(x-1,y-1,x,y);
                 genIndex = new GenIndex(x,0);
                 flag = 0;
                 leaf = new Leaf(aabb,genIndex,flag);
@@ -84,19 +84,19 @@ public class BoundingVolumeHierarchyTest
     {
         BoundingVolumeHierarchy bvh = new();
 
-        AABB leafAABB;
+        Aabb leafAABB;
         GenIndex genIndex;
         byte flag;
 
         // leaf 1 
-        leafAABB = new AABB(0,0,10,10);
+        leafAABB = new Aabb(0,0,10,10);
         genIndex = new GenIndex(0,0);
         flag = 0;
         Leaf leaf1 = new Leaf(leafAABB, genIndex, flag);
         InsertLeaf(bvh, leaf1);
 
         // leaf 2
-        leafAABB = new AABB(10,10,20,20);
+        leafAABB = new Aabb(10,10,20,20);
         genIndex = new GenIndex(1,0);
         flag = 0;
         Leaf leaf2 = new Leaf(leafAABB, genIndex, flag);
@@ -105,18 +105,18 @@ public class BoundingVolumeHierarchyTest
         ConstructTree(bvh);
     
         // fail to intersect.
-        ReadOnlySpan<QueryResult> zeroResult = AreaQuery(bvh, new AABB(100,100,333,333));
+        ReadOnlySpan<QueryResult> zeroResult = AreaQuery(bvh, new Aabb(100,100,333,333));
         Assert.Equal(0,zeroResult.Length);
 
         // find single intersect.
-        ReadOnlySpan<QueryResult> singleResult = AreaQuery(bvh, new AABB(0,0,9,9));
+        ReadOnlySpan<QueryResult> singleResult = AreaQuery(bvh, new Aabb(0,0,9,9));
         Assert.Equal(1,singleResult.Length);
         Assert.Equal(leaf1.Index,       singleResult[0].GenIndex.Index);
         Assert.Equal(leaf1.Generation,  singleResult[0].GenIndex.Generation);
         Assert.Equal(leaf1.Flag,        singleResult[0].Flag);
 
         // find dual intersect.
-        ReadOnlySpan<QueryResult> doubleResult = AreaQuery(bvh, new AABB(5,5,20,20));
+        ReadOnlySpan<QueryResult> doubleResult = AreaQuery(bvh, new Aabb(5,5,20,20));
         Assert.Equal(2,doubleResult.Length);
         Assert.Equal(leaf1.Index,       doubleResult[0].GenIndex.Index);
         Assert.Equal(leaf1.Generation,  doubleResult[0].GenIndex.Generation);
@@ -131,19 +131,19 @@ public class BoundingVolumeHierarchyTest
     {
         BoundingVolumeHierarchy bvh = new();
 
-        AABB leafAABB;
+        Aabb leafAABB;
         GenIndex genIndex;
         byte flag;
 
         // leaf 1 
-        leafAABB = new AABB(0,0,10,10);
+        leafAABB = new Aabb(0,0,10,10);
         genIndex = new GenIndex(0,0);
         flag = 0;
         Leaf leaf1 = new Leaf(leafAABB, genIndex, flag);
         InsertLeaf(bvh, leaf1);
 
         // leaf 2
-        leafAABB = new AABB(10,10,20,20);
+        leafAABB = new Aabb(10,10,20,20);
         genIndex = new GenIndex(1,0);
         flag = 0;
         Leaf leaf2 = new Leaf(leafAABB, genIndex, flag);

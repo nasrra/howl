@@ -263,9 +263,9 @@ public struct Rectangle
     /// <param name="rectangle">the rectangle.</param>
     /// <returns>the constructed AABB.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static AABB GetAABB(in Rectangle rectangle)
+    public static Aabb GetAABB(in Rectangle rectangle)
     {
-        return new AABB(BottomLeft(rectangle), TopRight(rectangle));
+        return new Aabb(BottomLeft(rectangle), TopRight(rectangle));
     }
 
     /// <summary>

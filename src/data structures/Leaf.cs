@@ -48,7 +48,7 @@ public struct Leaf
     /// <param name="aabb">The aabb.</param>
     /// <param name="genIndex">The gen index of the data to associate with this leaf.</param>
     /// <param name="flag">any user-defined flags to distinguish this leaf.</param>
-    public Leaf(AABB aabb, GenIndex genIndex, int flag)
+    public Leaf(Aabb aabb, GenIndex genIndex, int flag)
     : this(aabb.MinX, aabb.MinY, aabb.MaxX, aabb.MaxY, genIndex.Index, genIndex.Generation, flag)
     {}
 

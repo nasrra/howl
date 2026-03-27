@@ -102,7 +102,7 @@ public class PolygonRectangleTest
     public void GetAABB_Test()
     {
         PolygonRectangle shape = new PolygonRectangle(-0.5f, 0.5f, 20, 10);
-        AABB aabb = GetAABB(shape);
+        Aabb aabb = GetAABB(shape);
         Assert.Equal(-0.5f, aabb.MinX, precision: 1);
         Assert.Equal(-9.5f, aabb.MinY, precision: 1);
         Assert.Equal(19.5f, aabb.MaxX, precision: 1);

@@ -15,7 +15,7 @@ using static Howl.ECS.GenIndexListProc;
 using static Howl.Math.Shapes.Circle;
 using static Howl.Math.Shapes.PolygonRectangle;
 using static Howl.Math.Shapes.Rectangle;
-using static Howl.Math.Shapes.AABB;
+using static Howl.Math.Shapes.Aabb;
 using static Howl.DataStructures.BoundingVolumeHierarchy;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Math.Shapes.ShapeUtils; 
@@ -836,7 +836,7 @@ public static class CollisionSystem
             }
         
             ref Transform transform = ref transformRef.Value;
-            AABB aabb = GetAABB(collider.BaseShape);
+            Aabb aabb = GetAABB(collider.BaseShape);
 
             Debug.Draw.Wireframe(
                 componentRegistry,
@@ -873,7 +873,7 @@ public static class CollisionSystem
             // PolygonRectangle polygonRectangle = new PolygonRectangle(collider.BaseShape);
             // polygonRectangle = PolygonRectangle.Transform(polygonRectangle, transform);
 
-            AABB aabb = GetAABB(collider.TransformedShape);
+            Aabb aabb = GetAABB(collider.TransformedShape);
             Debug.Draw.Wireframe(
                 componentRegistry,
                 Math.Transform.Identity, // no rotation for AABB's 

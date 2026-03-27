@@ -1,7 +1,7 @@
 using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.Math.Shapes.Rectangle;
-using static Howl.Math.Shapes.AABB;
+using static Howl.Math.Shapes.Aabb;
 
 namespace Howl.Test.Math.Shapes;
 
@@ -110,7 +110,7 @@ public class RectangleTest
     public void GetAABB_Test()
     {
         Rectangle rectangle = new Rectangle(-12,-12,12,32);
-        AABB aabb = GetAABB(rectangle);
+        Aabb aabb = GetAABB(rectangle);
         Assert.Equal(new Vector2(-12, -44), MinVector(aabb));
         Assert.Equal(new Vector2(0, -12), MaxVector(aabb));
     }

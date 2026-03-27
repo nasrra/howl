@@ -170,7 +170,7 @@ public unsafe struct PolygonRectangle
     /// <param name="polygonRectangle">The polygon rectangle.</param>
     /// <returns>The calculated AABB.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static AABB GetAABB(in PolygonRectangle polygonRectangle)
+    public static Aabb GetAABB(in PolygonRectangle polygonRectangle)
     {
         Math.GetMinMaxVectors(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), out float minX, out float minY, out float maxX, out float maxY);
         return new(minX, minY, maxX, maxY);

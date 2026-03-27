@@ -26,7 +26,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     public Soa_BoundingVolumeHierarchy(int capacity)
     {
         Leaves = new(capacity);
-        Branches = new(capacity);
+        Branches = new(capacity*2);
     }
 
     /// <summary>
@@ -38,6 +38,28 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         LeafBuffer.Clear(bvh.Leaves);
         BranchBuffer.Clear(bvh.Branches);
     }
+
+    public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
+    {
+        BranchBuffer.Clear(bvh.Branches);
+    }
+
+    public static void ConstructBranches(
+        LeafBuffer leaves,
+        BranchBuffer branches,
+        ref int writeIndex,
+        ref float boundingBoxMinX,
+        ref float boundingBoxMinY,
+        ref float boundingBoxMaxX,
+        ref float boundingBoxMaxY
+    )
+    {
+        // reserve space.
+        int branchIndex = writeIndex++;
+
+        // if()
+    }
+
 
 
 

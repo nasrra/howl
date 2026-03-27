@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Howl.ECS;
+using Howl.Math;
 using Howl.Math.Shapes;
 
 namespace Howl.DataStructures.Bvh;
@@ -16,6 +17,11 @@ public class LeafBuffer : IDisposable
     /// The gen indices.
     /// </summary>
     public Soa_GenIndex GenIndices;
+
+    /// <summary>
+    /// The centroids of the Aabb's
+    /// </summary>
+    public Soa_Vector2 Centroids;
 
     /// <summary>
     /// The user-defined flags.

@@ -11,7 +11,7 @@ using Vector2 = Howl.Math.Vector2;
 using static Howl.Math.Math;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.DataStructures.BoundingVolumeHierarchy;
-using static Howl.Math.Shapes.AABB;
+using static Howl.Math.Shapes.Aabb;
 using static Howl.Collections.Buffer;
 using static Howl.Math.Shapes.ShapeUtils;
 using static Howl.Physics.Soa_Collision;
@@ -2361,6 +2361,15 @@ public static class SoaPhysicsSystem
             Debug.Draw.WireframeCircle(colour, camera.Position.X, camera.Position.Y, camera.Zoom,
                 centroidsX[i], centroidsY[i], 0.1f
             );
+        }
+    }
+
+    public static void DrawAabbs(Camera camera, Soa_Aabb aabbs, Span<PhysicsBodyFlags> flags, Colour colour)
+    {
+        for(int i = 0; i < flags.Length; i++)
+        {
+            if((flags[i] & PhysicsBodyFlags.InUse) == 0)
+                continue;
         }
     }
 }

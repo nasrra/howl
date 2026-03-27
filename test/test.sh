@@ -48,6 +48,7 @@ TEST_MAP=(
     ["RigidBody"]="${PHYSICS_NAMESPACE}RigidBodyTest"
     ["PhysicsSystem"]="${PHYSICS_NAMESPACE}SOAPhysicsSystemTest"
     ["SAT"]="${SHAPES_NAMESPACE}SATTest"
+    ["Soa_Aabb"]="${SHAPES_NAMESPACE}Soa_AabbTest"
     ["Soa_Transform"]="${MATH_NAMESPACE}Soa_TransformTest"
     ["SpatialPairBuffer"]="${DATA_STRUCTURES_NAMESPACE}Bvh.SpatialPairBufferTest"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"

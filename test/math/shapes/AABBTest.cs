@@ -1,6 +1,6 @@
 using Howl.Math;
 using Howl.Math.Shapes;
-using static Howl.Math.Shapes.AABB;
+using static Howl.Math.Shapes.Aabb;
 
 namespace Howl.Test.Math.Shapes;
 
@@ -12,7 +12,7 @@ public class AABBTest
     [Fact]
     public void FloatConstructor_Test()
     {
-        AABB aabb;
+        Aabb aabb;
 
         float minX = 0;
         float minY = 0;
@@ -30,7 +30,7 @@ public class AABBTest
     [Fact]
     public void VectorConstructor_Test()
     {        
-        AABB aabb;
+        Aabb aabb;
         Vector2 min = new(10,10);
         Vector2 max = new(30,30);
         aabb = new(min, max);
@@ -43,7 +43,7 @@ public class AABBTest
     [Fact]
     public void MinAndMaxVector_Test()
     {
-        AABB aabb;
+        Aabb aabb;
         Vector2 min = new(10,10);
         Vector2 max = new(30,30);
         aabb = new(min, max);
@@ -54,22 +54,22 @@ public class AABBTest
     [Fact]
     public void UnionAABBConstructor_Test()
     {
-        AABB a = new(
+        Aabb a = new(
             new Vector2(-20, 20), 
             new Vector2(30,50)
         );
         
-        AABB b = new(
+        Aabb b = new(
             new Vector2(33, -90), 
             new Vector2(66,45)
         );
         
-        AABB expected = new(
+        Aabb expected = new(
             new Vector2(-20, -90),
             new Vector2(66, 50)
         );
 
-        AABB result = Union(a,b);
+        Aabb result = Union(a,b);
 
         Assert.Equal(expected.MinX, result.MinX);
         Assert.Equal(expected.MinY, result.MinY);
@@ -80,7 +80,7 @@ public class AABBTest
     [Fact]
     public void Height_Test()
     {
-        AABB aabb;
+        Aabb aabb;
 
         Vector2 min;
         Vector2 max;
@@ -111,100 +111,100 @@ public class AABBTest
     [Fact]
     public void Center_Test()
     {
-        AABB aabb = new(new Vector2(-20, -30), new Vector2(15, 25));
+        Aabb aabb = new(new Vector2(-20, -30), new Vector2(15, 25));
         Vector2 expected = new Vector2(-2.5f, -2.5f);
-        Assert.Equal(expected, Center(aabb));
+        Assert.Equal(expected, CalculateCentroid(aabb));
     }
 
     [Fact]
     public void SubtractVector_Test()
     {
-        AABB aabb;
-        AABB expected;
+        Aabb aabb;
+        Aabb expected;
         Vector2 vector;
 
         aabb = new(Vector2.Zero, Vector2.Zero);
         vector = new Vector2(12, -20);
-        expected = new AABB(new Vector2(-12, 20), new Vector2(-12, 20));
+        expected = new Aabb(new Vector2(-12, 20), new Vector2(-12, 20));
         Assert.Equal(expected, aabb - vector);
 
         aabb = new(new Vector2(-10, -10), new Vector2(10, 10));
         vector = new Vector2(-10, -10);
-        expected = new AABB(Vector2.Zero, new Vector2(20,20));
+        expected = new Aabb(Vector2.Zero, new Vector2(20,20));
         Assert.Equal(expected, aabb - vector);
 
         aabb = new(new Vector2(-13, -2), new Vector2(22, 55));
         vector = new Vector2(-16, 3);
-        expected = new AABB(new Vector2(3, -5), new Vector2(38, 52));
+        expected = new Aabb(new Vector2(3, -5), new Vector2(38, 52));
         Assert.Equal(expected, aabb - vector);
     }
 
     [Fact]
     public void AddVector_Test()
     {
-        AABB aabb;
-        AABB expected;
+        Aabb aabb;
+        Aabb expected;
         Vector2 vector;
 
         aabb = new(Vector2.Zero, Vector2.Zero);
         vector = new Vector2(10,10);
-        expected = new AABB(vector,vector);
+        expected = new Aabb(vector,vector);
         Assert.Equal(expected, aabb + vector);
 
         aabb = new(new Vector2(-10,-10), new Vector2(10,10));
         vector = new Vector2(-10,-10);
-        expected = new AABB(new Vector2(-20,-20),new Vector2(0,0));
+        expected = new Aabb(new Vector2(-20,-20),new Vector2(0,0));
         Assert.Equal(expected, aabb + vector);
 
         aabb = new(new Vector2(12,-99), new Vector2(200,-33));
         vector = new Vector2(4,-33);
-        expected = new AABB(new Vector2(16,-132),new Vector2(204,-66));
+        expected = new Aabb(new Vector2(16,-132),new Vector2(204,-66));
         Assert.Equal(expected, aabb + vector);
     }
 
     [Fact]
     public void VectorIntersect_Test()
     {
-        AABB aabb = new AABB(0,0,10,10);
+        Aabb aabb = new Aabb(0,0,10,10);
         Vector2 vector;
 
         vector = new Vector2(5,5);
-        Assert.True(AABB.Intersect(aabb, vector));
-        Assert.True(AABB.Intersect(vector, aabb));
+        Assert.True(Aabb.Intersect(aabb, vector));
+        Assert.True(Aabb.Intersect(vector, aabb));
 
         vector = new Vector2(10,10);
-        Assert.True(AABB.Intersect(aabb, vector));
-        Assert.True(AABB.Intersect(vector, aabb));
+        Assert.True(Aabb.Intersect(aabb, vector));
+        Assert.True(Aabb.Intersect(vector, aabb));
 
         vector = new Vector2(12,12);
-        Assert.False(AABB.Intersect(aabb, vector));
-        Assert.False(AABB.Intersect(vector, aabb));
+        Assert.False(Aabb.Intersect(aabb, vector));
+        Assert.False(Aabb.Intersect(vector, aabb));
 
         vector = new Vector2(-12,12);
-        Assert.False(AABB.Intersect(aabb, vector));
-        Assert.False(AABB.Intersect(vector, aabb));
+        Assert.False(Aabb.Intersect(aabb, vector));
+        Assert.False(Aabb.Intersect(vector, aabb));
     }
 
     [Fact]
     public void AABBIntersect_Test()
     {
-        AABB aabb = new AABB(0,0,10,10);
-        AABB query;
+        Aabb aabb = new Aabb(0,0,10,10);
+        Aabb query;
 
-        query = new AABB(0,0,5,5);
-        Assert.True(AABB.Intersect(aabb, query));
+        query = new Aabb(0,0,5,5);
+        Assert.True(Aabb.Intersect(aabb, query));
 
-        query = new AABB(10,10,15,15);
-        Assert.False(AABB.Intersect(aabb, query));
+        query = new Aabb(10,10,15,15);
+        Assert.False(Aabb.Intersect(aabb, query));
 
-        query = new AABB(11,11,15,15);
-        Assert.False(AABB.Intersect(aabb, query));
+        query = new Aabb(11,11,15,15);
+        Assert.False(Aabb.Intersect(aabb, query));
     }
 
     [Fact]
     public void LineSegmentIntersect_Test()
     {
-        AABB aabb = new AABB(0,0,10,10);
+        Aabb aabb = new Aabb(0,0,10,10);
 
         Vector2 lineSegmentStart;
         Vector2 lineSegmentEnd;
@@ -221,21 +221,21 @@ public class AABBTest
     [Fact]
     public void NearlyEquals_Test()
     {
-        AABB a;
-        AABB b;
+        Aabb a;
+        Aabb b;
 
-        a = new AABB(33.33333f,33.33333f,33.33333f,33.33333f);
-        b = new AABB(0,0,0,0);
+        a = new Aabb(33.33333f,33.33333f,33.33333f,33.33333f);
+        b = new Aabb(0,0,0,0);
 
         for(int i = 0; i < 3; i++)
         {
             b += new Vector2(11.11111f,11.11111f);
         }
 
-        Assert.True(AABB.NearlyEqual(a,b,NearlyEqualEpsilon));
+        Assert.True(Aabb.NearlyEqual(a,b,NearlyEqualEpsilon));
 
-        a = new AABB(-99.99999f,-99.99999f,-99.99999f,-99.99999f);
-        b = new AABB(0,0,0,0);
+        a = new Aabb(-99.99999f,-99.99999f,-99.99999f,-99.99999f);
+        b = new Aabb(0,0,0,0);
 
         for(int i = 0; i < 9; i++)
         {
@@ -243,10 +243,10 @@ public class AABBTest
         }
 
         // this should be false due to rounding errors with floating point accumulation.
-        Assert.False(AABB.NearlyEqual(a,b,NearlyEqualEpsilon));
+        Assert.False(Aabb.NearlyEqual(a,b,NearlyEqualEpsilon));
 
-        a = new AABB(99999.99999f, 99999.99999f, 99999.99999f, 99999.99999f);
-        b = new AABB(99999.99998f, 99999.99998f, 99999.99998f, 99999.99998f);
-        Assert.True(AABB.NearlyEqual(a,b,NearlyEqualEpsilon));
+        a = new Aabb(99999.99999f, 99999.99999f, 99999.99999f, 99999.99999f);
+        b = new Aabb(99999.99998f, 99999.99998f, 99999.99998f, 99999.99998f);
+        Assert.True(Aabb.NearlyEqual(a,b,NearlyEqualEpsilon));
     }
 }

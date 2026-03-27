@@ -11,7 +11,7 @@ public class Soa_BoundingVolumeHierarchyTest
         int capacity = 9;
         Soa_BoundingVolumeHierarchy bvh = new(capacity);
         LeafBufferAssert.LengthEqual(capacity, bvh.Leaves);
-        BranchBufferAssert.LengthEqual(capacity, bvh.Branches);
+        BranchBufferAssert.LengthEqual(capacity*2, bvh.Branches);
     }
 
     [Fact]

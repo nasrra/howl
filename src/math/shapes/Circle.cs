@@ -160,7 +160,7 @@ public struct Circle
     /// </summary>
     /// <returns>The calculated AABB.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static AABB GetAABB(in Circle circle)
+    public static Aabb GetAABB(in Circle circle)
     {
         GetMinMaxVectors(circle.X, circle.Y, circle.Radius, out float minX, out float minY, out float maxX, out float maxY);
         return new(minX, minY, maxX, maxY);

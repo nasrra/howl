@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Howl.ECS;
 using Howl.Math;
 using Howl.Math.Shapes;
-using static Howl.Math.Shapes.AABB;
+using static Howl.Math.Shapes.Aabb;
 using static Howl.DataStructures.Branch;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using System.Runtime.CompilerServices;
@@ -346,7 +346,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         for(int i = 0; i < leafSpan.Length; i++)
         {
             ref Leaf leaf = ref leafSpan[i];
-            Center(
+            CalculateCentroid(
                 leaf.BoundingBoxMinX, 
                 leaf.BoundingBoxMinY, 
                 leaf.BoundingBoxMaxX, 
@@ -385,7 +385,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
     /// <param name="aabb">The area to query for intersects.</param>
     /// <returns>A span of all of the found intersects.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Span<QueryResult> AreaQuery(BoundingVolumeHierarchy bvh, in AABB aabb)
+    public static Span<QueryResult> AreaQuery(BoundingVolumeHierarchy bvh, in Aabb aabb)
     {
         return AreaQuery(bvh, aabb.MinX, aabb.MinY, aabb.MaxX, aabb.MaxY);
     }
@@ -481,7 +481,7 @@ public sealed class BoundingVolumeHierarchy : IDisposable
         List<QueryResult> results,
         Span<Leaf> leaves, 
         Span<int> leafIndices, 
-        in AABB aabb
+        in Aabb aabb
     )
     {
         QueryLeaves(

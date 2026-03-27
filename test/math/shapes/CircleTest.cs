@@ -1,7 +1,7 @@
 using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.Math.Shapes.Circle;
-using static Howl.Math.Shapes.AABB;
+using static Howl.Math.Shapes.Aabb;
 using static Howl.Math.Math;
 
 namespace Howl.Test.Math.Shapes;
@@ -51,7 +51,7 @@ public class CircleTest
     public void GetAABB_Test()
     {
         Circle circle = new Circle(0,0,3);
-        AABB aabb = GetAABB(circle);
+        Aabb aabb = GetAABB(circle);
         Assert.Equal(new Vector2(-3,-3), MinVector(aabb));
         Assert.Equal(new Vector2(3,3), MaxVector(aabb));
     }
