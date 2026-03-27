@@ -50,7 +50,7 @@ public class QueryResultBuffer : IDisposable
     /// <param name="generation">the <c>generation</c> of the data associated with the query result.</param>
     /// <param name="flags">the user-defined flags of the data associated with the query result.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendQueryResult(QueryResultBuffer buffer, int index, int generation, int flags)
+    public static void Append(QueryResultBuffer buffer, int index, int generation, int flags)
     {
         int count = buffer.Count;
         buffer.GenIndices.Indices[count] = index;
@@ -96,6 +96,8 @@ public class QueryResultBuffer : IDisposable
         Soa_GenIndex.Dispose(buffer.GenIndices);
         buffer.GenIndices = null;
         buffer.Flags = null;
+        buffer.Count = 0;
+        buffer.Length = 0;
 
         GC.SuppressFinalize(buffer);
     }
