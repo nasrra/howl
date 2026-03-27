@@ -27,16 +27,16 @@ public ref struct Soa_AabbSlice
     public Span<float> MaxY;
 
     /// <summary>
-    /// The length of all the backing spans of this instance.
+    /// The length of all the backing spans.
     /// </summary>
     public int Length;
 
     /// <summary>
-    /// Construts a Structure-Of-Arays Axis-Aligned-Bounding-Box slice.
+    /// Constructs a Structure-Of-Arrays span over the portion of the target soa beginning at a specified position for a specified length.
     /// </summary>
-    /// <param name="soa"></param>
-    /// <param name="start"></param>
-    /// <param name="length"></param>
+    /// <param name="soa">the target soa instance to get a slice of.</param>
+    /// <param name="start">the starting index.</param>
+    /// <param name="length">the length of the slice.</param>
     public Soa_AabbSlice(Soa_Aabb soa, int start, int length)
     {
         MinX = soa.MinX.AsSpan(start, length);

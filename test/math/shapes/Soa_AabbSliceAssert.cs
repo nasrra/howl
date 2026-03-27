@@ -5,17 +5,17 @@ namespace Howl.Test.Math.Shapes;
 public static class Soa_AabbSliceAssert
 {
     /// <summary>
-    /// Asserts the equality of array lengths in a slice instance.
+    /// Asserts the equality of span lengths in a slice instance.
     /// </summary>
-    /// <param name="length">the expected length of the backing arrays.</param>
+    /// <param name="length">the expected length of the backing spans.</param>
     /// <param name="slice">the slice instance.</param>
-    public static void LengthEqual(int expectedLength, Soa_AabbSlice slice)
+    public static void LengthEqual(int length, Soa_AabbSlice slice)
     {
-        Assert.Equal(expectedLength, slice.MinX.Length);
-        Assert.Equal(expectedLength, slice.MinY.Length);
-        Assert.Equal(expectedLength, slice.MaxX.Length);
-        Assert.Equal(expectedLength, slice.MaxY.Length);
-        Assert.Equal(expectedLength, slice.Length);
+        Assert.Equal(length, slice.MinX.Length);
+        Assert.Equal(length, slice.MinY.Length);
+        Assert.Equal(length, slice.MaxX.Length);
+        Assert.Equal(length, slice.MaxY.Length);
+        Assert.Equal(length, slice.Length);
     }
 
     /// <summary>
