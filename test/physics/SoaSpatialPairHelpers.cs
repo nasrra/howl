@@ -4,7 +4,7 @@ namespace Howl.Test.Physics;
 
 public static class SoaSpatialPairHelpers
 {
-    public static void AssertEntry(Soa_SpatialPair soa, int index, int ownerIndex, int ownerGeneration, int otherIndex,
+    public static void AssertEntry(SpatialPairBuffer soa, int index, int ownerIndex, int ownerGeneration, int otherIndex,
         int otherGeneration, byte ownerFlags, byte otherFlags)
     {
         Assert.Equal(ownerFlags, soa.OwnerFlags[index]);

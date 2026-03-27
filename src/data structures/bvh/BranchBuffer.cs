@@ -42,6 +42,11 @@ public class BranchBuffer : IDisposable
     public int Count;
 
     /// <summary>
+    /// The length of all the backing arrays of this instance.
+    /// </summary>
+    public int Length;
+
+    /// <summary>
     /// Whether or not this instance has been disposed.
     /// </summary>
     public bool Disposed;
@@ -49,14 +54,15 @@ public class BranchBuffer : IDisposable
     /// <summary>
     /// Creates a new branch buffer instance.
     /// </summary>
-    /// <param name="capacity">the capcity of the backing arrays.</param>
-    public BranchBuffer(int capacity)
+    /// <param name="length">the length of the backing arrays.</param>
+    public BranchBuffer(int length)
     {
-        Aabbs = new(capacity);
-        LeftLeafIndices = new int[capacity];
-        RightLeafIndices = new int[capacity];
-        SubtreeSizes = new int[capacity];
-        LeafCounts = new int[capacity];
+        Aabbs = new(length);
+        LeftLeafIndices = new int[length];
+        RightLeafIndices = new int[length];
+        SubtreeSizes = new int[length];
+        LeafCounts = new int[length];
+        Length = length;
     }
 
     /// <summary>

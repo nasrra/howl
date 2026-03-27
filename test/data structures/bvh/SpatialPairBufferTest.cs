@@ -12,12 +12,7 @@ public class SpatialPairBufferTest
     {
         int capacity = 7;
         SpatialPairBuffer buffer = new(capacity);
-        Assert.Equal(capacity, buffer.OwnerGenIndices.Indices.Length);
-        Assert.Equal(capacity, buffer.OwnerGenIndices.Generations.Length);
-        Assert.Equal(capacity, buffer.OtherGenIndices.Indices.Length);
-        Assert.Equal(capacity, buffer.OtherGenIndices.Generations.Length);
-        Assert.Equal(capacity, buffer.OtherFlags.Length);
-        Assert.Equal(capacity, buffer.OtherFlags.Length);
+        SpatialPairBufferAssert.LengthEqual(capacity, buffer);
         Assert.False(buffer.Disposed);
         Assert.Equal(0, buffer.Count);
     }
@@ -36,7 +31,7 @@ public class SpatialPairBufferTest
             int otherGeneration = j += 1;
             int otherFlags = j += 1;
             AppendSpatialPair(buffer, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
-            SpatialPairBufferAssert.EntryEquals(buffer, i, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
+            SpatialPairBufferAssert.EntryEqual(buffer, i, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
             Assert.Equal(i+1, buffer.Count);
         }
     }
@@ -55,7 +50,7 @@ public class SpatialPairBufferTest
             int otherGeneration = j += 1;
             int otherFlags = j += 1;
             AppendSpatialPair(buffer, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
-            SpatialPairBufferAssert.EntryEquals(buffer, i, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
+            SpatialPairBufferAssert.EntryEqual(buffer, i, ownerIndex, ownerGeneration, ownerFlags, otherIndex, otherGeneration, otherFlags);
         }        
         Assert.Equal(2, buffer.Count);
         Clear(buffer);

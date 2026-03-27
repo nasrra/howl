@@ -34,6 +34,11 @@ public class LeafBuffer : IDisposable
     public int Count;
 
     /// <summary>
+    /// The length of all the backing arrays of this instance.
+    /// </summary>
+    public int Length;
+
+    /// <summary>
     /// Whether or not this instance has been disposed.
     /// </summary>
     public bool Disposed;
@@ -41,12 +46,13 @@ public class LeafBuffer : IDisposable
     /// <summary>
     /// Creates a new LeafBuffer instance.
     /// </summary>
-    /// <param name="capacity">the capacity of the backing arrays.</param>
-    public LeafBuffer(int capacity)
+    /// <param name="length">the length of the backing arrays.</param>
+    public LeafBuffer(int length)
     {
-        Aabbs = new(capacity);
-        GenIndices = new(capacity);
-        Flags = new int[capacity];
+        Aabbs = new(length);
+        GenIndices = new(length);
+        Flags = new int[length];
+        Length = length;
     }
 
     /// <summary>

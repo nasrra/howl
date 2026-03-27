@@ -19,11 +19,11 @@ public class CollisionManifoldNew : IDisposable
 
 
 
-    public Soa_SpatialPair CircleSpatialPairs;
+    public SpatialPairBuffer CircleSpatialPairs;
 
-    public Soa_SpatialPair PolygonSpatialPairs;
+    public SpatialPairBuffer PolygonSpatialPairs;
 
-    public Soa_SpatialPair PolygonToCircleSpatialPairs;
+    public SpatialPairBuffer PolygonToCircleSpatialPairs;
 
 
 
@@ -68,9 +68,9 @@ public class CollisionManifoldNew : IDisposable
     /// <param name="maxCollisions"></param>
     public CollisionManifoldNew(int maxCollisions)
     {
-        CircleSpatialPairs          = new Soa_SpatialPair(maxCollisions);
-        PolygonSpatialPairs         = new Soa_SpatialPair(maxCollisions);
-        PolygonToCircleSpatialPairs = new Soa_SpatialPair(maxCollisions);
+        CircleSpatialPairs          = new SpatialPairBuffer(maxCollisions);
+        PolygonSpatialPairs         = new SpatialPairBuffer(maxCollisions);
+        PolygonToCircleSpatialPairs = new SpatialPairBuffer(maxCollisions);
 
         CircleCollisionsToResolve           = new Soa_Collision(maxCollisions);
         PolygonCollisionsToResolve          = new Soa_Collision(maxCollisions);

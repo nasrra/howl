@@ -32,6 +32,11 @@ public class SpatialPairBuffer : IDisposable
     public int Count;
 
     /// <summary>
+    /// The length of all the backing arrays of this instance.
+    /// </summary>
+    public int Length;
+
+    /// <summary>
     /// Whether this instance has been disposed.
     /// </summary>
     public bool Disposed;
@@ -39,13 +44,14 @@ public class SpatialPairBuffer : IDisposable
     /// <summary>
     /// Creates a new spatial pair bufffer instance.
     /// </summary>
-    /// <param name="capacity">the capacity of the backing arrays.</param>
-    public SpatialPairBuffer(int capacity)
+    /// <param name="length">the length of the backing arrays.</param>
+    public SpatialPairBuffer(int length)
     {
-        OwnerGenIndices = new(capacity);
-        OtherGenIndices = new(capacity);
-        OwnerFlags = new int[capacity];
-        OtherFlags = new int[capacity];
+        OwnerGenIndices = new(length);
+        OtherGenIndices = new(length);
+        OwnerFlags = new int[length];
+        OtherFlags = new int[length];
+        Length = length;
     }
 
     /// <summary>

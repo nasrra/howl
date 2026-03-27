@@ -8,46 +8,53 @@ public class QueryResultBufferTest
     [Fact]
     public void Constructor_Test()
     {
-        int capacity = 34;
-        QueryResultBuffer buffer = new(capacity);
-        Assert.Equal(capacity, buffer.GenIndices.Indices.Length);
-        Assert.Equal(capacity, buffer.GenIndices.Generations.Length);
-        Assert.Equal(capacity, buffer.Flags.Length);
-        Assert.Equal(0, buffer.Count);
-        Assert.False(buffer.Disposed);
+        for(int length = 0; length < 25; length++)
+        {            
+            QueryResultBuffer buffer = new(length);
+            QueryResultBufferAssert.LengthEqual(length, buffer);
+            Assert.Equal(0, buffer.Count);
+            Assert.False(buffer.Disposed);
+        }
     }
 
     [Fact]
     public void Append_Test()
     {
-        QueryResultBuffer buffer = new(12);
-        int j = 0;
-        for(int i = 0; i < 2; i++)
-        {
-            int index = j++;
-            int generation = j++;
-            int flags = j++;
-            AppendQueryResult(buffer, index, generation, flags);
-            QueryResultBufferAssert.EntryEquals(index, generation, flags, i, buffer);
-            Assert.Equal(i+1, buffer.Count);
+        for(int length = 0; length < 25; length++)
+        {            
+            QueryResultBuffer buffer = new(length);
+            int j = 0;
+            for(int i = 0; i < length; i++)
+            {
+                int index = j++;
+                int generation = j++;
+                int flags = j++;
+                AppendQueryResult(buffer, index, generation, flags);
+                QueryResultBufferAssert.EntryEquals(index, generation, flags, i, buffer);
+                Assert.Equal(i+1, buffer.Count);
+            }
+            Assert.Equal(length, buffer.Count);
         }
     }
 
     [Fact]
     public void Clear_Test()
     {
-        QueryResultBuffer buffer = new(12);
-        int j = 0;
-        for(int i = 0; i < 2; i++)
-        {
-            int index = j++;
-            int generation = j++;
-            int flags = j++;
-            AppendQueryResult(buffer, index, generation, flags);
-            QueryResultBufferAssert.EntryEquals(index, generation, flags, i, buffer);
+        for(int length = 0; length < 25; length++)
+        {            
+            QueryResultBuffer buffer = new(length);
+            int j = 0;
+            for(int i = 0; i < length; i++)
+            {
+                int index = j++;
+                int generation = j++;
+                int flags = j++;
+                AppendQueryResult(buffer, index, generation, flags);
+                QueryResultBufferAssert.EntryEquals(index, generation, flags, i, buffer);
+            }
+            Assert.Equal(length,buffer.Count);
+            Clear(buffer);
+            Assert.Equal(0,buffer.Count);
         }
-        Assert.Equal(2,buffer.Count);
-        Clear(buffer);
-        Assert.Equal(0,buffer.Count);
     }
 }

@@ -15,7 +15,7 @@ public static class SpatialPairBufferAssert
     /// <param name="otherIndex">the expected 'other' index value.</param>
     /// <param name="otherGeneration">the expected 'other' generation value.</param>
     /// <param name="otherFlags">the expected 'other' flags value.</param>
-    public static void EntryEquals(SpatialPairBuffer buffer, int entryIndex, int ownerIndex, int ownerGeneration, int ownerFlags, int otherIndex, 
+    public static void EntryEqual(SpatialPairBuffer buffer, int entryIndex, int ownerIndex, int ownerGeneration, int ownerFlags, int otherIndex, 
         int otherGeneration, int otherFlags
     )
     {
@@ -25,5 +25,21 @@ public static class SpatialPairBufferAssert
         Assert.Equal(otherIndex, buffer.OtherGenIndices.Indices[entryIndex]);    
         Assert.Equal(otherGeneration, buffer.OtherGenIndices.Generations[entryIndex]);    
         Assert.Equal(otherFlags, buffer.OtherFlags[entryIndex]);    
+    }
+
+    /// <summary>
+    /// Asserts the equality of array lengths in a buffer instance.
+    /// </summary>
+    /// <param name="expectedLength">the expected length of the backing arrays.</param>
+    /// <param name="buffer">the buffer instance.</param>
+    public static void LengthEqual(int expectedLength, SpatialPairBuffer buffer)
+    {
+        Assert.Equal(expectedLength, buffer.OwnerGenIndices.Indices.Length);
+        Assert.Equal(expectedLength, buffer.OwnerGenIndices.Generations.Length);
+        Assert.Equal(expectedLength, buffer.OtherGenIndices.Indices.Length);
+        Assert.Equal(expectedLength, buffer.OtherGenIndices.Generations.Length);
+        Assert.Equal(expectedLength, buffer.OtherFlags.Length);
+        Assert.Equal(expectedLength, buffer.OtherFlags.Length);
+        Assert.Equal(expectedLength, buffer.Length);
     }
 }

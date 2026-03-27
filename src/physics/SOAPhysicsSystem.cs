@@ -15,7 +15,7 @@ using static Howl.Math.Shapes.Aabb;
 using static Howl.Collections.Buffer;
 using static Howl.Math.Shapes.ShapeUtils;
 using static Howl.Physics.Soa_Collision;
-using static Howl.DataStructures.Soa_SpatialPair;
+using static Howl.DataStructures.SpatialPairBuffer;
 using static Howl.Math.Shapes.SAT;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Math.Soa_Transform;
@@ -1138,9 +1138,9 @@ public static class SoaPhysicsSystem
     /// <param name="polygonToCircleSpatialPairs">the so spatial pair to append any found pairs that contain a polygon and circle body.</param>
     /// <param name="spatialPairs">the spatial pairs to filter.</param>
     public static void FilterBvhIntoCollisionManifold(
-        Soa_SpatialPair circleSpatialPairs,
-        Soa_SpatialPair polygonSpatialPairs,
-        Soa_SpatialPair polygonToCircleSpatialPairs,
+        SpatialPairBuffer circleSpatialPairs,
+        SpatialPairBuffer polygonSpatialPairs,
+        SpatialPairBuffer polygonToCircleSpatialPairs,
         Span<SpatialPair> spatialPairs
     )
     {
@@ -1154,7 +1154,7 @@ public static class SoaPhysicsSystem
                 if((otherFlag & PhysicsBodyFlags.RectangleShape) != 0)
                 {
                     // polygon to polygon.
-                    AppendSpatialPair(
+                    Append(
                         polygonSpatialPairs, 
                         pair.Owner.GenIndex.Index, 
                         pair.Owner.GenIndex.Generation, 
@@ -1167,7 +1167,7 @@ public static class SoaPhysicsSystem
                 else // other is a circle.
                 {
                     // polygon to circle.
-                    AppendSpatialPair(
+                    Append(
                         polygonToCircleSpatialPairs, 
                         pair.Owner.GenIndex.Index, 
                         pair.Owner.GenIndex.Generation, 
@@ -1185,7 +1185,7 @@ public static class SoaPhysicsSystem
                     // circle to polygon.
                     // Note: append other first instead of owner as
                     // other is the polygon.
-                    AppendSpatialPair(
+                    Append(
                         polygonToCircleSpatialPairs, 
                         pair.Other.GenIndex.Index, 
                         pair.Other.GenIndex.Generation,
@@ -1197,7 +1197,7 @@ public static class SoaPhysicsSystem
                 }
                 else // other is circle.
                 {
-                    AppendSpatialPair(
+                    Append(
                         circleSpatialPairs, 
                         pair.Owner.GenIndex.Index, 
                         pair.Owner.GenIndex.Generation, 
@@ -1221,7 +1221,7 @@ public static class SoaPhysicsSystem
     /// <param name="maxAABBVectors">the soa vector containing the circles AABB's maximum vector.</param>
     /// <param name="radii">the radii of the circle bodies.</param>
     /// <param name="firstVertexIndices">the index of the first vertex of a body in the vertices collection.</param>
-    public static void FindCircleCollisions(Soa_Collision collisionsToResolve, Soa_SpatialPair spatialPairs,
+    public static void FindCircleCollisions(Soa_Collision collisionsToResolve, SpatialPairBuffer spatialPairs,
         Soa_Vector2 vertices, Soa_Vector2 minAABBVectors, Soa_Vector2 maxAABBVectors, Span<float> radii,
         Span<int> firstVertexIndices
     )
@@ -1288,7 +1288,7 @@ public static class SoaPhysicsSystem
         }
     }
 
-    public static void FindPolygonCollisions(Soa_Collision collisionsToResolve, Soa_SpatialPair spatialPairs,
+    public static void FindPolygonCollisions(Soa_Collision collisionsToResolve, SpatialPairBuffer spatialPairs,
         Soa_Vector2 vertices, Soa_Vector2 minAABBVectors, Soa_Vector2 maxAABBVectors, Soa_Vector2 centroids,
         Span<int> firstVertexIndices, Span<int> nextVertexIndices, int maxPolygonVerticeCount
     )
@@ -1384,7 +1384,7 @@ public static class SoaPhysicsSystem
 
     }
 
-    public static void FindPolygonToCircleCollisions(Soa_Collision collisionsToResolve, Soa_SpatialPair spatialPairs, 
+    public static void FindPolygonToCircleCollisions(Soa_Collision collisionsToResolve, SpatialPairBuffer spatialPairs, 
         Soa_Vector2 vertices, Soa_Vector2 minAABBVectors, Soa_Vector2 maxAABBVectors, Soa_Vector2 centroids,
         Span<int> firstVertexIndices, Span<int> nextVertexIndices, Span<float> radii, 
         int maxPolygonVerticeCount

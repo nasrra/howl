@@ -1,4 +1,5 @@
 using System;
+using Howl.Math.Shapes;
 
 namespace Howl.DataStructures.Bvh;
 
@@ -13,6 +14,11 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// The constructed branches from the inserted leaves.
     /// </summary>
     public BranchBuffer Branches;
+
+    /// <summary>
+    /// The spatial pairs of leaves in the constructed tree.
+    /// </summary>
+    public SpatialPairBuffer SpatialPairs;
 
     /// <summary>
     /// Whether this instance has been disposed of.
@@ -42,11 +48,16 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
     {
         BranchBuffer.Clear(bvh.Branches);
+        Soa_Aabb.CalculateCentroids(bvh.Leaves.Aabbs, bvh.Leaves.Centroids.X, bvh.Leaves.Centroids.Y, 0, bvh.Leaves.Length);
+
     }
 
     public static void ConstructBranches(
         LeafBuffer leaves,
         BranchBuffer branches,
+        Span<float> centroidXSlice,
+        Span<float> centroidYSlice,
+        int centroidSliceLength,
         ref int writeIndex,
         ref float boundingBoxMinX,
         ref float boundingBoxMinY,
@@ -57,7 +68,17 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         // reserve space.
         int branchIndex = writeIndex++;
 
-        // if()
+        // == leaf ==
+        if (centroidSliceLength <= 2)
+        {
+            // build leaf aabb.
+            // int leftLeafIndex= 
+        }
+        else
+        {
+            
+        }
+
     }
 
 

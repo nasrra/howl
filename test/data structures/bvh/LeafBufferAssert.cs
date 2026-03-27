@@ -7,7 +7,7 @@ using Howl.Test.Math.Shapes;
 public static class LeafBufferAssert
 {
     /// <summary>
-    /// Asserts the equality of values for a buffer entry and expected values.
+    /// Asserts the equality of a buffer entry and expected values.
     /// </summary>
     /// <param name="minX">the expected minimum x value.</param>
     /// <param name="minY">the expected minimum y value.</param>
@@ -30,12 +30,13 @@ public static class LeafBufferAssert
     /// <summary>
     /// Asserts the equality of array lengths in a buffer instance.
     /// </summary>
-    /// <param name="buffer">the buffer instance.</param>
     /// <param name="length">the expected length of the backing arrays.</param>
+    /// <param name="buffer">the buffer instance.</param>
     public static void LengthEqual(int length, LeafBuffer buffer)
     {
         Soa_AabbAssert.LengthEqual(length, buffer.Aabbs);
         Soa_GenIndexAssert.LengthEqual(length, buffer.GenIndices);
         Assert.Equal(length, buffer.Flags.Length);
+        Assert.Equal(length, buffer.Length);
     }
 }

@@ -3,7 +3,7 @@ using Howl.ECS;
 
 namespace Howl.DataStructures;
 
-public class Soa_SpatialPair
+public class SpatialPairBuffer
 {
     /// <summary>
     /// Gets and sets the 'owner' gen indices.
@@ -31,10 +31,10 @@ public class Soa_SpatialPair
     public int Count;
 
     /// <summary>
-    /// Creates a new Structure-Of-Arrays SpatialPair instance.
+    /// Creates a new spatial pair buffer instance.
     /// </summary>
     /// <param name="capacity">the capacity of the backing arrays.</param>
-    public Soa_SpatialPair(int capacity)
+    public SpatialPairBuffer(int capacity)
     {
         OwnerGenIndices = new(capacity);
         OtherGenIndices = new(capacity);
@@ -43,11 +43,11 @@ public class Soa_SpatialPair
     }
 
     /// <summary>
-    /// Clears all entries in a soa spatial pair by setting its count to zero.
+    /// Clears all entries in a spatial pair buffer by setting its count to zero.
     /// </summary>
     /// <param name="soa">the soa spatial pair to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Clear(Soa_SpatialPair soa)
+    public static void Clear(SpatialPairBuffer soa)
     {
         soa.Count = 0;
     }
@@ -63,7 +63,7 @@ public class Soa_SpatialPair
     /// <param name="ownerFlags">the user-defined flags of the 'owner'.</param>
     /// <param name="otherFlags">the user-defined flags of the 'other'.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendSpatialPair(Soa_SpatialPair soa, int ownerIndex, int ownerGeneration, int otherIndex, int otherGeneration, int ownerFlags, int otherFlags)
+    public static void Append(SpatialPairBuffer soa, int ownerIndex, int ownerGeneration, int otherIndex, int otherGeneration, int ownerFlags, int otherFlags)
     {
         int count = soa.Count;
         
@@ -86,8 +86,8 @@ public class Soa_SpatialPair
     /// <param name="ownerFlags">the user-defined flags of the 'owner'.</param>
     /// <param name="otherFlags">the user-defined flags of the 'other'.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendSpatialPair(Soa_SpatialPair soa, GenIndex ownerIndex, GenIndex otherIndex, byte ownerFlags, byte otherFlags)
+    public static void Append(SpatialPairBuffer soa, GenIndex ownerIndex, GenIndex otherIndex, byte ownerFlags, byte otherFlags)
     {
-        AppendSpatialPair(soa, ownerIndex.Index, ownerIndex.Generation, otherIndex.Index, otherIndex.Generation, ownerFlags, otherFlags);
+        Append(soa, ownerIndex.Index, ownerIndex.Generation, otherIndex.Index, otherIndex.Generation, ownerFlags, otherFlags);
     }
 }

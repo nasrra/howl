@@ -41,5 +41,6 @@ public static class BranchBufferAssert
         Assert.Equal(length, buffer.RightLeafIndices.Length);
         Assert.Equal(length, buffer.SubtreeSizes.Length);
         Assert.Equal(length, buffer.LeafCounts.Length);
+        Assert.Equal(length, buffer.Length);
     }
 }

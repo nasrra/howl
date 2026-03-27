@@ -22,6 +22,11 @@ public class QueryResultBuffer : IDisposable
     public int Count;
 
     /// <summary>
+    /// The length of all the backing arrays of this instance.
+    /// </summary>
+    public int Length;
+
+    /// <summary>
     /// Whether or not this instance has been disposed.
     /// </summary>
     public bool Disposed;
@@ -29,11 +34,12 @@ public class QueryResultBuffer : IDisposable
     /// <summary>
     /// Creates a query result buffer.
     /// </summary>
-    /// <param name="capacity">the capacity of the backing arrays.</param>
-    public QueryResultBuffer(int capacity)
+    /// <param name="length">the length of the backing arrays.</param>
+    public QueryResultBuffer(int length)
     {
-        GenIndices = new(capacity);
-        Flags = new int[capacity];
+        GenIndices = new(length);
+        Flags = new int[length];
+        Length = length;
     }
 
     /// <summary>
