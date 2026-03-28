@@ -12,7 +12,6 @@ using static Howl.Math.Math;
 using static Howl.ECS.GenIndexListProc;
 using static Howl.DataStructures.BoundingVolumeHierarchy;
 using static Howl.Math.Shapes.Aabb;
-using static Howl.Collections.Buffer;
 using static Howl.Math.Shapes.ShapeUtils;
 using static Howl.Physics.Soa_Collision;
 using static Howl.DataStructures.SpatialPairBuffer;

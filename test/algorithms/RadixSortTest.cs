@@ -1,8 +1,8 @@
-using Howl.Algorithms;
+using Howl.Algorithms.Sorting;
 
-namespace Howl.Test.Algorithms;
+namespace Howl.Test.Algorithms.Sorting;
 
-public class SortTest
+public class RadixSortTest
 {
     [Fact]
     public void FloatToUintSortable_Test(){
@@ -20,10 +20,10 @@ public class SortTest
             float fD = 98.98f + additive;
             
             // convert to uint.
-            uint uA = Sort.FloatToUintSortable(fA);
-            uint uB = Sort.FloatToUintSortable(fB);
-            uint uC = Sort.FloatToUintSortable(fC);
-            uint uD = Sort.FloatToUintSortable(fD);
+            uint uA = RadixSort.FloatToUintSortable(fA);
+            uint uB = RadixSort.FloatToUintSortable(fB);
+            uint uC = RadixSort.FloatToUintSortable(fC);
+            uint uD = RadixSort.FloatToUintSortable(fD);
 
             // test uints.
             Assert.True((uA < uB) && (uA < uC) && (uA < uD));
@@ -32,15 +32,15 @@ public class SortTest
             Assert.True((uD > uA) && (uD > uB) && (uD > uC));
 
             // convert back to float.
-            Assert.Equal(fA, Sort.UintSortableToFloat(uA));
-            Assert.Equal(fB, Sort.UintSortableToFloat(uB));
-            Assert.Equal(fC, Sort.UintSortableToFloat(uC));
-            Assert.Equal(fD, Sort.UintSortableToFloat(uD));
+            Assert.Equal(fA, RadixSort.UintSortableToFloat(uA));
+            Assert.Equal(fB, RadixSort.UintSortableToFloat(uB));
+            Assert.Equal(fC, RadixSort.UintSortableToFloat(uC));
+            Assert.Equal(fD, RadixSort.UintSortableToFloat(uD));
         }
     }
 
     [Fact]
-    public void RadixAsc_Test()
+    public void FloatAscend_Test()
     {
         float a = 3498.0192f;
         float b = 123.987f;
@@ -59,7 +59,7 @@ public class SortTest
         uint[] temp = new uint[buffer.Length];
         int[] count = new int[256];
 
-        Sort.RadixAsc(nums, buffer, temp, count, nums.Length);
+        RadixSort.Ascend(nums, buffer, temp, count, nums.Length);
 
         for(int q = 0; q < nums.Length; q++)
         {
@@ -68,7 +68,7 @@ public class SortTest
     }
 
     [Fact]
-    public void RadixDsc_Test()
+    public void FloatDescend_Test()
     {
         float a = 3498.0192f;
         float b = 123.987f;
@@ -87,7 +87,7 @@ public class SortTest
         uint[] temp = new uint[buffer.Length];
         int[] count = new int[256];
 
-        Sort.RadixDsc(nums, buffer, temp, count, nums.Length);
+        RadixSort.Descend(nums, buffer, temp, count, nums.Length);
 
         for(int q = 0; q < nums.Length; q++)
         {
@@ -96,7 +96,7 @@ public class SortTest
     }
 
     [Fact]
-    public void RadixIndexedAsc_Test()
+    public void FloatIndexedAscend_Test()
     {
         // numbers.
         float nA = 3498.0192f;
@@ -133,7 +133,7 @@ public class SortTest
         int[] tempIndices = new int[indices.Length];
         int[] count = new int[256];
 
-        Sort.RadixIndexedAsc(nums, translatedNums, tempNums, 
+        RadixSort.IndexedAscend(nums, translatedNums, tempNums, 
             indices, tempIndices, count, nums.Length
         );
 
@@ -146,7 +146,7 @@ public class SortTest
 
 
     [Fact]
-    public void RadixIndexedDsc_Test()
+    public void FloatIndexedDescend_Test()
     {
         // numbers.
         float nA = 3498.0192f;
@@ -183,7 +183,7 @@ public class SortTest
         int[] tempIndices = new int[indices.Length];
         int[] count = new int[256];
 
-        Sort.RadixIndexedDsc(nums, translatedNums, tempNums, 
+        RadixSort.IndexedDescend(nums, translatedNums, tempNums, 
             indices, tempIndices, count, nums.Length
         );
 

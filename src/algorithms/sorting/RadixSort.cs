@@ -1,9 +1,9 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Howl.Algorithms;
+namespace Howl.Algorithms.Sorting;
 
-public static class Sort
+public static class RadixSort
 {
 
 
@@ -90,7 +90,7 @@ public static class Sort
 
     /*******************
     
-        Radix Floating Point Sorting.
+        Floating Point Sorting.
     
     ********************/
 
@@ -105,7 +105,7 @@ public static class Sort
     /// <param name="temp">temporary span for reordering numbers during each pass.</param>
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void RadixAsc(Span<float> numbers, Span<uint> translated, Span<uint> temp, Span<int> count, int length)
+    public static void Ascend(Span<float> numbers, Span<uint> translated, Span<uint> temp, Span<int> count, int length)
     {
         // convert float bits to uints that are able to be ordered in ascending/descending order.
         for(int i = 0; i < length; i++)
@@ -113,7 +113,7 @@ public static class Sort
             translated[i] = FloatToUintSortable(numbers[i]);
         }
 
-        RadixAsc(translated, temp, count, length);
+        Ascend(translated, temp, count, length);
 
         // finally, convert the sorted uints back into the original float span
         for(int i = 0; i < length; i++)
@@ -130,7 +130,7 @@ public static class Sort
     /// <param name="temp">temporary span for reordering numbers during each pass.</param>
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void RadixDsc(Span<float> numbers, Span<uint> translated, Span<uint> temp, Span<int> count, int length)
+    public static void Descend(Span<float> numbers, Span<uint> translated, Span<uint> temp, Span<int> count, int length)
     {
         // convert float bits to uints that are able to be ordered in ascending/descending order.
         for(int i = 0; i < length; i++)
@@ -138,7 +138,7 @@ public static class Sort
             translated[i] = FloatToUintSortable(numbers[i]);
         }
 
-        RadixDsc(translated, temp, count, length);
+        Descend(translated, temp, count, length);
 
         // finally, convert the sorted uints back into the original float span
         for(int i = 0; i < length; i++)
@@ -169,7 +169,7 @@ public static class Sort
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void RadixIndexedAsc(Span<float> numbers, Span<uint> translatedNumbers, Span<uint> tempNumbers, 
+    public static void IndexedAscend(Span<float> numbers, Span<uint> translatedNumbers, Span<uint> tempNumbers, 
         Span<int> indices, Span<int> tempIndices, Span<int> count, int length
     )
     {
@@ -179,7 +179,7 @@ public static class Sort
             translatedNumbers[i] = FloatToUintSortable(numbers[i]);
         }
 
-        RadixIndexedAsc(translatedNumbers, tempNumbers, indices, tempIndices, count, length);
+        IndexedAscend(translatedNumbers, tempNumbers, indices, tempIndices, count, length);
 
         // finally, convert the sorted uints into the original flat span.
         for(int i = 0; i < length; i++)
@@ -210,7 +210,7 @@ public static class Sort
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void RadixIndexedDsc(Span<float> numbers, Span<uint> translatedNumbers, Span<uint> tempNumbers, 
+    public static void IndexedDescend(Span<float> numbers, Span<uint> translatedNumbers, Span<uint> tempNumbers, 
         Span<int> indices, Span<int> tempIndices, Span<int> count, int length
     )
     {
@@ -220,7 +220,7 @@ public static class Sort
             translatedNumbers[i] = FloatToUintSortable(numbers[i]);
         }
 
-        RadixIndexedDsc(translatedNumbers, tempNumbers, indices, tempIndices, count, length);
+        IndexedDescend(translatedNumbers, tempNumbers, indices, tempIndices, count, length);
 
         // finally, convert the sorted uints into the original flat span.
         for(int i = 0; i < length; i++)
@@ -257,7 +257,7 @@ public static class Sort
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void RadixAsc(Span<uint> numbers, Span<uint> temp, Span<int> count, int length)
+    public static void Ascend(Span<uint> numbers, Span<uint> temp, Span<int> count, int length)
     {        
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -317,7 +317,7 @@ public static class Sort
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void RadixDsc(Span<uint> numbers, Span<uint> temp, Span<int> count, int length)
+    public static void Descend(Span<uint> numbers, Span<uint> temp, Span<int> count, int length)
     {        
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -380,7 +380,7 @@ public static class Sort
     /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void RadixIndexedAsc(Span<uint> numbers, Span<uint> tempNumbers, Span<int> indices, Span<int> tempIndices, Span<int> count, int length)
+    public static void IndexedAscend(Span<uint> numbers, Span<uint> tempNumbers, Span<int> indices, Span<int> tempIndices, Span<int> count, int length)
     {        
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -446,7 +446,7 @@ public static class Sort
     /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void RadixIndexedDsc(Span<uint> numbers, Span<uint> tempNumbers, Span<int> indices, Span<int> tempIndices, Span<int> count, int length)
+    public static void IndexedDescend(Span<uint> numbers, Span<uint> tempNumbers, Span<int> indices, Span<int> tempIndices, Span<int> count, int length)
     {        
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
