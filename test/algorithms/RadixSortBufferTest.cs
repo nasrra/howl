@@ -25,6 +25,7 @@ public class RadixSortBufferTest
             Assert.Null(buffer.TempValues);
             Assert.Null(buffer.TranslatedValues);
             Assert.Null(buffer.ByteCount);
+            Assert.Null(buffer.TempIndices);
             Assert.True(buffer.Disposed);
         }
     }

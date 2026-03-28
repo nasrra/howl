@@ -53,13 +53,30 @@ public class RadixSortTest
         float i = -345.213123f;
         float j = -8975.98f;
         
-        float[] nums = [a,j,b,i,c,h,g,d,e,f];
-        float[] expected = [j,i,h,g,f,e,d,c,b,a];
-        uint[] buffer = new uint[nums.Length];
-        uint[] temp = new uint[buffer.Length];
+        // == without buffer ==
+
+        Span<float> nums = [a,j,b,i,c,h,g,d,e,f];
+        Span<float> expected = [j,i,h,g,f,e,d,c,b,a];
+        
+        uint[] translated = new uint[nums.Length];
+        uint[] temp = new uint[translated.Length];
         int[] count = new int[256];
 
-        RadixSort.Ascend(nums, buffer, temp, count, nums.Length);
+        RadixSort.Ascend(nums, translated, temp, count, nums.Length);
+
+        for(int q = 0; q < nums.Length; q++)
+        {
+            Assert.Equal(expected[q], nums[q]);
+        }
+
+        // == with buffer ==
+
+        nums = [a,j,b,i,c,h,g,d,e,f];
+        expected = [j,i,h,g,f,e,d,c,b,a];
+
+        RadixSortBuffer buffer = new(nums.Length);
+
+        RadixSort.Ascend(nums, buffer, nums.Length);
 
         for(int q = 0; q < nums.Length; q++)
         {
@@ -80,19 +97,37 @@ public class RadixSortTest
         float h = -12.123f;
         float i = -345.213123f;
         float j = -8975.98f;
+
+        // == without buffer ==
+
+        Span<float> nums = [a,j,b,i,c,h,g,d,e,f];
+        Span<float> expected = [a,b,c,d,e,f,g,h,i,j];
         
-        float[] nums = [a,j,b,i,c,h,g,d,e,f];
-        float[] expected = [a,b,c,d,e,f,g,h,i,j];
-        uint[] buffer = new uint[nums.Length];
-        uint[] temp = new uint[buffer.Length];
+        uint[] translated = new uint[nums.Length];
+        uint[] temp = new uint[translated.Length];
         int[] count = new int[256];
 
-        RadixSort.Descend(nums, buffer, temp, count, nums.Length);
+        RadixSort.Descend(nums, translated, temp, count, nums.Length);
 
         for(int q = 0; q < nums.Length; q++)
         {
             Assert.Equal(expected[q], nums[q]);
         }
+
+        // == with buffer ==
+
+        nums = [a,j,b,i,c,h,g,d,e,f];
+        expected = [a,b,c,d,e,f,g,h,i,j];
+
+        RadixSortBuffer buffer = new(nums.Length);
+
+        RadixSort.Descend(nums, buffer, nums.Length);
+
+        for(int q = 0; q < nums.Length; q++)
+        {
+            Assert.Equal(expected[q], nums[q]);
+        }
+
     }
 
     [Fact]
@@ -122,10 +157,12 @@ public class RadixSortTest
         int iI = 1;
         int iJ = 0;
 
-        float[] nums    = [nA, nJ, nB, nI, nC, nH, nG, nD, nE, nF];
-        int[] indices   = [iA, iJ, iB, iI, iC, iH, iG, iD, iE, iF];
-        float[] expectedNums    = [nJ, nI, nH, nG, nF, nE, nD, nC, nB, nA];
-        float[] expectedIndices = [iJ, iI, iH, iG, iF, iE, iD, iC, iB, iA];    
+        Span<float> nums            = [nA, nJ, nB, nI, nC, nH, nG, nD, nE, nF];
+        Span<int> indices           = [iA, iJ, iB, iI, iC, iH, iG, iD, iE, iF];
+        Span<float> expectedNums    = [nJ, nI, nH, nG, nF, nE, nD, nC, nB, nA];
+        Span<int> expectedIndices   = [iJ, iI, iH, iG, iF, iE, iD, iC, iB, iA];    
+
+        // == without buffer ==
 
         // create sorting array's.
         uint[] translatedNums = new uint[nums.Length];
@@ -142,8 +179,21 @@ public class RadixSortTest
             Assert.Equal(expectedNums[q], nums[q]);
             Assert.Equal(expectedIndices[q], indices[q]);
         }
-    }
 
+        // == with buffer ==
+        
+        nums    = [nA, nJ, nB, nI, nC, nH, nG, nD, nE, nF];
+        indices = [iA, iJ, iB, iI, iC, iH, iG, iD, iE, iF];
+        
+        RadixSortBuffer buffer = new(10);
+        RadixSort.IndexedAscend(nums, indices, buffer, nums.Length);
+
+        for(int q = 0; q < nums.Length; q++)
+        {
+            Assert.Equal(expectedNums[q], nums[q]);
+            Assert.Equal(expectedIndices[q], indices[q]);
+        }
+    }
 
     [Fact]
     public void FloatIndexedDescend_Test()
@@ -172,10 +222,12 @@ public class RadixSortTest
         int iI = 1;
         int iJ = 0;
 
-        float[] nums    = [nA, nJ, nB, nI, nC, nH, nG, nD, nE, nF];
-        int[] indices   = [iA, iJ, iB, iI, iC, iH, iG, iD, iE, iF];
-        float[] expectedNums    = [nA, nB, nC, nD, nE, nF, nG, nH , nI, nJ];
-        int[] expectedIndices   = [iA, iB, iC, iD, iE, iF, iG, iH , iI, iJ];
+        Span<float> nums            = [nA, nJ, nB, nI, nC, nH, nG, nD, nE, nF];
+        Span<int> indices           = [iA, iJ, iB, iI, iC, iH, iG, iD, iE, iF];
+        Span<float> expectedNums    = [nA, nB, nC, nD, nE, nF, nG, nH , nI, nJ];
+        Span<int> expectedIndices   = [iA, iB, iC, iD, iE, iF, iG, iH , iI, iJ];
+
+        // == without buffer ==
 
         // create sorting array's.
         uint[] translatedNums = new uint[nums.Length];
@@ -186,6 +238,20 @@ public class RadixSortTest
         RadixSort.IndexedDescend(nums, translatedNums, tempNums, 
             indices, tempIndices, count, nums.Length
         );
+
+        for(int q = 0; q < nums.Length; q++)
+        {
+            Assert.Equal(expectedNums[q], nums[q]);
+            Assert.Equal(expectedIndices[q], indices[q]);
+        }
+
+        // == with buffer ==
+
+        nums            = [nA, nJ, nB, nI, nC, nH, nG, nD, nE, nF];
+        indices         = [iA, iJ, iB, iI, iC, iH, iG, iD, iE, iF];
+
+        RadixSortBuffer buffer = new(10);        
+        RadixSort.IndexedDescend(nums, indices, buffer, nums.Length);
 
         for(int q = 0; q < nums.Length; q++)
         {

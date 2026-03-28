@@ -12,5 +12,6 @@ public static class RadixSortBufferAssert
         Assert.Equal(256, buffer.ByteCount.Length);
         Assert.Equal(expected, buffer.TranslatedValues.Length);
         Assert.Equal(expected, buffer.TempValues.Length);
+        Assert.Equal(expected, buffer.TempIndices.Length);
     }
 }

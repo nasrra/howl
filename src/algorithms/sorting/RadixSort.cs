@@ -98,53 +98,82 @@ public static class RadixSort
 
 
     /// <summary>
-    /// Sorts a span of floating point numbers in ascending order using Radix sort.
+    /// Sorts a span of floating point values in ascending order using Radix Sort.
     /// </summary>
-    /// <param name="numbers">the span of floats to be sorted. this span will contain the sorted result.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted numbers for sorting.</param>
-    /// <param name="temp">temporary span for reordering numbers during each pass.</param>
-    /// <param name="count">a histogram span, must be at least 256 elements long.</param>
-    /// <param name="length">the total number of elements to process.</param>
-    public static void Ascend(Span<float> numbers, Span<uint> translated, Span<uint> temp, Span<int> count, int length)
+    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
+    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="temp">temporary span for reordering values during each pass.</param>
+    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="length">the total number of elements to process; starting from zero.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Ascend(Span<float> values, Span<uint> translated, Span<uint> temp, Span<int> byteCount, int length)
     {
         // convert float bits to uints that are able to be ordered in ascending/descending order.
         for(int i = 0; i < length; i++)
         {
-            translated[i] = FloatToUintSortable(numbers[i]);
+            translated[i] = FloatToUintSortable(values[i]);
         }
 
-        Ascend(translated, temp, count, length);
+        Ascend(translated, temp, byteCount, length);
 
         // finally, convert the sorted uints back into the original float span
         for(int i = 0; i < length; i++)
         {
-            numbers[i] = UintSortableToFloat(translated[i]);
+            values[i] = UintSortableToFloat(translated[i]);
         }
     }
 
     /// <summary>
-    /// Sorts a span of floating point numbers in descending order using Radix sort.
+    /// Sorts a span of floating point values in ascending order using Radix Sort.
     /// </summary>
-    /// <param name="numbers">the span of floats to be sorted. this span will contain the sorted result.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted numbers for sorting.</param>
-    /// <param name="temp">temporary span for reordering numbers during each pass.</param>
-    /// <param name="count">a histogram span, must be at least 256 elements long.</param>
+    /// <remarks>
+    /// The 'length' of the buffer and values span should be the same.
+    /// </remarks>
+    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
+    /// <param name="buffer">A radix sort buffer </param>
+    /// <param name="length">the total number of elements to process; starting from zero.</param>
+    public static void Ascend(Span<float> values, RadixSortBuffer buffer, int length)
+    {
+        Ascend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount, length);
+    }
+
+    /// <summary>
+    /// Sorts a span of floating point values in descending order using Radix sort.
+    /// </summary>
+    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
+    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="temp">temporary span for reordering values during each pass.</param>
+    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void Descend(Span<float> numbers, Span<uint> translated, Span<uint> temp, Span<int> count, int length)
+    public static void Descend(Span<float> values, Span<uint> translated, Span<uint> temp, Span<int> byteCount, int length)
     {
         // convert float bits to uints that are able to be ordered in ascending/descending order.
         for(int i = 0; i < length; i++)
         {
-            translated[i] = FloatToUintSortable(numbers[i]);
+            translated[i] = FloatToUintSortable(values[i]);
         }
 
-        Descend(translated, temp, count, length);
+        Descend(translated, temp, byteCount, length);
 
         // finally, convert the sorted uints back into the original float span
         for(int i = 0; i < length; i++)
         {
-            numbers[i] = UintSortableToFloat(translated[i]);
+            values[i] = UintSortableToFloat(translated[i]);
         }
+    }
+
+    /// <summary>
+    /// Sorts a span of floating point values in descending order using Radix Sort.
+    /// </summary>
+    /// <remarks>
+    /// The 'length' of the buffer and values span should be the same.
+    /// </remarks>
+    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
+    /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
+    /// <param name="length">the total number of elements to process; starting from zero.</param>
+    public static void Descend(Span<float> values, RadixSortBuffer buffer, int length)
+    {
+        Descend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount, length);
     }
 
     /// <summary>
@@ -156,36 +185,59 @@ public static class RadixSort
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
-    /// <item><paramref name="numbers"/></item>
-    /// <item><paramref name="tempNumbers"/></item> 
-    /// <item><paramref name="translatedNumbers"/></item> 
+    /// <item><paramref name="values"/></item>
+    /// <item><paramref name="tempValues"/></item> 
+    /// <item><paramref name="translated"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="numbers">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted numbers for sorting.</param>
-    /// <param name="tempNumbers">temporary span for reordering numbers during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the numbers.</param>
+    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
     /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="count">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void IndexedAscend(Span<float> numbers, Span<uint> translatedNumbers, Span<uint> tempNumbers, 
-        Span<int> indices, Span<int> tempIndices, Span<int> count, int length
+    public static void IndexedAscend(Span<float> values, Span<uint> translated, Span<uint> tempValues, 
+        Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int length
     )
     {
         // convert float bits to uints that are able to be ordered in ascending/descending order.
         for(int i = 0; i < length; i++)
         {
-            translatedNumbers[i] = FloatToUintSortable(numbers[i]);
+            translated[i] = FloatToUintSortable(values[i]);
         }
 
-        IndexedAscend(translatedNumbers, tempNumbers, indices, tempIndices, count, length);
+        IndexedAscend(translated, tempValues, indices, tempIndices, byteCount, length);
 
         // finally, convert the sorted uints into the original flat span.
         for(int i = 0; i < length; i++)
         {
-            numbers[i] = UintSortableToFloat(translatedNumbers[i]);
+            values[i] = UintSortableToFloat(translated[i]);
         }
+    }
+
+    /// <summary>
+    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// </summary>
+    /// <remarks>
+    /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
+    /// The following spans and buffers must have a length at least equal to <paramref name="length"/>:
+    /// <list type="bullet">
+    /// <item><paramref name="indices"/></item>
+    /// <item><paramref name="indices"/></item> 
+    /// <item><paramref name="buffer"/></item> 
+    /// </list>
+    /// </remarks>
+    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
+    /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
+    /// <param name="length">the total number of elements to process.</param>
+    public static void IndexedAscend(Span<float> values, Span<int> indices, RadixSortBuffer buffer, int length)
+    {
+        IndexedAscend(values, buffer.TranslatedValues, buffer.TempValues, 
+            indices, buffer.TempIndices, buffer.ByteCount, length
+        );
     }
 
     /// <summary>
@@ -197,36 +249,59 @@ public static class RadixSort
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
-    /// <item><paramref name="numbers"/></item>
-    /// <item><paramref name="tempNumbers"/></item> 
-    /// <item><paramref name="translatedNumbers"/></item> 
+    /// <item><paramref name="values"/></item>
+    /// <item><paramref name="tempValues"/></item> 
+    /// <item><paramref name="translatedValues"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="numbers">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted numbers for sorting.</param>
-    /// <param name="tempNumbers">temporary span for reordering numbers during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the numbers.</param>
+    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="translatedValues">a span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
     /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void IndexedDescend(Span<float> numbers, Span<uint> translatedNumbers, Span<uint> tempNumbers, 
+    public static void IndexedDescend(Span<float> values, Span<uint> translatedValues, Span<uint> tempValues, 
         Span<int> indices, Span<int> tempIndices, Span<int> count, int length
     )
     {
         // convert float bits to uints that are able to be ordered in ascending/descending order.
         for(int i = 0; i < length; i++)
         {
-            translatedNumbers[i] = FloatToUintSortable(numbers[i]);
+            translatedValues[i] = FloatToUintSortable(values[i]);
         }
 
-        IndexedDescend(translatedNumbers, tempNumbers, indices, tempIndices, count, length);
+        IndexedDescend(translatedValues, tempValues, indices, tempIndices, count, length);
 
         // finally, convert the sorted uints into the original flat span.
         for(int i = 0; i < length; i++)
         {
-            numbers[i] = UintSortableToFloat(translatedNumbers[i]);
+            values[i] = UintSortableToFloat(translatedValues[i]);
         }
+    }
+
+    /// <summary>
+    /// Sorts a span of uints in descending order using the Radix Sort Algorithm.
+    /// </summary>
+    /// <remarks>
+    /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
+    /// The following spans and buffers must have a length at least equal to <paramref name="length"/>:
+    /// <list type="bullet">
+    /// <item><paramref name="indices"/></item>
+    /// <item><paramref name="indices"/></item> 
+    /// <item><paramref name="buffer"/></item> 
+    /// </list>
+    /// </remarks>
+    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
+    /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
+    /// <param name="length">the total number of elements to process.</param>
+    public static void IndexedDescend(Span<float> values, Span<int> indices, RadixSortBuffer buffer, int length)
+    {
+        IndexedDescend(values, buffer.TranslatedValues, buffer.TempValues, 
+            indices, buffer.TempIndices, buffer.ByteCount, length
+        );
     }
 
 
@@ -248,16 +323,16 @@ public static class RadixSort
     /// This implementation processes 32-bit integers in four 8-bit (1 byte) passes .
     /// The following spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
-    /// <item><paramref name="numbers"/></item>
+    /// <item><paramref name="values"/></item>
     /// <item><paramref name="temp"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="numbers">the span of uints to be sorted. Contains the final sorted values.</param>
-    /// <param name="temp">temporary span for reordering numbers during each pass.</param>
+    /// <param name="values">the span of uints to be sorted. Contains the final sorted values.</param>
+    /// <param name="temp">temporary span for reordering values during each pass.</param>
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Ascend(Span<uint> numbers, Span<uint> temp, Span<int> count, int length)
+    public static void Ascend(Span<uint> values, Span<uint> temp, Span<int> count, int length)
     {        
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -274,7 +349,7 @@ public static class RadixSort
                 // Apply a bit mask of 0xFF (binary 11111111) to zero out everythin except
                 //  those bottom 8 bits.
                 // This results in a 'bucket' index between 0 and 255, matching our count array.
-                int bucket = (int)((numbers[i] >> shift) & 0xFF);
+                int bucket = (int)((values[i] >> shift) & 0xFF);
                 count[bucket]++;
             }
 
@@ -292,12 +367,12 @@ public static class RadixSort
             // move data from buffer to temp based on the counts.
             for(int i = 0; i < length; i++)
             {
-                int bucket = (int)((numbers[i] >> shift) & 0xFF);
-                temp[count[bucket]++] = numbers[i];
+                int bucket = (int)((values[i] >> shift) & 0xFF);
+                temp[count[bucket]++] = values[i];
             }
 
             // swap buffer and temp for the next pass.
-            temp.CopyTo(numbers);
+            temp.CopyTo(values);
         }
     }
 
@@ -308,16 +383,16 @@ public static class RadixSort
     /// This implementation processes 32-bit integers in four 8-bit (1 byte) passes .
     /// The following spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
-    /// <item><paramref name="numbers"/></item>
+    /// <item><paramref name="values"/></item>
     /// <item><paramref name="temp"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="numbers">the span of uints to be sorted. Contains the final sorted values.</param>
-    /// <param name="temp">temporary span for reordering numbers during each pass.</param>
+    /// <param name="values">the span of uints to be sorted. Contains the final sorted values.</param>
+    /// <param name="temp">temporary span for reordering values during each pass.</param>
     /// <param name="count">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Descend(Span<uint> numbers, Span<uint> temp, Span<int> count, int length)
+    public static void Descend(Span<uint> values, Span<uint> temp, Span<int> count, int length)
     {        
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -334,7 +409,7 @@ public static class RadixSort
                 // Apply a bit mask of 0xFF (binary 11111111) to zero out everythin except
                 //  those bottom 8 bits.
                 // This results in a 'bucket' index between 0 and 255, matching our count array.
-                int bucket = (int)((numbers[i] >> shift) & 0xFF);
+                int bucket = (int)((values[i] >> shift) & 0xFF);
                 count[bucket]++;
             }
 
@@ -352,12 +427,12 @@ public static class RadixSort
             // move data from buffer to temp based on the counts.
             for(int i = 0; i < length; i++)
             {
-                int bucket = (int)((numbers[i] >> shift) & 0xFF);
-                temp[count[bucket]++] = numbers[i];
+                int bucket = (int)((values[i] >> shift) & 0xFF);
+                temp[count[bucket]++] = values[i];
             }
 
             // swap buffer and temp for the next pass.
-            temp.CopyTo(numbers);
+            temp.CopyTo(values);
         }
     }
 
@@ -370,24 +445,24 @@ public static class RadixSort
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
-    /// <item><paramref name="numbers"/></item>
-    /// <item><paramref name="tempNumbers"/></item> 
+    /// <item><paramref name="values"/></item>
+    /// <item><paramref name="tempValues"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="numbers">the span of uints to be sorted. Contains the final sorted values.</param>
-    /// <param name="tempNumbers">temporary span for reordering numbers during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the numbers.</param>
+    /// <param name="values">the span of uints to be sorted. Contains the final sorted values.</param>
+    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
     /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="count">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void IndexedAscend(Span<uint> numbers, Span<uint> tempNumbers, Span<int> indices, Span<int> tempIndices, Span<int> count, int length)
+    public static void IndexedAscend(Span<uint> values, Span<uint> tempValues, Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int length)
     {        
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
         for(int shift = 0; shift < 32; shift += 8)
         {
             // reset the frequency of counts for this 8-bit chunk.
-            count.Clear();
+            byteCount.Clear();
 
             // count the occurences of each 8-value (0-255).
             for(int i = 0 ; i < length; i++)
@@ -397,8 +472,8 @@ public static class RadixSort
                 // Apply a bit mask of 0xFF (binary 11111111) to zero out everythin except
                 //  those bottom 8 bits.
                 // This results in a 'bucket' index between 0 and 255, matching our count array.
-                int bucket = (int)((numbers[i] >> shift) & 0xFF);
-                count[bucket]++;
+                int bucket = (int)((values[i] >> shift) & 0xFF);
+                byteCount[bucket]++;
             }
 
             // compute prefix sum (cumulative count)
@@ -407,22 +482,22 @@ public static class RadixSort
             int c = 0;
             for(int i = 0; i < 256; i++)
             {
-                c = count[i];
-                count[i] = startIndex;
+                c = byteCount[i];
+                byteCount[i] = startIndex;
                 startIndex += c;
             }
 
             // move data from buffer to temp based on the counts.
             for(int i = 0; i < length; i++)
             {
-                int bucket = (int)((numbers[i] >> shift) & 0xFF);
-                int swapIndex = count[bucket]++; 
-                tempNumbers[swapIndex] = numbers[i];
+                int bucket = (int)((values[i] >> shift) & 0xFF);
+                int swapIndex = byteCount[bucket]++; 
+                tempValues[swapIndex] = values[i];
                 tempIndices[swapIndex] = indices[i];
             }
 
             // swap buffer and temp for the next pass.
-            tempNumbers.CopyTo(numbers);
+            tempValues.CopyTo(values);
             tempIndices.CopyTo(indices);
         }
     }
@@ -436,24 +511,24 @@ public static class RadixSort
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
-    /// <item><paramref name="numbers"/></item>
-    /// <item><paramref name="tempNumbers"/></item> 
+    /// <item><paramref name="values"/></item>
+    /// <item><paramref name="tempvalues"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="numbers">the span of uints to be sorted. Contains the final sorted values.</param>
-    /// <param name="tempNumbers">temporary span for reordering numbers during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the numbers.</param>
+    /// <param name="values">the span of uints to be sorted. Contains the final sorted values.</param>
+    /// <param name="tempvalues">temporary span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
     /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="count">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void IndexedDescend(Span<uint> numbers, Span<uint> tempNumbers, Span<int> indices, Span<int> tempIndices, Span<int> count, int length)
+    public static void IndexedDescend(Span<uint> values, Span<uint> tempvalues, Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int length)
     {        
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
         for(int shift = 0; shift < 32; shift += 8)
         {
             // reset the frequency of counts for this 8-bit chunk.
-            count.Clear();
+            byteCount.Clear();
 
             // count the occurences of each 8-value (0-255).
             for(int i = 0 ; i < length; i++)
@@ -463,8 +538,8 @@ public static class RadixSort
                 // Apply a bit mask of 0xFF (binary 11111111) to zero out everythin except
                 //  those bottom 8 bits.
                 // This results in a 'bucket' index between 0 and 255, matching our count array.
-                int bucket = (int)((numbers[i] >> shift) & 0xFF);
-                count[bucket]++;
+                int bucket = (int)((values[i] >> shift) & 0xFF);
+                byteCount[bucket]++;
             }
 
             // compute prefix sum (cumulative count) - descending order.
@@ -473,22 +548,22 @@ public static class RadixSort
             int c = 0;
             for(int i = 255; i >= 0; i--)
             {
-                c = count[i];
-                count[i] = startIndex;
+                c = byteCount[i];
+                byteCount[i] = startIndex;
                 startIndex += c;
             }
 
             // move data from buffer to temp based on the counts.
             for(int i = 0; i < length; i++)
             {
-                int bucket = (int)((numbers[i] >> shift) & 0xFF);
-                int swapIndex = count[bucket]++; 
-                tempNumbers[swapIndex] = numbers[i];
+                int bucket = (int)((values[i] >> shift) & 0xFF);
+                int swapIndex = byteCount[bucket]++; 
+                tempvalues[swapIndex] = values[i];
                 tempIndices[swapIndex] = indices[i];
             }
 
             // swap buffer and temp for the next pass.
-            tempNumbers.CopyTo(numbers);
+            tempvalues.CopyTo(values);
             tempIndices.CopyTo(indices);
         }
     }

@@ -10,7 +10,7 @@ public class RadixSortBuffer : IDisposable
     public uint[] TranslatedValues;
 
     /// <summary>
-    /// The array for temporary data when reordering the translated values during each radix pass.
+    /// The array for temporary values when reordering the translated values during each radix pass.
     /// </summary>
     public uint[] TempValues;
 
@@ -21,6 +21,11 @@ public class RadixSortBuffer : IDisposable
     /// Always 256 elements long.
     /// </remarks>
     public int[] ByteCount;
+
+    /// <summary>
+    /// The array for temporary indices when reordering indices alongside the values during each radix pass.
+    /// </summary>
+    public int[] TempIndices;
 
     /// <summary>
     /// Whether or not this instance has been disposed.
@@ -35,9 +40,9 @@ public class RadixSortBuffer : IDisposable
     {
         TranslatedValues = new uint[length];
         TempValues = new uint[length];
+        TempIndices = new int[length];
         ByteCount = new int[256]; // count must always be 256 as radix operates on 8-bit/byte chunks.
     }
-
 
 
 
@@ -66,6 +71,7 @@ public class RadixSortBuffer : IDisposable
         buffer.TranslatedValues = null;
         buffer.TempValues = null;
         buffer.ByteCount = null;
+        buffer.TempIndices = null;
 
         GC.SuppressFinalize(buffer);
     }
