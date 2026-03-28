@@ -70,6 +70,7 @@ public class LeafBufferTest
         Assert.Null(buffer.GenIndices);
         Assert.Null(buffer.Centroids);
         Assert.Null(buffer.Flags);
+        Assert.Null(buffer.SortingArray);
         Assert.Equal(0, buffer.Count);
         Assert.Equal(0, buffer.Length);
         Assert.True(buffer.Disposed);

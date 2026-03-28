@@ -29,6 +29,11 @@ public class LeafBuffer : IDisposable
     public int[] Flags;
 
     /// <summary>
+    /// An array used when sorting a leaf buffer, containing the indicies of entries that will be swapped.
+    /// </summary>
+    public int[] SortingArray;
+
+    /// <summary>
     /// The count of allocated leaf entries; starting from index 0.
     /// </summary>
     public int Count;
@@ -53,6 +58,7 @@ public class LeafBuffer : IDisposable
         GenIndices = new(length);
         Flags = new int[length];
         Centroids = new(length);
+        SortingArray = new int[length];
         Length = length;
     }
 
@@ -91,6 +97,16 @@ public class LeafBuffer : IDisposable
         buffer.Count = 0;
     }
 
+    public static void SortByAscendingCentroidX(LeafBuffer buffer, int start, int length)
+    {
+         
+    }
+
+    public static void SortByAscendingCentroidY()
+    {
+        
+    }
+
 
 
 
@@ -122,6 +138,7 @@ public class LeafBuffer : IDisposable
         Soa_Vector2.Dispose(buffer.Centroids);
         buffer.Centroids = null;
         buffer.Flags = null;
+        buffer.SortingArray = null;
         buffer.Length = 0;
         buffer.Count = 0;
 

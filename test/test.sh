@@ -11,6 +11,7 @@ ECS_NAMESPACE="${NAMESPACE}ECS."
 PHYSICS_NAMESPACE="${NAMESPACE}Physics."
 GRAPHICS_NAMESPACE="${NAMESPACE}Graphics."
 DATA_STRUCTURES_NAMESPACE="${NAMESPACE}DataStructures."
+ALGORITHMS_NAMESPACE="${NAMESPACE}Algorithms."
 
 VENDORS_NAMESPACE="${NAMESPACE}Vendors."
 
@@ -58,6 +59,7 @@ TEST_MAP=(
     ["Soa_Vector2"]="${MATH_NAMESPACE}Soa_Vector2Test"
     ["Soa_Vector2Slice"]="${MATH_NAMESPACE}Soa_Vector2SliceTest"
     ["SpatialPairBuffer"]="${DATA_STRUCTURES_NAMESPACE}Bvh.SpatialPairBufferTest"
+    ["Sort"]="${ALGORITHMS_NAMESPACE}SortTest"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"
     ["Text4096"]="${GRAPHICS_NAMESPACE}Text.Text4096Test"
     ["Transform"]="${MATH_NAMESPACE}TransformTest"

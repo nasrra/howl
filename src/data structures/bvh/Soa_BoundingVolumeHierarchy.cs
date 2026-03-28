@@ -52,27 +52,23 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
     }
 
-    public static void ConstructBranches(
-        LeafBuffer leaves,
-        BranchBuffer branches,
-        Span<float> centroidXSlice,
-        Span<float> centroidYSlice,
-        int centroidSliceLength,
-        ref int writeIndex,
-        ref float boundingBoxMinX,
-        ref float boundingBoxMinY,
-        ref float boundingBoxMaxX,
-        ref float boundingBoxMaxY
+    public static void ConstructBranches(BranchBuffer branches, LeafBufferSlice leafSlice, ref int writeIndex, 
+        ref float aabbMinX, ref float aabbMinY, ref float aabbMaxX, ref float aabbMaxY
     )
     {
         // reserve space.
         int branchIndex = writeIndex++;
 
         // == leaf ==
-        if (centroidSliceLength <= 2)
+        if (leafSlice.Length <= 2)
         {
             // build leaf aabb.
-            // int leftLeafIndex= 
+            aabbMinX = leafSlice.Aabbs.MinX[0];
+            aabbMinY = leafSlice.Aabbs.MinY[0];
+            aabbMaxX = leafSlice.Aabbs.MaxX[0];
+            aabbMaxY = leafSlice.Aabbs.MaxY[0];
+
+            // int leftLeafIndex 
         }
         else
         {
