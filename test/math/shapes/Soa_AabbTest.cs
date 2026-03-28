@@ -17,6 +17,26 @@ public class Soa_AabbTest
     }
 
     [Fact]
+    public void Insert_Test()
+    {
+        for(int capacity = 0; capacity < 24; capacity++)
+        {            
+            Soa_Aabb soa = new(capacity);
+
+            int j = 0;
+            for(int i = 0; i < capacity; i++)
+            {
+                float minX = j++;
+                float minY = j++;
+                float maxX = j++;
+                float maxY = j++;
+                Soa_Aabb.Insert(soa, i, minX, minY, maxX, maxY);
+                Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, i, soa);
+            }
+        }
+    }
+
+    [Fact]
     public void CalculateCentroids_Sisd_Test()
     {
         for(int capacity = 0; capacity < 24; capacity++)
@@ -48,26 +68,6 @@ public class Soa_AabbTest
                 Assert.Equal(eY, cY[i]);
             }
         }        
-    }
-
-    [Fact]
-    public void Insert_Test()
-    {
-        for(int capacity = 0; capacity < 24; capacity++)
-        {            
-            Soa_Aabb soa = new(capacity);
-
-            int j = 0;
-            for(int i = 0; i < capacity; i++)
-            {
-                float minX = j++;
-                float minY = j++;
-                float maxX = j++;
-                float maxY = j++;
-                Soa_Aabb.Insert(soa, i, minX, minY, maxX, maxY);
-                Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, i, soa);
-            }
-        }
     }
 
     [Fact]
