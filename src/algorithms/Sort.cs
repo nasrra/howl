@@ -5,11 +5,6 @@ namespace Howl.Algorithms;
 
 public static class Sort
 {
-    public static void RadixSort(Span<float> numbers, Span<uint> buffer, Span<uint> temp, Span<int> count, int length)
-    {
-    }
-
-
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static uint FloatToUintSortable(float value)
     {
@@ -65,5 +60,61 @@ public static class Sort
 
         //convert the corrected bit pattern back into a 32-bit float.
         return BitConverter.ToSingle(BitConverter.GetBytes(value), 0);
+    }
+
+    public static void Radix(Span<float> numbers, Span<uint> buffer, Span<uint> temp, Span<int> count, int length)
+    {
+        // convert float bits to uints that are able to be ordered in ascending/descending order.
+        for(int i = 0; i < length; i++)
+        {
+            buffer[i] = FloatToUintSortable(numbers[i]);
+        }
+
+        // perform the radix sort on the units (LSD approach)
+        // Use 8-bit chunks (buckets of 256) for efficiency.
+        for(int shift = 0; shift < 32; shift += 8)
+        {
+            // reset the frequency of counts for this 8-bit chunk.
+            count.Clear();
+
+            // count the occurences of each 8-value (0-255).
+            for(int i = 0 ; i < length; i++)
+            {
+                // Shift the target 8-bit chunk (byte) to the far right of the 32-bit integer.
+                //  'shift' moves in increments of 8 (0, 8, 16, 24) to isolate each byte in the uint.
+                // Apply a bit mask of 0xFF (binary 11111111) to zero out everythin except
+                //  those bottom 8 bits.
+                // This results in a 'bucket' index between 0 and 255, matching our count array.
+                int bucket = (int)((buffer[i] >> shift) & 0xFF);
+                count[bucket]++;
+            }
+
+            // compute prefix sum (cumulative count)
+            // this tells us exactly which index each bucket starts at in the temp array.
+            int startIndex = 0;
+            int c = 0;
+            for(int i = 0; i < 256; i++)
+            {
+                c = count[i];
+                count[i] = startIndex;
+                startIndex += c;
+            }
+
+            // move data from buffer to temp based on the counts.
+            for(int i = 0; i < length; i++)
+            {
+                int bucket = (int)((buffer[i] >> shift) & 0xFF);
+                temp[count[bucket]++] = buffer[i];
+            }
+
+            // swap buffer and temp for the next pass.
+            temp.CopyTo(buffer);
+        }
+
+        // finally, convert the sorted uints back into the original float span
+        for(int i = 0; i < length; i++)
+        {
+            numbers[i] = UintSortableToFloat(buffer[i]);
+        }
     }
 }

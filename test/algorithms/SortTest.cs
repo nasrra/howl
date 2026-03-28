@@ -38,4 +38,32 @@ public class SortTest
             Assert.Equal(fD, Sort.UintSortableToFloat(uD));
         }
     }
+
+    [Fact]
+    public void Radix_Test()
+    {
+        float a = 3498.0192f;
+        float b = 123.987f;
+        float c = 90.1234f;
+        float d = 8.123f;
+        float e = 0.0f;
+        float f = -0.0f;
+        float g = -9.129387f;
+        float h = -12.123f;
+        float i = -345.213123f;
+        float j = -8975.98f;
+        
+        float[] nums = [a,j,b,i,c,h,g,d,e,f];
+        float[] expected = [j,i,h,g,f,e,d,c,b,a];
+        uint[] buffer = new uint[nums.Length];
+        uint[] temp = new uint[buffer.Length];
+        int[] count = new int[256];
+
+        Sort.Radix(nums, buffer, temp, count, nums.Length);
+
+        for(int q = 0; q < nums.Length; q++)
+        {
+            Assert.Equal(expected[q], nums[q]);
+        }
+    }
 }
