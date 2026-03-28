@@ -36,6 +36,7 @@ TEST_MAP=(
     ["GuiText16"]="${GRAPHICS_NAMESPACE}Text.GuiText16Test"
     ["GuiText4096"]="${GRAPHICS_NAMESPACE}Text.GuiText4096Test"
     ["LeafBuffer"]="${DATA_STRUCTURES_NAMESPACE}Bvh.LeafBufferTest"
+    ["LeafBufferSlice"]="${DATA_STRUCTURES_NAMESPACE}Bvh.LeafBufferSliceTest"
     ["MathNamespace"]="${MATH_NAMESPACE}"
     ["Math"]="${MATH_NAMESPACE}MathTest"
     ["MonoGameColourExt"]="${MONOGAME_GRAPHICS_NAMESPACE}ColourExtensionsTest"

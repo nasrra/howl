@@ -14,7 +14,7 @@ public class LeafBuffer : IDisposable
     public Soa_Aabb Aabbs;
 
     /// <summary>
-    /// The gen indices.
+    /// The gen indices of the data associated with a leaf.
     /// </summary>
     public Soa_GenIndex GenIndices;
 
@@ -52,6 +52,7 @@ public class LeafBuffer : IDisposable
         Aabbs = new(length);
         GenIndices = new(length);
         Flags = new int[length];
+        Centroids = new(length);
         Length = length;
     }
 
@@ -118,6 +119,8 @@ public class LeafBuffer : IDisposable
         buffer.Aabbs = null;
         Soa_GenIndex.Dispose(buffer.GenIndices);
         buffer.GenIndices = null;
+        Soa_Vector2.Dispose(buffer.Centroids);
+        buffer.Centroids = null;
         buffer.Flags = null;
         buffer.Length = 0;
         buffer.Count = 0;

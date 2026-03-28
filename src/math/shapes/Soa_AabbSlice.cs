@@ -32,7 +32,7 @@ public ref struct Soa_AabbSlice
     public int Length;
 
     /// <summary>
-    /// Constructs a Structure-Of-Arrays span over the portion of the target soa beginning at a specified position for a specified length.
+    /// Constructs a Structure-Of-Arrays span over the portion of the target soa, beginning at a specified position for a specified length.
     /// </summary>
     /// <param name="soa">the target soa instance to get a slice of.</param>
     /// <param name="start">the starting index.</param>
