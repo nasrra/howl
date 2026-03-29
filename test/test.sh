@@ -50,6 +50,7 @@ TEST_MAP=(
     ["PolygonRectangle"]="${SHAPES_NAMESPACE}PolygonRectangleTest"
     ["QueryResultBuffer"]="${DATA_STRUCTURES_NAMESPACE}Bvh.QueryResultBufferTest"
     ["RadixSort"]="${SORTING_NAMESPACE}RadixSortTest"
+    ["RadixSortF"]="${SORTING_NAMESPACE}RadixSortFTest"
     ["RadixSortBuffer"]="${SORTING_NAMESPACE}RadixSortBuffer"
     ["Rectangle"]="${SHAPES_NAMESPACE}RectangleTest"
     ["RigidBody"]="${PHYSICS_NAMESPACE}RigidBodyTest"
