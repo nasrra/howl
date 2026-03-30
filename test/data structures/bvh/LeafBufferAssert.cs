@@ -28,6 +28,7 @@ public static class LeafBufferAssert
     {
         Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, entryIndex, buffer.Aabbs);
         Soa_GenIndexAssert.EntryEqual(index, generation, entryIndex, buffer.GenIndices);
+        Soa_Vector2Assert.EntryEqual(centroidX, centroidY, entryIndex, buffer.Centroids);
         Assert.Equal(flags, buffer.Flags[entryIndex]);
     }
 
@@ -42,7 +43,7 @@ public static class LeafBufferAssert
         Soa_GenIndexAssert.LengthEqual(length, buffer.GenIndices);
         Soa_Vector2Assert.LengthEqual(length, buffer.Centroids);
         Assert.Equal(length, buffer.Flags.Length);
-        Assert.Equal(length, buffer.SortingArray.Length);
+        Assert.Equal(length, buffer.CentroidIds.Length);
         Assert.Equal(length, buffer.Length);
     }
 }

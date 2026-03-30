@@ -170,7 +170,7 @@ public static class RadixSortF
     /// <param name="temp">temporary span for reordering values during each pass.</param>
     /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
-    /// <param name="length">the total number of elements to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void Ascend(Span<float> values, Span<uint> translated, Span<uint> temp, Span<int> byteCount, int start, int length)
     {
         Span<float> valuesSlice = values.Slice(start, length);
@@ -187,7 +187,6 @@ public static class RadixSortF
     /// </remarks>
     /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
     /// <param name="buffer">A radix sort buffer </param>
-    /// <param name="start">the index of the first element to process.</param>
     public static void Ascend(Span<float> values, RadixSortBuffer buffer)
     {
         Ascend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount);
@@ -203,7 +202,7 @@ public static class RadixSortF
     /// <param name="buffer">A radix sort buffer </param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="start">the index of the first element to process.</param>
-    /// <param name="length">the total number of elements to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void Ascend(Span<float> values, RadixSortBuffer buffer, int start, int length)
     {
         Ascend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount, start, length);
@@ -260,7 +259,7 @@ public static class RadixSortF
     /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
     /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
-    /// <param name="length">the total number of elements to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void IndexedAscend(Span<float> values, Span<uint> translated, Span<uint> tempValues, 
         Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int start, int length
@@ -290,7 +289,7 @@ public static class RadixSortF
     /// <param name="indices">the associated index span to be reordered alongside the values.</param>
     /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
     /// <param name="start">the index of the first element to process.</param>
-    /// <param name="length">the total number of elements to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void IndexedAscend(Span<float> values, Span<int> indices, RadixSortBuffer buffer, int start, int length)
     {
         IndexedAscend(values, buffer.TranslatedValues, buffer.TempValues, 
@@ -369,7 +368,7 @@ public static class RadixSortF
     /// <param name="temp">temporary span for reordering values during each pass.</param>
     /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
-    /// <param name="length">the total number of elements to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void Descend(Span<float> values, Span<uint> translated, Span<uint> temp, Span<int> byteCount, int start, int length)
     {
         Span<float> valuesSlice = values.Slice(start, length);
@@ -386,7 +385,6 @@ public static class RadixSortF
     /// </remarks>
     /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
     /// <param name="buffer">A radix sort buffer </param>
-    /// <param name="start">the index of the first element to process.</param>
     public static void Descend(Span<float> values, RadixSortBuffer buffer)
     {
         Descend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount);
@@ -402,7 +400,7 @@ public static class RadixSortF
     /// <param name="buffer">A radix sort buffer </param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="start">the index of the first element to process.</param>
-    /// <param name="length">the total number of elements to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void Descend(Span<float> values, RadixSortBuffer buffer, int start, int length)
     {
         Descend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount, start, length);
@@ -459,7 +457,7 @@ public static class RadixSortF
     /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
     /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
-    /// <param name="length">the total number of elements to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void IndexedDescend(Span<float> values, Span<uint> translated, Span<uint> tempValues, 
         Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int start, int length
@@ -489,7 +487,7 @@ public static class RadixSortF
     /// <param name="indices">the associated index span to be reordered alongside the values.</param>
     /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
     /// <param name="start">the index of the first element to process.</param>
-    /// <param name="length">the total number of elements to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void IndexedDescend(Span<float> values, Span<int> indices, RadixSortBuffer buffer, int start, int length)
     {
         IndexedDescend(values, buffer.TranslatedValues, buffer.TempValues, 

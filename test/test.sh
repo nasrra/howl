@@ -63,6 +63,7 @@ TEST_MAP=(
     ["Soa_Vector2"]="${MATH_NAMESPACE}Soa_Vector2Test"
     ["Soa_Vector2Slice"]="${MATH_NAMESPACE}Soa_Vector2SliceTest"
     ["SpatialPairBuffer"]="${DATA_STRUCTURES_NAMESPACE}Bvh.SpatialPairBufferTest"
+    ["Swap"]="${ALGORITHMS_NAMESPACE}SwapTest"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"
     ["Text4096"]="${GRAPHICS_NAMESPACE}Text.Text4096Test"
     ["Transform"]="${MATH_NAMESPACE}TransformTest"
