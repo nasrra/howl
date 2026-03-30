@@ -66,7 +66,7 @@ public class Soa_Branch : IDisposable
     }
 
     /// <summary>
-    /// Appends an entry into a soa at a soa's <c>AppendCount</c> index.
+    /// Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
     /// </summary>
     /// <param name="soa">the soa instance to append to.</param>
     /// <param name="minX">the x-component of the minimum vertex of the aabb.</param>

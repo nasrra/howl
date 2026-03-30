@@ -47,7 +47,7 @@ public class Soa_LeafTest
     {
         int length = 12;
         Soa_Leaf leaves = new(length);
-        QueryResultBuffer results = new(length);
+        Soa_QueryResult results = new(length);
         Span<int> queryIndices = [0,1,3];
 
         // leaf 0.
@@ -97,9 +97,9 @@ public class Soa_LeafTest
         Soa_Leaf.Query(leaves, results, queryIndices, -0.5f, -0.5f, 0.5f, 0.5f);
 
         // only leaf 0 and 1 should be counted as overlapping.
-        Assert.Equal(2, results.Count);
-        QueryResultBufferAssert.EntryEquals(leaf0Index, leaf0Generation, leaf0Flags, 0, results);
-        QueryResultBufferAssert.EntryEquals(leaf1Index, leaf1Generation, leaf1Flags, 1, results);
+        Assert.Equal(2, results.AppendCount);
+        Soa_QueryResultAssert.EntryEquals(leaf0Index, leaf0Generation, leaf0Flags, 0, results);
+        Soa_QueryResultAssert.EntryEquals(leaf1Index, leaf1Generation, leaf1Flags, 1, results);
     }
 
     [Fact]

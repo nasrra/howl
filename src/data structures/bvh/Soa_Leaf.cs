@@ -52,7 +52,7 @@ public class Soa_Leaf : IDisposable
     }
 
     /// <summary>
-    /// Appends an entry to the soa instance..
+    /// Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
     /// </summary>
     /// <param name="soa">the soa instance to append to.</param>
     /// <param name="minX">the the x-component of the aabb minimum vertex.</param>
@@ -89,6 +89,9 @@ public class Soa_Leaf : IDisposable
     /// <summary>
     /// Queries a soa instance for any leaves that may overlap within a given area.
     /// </summary>
+    /// <remarks>
+    /// Result writing is non-destructive, any found overlaps will be appended straight onto <paramref name="results"/>.
+    /// </remarks>
     /// <param name="leaves">the soa instance to query.</param>
     /// <param name="results">the soa instance to append overlapping leaf data to; specifically the gen index and user-defined flags of the data associated with the leaf.</param>
     /// <param name="indices">the indices of the leaves to query for overlap against the query area.</param>
@@ -96,7 +99,7 @@ public class Soa_Leaf : IDisposable
     /// <param name="minY">the y-component of the query area maximum vertex.</param>
     /// <param name="maxX">the x-component of the query area maximum vertex.</param>
     /// <param name="maxY">the y-component of the query area maximum vertex.</param>
-    public static void Query(Soa_Leaf leaves, QueryResultBuffer results, Span<int> indices, float minX, float minY, float maxX, float maxY)
+    public static void Query(Soa_Leaf leaves, Soa_QueryResult results, Span<int> indices, float minX, float minY, float maxX, float maxY)
     {
         // hoisting of invariance.
         Soa_Aabb aabbs = leaves.Aabbs;
@@ -115,7 +118,7 @@ public class Soa_Leaf : IDisposable
             if(Aabb.Intersect(aabbsMinX[index], aabbsMinY[index], aabbsMaxX[index], aabbsMaxY[index], minX, minY, maxX, maxY))
             {
                 // add to the results if the leaf intersects with the query area.
-                QueryResultBuffer.Append(results, leafIndices[index], leafGenerations[index], leafFags[index]);
+                Soa_QueryResult.Append(results, leafIndices[index], leafGenerations[index], leafFags[index]);
             }
         }
     }

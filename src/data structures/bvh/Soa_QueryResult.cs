@@ -4,7 +4,7 @@ using Howl.ECS;
 
 namespace Howl.DataStructures.Bvh;
 
-public class QueryResultBuffer : IDisposable
+public class Soa_QueryResult : IDisposable
 {
     /// <summary>
     /// The gen indices.
@@ -17,9 +17,9 @@ public class QueryResultBuffer : IDisposable
     public int[] Flags;
 
     /// <summary>
-    /// The count of allocated entries; starting from index 0.
+    /// The count of allocated entries from appending.
     /// </summary>
-    public int Count;
+    public int AppendCount;
 
     /// <summary>
     /// The length of all the backing arrays of this instance.
@@ -32,10 +32,10 @@ public class QueryResultBuffer : IDisposable
     public bool Disposed;
 
     /// <summary>
-    /// Creates a query result buffer.
+    /// Creates a soa instance.
     /// </summary>
     /// <param name="length">the length of the backing arrays.</param>
-    public QueryResultBuffer(int length)
+    public Soa_QueryResult(int length)
     {
         GenIndices = new(length);
         Flags = new int[length];
@@ -43,30 +43,30 @@ public class QueryResultBuffer : IDisposable
     }
 
     /// <summary>
-    /// Appends a query result to a buffer
+    /// Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
     /// </summary>
-    /// <param name="buffer">the buffer to append to.</param>
+    /// <param name="soa">the soa instance to append to.</param>
     /// <param name="index">the <c>index</c> of the data associated with the query result.</param>
     /// <param name="generation">the <c>generation</c> of the data associated with the query result.</param>
     /// <param name="flags">the user-defined flags of the data associated with the query result.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append(QueryResultBuffer buffer, int index, int generation, int flags)
+    public static void Append(Soa_QueryResult soa, int index, int generation, int flags)
     {
-        int count = buffer.Count;
-        buffer.GenIndices.Indices[count] = index;
-        buffer.GenIndices.Generations[count] = generation;
-        buffer.Flags[count] = flags;
-        buffer.Count++;
+        int count = soa.AppendCount;
+        soa.GenIndices.Indices[count] = index;
+        soa.GenIndices.Generations[count] = generation;
+        soa.Flags[count] = flags;
+        soa.AppendCount++;
     }
 
     /// <summary>
-    /// Sets a buffer's count to zero.
+    /// Sets a soa instance's <c>AppendCount</c> to zero.
     /// </summary>
     /// <param name="buffer">the buffer to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Clear(QueryResultBuffer buffer)
+    public static void Clear(Soa_QueryResult buffer)
     {
-        buffer.Count = 0; 
+        buffer.AppendCount = 0; 
     }
 
 
@@ -86,7 +86,7 @@ public class QueryResultBuffer : IDisposable
         throw new NotImplementedException();
     }
 
-    public static void Dispose(QueryResultBuffer buffer)
+    public static void Dispose(Soa_QueryResult buffer)
     {
         if(buffer.Disposed)
             return;
@@ -96,13 +96,13 @@ public class QueryResultBuffer : IDisposable
         Soa_GenIndex.Dispose(buffer.GenIndices);
         buffer.GenIndices = null;
         buffer.Flags = null;
-        buffer.Count = 0;
+        buffer.AppendCount = 0;
         buffer.Length = 0;
 
         GC.SuppressFinalize(buffer);
     }
 
-    ~QueryResultBuffer()
+    ~Soa_QueryResult()
     {
         Dispose(this);
     }

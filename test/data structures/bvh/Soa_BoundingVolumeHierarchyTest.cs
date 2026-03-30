@@ -64,7 +64,7 @@ public class Soa_BoundingVolumeHierarchyTest
         float[] eMaxY           = [440,3,440,34,440];
         int[] eLeftLeafIndices  = [0,1,0,2,3];
         int[] eRightLeafIndices = [0,0,0,0,4];
-        int[] eSubtreeSize      = [5,0,3,0,0];
+        int[] eSubtreeSize      = [5,1,3,1,1];
         int[] eLeafCount        = [0,2,0,1,2];
 
         // construct.
@@ -76,6 +76,34 @@ public class Soa_BoundingVolumeHierarchyTest
         {
             Soa_BranchAssert.EntryEqual(eMinX[i], eMinY[i], eMaxX[i], eMaxY[i], eLeftLeafIndices[i], eRightLeafIndices[i], eSubtreeSize[i], eLeafCount[i], i, bvh.Branches);
         } 
+    }
+
+    [Fact]
+    public void AreaQuery_Test()
+    {
+        int length = 6;
+        Soa_QueryResult results = new(length*2);
+        Soa_BoundingVolumeHierarchy bvh = new(length);
+        
+        for(int i = 0; i < length; i++)
+        {
+            Soa_Leaf.Append(bvh.Leaves, i, i, i+1f, i+1f, i+1, i+2, i+3);
+        }
+        
+        Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
+
+        // bvh query.
+        Soa_BoundingVolumeHierarchy.AreaQuery(bvh, results, 0,0,2,2);
+        Assert.Equal(2,results.AppendCount);
+        Soa_QueryResultAssert.EntryEquals(1,2,3,0,results);
+        Soa_QueryResultAssert.EntryEquals(2,3,4,1,results);
+    
+        // decomposed bvh query.
+        Soa_BoundingVolumeHierarchy.AreaQuery(bvh.Branches, bvh.Leaves, results, 2,2,5,5);
+        Assert.Equal(3,results.AppendCount);
+        Soa_QueryResultAssert.EntryEquals(3,4,5,0,results);
+        Soa_QueryResultAssert.EntryEquals(4,5,6,1,results);
+        Soa_QueryResultAssert.EntryEquals(5,6,7,2,results);
     }
 
     [Fact]

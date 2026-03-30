@@ -32,7 +32,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <summary>
     /// The query result buffer for constructing spaial pairs after tree construction.
     /// </summary>
-    public QueryResultBuffer SpatialPairQueryBuffer;
+    public Soa_QueryResult SpatialPairQueryBuffer;
 
     /// <summary>
     /// The centroids of all leaf Aabbs
@@ -155,7 +155,8 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             }
 
             // insert the leaf.
-            Soa_Branch.Insert(branches, branchIndex, aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, leftLeafIndex, rightLeafIndex, 0, leafCount);
+            // note: subtree size for leaves is always one as subtree size is inclusive of then entry; and a leaf is the final in a branch chain.
+            Soa_Branch.Insert(branches, branchIndex, aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, leftLeafIndex, rightLeafIndex, 1, leafCount);
         }
         else
         {
@@ -250,6 +251,76 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
     }
 
+    /// <summary>
+    /// Queries a constructed tree of branches for any that overlap within a given area.
+    /// </summary>
+    /// <param name="branches">the constructed tree of branches to query.</param>
+    /// <param name="leaves">the leaf data associated with the branches.</param>
+    /// <param name="results">the buffer of results to write overlap data to.</param>
+    /// <param name="minX">the x-component of the query area minimum vertex.</param>
+    /// <param name="minY">the y-component of the query area minimum vertex.</param>
+    /// <param name="maxX">the x-component of the query area maximum vertex.</param>
+    /// <param name="maxY">the y-component of the query area maximum vertex.</param>
+    public static void AreaQuery(Soa_Branch branches, Soa_Leaf leaves, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
+    {
+        Soa_QueryResult.Clear(results);
+        Span<float> branchMinX = branches.Aabbs.MinX;
+        Span<float> branchMinY = branches.Aabbs.MinY;
+        Span<float> branchMaxX = branches.Aabbs.MaxX;
+        Span<float> branchMaxY = branches.Aabbs.MaxY;
+        Span<int> branchSubtreeSizes = branches.SubtreeSizes;
+        Span<int> branchLeafCounts = branches.LeafCounts;
+        Span<int> leftLeafIndices = branches.LeftLeafIndices;
+        Span<int> rightLeafIndices = branches.RightLeafIndices;
+
+        int i = 0;
+        while(i < branches.AppendCount)
+        {
+            if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[i], branchMinY[i], branchMaxX[i], branchMaxY[i]))
+            {
+                // skip the entire subtree.
+                i+= branchSubtreeSizes[i];
+                continue;
+            }
+
+            int leafCount = branchLeafCounts[i];
+
+            switch (leafCount)
+            {
+                case 1:
+                    // left leaf index should always be populated for branches with leaf(s) attatched.
+                    Soa_Leaf.Query(leaves, results, [leftLeafIndices[i]], minX, minY, maxX, maxY);
+                    break;
+                case 2:
+                    Soa_Leaf.Query(leaves, results, [leftLeafIndices[i], rightLeafIndices[i]], minX, minY, maxX, maxY);
+                    break;
+                case 0:
+                    // do nothing..., just go to next branch in the tree..
+                    break;
+                default:
+                    System.Diagnostics.Debug.Assert(false);
+                    break;
+            }
+
+            // go to next branch in the tree.
+            i++;
+        }
+    }
+
+    /// <summary>
+    /// Queries a build bounding-volume-hierarchy tree for leaves that overlap within a given area. 
+    /// </summary>
+    /// <param name="bvh">the bounding-volume-hierarchy instance.</param>
+    /// <param name="results">output buffer to write overlap data to.</param>
+    /// <param name="minX">the x-component of the query area minimum vertex.</param>
+    /// <param name="minY">the y-component of the query area minimum vertex.</param>
+    /// <param name="maxX">the x-component of the query area maximum vertex.</param>
+    /// <param name="maxY">the y-component of the query area maximum vertex.</param>
+    public static void AreaQuery(Soa_BoundingVolumeHierarchy bvh, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
+    {
+        AreaQuery(bvh.Branches, bvh.Leaves, results, minX, minY, maxX, maxY);
+    }
+
 
 
 
@@ -319,7 +390,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         Soa_Vector2.Dispose(bvh.LeafCentroids);
         bvh.LeafCentroids = null;
         
-        QueryResultBuffer.Dispose(bvh.SpatialPairQueryBuffer);
+        Soa_QueryResult.Dispose(bvh.SpatialPairQueryBuffer);
         bvh.SpatialPairQueryBuffer = null;
         
         bvh.CentroidLeafIds = null;
