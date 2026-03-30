@@ -117,6 +117,8 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         // inserts branches in a 'subtree size' relative order for each branch; meaning, at the end of the 
         // construction of all branches, the data is contiguous (no holes in the array entries).
         bvh.Branches.AppendCount = BranchCount;
+
+        ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, bvh.SpatialPairQueryBuffer);
     }
 
     public static void ConstructBranches(RadixSortBuffer radixSortBuffer, Soa_Branch branches, Span<float> leavesMinX, Span<float> leavesMinY, 
@@ -254,6 +256,9 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <summary>
     /// Queries a constructed tree of branches for any that overlap within a given area.
     /// </summary>
+    /// <remarks>
+    /// Appending to <paramref name="results"/> is a destructive process; the buffer will be cleared before it appends.
+    /// </remarks>
     /// <param name="branches">the constructed tree of branches to query.</param>
     /// <param name="leaves">the leaf data associated with the branches.</param>
     /// <param name="results">the buffer of results to write overlap data to.</param>
@@ -310,6 +315,9 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <summary>
     /// Queries a build bounding-volume-hierarchy tree for leaves that overlap within a given area. 
     /// </summary>
+    /// <remarks>
+    /// Appending to <paramref name="results"/> is a destructive process; the buffer will be cleared before it appends.
+    /// </remarks>
     /// <param name="bvh">the bounding-volume-hierarchy instance.</param>
     /// <param name="results">output buffer to write overlap data to.</param>
     /// <param name="minX">the x-component of the query area minimum vertex.</param>
@@ -319,6 +327,57 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     public static void AreaQuery(Soa_BoundingVolumeHierarchy bvh, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
     {
         AreaQuery(bvh.Branches, bvh.Leaves, results, minX, minY, maxX, maxY);
+    }
+
+    /// <summary>
+    /// Constructs the spatial pair list from a given leaf set.
+    /// </summary>
+    /// <remarks>
+    /// Note: 
+    /// - <paramref name="results"/> and <paramref name="spatialPairs"/> writing is destructive, the soa buffers will be cleared and output with this funcitons results.
+    /// - This method does not produce duplicate spatial pairings.
+    /// </remarks>
+    /// <param name="branches">the constructed tree of branches to query.</param>
+    /// <param name="leaves">the leaf data associated with the branches.</param>
+    /// <param name="spatialPairs">the buffer of spatial pairs to write overlap data to.</param>
+    /// <param name="results">the buffer of results to write temporary overlap data to.</param>
+    public static void ConstructSpatialPairs(Soa_Branch branches, Soa_Leaf leaves, SpatialPairBuffer spatialPairs, Soa_QueryResult results)
+    {
+        SpatialPairBuffer.Clear(spatialPairs);
+        Span<int> leafIndices = leaves.GenIndices.Indices;
+        Span<int> leafGenerations = leaves.GenIndices.Generations;
+        Span<int> leafFlags = leaves.Flags; 
+        Span<float> leafMinX = leaves.Aabbs.MinX;
+        Span<float> leafMinY = leaves.Aabbs.MinY;
+        Span<float> leafMaxX = leaves.Aabbs.MaxX;
+        Span<float> leafMaxY = leaves.Aabbs.MaxY;
+
+        int ownerIndex;
+        int ownerGeneration;
+        int ownerFlag;
+
+        for(int i = 0; i < leaves.AppendCount; i++)
+        {
+            ownerIndex = leafIndices[i];
+            ownerGeneration = leafGenerations[i];
+            ownerFlag = leafFlags[i];
+
+            // get all near colliders to the owner leaf AABB.
+            AreaQuery(branches, leaves, results, leafMinX[i], leafMinY[i], leafMaxX[i], leafMaxY[i]);
+
+            for(int j = 0; j < results.AppendCount; j++)
+            {
+                int otherIndex = results.GenIndices.Indices[j];
+                
+                // ensure that spatial pairs are not added twice.
+                if(ownerIndex >= otherIndex)
+                {
+                    continue;
+                }
+
+                SpatialPairBuffer.Append(spatialPairs, ownerIndex, ownerGeneration, ownerFlag, otherIndex, results.GenIndices.Generations[j], results.Flags[j]);
+            }
+        }
     }
 
 
