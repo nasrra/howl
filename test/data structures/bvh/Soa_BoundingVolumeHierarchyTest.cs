@@ -15,7 +15,7 @@ public class Soa_BoundingVolumeHierarchyTest
             Soa_BoundingVolumeHierarchy bvh = new(length);
 
             RadixSortBufferAssert.LengthEqual(length, bvh.RadixSortBuffer);
-            SpatialPairBufferAssert.LengthEqual(length, bvh.SpatialPairs);
+            Soa_SpatialPairAssert.LengthEqual(length, bvh.SpatialPairs);
             Soa_BranchAssert.LengthEqual(length*2, bvh.Branches);
             Soa_LeafAssert.LengthEqual(length, bvh.Leaves);
             Soa_Vector2Assert.LengthEqual(length, bvh.LeafCentroids);
@@ -170,8 +170,8 @@ public class Soa_BoundingVolumeHierarchyTest
 
         Soa_BoundingVolumeHierarchy.ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, results);
     
-        Assert.Equal(4, bvh.SpatialPairs.Count);
-        for(int i = 0; i < bvh.SpatialPairs.Count; i++)
+        Assert.Equal(4, bvh.SpatialPairs.AppendCount);
+        for(int i = 0; i < bvh.SpatialPairs.AppendCount; i++)
         {
             Assert.Equal(eOwnerIndices[i], bvh.SpatialPairs.OwnerGenIndices.Indices[i]);
             Assert.Equal(eOwnerGenerations[i], bvh.SpatialPairs.OwnerGenIndices.Generations[i]);
@@ -192,7 +192,7 @@ public class Soa_BoundingVolumeHierarchyTest
 
         Soa_BoundingVolumeHierarchy.ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, results);
 
-        Assert.Equal(0, bvh.SpatialPairs.Count);
+        Assert.Equal(0, bvh.SpatialPairs.AppendCount);
     }
 
     [Fact]

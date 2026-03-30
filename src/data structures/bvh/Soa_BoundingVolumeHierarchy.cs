@@ -17,7 +17,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <summary>
     /// The spatial pairs of leaves in the constructed tree.
     /// </summary>
-    public SpatialPairBuffer SpatialPairs;
+    public Soa_SpatialPair SpatialPairs;
 
     /// <summary>
     /// The constructed branches from the inserted leaves.
@@ -341,9 +341,9 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="leaves">the leaf data associated with the branches.</param>
     /// <param name="spatialPairs">the buffer of spatial pairs to write overlap data to.</param>
     /// <param name="results">the buffer of results to write temporary overlap data to.</param>
-    public static void ConstructSpatialPairs(Soa_Branch branches, Soa_Leaf leaves, SpatialPairBuffer spatialPairs, Soa_QueryResult results)
+    public static void ConstructSpatialPairs(Soa_Branch branches, Soa_Leaf leaves, Soa_SpatialPair spatialPairs, Soa_QueryResult results)
     {
-        SpatialPairBuffer.Clear(spatialPairs);
+        Soa_SpatialPair.Clear(spatialPairs);
         Span<int> leafIndices = leaves.GenIndices.Indices;
         Span<int> leafGenerations = leaves.GenIndices.Generations;
         Span<int> leafFlags = leaves.Flags; 
@@ -375,7 +375,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
                     continue;
                 }
 
-                SpatialPairBuffer.Append(spatialPairs, ownerIndex, ownerGeneration, ownerFlag, otherIndex, results.GenIndices.Generations[j], results.Flags[j]);
+                Soa_SpatialPair.Append(spatialPairs, ownerIndex, ownerGeneration, ownerFlag, otherIndex, results.GenIndices.Generations[j], results.Flags[j]);
             }
         }
     }
@@ -437,7 +437,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         RadixSortBuffer.Dispose(bvh.RadixSortBuffer);
         bvh.RadixSortBuffer = null;
 
-        SpatialPairBuffer.Dispose(bvh.SpatialPairs);        
+        Soa_SpatialPair.Dispose(bvh.SpatialPairs);        
         bvh.SpatialPairs = null;
         
         Soa_Branch.Dispose(bvh.Branches);

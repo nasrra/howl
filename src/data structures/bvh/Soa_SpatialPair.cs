@@ -4,7 +4,7 @@ using Howl.ECS;
 
 namespace Howl.DataStructures.Bvh;
 
-public class SpatialPairBuffer : IDisposable
+public class Soa_SpatialPair : IDisposable
 {
     /// <summary>
     /// The gen-index for data assocaited with the 'owners' of all spatial pairs.
@@ -27,9 +27,9 @@ public class SpatialPairBuffer : IDisposable
     public int[] OtherFlags;
 
     /// <summary>
-    /// The count of allocated entries; starting from index 0.
+    /// The count of allocated entries from appending.
     /// </summary>
-    public int Count;
+    public int AppendCount;
 
     /// <summary>
     /// The length of all the backing arrays of this instance.
@@ -42,10 +42,10 @@ public class SpatialPairBuffer : IDisposable
     public bool Disposed;
 
     /// <summary>
-    /// Creates a new spatial pair bufffer instance.
+    /// Creates a new soa instance.
     /// </summary>
     /// <param name="length">the length of the backing arrays.</param>
-    public SpatialPairBuffer(int length)
+    public Soa_SpatialPair(int length)
     {
         OwnerGenIndices = new(length);
         OtherGenIndices = new(length);
@@ -55,37 +55,37 @@ public class SpatialPairBuffer : IDisposable
     }
 
     /// <summary>
-    /// Appends a spatial pair to a buffer.
+    /// Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
     /// </summary>
-    /// <param name="buffer">the buffer to append to.</param>
+    /// <param name="soa">the soa instance to append to.</param>
     /// <param name="ownerIndex">the index of the data associated with the spatial pair's 'owner'.</param>
     /// <param name="ownerGeneration">the generation of the data assocaited with the spatial pair's 'owner'.</param>
     /// <param name="ownerFlags">the user-defined flags of the spatial pair's 'owner'.</param>
     /// <param name="otherIndex">the index of the data associated with the spatial pair's 'other'.</param>
     /// <param name="otherGeneration">the generation of the data assocaited with the spatial pair's 'other'.</param>
     /// <param name="otherFlags">the user-defined flags of the spatial pair's 'other'.</param>
-    public static void Append(SpatialPairBuffer buffer, int ownerIndex, int ownerGeneration, int ownerFlags, int otherIndex, int otherGeneration,
+    public static void Append(Soa_SpatialPair soa, int ownerIndex, int ownerGeneration, int ownerFlags, int otherIndex, int otherGeneration,
         int otherFlags
     )
     {
-        int count = buffer.Count;
-        buffer.OwnerGenIndices.Indices[count] = ownerIndex;
-        buffer.OwnerGenIndices.Generations[count] = ownerGeneration;
-        buffer.OwnerFlags[count] = ownerFlags;
-        buffer.OtherGenIndices.Indices[count] = otherIndex;
-        buffer.OtherGenIndices.Generations[count] = otherGeneration;
-        buffer.OtherFlags[count] = otherFlags;
-        buffer.Count++;
+        int count = soa.AppendCount;
+        soa.OwnerGenIndices.Indices[count] = ownerIndex;
+        soa.OwnerGenIndices.Generations[count] = ownerGeneration;
+        soa.OwnerFlags[count] = ownerFlags;
+        soa.OtherGenIndices.Indices[count] = otherIndex;
+        soa.OtherGenIndices.Generations[count] = otherGeneration;
+        soa.OtherFlags[count] = otherFlags;
+        soa.AppendCount++;
     }
 
     /// <summary>
-    /// Sets the count of a buffer to zero.
+    /// Sets the <c>AppendCount</c> of a soa instance to zero.
     /// </summary>
-    /// <param name="buffer">the buffer to clear.</param>
+    /// <param name="soa">the soa instance to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Clear(SpatialPairBuffer buffer)
+    public static void Clear(Soa_SpatialPair soa)
     {
-        buffer.Count = 0;
+        soa.AppendCount = 0;
     }
 
 
@@ -105,25 +105,25 @@ public class SpatialPairBuffer : IDisposable
         Dispose(this);
     }
 
-    public static void Dispose(SpatialPairBuffer buffer)
+    public static void Dispose(Soa_SpatialPair soa)
     {
-        if(buffer.Disposed)
+        if(soa.Disposed)
             return;
 
-        buffer.Disposed = true;
-        Soa_GenIndex.Dispose(buffer.OwnerGenIndices);
-        buffer.OwnerGenIndices = null;
-        Soa_GenIndex.Dispose(buffer.OtherGenIndices);
-        buffer.OtherGenIndices = null;
-        buffer.OwnerFlags = null;
-        buffer.OtherFlags = null;
-        buffer.Count = 0;
-        buffer.Length = 0;
+        soa.Disposed = true;
+        Soa_GenIndex.Dispose(soa.OwnerGenIndices);
+        soa.OwnerGenIndices = null;
+        Soa_GenIndex.Dispose(soa.OtherGenIndices);
+        soa.OtherGenIndices = null;
+        soa.OwnerFlags = null;
+        soa.OtherFlags = null;
+        soa.AppendCount = 0;
+        soa.Length = 0;
 
-        GC.SuppressFinalize(buffer);
+        GC.SuppressFinalize(soa);
     }
 
-    ~SpatialPairBuffer()
+    ~Soa_SpatialPair()
     {
         Dispose(this);
     }

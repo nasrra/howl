@@ -2,7 +2,7 @@ using Howl.DataStructures.Bvh;
 
 namespace Howl.Test.DataStructures.Bvh;
 
-public static class SpatialPairBufferAssert
+public static class Soa_SpatialPairAssert
 {
     /// <summary>
     /// Asserts the equality of values for a buffer entry and expected values.
@@ -15,7 +15,7 @@ public static class SpatialPairBufferAssert
     /// <param name="otherIndex">the expected 'other' index value.</param>
     /// <param name="otherGeneration">the expected 'other' generation value.</param>
     /// <param name="otherFlags">the expected 'other' flags value.</param>
-    public static void EntryEqual(SpatialPairBuffer buffer, int entryIndex, int ownerIndex, int ownerGeneration, int ownerFlags, int otherIndex, 
+    public static void EntryEqual(Soa_SpatialPair buffer, int entryIndex, int ownerIndex, int ownerGeneration, int ownerFlags, int otherIndex, 
         int otherGeneration, int otherFlags
     )
     {
@@ -32,7 +32,7 @@ public static class SpatialPairBufferAssert
     /// </summary>
     /// <param name="expectedLength">the expected length of the backing arrays.</param>
     /// <param name="buffer">the buffer instance.</param>
-    public static void LengthEqual(int expectedLength, SpatialPairBuffer buffer)
+    public static void LengthEqual(int expectedLength, Soa_SpatialPair buffer)
     {
         Assert.Equal(expectedLength, buffer.OwnerGenIndices.Indices.Length);
         Assert.Equal(expectedLength, buffer.OwnerGenIndices.Generations.Length);
