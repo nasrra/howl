@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Howl.DataStructures;
+using Howl.DataStructures.Bvh;
 using Howl.ECS;
 using Howl.Graphics;
 using Howl.Math;
@@ -220,7 +221,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
     /// <summary>
     /// Gets the bounding volume hierarchy for a collision system.
     /// </summary>
-    public BoundingVolumeHierarchy Bvh;
+    public Soa_BoundingVolumeHierarchy Bvh;
 
     /// <summary>
     /// Gets the collision manifold.
@@ -527,7 +528,7 @@ public sealed class SoaPhysicsSystemState : IDisposable
         MaxPhysicsBodyCount = physicsBodyCount;
 
         // Utility.
-        Bvh = new();
+        Bvh = new(physicsBodyCount, maxCollisions);
         CollisionManifold = new(maxCollisions);
 
         // Physics body data.

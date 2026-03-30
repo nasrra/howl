@@ -65,16 +65,16 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// Creates a new bounding volume hierarchy instance.
     /// </summary>
     /// <param name="length"></param>
-    public Soa_BoundingVolumeHierarchy(int length)
+    public Soa_BoundingVolumeHierarchy(int length, int spatialPairsLength)
     {
         Leaves = new(length);
         Branches = new(length*2);
-        SpatialPairQueryBuffer = new(length*2);
+        SpatialPairQueryBuffer = new(spatialPairsLength);
         LeafCentroids = new(length);
         CentroidLeafIds = new int[length];
         LeafCentroidsSwapBuffer = new float[length];
         RadixSortBuffer = new(length);
-        SpatialPairs = new(length);
+        SpatialPairs = new(spatialPairsLength);
     }
 
     /// <summary>
@@ -395,14 +395,14 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     public static void DrawBranches(Howl.Graphics.Camera camera, Soa_BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
     {
 
-        for(int i = 0; i < bvh.Branches.Length; i++)
+        for(int i = 0; i < bvh.Branches.AppendCount; i++)
         {
             Debug.Draw.Wireframe(
                 camera,
                 new Transform(Vector2.Zero, Vector2.One, 0),
                 new Rectangle(
-                    new Vector2(bvh.Branches.Aabbs.MinX[i], bvh.Branches.Aabbs.MinX[i]), 
-                    new Vector2(bvh.Branches.Aabbs.MaxX[i], bvh.Branches.Aabbs.MaxX[i])
+                    new Vector2(bvh.Branches.Aabbs.MinX[i], bvh.Branches.Aabbs.MinY[i]), 
+                    new Vector2(bvh.Branches.Aabbs.MaxX[i], bvh.Branches.Aabbs.MaxY[i])
                 ), 
                 colour
             );

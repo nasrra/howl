@@ -10,7 +10,6 @@ using System.Numerics;
 using Vector2 = Howl.Math.Vector2;
 using static Howl.Math.Math;
 using static Howl.ECS.GenIndexListProc;
-using static Howl.DataStructures.BoundingVolumeHierarchy;
 using static Howl.Math.Shapes.Aabb;
 using static Howl.Math.Shapes.ShapeUtils;
 using static Howl.Physics.Soa_Collision;
@@ -19,6 +18,7 @@ using static Howl.Math.Shapes.SAT;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 using static Howl.Math.Soa_Transform;
 using static Howl.Physics.PhysicsBody;
+using Howl.DataStructures.Bvh;
 
 namespace Howl.Physics;
 
@@ -103,7 +103,7 @@ public static class SoaPhysicsSystem
                     state.CollisionManifold.CircleSpatialPairs,
                     state.CollisionManifold.PolygonSpatialPairs,
                     state.CollisionManifold.PolygonToCircleSpatialPairs,
-                    AsSpan(state.Bvh.SpatialPairs)
+                    state.Bvh.SpatialPairs
                 );
             state.FilterBvhIntoCollisionManifoldStopwatch.Stop();
 
@@ -188,7 +188,7 @@ public static class SoaPhysicsSystem
 
         if(state.DrawBvhBranches)
         {
-            BoundingVolumeHierarchy.DrawBranches(camera, state.Bvh, Colour.Yellow);
+            Soa_BoundingVolumeHierarchy.DrawBranches(camera, state.Bvh, Colour.Yellow);
         }
 
         if (state.DrawColliderWireframes)
@@ -1036,12 +1036,12 @@ public static class SoaPhysicsSystem
         Span<int> nextVertexIndices, 
         Span<int> generations,
         Span<PhysicsBodyFlags> flags, 
-        BoundingVolumeHierarchy bvh,
+        Soa_BoundingVolumeHierarchy bvh,
         int maxPhysicsBodyVertexCount
     )
     {   
         // clear the previous bvh data.
-        Clear(bvh);
+        Soa_BoundingVolumeHierarchy.Clear(bvh);
 
         // create spans of the maximum amount of vertices a given 
         // body shape can store.
@@ -1106,23 +1106,14 @@ public static class SoaPhysicsSystem
                 }
 
                 // insert into the bvh.
-                InsertLeaf(
-                    bvh,
-                    new Leaf(
-                        minX,
-                        minY,
-                        maxX,
-                        maxY,
-                        i,
-                        generations[i],
-                        (int)flag // this is okay as PhysicsBodyFlags is a int under the hood.
-                    )
+                Soa_Leaf.Append(
+                    bvh.Leaves, minX, minY, maxX, maxY, i, generations[i], (int)flag // <-- this is okay as PhysicsBodyFlags is a int under the hood.
                 );
             }
         }
 
         // construct the bvh with the new data.
-        ConstructTree(bvh);
+        Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
     }
 
     /// <summary>
@@ -1140,41 +1131,32 @@ public static class SoaPhysicsSystem
         SpatialPairBuffer circleSpatialPairs,
         SpatialPairBuffer polygonSpatialPairs,
         SpatialPairBuffer polygonToCircleSpatialPairs,
-        Span<SpatialPair> spatialPairs
+        Soa_SpatialPair spatialPairs
     )
     {
-        for(int i = 0; i < spatialPairs.Length; i++)
+
+        Span<int> ownerIndices = spatialPairs.OwnerGenIndices.Indices;
+        Span<int> ownerGenerations = spatialPairs.OwnerGenIndices.Generations;
+        Span<int> ownerFlags = spatialPairs.OwnerFlags;
+        Span<int> otherIndices = spatialPairs.OtherGenIndices.Indices;
+        Span<int> otherGenerations = spatialPairs.OtherGenIndices.Generations;
+        Span<int> otherFlags = spatialPairs.OtherFlags;        
+
+        for(int i = 0; i < spatialPairs.AppendCount; i++)
         {
-            ref SpatialPair pair = ref spatialPairs[i];
-            PhysicsBodyFlags ownerFlag = (PhysicsBodyFlags)pair.Owner.Flag;
-            PhysicsBodyFlags otherFlag = (PhysicsBodyFlags)pair.Other.Flag;
+            PhysicsBodyFlags ownerFlag = (PhysicsBodyFlags)ownerFlags[i];
+            PhysicsBodyFlags otherFlag = (PhysicsBodyFlags)otherFlags[i];
             if((ownerFlag & PhysicsBodyFlags.RectangleShape) != 0)
             {
                 if((otherFlag & PhysicsBodyFlags.RectangleShape) != 0)
                 {
                     // polygon to polygon.
-                    Append(
-                        polygonSpatialPairs, 
-                        pair.Owner.GenIndex.Index, 
-                        pair.Owner.GenIndex.Generation, 
-                        pair.Other.GenIndex.Index, 
-                        pair.Other.GenIndex.Generation,
-                        pair.Owner.Flag,
-                        pair.Other.Flag 
-                    );
+                    Append(polygonSpatialPairs, ownerIndices[i], ownerGenerations[i], otherIndices[i], otherGenerations[i], ownerFlags[i], otherFlags[i]);
                 }
                 else // other is a circle.
                 {
                     // polygon to circle.
-                    Append(
-                        polygonToCircleSpatialPairs, 
-                        pair.Owner.GenIndex.Index, 
-                        pair.Owner.GenIndex.Generation, 
-                        pair.Other.GenIndex.Index, 
-                        pair.Other.GenIndex.Generation,
-                        pair.Owner.Flag,
-                        pair.Other.Flag 
-                    );
+                    Append(polygonToCircleSpatialPairs, ownerIndices[i], ownerGenerations[i], otherIndices[i], otherGenerations[i], ownerFlags[i], otherFlags[i]);
                 }
             }
             else // owner is circle.
@@ -1184,27 +1166,11 @@ public static class SoaPhysicsSystem
                     // circle to polygon.
                     // Note: append other first instead of owner as
                     // other is the polygon.
-                    Append(
-                        polygonToCircleSpatialPairs, 
-                        pair.Other.GenIndex.Index, 
-                        pair.Other.GenIndex.Generation,
-                        pair.Owner.GenIndex.Index, 
-                        pair.Owner.GenIndex.Generation, 
-                        pair.Other.Flag, 
-                        pair.Owner.Flag
-                    );
+                    Append(polygonToCircleSpatialPairs, otherIndices[i], otherGenerations[i], ownerIndices[i], ownerGenerations[i], otherFlags[i], ownerFlags[i]);
                 }
                 else // other is circle.
                 {
-                    Append(
-                        circleSpatialPairs, 
-                        pair.Owner.GenIndex.Index, 
-                        pair.Owner.GenIndex.Generation, 
-                        pair.Other.GenIndex.Index, 
-                        pair.Other.GenIndex.Generation,
-                        pair.Owner.Flag,
-                        pair.Other.Flag 
-                    );
+                    Append(circleSpatialPairs, ownerIndices[i], ownerGenerations[i], otherIndices[i], otherGenerations[i], ownerFlags[i], otherFlags[i]);
                 }
             }
         }
