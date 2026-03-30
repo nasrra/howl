@@ -9,13 +9,13 @@ public class LeafBufferSliceTest
     {
         for(int length = 0; length < 4; length++)
         {
-            LeafBuffer buffer = new(length);
+            Soa_Leaf buffer = new(length);
             
             // populate buffer.
             int q = 0;
             for(int i = 0 ; i < length; i++)
             {
-                LeafBuffer.Append(buffer, q++, q++, q++, q++, q++, q++, q++);
+                Soa_Leaf.Append(buffer, q++, q++, q++, q++, q++, q++, q++);
             }
 
             // construct and assert slices.

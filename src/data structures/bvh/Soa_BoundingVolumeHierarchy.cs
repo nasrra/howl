@@ -27,7 +27,12 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <summary>
     /// The leaves to construct branches from.
     /// </summary>
-    public LeafBuffer Leaves;   
+    public Soa_Leaf Leaves;
+
+    /// <summary>
+    /// The query result buffer for constructing spaial pairs after tree construction.
+    /// </summary>
+    public QueryResultBuffer SpatialPairQueryBuffer;
 
     /// <summary>
     /// The centroids of all leaf Aabbs
@@ -64,6 +69,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     {
         Leaves = new(length);
         Branches = new(length*2);
+        SpatialPairQueryBuffer = new(length*2);
         LeafCentroids = new(length);
         CentroidLeafIds = new int[length];
         LeafCentroidsSwapBuffer = new float[length];
@@ -77,14 +83,14 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="bvh">the bvh to clear.</param>
     public static void Clear(Soa_BoundingVolumeHierarchy bvh)
     {
-        LeafBuffer.Clear(bvh.Leaves);
+        Soa_Leaf.Clear(bvh.Leaves);
         Soa_Branch.Clear(bvh.Branches);
     }
 
     public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
     {
         int start = 0;
-        int length = bvh.Leaves.Count;
+        int length = bvh.Leaves.AppendCount;
 
         Soa_Branch.Clear(bvh.Branches);
         Soa_Aabb.CalculateCentroids(bvh.Leaves.Aabbs, bvh.LeafCentroids.X, bvh.LeafCentroids.Y, start, length);
@@ -298,20 +304,23 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         
         bvh.Disposed = true;
         
-        bvh.RadixSortBuffer.Dispose();
+        RadixSortBuffer.Dispose(bvh.RadixSortBuffer);
         bvh.RadixSortBuffer = null;
-        
-        bvh.SpatialPairs.Dispose();
+
+        SpatialPairBuffer.Dispose(bvh.SpatialPairs);        
         bvh.SpatialPairs = null;
         
-        bvh.Branches.Dispose();
+        Soa_Branch.Dispose(bvh.Branches);
         bvh.Branches = null;
 
-        bvh.Leaves.Dispose();
+        Soa_Leaf.Dispose(bvh.Leaves);
         bvh.Leaves = null;
 
-        bvh.LeafCentroids.Dispose();
+        Soa_Vector2.Dispose(bvh.LeafCentroids);
         bvh.LeafCentroids = null;
+        
+        QueryResultBuffer.Dispose(bvh.SpatialPairQueryBuffer);
+        bvh.SpatialPairQueryBuffer = null;
         
         bvh.CentroidLeafIds = null;
         

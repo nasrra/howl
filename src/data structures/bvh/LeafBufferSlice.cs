@@ -32,7 +32,7 @@ public ref struct LeafBufferSlice
     /// <param name="buffer">the target buffer instance to get a slice of.</param>
     /// <param name="start">the starting index.</param>
     /// <param name="length">the length of the slice.</param>
-    public LeafBufferSlice(LeafBuffer buffer, int start, int length)
+    public LeafBufferSlice(Soa_Leaf buffer, int start, int length)
     {
         Aabbs = new(buffer.Aabbs, start, length);
         GenIndices = new(buffer.GenIndices, start, length);

@@ -17,7 +17,7 @@ public class Soa_BoundingVolumeHierarchyTest
             RadixSortBufferAssert.LengthEqual(length, bvh.RadixSortBuffer);
             SpatialPairBufferAssert.LengthEqual(length, bvh.SpatialPairs);
             Soa_BranchAssert.LengthEqual(length*2, bvh.Branches);
-            LeafBufferAssert.LengthEqual(length, bvh.Leaves);
+            Soa_LeafAssert.LengthEqual(length, bvh.Leaves);
             Soa_Vector2Assert.LengthEqual(length, bvh.LeafCentroids);
             Assert.Equal(length, bvh.LeafCentroidsSwapBuffer.Length);
             Assert.Equal(length, bvh.CentroidLeafIds.Length);
@@ -48,13 +48,13 @@ public class Soa_BoundingVolumeHierarchyTest
         int j = 0;
 
         // together.
-        LeafBuffer.Append(bvh.Leaves, 0, 0, 1, 2, j++, j++, j++); // leaf 0.
-        LeafBuffer.Append(bvh.Leaves, -10, -12, 3, 3,  j++, j++, j++); // leaf 1.
+        Soa_Leaf.Append(bvh.Leaves, 0, 0, 1, 2, j++, j++, j++); // leaf 0.
+        Soa_Leaf.Append(bvh.Leaves, -10, -12, 3, 3,  j++, j++, j++); // leaf 1.
         // solo.
-        LeafBuffer.Append(bvh.Leaves, 10, 12, 33, 34, j++, j++, j++); // leaf 2.
+        Soa_Leaf.Append(bvh.Leaves, 10, 12, 33, 34, j++, j++, j++); // leaf 2.
         // together.
-        LeafBuffer.Append(bvh.Leaves, 100, 102, 123, 124,  j++, j++, j++); // leaf 3.
-        LeafBuffer.Append(bvh.Leaves, 200, 220, 430, 440,  j++, j++, j++); // leaf 4.
+        Soa_Leaf.Append(bvh.Leaves, 100, 102, 123, 124,  j++, j++, j++); // leaf 3.
+        Soa_Leaf.Append(bvh.Leaves, 200, 220, 430, 440,  j++, j++, j++); // leaf 4.
 
 
         // expected min and maxes of the constructed aabbs.
@@ -94,7 +94,7 @@ public class Soa_BoundingVolumeHierarchyTest
                 int index = j++; 
                 int generation = j++; 
                 int flags = j++;
-                LeafBuffer.Append(bvh.Leaves, minX, minY, maxX, maxY, index, generation, flags);
+                Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, index, generation, flags);
 
                 int leftLeafIndex = j++;
                 int rightLeafIndex = j++; 
@@ -103,10 +103,10 @@ public class Soa_BoundingVolumeHierarchyTest
                 Soa_Branch.Append(bvh.Branches, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount);
             }
 
-            Assert.Equal(length, bvh.Leaves.Count);
+            Assert.Equal(length, bvh.Leaves.AppendCount);
             Assert.Equal(length, bvh.Branches.AppendCount);
             Soa_BoundingVolumeHierarchy.Clear(bvh);
-            Assert.Equal(0, bvh.Leaves.Count);
+            Assert.Equal(0, bvh.Leaves.AppendCount);
             Assert.Equal(0, bvh.Branches.AppendCount);
         }
     }
@@ -127,7 +127,7 @@ public class Soa_BoundingVolumeHierarchyTest
                 int index = j++; 
                 int generation = j++; 
                 int flags = j++;
-                LeafBuffer.Append(bvh.Leaves, minX, minY, maxX, maxY, index, generation, flags);
+                Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, index, generation, flags);
 
                 int leftLeafIndex = j++;
                 int rightLeafIndex = j++; 

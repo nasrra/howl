@@ -6,7 +6,7 @@ using Howl.Test.ECS;
 using Howl.Test.Math;
 using Howl.Test.Math.Shapes;
 
-public static class LeafBufferAssert
+public static class Soa_LeafAssert
 {
     /// <summary>
     /// Asserts the equality of a buffer entry and expected values.
@@ -21,7 +21,7 @@ public static class LeafBufferAssert
     /// <param name="entryIndex">the index of the entry in the buffer to assert equality against.</param>
     /// <param name="buffer">the buffer containing the entry to assert.</param>
     public static void EntryEqual(float minX, float minY, float maxX, float maxY, int index, int generation, 
-        int flags, int entryIndex, LeafBuffer buffer
+        int flags, int entryIndex, Soa_Leaf buffer
     )
     {
         Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, entryIndex, buffer.Aabbs);
@@ -34,7 +34,7 @@ public static class LeafBufferAssert
     /// </summary>
     /// <param name="length">the expected length of the backing arrays.</param>
     /// <param name="buffer">the buffer instance.</param>
-    public static void LengthEqual(int length, LeafBuffer buffer)
+    public static void LengthEqual(int length, Soa_Leaf buffer)
     {
         Soa_AabbAssert.LengthEqual(length, buffer.Aabbs);
         Soa_GenIndexAssert.LengthEqual(length, buffer.GenIndices);
