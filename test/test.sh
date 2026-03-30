@@ -28,7 +28,6 @@ declare -A TEST_MAP
 TEST_MAP=(
     ["AABB"]="${SHAPES_NAMESPACE}AABBTest"
     ["BoundingVolumeHierarchy"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Soa_BoundingVolumeHierarchyTest"
-    ["BranchBuffer"]="${DATA_STRUCTURES_NAMESPACE}Bvh.BranchBufferTest"
     ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
     ["ComponentType"]="${ECS_NAMESPACE}ComponentTypeTest"
     ["Circle"]="${SHAPES_NAMESPACE}CircleTest"
@@ -57,6 +56,7 @@ TEST_MAP=(
     ["SAT"]="${SHAPES_NAMESPACE}SATTest"
     ["Soa_Aabb"]="${SHAPES_NAMESPACE}Soa_AabbTest"
     ["Soa_AabbSlice"]="${SHAPES_NAMESPACE}Soa_AabbSliceTest"
+    ["Soa_Branch"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Soa_BranchTest"
     ["Soa_GenIndex"]="${ECS_NAMESPACE}Soa_GenIndexTest"
     ["Soa_GenIndexSlice"]="${ECS_NAMESPACE}Soa_GenIndexSliceTest"
     ["Soa_Transform"]="${MATH_NAMESPACE}Soa_TransformTest"

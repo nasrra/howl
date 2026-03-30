@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Howl.Math.Shapes;
 
@@ -26,6 +27,16 @@ public class Soa_Aabb : IDisposable
     public float[] MaxY;
 
     /// <summary>
+    /// The count of allocated entries from appending.
+    /// </summary>
+    public int AppendCount;
+
+    /// <summary>
+    /// The length of all the backing arrays of this instance.
+    /// </summary>
+    public int Length;
+
+    /// <summary>
     /// Whether or not this instance has been disposed.
     /// </summary>
     public bool Disposed;
@@ -33,13 +44,56 @@ public class Soa_Aabb : IDisposable
     /// <summary>
     /// Creates a new Structure-Of-Array's Axis-Aligned Bounding-Box.
     /// </summary>
-    /// <param name="capacity">the capacity of the backing arrays.</param>
-    public Soa_Aabb(int capacity)
+    /// <param name="length">the capacity of the backing arrays.</param>
+    public Soa_Aabb(int length)
     {
-        MinX = new float[capacity];
-        MinY = new float[capacity];
-        MaxX = new float[capacity];
-        MaxY = new float[capacity];
+        MinX = new float[length];
+        MinY = new float[length];
+        MaxX = new float[length];
+        MaxY = new float[length];
+        Length = length;
+    }
+
+    /// <summary>
+    /// Inserts an entry into a soa instance.
+    /// </summary>
+    /// <param name="soa">the soa aabb to insert into.</param>
+    /// <param name="insertIndex">the index in the soa arrays to insert into.</param>
+    /// <param name="minX">the x-component of the minimum vertex.</param>
+    /// <param name="minY">the y-component of the minimum vertex.</param>
+    /// <param name="maxX">the x-component of the maximum vertex.</param>
+    /// <param name="maxY">the y-component of the maximum vertex.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Insert(Soa_Aabb soa, int insertIndex, float minX, float minY, float maxX, float maxY)
+    {
+        soa.MinX[insertIndex] = minX;
+        soa.MinY[insertIndex] = minY;
+        soa.MaxX[insertIndex] = maxX;
+        soa.MaxY[insertIndex] = maxY;   
+    }
+
+    /// <summary>
+    /// Appends an entry into an soa at the soa's <c>AppendCount</c> index.
+    /// </summary>
+    /// <param name="soa">the soa aabb to insert into.</param>
+    /// <param name="minX">the x-component of the minimum vertex.</param>
+    /// <param name="minY">the y-component of the minimum vertex.</param>
+    /// <param name="maxX">the x-component of the maximum vertex.</param>
+    /// <param name="maxY">the y-component of the maximum vertex.</param>
+    public static void Append(Soa_Aabb soa, float minX, float minY, float maxX, float maxY)
+    {
+        Insert(soa, soa.AppendCount, minX, minY, maxX, maxY);
+        soa.AppendCount++;
+    }
+
+    /// <summary>
+    /// Sets a soa instance's count to zero.
+    /// </summary>
+    /// <param name="soa">the soa instance to clear.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Clear(Soa_Aabb soa)
+    {
+        soa.AppendCount = 0;
     }
 
     /// <summary>
@@ -123,24 +177,6 @@ public class Soa_Aabb : IDisposable
         CalculateCentroids_Sisd(soa, x, y, simdTailIndex, length);
     }
 
-    /// <summary>
-    /// Inserts an aabb into an soa aabb.
-    /// </summary>
-    /// <param name="soa">the soa aabb to insert into.</param>
-    /// <param name="insertIndex">the index in the soa arrays to insert into.</param>
-    /// <param name="minX">the x-component of the minimum vertex.</param>
-    /// <param name="minY">the y-component of the minimum vertex.</param>
-    /// <param name="maxX">the x-component of the maximum vertex.</param>
-    /// <param name="maxY">the y-component of the maximum vertex.</param>
-    public static void Insert(Soa_Aabb soa, int insertIndex, float minX, float minY, float maxX, float maxY)
-    {
-        soa.MinX[insertIndex] = minX;
-        soa.MinY[insertIndex] = minY;
-        soa.MaxX[insertIndex] = maxX;
-        soa.MaxY[insertIndex] = maxY;   
-    }
-
-
 
 
 
@@ -169,6 +205,9 @@ public class Soa_Aabb : IDisposable
         soa.MinY = null;
         soa.MaxX = null;
         soa.MaxY = null;
+        
+        soa.AppendCount = 0;
+        soa.Length = 0;
 
         GC.SuppressFinalize(soa);
     }

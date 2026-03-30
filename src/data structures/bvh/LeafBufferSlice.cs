@@ -15,11 +15,6 @@ public ref struct LeafBufferSlice
     /// The gen indices of the data associated with a leaf.
     /// </summary>
     public Soa_GenIndexSlice GenIndices;
-
-    /// <summary>
-    /// The centroids of the Aabb's
-    /// </summary>
-    public Soa_Vector2Slice Centroids;
     
     /// <summary>
     /// The user-defined flags.
@@ -41,7 +36,6 @@ public ref struct LeafBufferSlice
     {
         Aabbs = new(buffer.Aabbs, start, length);
         GenIndices = new(buffer.GenIndices, start, length);
-        Centroids = new(buffer.Centroids, start, length);
         Flags = MemoryExtensions.AsSpan(buffer.Flags, start, length);
     }
 }

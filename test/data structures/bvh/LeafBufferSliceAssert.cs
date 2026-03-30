@@ -17,7 +17,6 @@ public static class LeafBufferSliceAssert
     {
         Assert.Equal(length, slice.Aabbs.Length);
         Assert.Equal(length, slice.GenIndices.Length);
-        Assert.Equal(length, slice.Centroids.Length);
         Assert.Equal(length, slice.Flags.Length);
         Assert.Equal(length, slice.Length);
     }

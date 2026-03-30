@@ -31,14 +31,12 @@ public class LeafBufferTest
                 float minY = j++;
                 float maxX = j++;
                 float maxY = j++;
-                float centroidX = 0;
-                float centroidY = 0;
                 int index = j++;
                 int generation = j++;
                 int flags = j++;
 
                 LeafBuffer.Append(buffer, minX, minY, maxX, maxY, index, generation, flags);
-                LeafBufferAssert.EntryEqual(minX, minY, maxX, maxY, centroidX, centroidY, index, generation, flags, i, buffer);
+                LeafBufferAssert.EntryEqual(minX, minY, maxX, maxY, index, generation, flags, i, buffer);
                 Assert.Equal(i+1, buffer.Count);
             }
         }
@@ -68,9 +66,7 @@ public class LeafBufferTest
         LeafBuffer.Dispose(buffer);
         Assert.Null(buffer.Aabbs);
         Assert.Null(buffer.GenIndices);
-        Assert.Null(buffer.Centroids);
         Assert.Null(buffer.Flags);
-        Assert.Null(buffer.CentroidIds);
         Assert.Equal(0, buffer.Count);
         Assert.Equal(0, buffer.Length);
         Assert.True(buffer.Disposed);

@@ -15,20 +15,17 @@ public static class LeafBufferAssert
     /// <param name="minY">the expected minimum y value.</param>
     /// <param name="maxX">the expected maximum x value.</param>
     /// <param name="maxY">the expected maximum y value.</param>
-    /// <param name="centroidX">the expected x-component of the centroid.</param>
-    /// <param name="centroidY">the expected y-component of the centroid.</param>
     /// <param name="index">the expected index value.</param>
     /// <param name="generation">the expected generation value.</param>
     /// <param name="flags">the expected flags value.</param>
     /// <param name="entryIndex">the index of the entry in the buffer to assert equality against.</param>
     /// <param name="buffer">the buffer containing the entry to assert.</param>
-    public static void EntryEqual(float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int index, int generation, 
+    public static void EntryEqual(float minX, float minY, float maxX, float maxY, int index, int generation, 
         int flags, int entryIndex, LeafBuffer buffer
     )
     {
         Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, entryIndex, buffer.Aabbs);
         Soa_GenIndexAssert.EntryEqual(index, generation, entryIndex, buffer.GenIndices);
-        Soa_Vector2Assert.EntryEqual(centroidX, centroidY, entryIndex, buffer.Centroids);
         Assert.Equal(flags, buffer.Flags[entryIndex]);
     }
 
@@ -41,9 +38,7 @@ public static class LeafBufferAssert
     {
         Soa_AabbAssert.LengthEqual(length, buffer.Aabbs);
         Soa_GenIndexAssert.LengthEqual(length, buffer.GenIndices);
-        Soa_Vector2Assert.LengthEqual(length, buffer.Centroids);
         Assert.Equal(length, buffer.Flags.Length);
-        Assert.Equal(length, buffer.CentroidIds.Length);
         Assert.Equal(length, buffer.Length);
     }
 }

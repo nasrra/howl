@@ -9,12 +9,6 @@ namespace Howl.DataStructures.Bvh;
 
 public class LeafBuffer : IDisposable
 {
-
-    /// <summary>
-    /// The radix sort buffer used when sorting this leaf buffer.
-    /// </summary>
-    public RadixSortBuffer RadixSortBuffer;
-
     /// <summary>
     /// The Axis-Aligned Bounding-Boxes.
     /// </summary>
@@ -26,29 +20,12 @@ public class LeafBuffer : IDisposable
     public Soa_GenIndex GenIndices;
 
     /// <summary>
-    /// The centroids of the Aabb's
-    /// </summary>
-    /// <remarks>
-    /// Use an element in <c>CentroidIds</> to get the leaf data associated with this centroid.
-    /// Elements in <c>CentroidIds</c> and <c>Centroids</c> are associated via index.
-    /// </remarks>
-    public Soa_Vector2 Centroids;
-
-    /// <summary>
-    /// Used as an index for a centroid element in <c>Centroids</c> to get its leaf data associated witht the centroid.
-    /// </summary>
-    /// <remarks>
-    /// Elements in <c>CentroidIds</c> and <c>Centroids</c> are associated via index.
-    /// </remarks>
-    public int[] CentroidIds;
-
-    /// <summary>
     /// The user-defined flags.
     /// </summary>
     public int[] Flags;
 
     /// <summary>
-    /// The count of allocated leaf entries; starting from index 0.
+    /// The count of allocated entries.
     /// </summary>
     public int Count;
 
@@ -71,9 +48,6 @@ public class LeafBuffer : IDisposable
         Aabbs = new(length);
         GenIndices = new(length);
         Flags = new int[length];
-        Centroids = new(length);
-        CentroidIds = new int[length];
-        RadixSortBuffer = new(length);
         Length = length;
     }
 
@@ -112,25 +86,6 @@ public class LeafBuffer : IDisposable
         buffer.Count = 0;
     }
 
-    public static void SortCentroidsByAscX(LeafBuffer buffer, int start, int length)
-    {
-        // set centroid indices.
-        for(int i = start; i < length; i++)
-        {
-            buffer.CentroidIds[i] = i;
-        }
-    }
-
-    public static void SortCentroidsByAscY(LeafBuffer buffer, int start, int length)
-    {
-        // set centroid indices.
-        for(int i = start; i < length; i++)
-        {
-            buffer.CentroidIds[i] = i;
-        }
-    }
-
-
 
 
     /*******************
@@ -159,17 +114,9 @@ public class LeafBuffer : IDisposable
         
         Soa_GenIndex.Dispose(buffer.GenIndices);
         buffer.GenIndices = null;
-        
-        Soa_Vector2.Dispose(buffer.Centroids);
-        buffer.Centroids = null;
-                
-        buffer.RadixSortBuffer.Dispose();
-        buffer.RadixSortBuffer = null;
-
+                        
         buffer.Flags = null;
-        
-        buffer.CentroidIds = null;
-        
+                
         buffer.Length = 0;
         buffer.Count = 0;
 

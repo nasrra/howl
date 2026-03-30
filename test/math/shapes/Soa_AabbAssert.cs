@@ -12,6 +12,7 @@ public static class Soa_AabbAssert
     /// <param name="length">the expected length of the backing arrays.</param>
     public static void LengthEqual(int length, Soa_Aabb soa)
     {
+        Assert.Equal(length, soa.Length);
         Assert.Equal(length, soa.MinX.Length);
         Assert.Equal(length, soa.MinY.Length);
         Assert.Equal(length, soa.MaxX.Length);
