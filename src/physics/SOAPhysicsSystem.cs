@@ -1061,7 +1061,6 @@ public static class SoaPhysicsSystem
 
                 if((flag & PhysicsBodyFlags.RectangleShape) != 0)
                 {
-
                     // get the body's shape vertices.
                     int verticeCount = 0;
                     int verticeIndex = firstVerticeIndex;
@@ -1113,6 +1112,7 @@ public static class SoaPhysicsSystem
         }
 
         // construct the bvh with the new data.
+        // Soa_BoundingVolumeHierarchy.ConstructTree_Slow(bvh);
         Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
     }
 

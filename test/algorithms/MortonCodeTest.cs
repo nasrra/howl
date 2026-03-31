@@ -58,5 +58,4 @@ public class MortonCodeTest
 
         Assert.Equal((uint)3557148913, MortonCode.CalculateMortonCode(13, 63, minX, minY, rangeX, rangeY));
     }
-
 }
