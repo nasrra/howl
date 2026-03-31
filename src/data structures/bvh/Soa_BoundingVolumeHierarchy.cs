@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Howl.Algorithms;
 using Howl.Algorithms.Sorting;
 using Howl.Math;
@@ -93,6 +94,18 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         Soa_Leaf.Clear(bvh.Leaves);
         Soa_Branch.Clear(bvh.Branches);
     }
+
+
+
+
+    /*******************
+    
+        Tree Construction.
+    
+    ********************/
+
+
+
 
     static Stopwatch a = new();
     static Stopwatch b = new();

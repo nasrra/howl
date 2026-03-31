@@ -43,6 +43,7 @@ TEST_MAP=(
     ["MonoGameRectangleExt"]="${MONOGAME_SHAPES_NAMESPACE}RectangleExtensionsTest"
     ["MonoGameVector2Ext"]="${MONOGAME_MATH_NAMESPACE}Vector2ExtensionsTest"
     ["MonoGameVector3Ext"]="${MONOGAME_MATH_NAMESPACE}Vector3ExtensionsTest"
+    ["MortonCode"]="${ALGORITHMS_NAMESPACE}MortonCode"
     ["PhysicsSystem"]="${PHYSICS_NAMESPACE}SOAPhysicsSystemTest"
     ["Polygon16"]="${SHAPES_NAMESPACE}Polygon16Test"
     ["PolygonRectangle"]="${SHAPES_NAMESPACE}PolygonRectangleTest"
