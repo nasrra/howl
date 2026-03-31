@@ -15,6 +15,11 @@ public class Soa_GenIndex : IDisposable
     public int[] Generations;
 
     /// <summary>
+    /// The count of allocated entries from appending.
+    /// </summary>
+    public int AppendCount;
+
+    /// <summary>
     /// The length of all the backing arrays of this instance.
     /// </summary>
     public int Length;
@@ -48,6 +53,26 @@ public class Soa_GenIndex : IDisposable
         soa.Generations[insertIndex] = generation;
     }
 
+    /// <summary>
+    /// Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
+    /// </summary>
+    /// <param name="soa">the soa instance to append to.</param>
+    /// <param name="index">the index value.</param>
+    /// <param name="generation">the generation value.</param>
+    public static void Append(Soa_GenIndex soa, int index, int generation)
+    {
+        Insert(soa, soa.AppendCount, index, generation);
+        soa.AppendCount++;
+    }
+
+    /// <summary>
+    /// Sets a soa instance's <c>AppendCount</c> to zero.
+    /// </summary>
+    /// <param name="soa">the soa instance to reset.</param>
+    public static void ResetCount(Soa_GenIndex soa)
+    {
+        soa.AppendCount = 0;        
+    }
 
 
 

@@ -88,7 +88,7 @@ public static class SoaPhysicsSystem
 
             // Reconstruct Bvh.
             state.BvhReconstructionStopwatch.Restart();
-            ReconstructBvhTree(state.MinAABBVertices, state.MaxAABBVertices, state.Generations, state.Flags, state.Bvh);
+            ReconstructBvhTree(state.MinAABBVertices, state.MaxAABBVertices, state.Centroids, state.Generations, state.Flags, state.Bvh);
             state.BvhReconstructionStopwatch.Stop();
 
             // Filter bvh into collision manifold.
@@ -1024,7 +1024,7 @@ public static class SoaPhysicsSystem
     /// <param name="generations">the generation for each physics body.</param>
     /// <param name="flags">the flags for each physics body.</param>
     /// <param name="bvh">the bounding volume hierarchy.</param>
-    public static void ReconstructBvhTree(Soa_Vector2 minAabbs, Soa_Vector2 maxAabbs, Span<int> generations, Span<PhysicsBodyFlags> flags, 
+    public static void ReconstructBvhTree(Soa_Vector2 minAabbs, Soa_Vector2 maxAabbs, Soa_Vector2 centroids, Span<int> generations, Span<PhysicsBodyFlags> flags, 
         Soa_BoundingVolumeHierarchy bvh
     )
     {   
@@ -1042,9 +1042,8 @@ public static class SoaPhysicsSystem
                 float maxY = maxAabbs.Y[i];
 
                 // insert into the bvh.
-                Soa_Leaf.Append(
-                    bvh.Leaves, minX, minY, maxX, maxY, i, generations[i], (int)flag // <-- this is okay as PhysicsBodyFlags is a 'int' under the hood.
-                );
+                // note: casting flag to 'int' is okay as PhysicsBodyFlags is a 'int' under the hood.
+                Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroids.X[i], centroids.Y[i], i, generations[i], (int)flag);
             }
         }
 

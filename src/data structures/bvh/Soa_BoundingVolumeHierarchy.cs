@@ -46,29 +46,20 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     public Soa_QueryResult SpatialPairQueryBuffer;
 
     /// <summary>
-    /// The centroids of all leaf Aabbs
-    /// </summary>
-    /// <remarks>
-    /// Use an element in <c>CentroidIds</> to get the leaf data associated with this centroid.
-    /// Elements in <c>CentroidLeafIds</c> and <c>LeafCentroids</c> are associated via index.
-    /// </remarks>
-    public Soa_Vector2 LeafCentroids;
-
-    /// <summary>
     /// The morton codes for all leaf centroids.
     /// </summary>
     /// <remarks>
-    /// Use a <c>CentroidLeafIds</c> entry to access elements.
+    /// Use a <c>MortonLeafIds</c> entry to access elements.
     /// </remarks>
     public uint[] MortonCentroids;
 
     /// <summary>
-    /// Used as an index for a centroid element in <c>Centroids</c> to get its associated leaf data in <c>Leaves</c>.
+    /// Used as an index for an element in <c>MortonCentroids</c> to get its associated leaf data in <c>Leaves</c>.
     /// </summary>
     /// <remarks>
-    /// Elements in <c>CentroidLeafIds</c> and <c>LeafCentroids</c> are associated via index.
+    /// Elements in <c>MortonLeafIds</c> and <c>MortonCentroids</c> are associated via index.
     /// </remarks>
-    public int[] CentroidLeafIds;
+    public int[] MortonLeafIds;
 
     /// <summary>
     /// Whether this instance has been disposed of.
@@ -85,8 +76,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         Branches = new(length*2);
         SpatialPairQueryBuffer = new(spatialPairsLength);
         MortonCentroids = new uint[length];
-        LeafCentroids = new(length);
-        CentroidLeafIds = new int[length];
+        MortonLeafIds = new int[length];
         RadixSortBuffer = new(length);
         SpatialPairs = new(spatialPairsLength);
     }
@@ -97,7 +87,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="bvh">the bvh to clear.</param>
     public static void Clear(Soa_BoundingVolumeHierarchy bvh)
     {
-        Soa_Leaf.Clear(bvh.Leaves);
+        Soa_Leaf.ResetCount(bvh.Leaves);
         Soa_Branch.Clear(bvh.Branches);
     }
 
@@ -120,12 +110,6 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
     {
         Soa_Branch.Clear(bvh.Branches);
-
-        Span<float> centroidsX = bvh.LeafCentroids.X;
-        Span<float> centroidsY = bvh.LeafCentroids.Y;
-
-        // TODO: this will be removed.
-        Soa_Aabb.CalculateCentroids(bvh.Leaves.Aabbs, bvh.LeafCentroids.X, bvh.LeafCentroids.Y, 0, bvh.Leaves.AppendCount);
         
         // get the spatial data for morton code calculations.
         float minX = float.MaxValue;
@@ -133,8 +117,8 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         float maxX = float.MinValue;
         float maxY = float.MinValue;
         for (int i = 0; i < bvh.Leaves.AppendCount; i++) {
-            float cx = bvh.LeafCentroids.X[i];
-            float cy = bvh.LeafCentroids.Y[i];
+            float cx = bvh.Leaves.Centroids.X[i];
+            float cy = bvh.Leaves.Centroids.Y[i];
             if (cx < minX) minX = cx;
             if (cx > maxX) maxX = cx;
             if (cy < minY) minY = cy;
@@ -146,16 +130,16 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         // get the morton code for sorting each of the centroids.
         for(int i = 0; i < bvh.Leaves.AppendCount; i++)
         {
-            bvh.MortonCentroids[i] = MortonCode.CalculateMortonCode(centroidsX[i], centroidsY[i], minX, minY, rangeX, rangeY);
+            bvh.MortonCentroids[i] = MortonCode.CalculateMortonCode(bvh.Leaves.Centroids.X[i], bvh.Leaves.Centroids.Y[i], minX, minY, rangeX, rangeY);
         }
 
         // reset leaf indices.
         for(int i = 0; i < bvh.Leaves.AppendCount; i++)
         {
-            bvh.CentroidLeafIds[i] = i;
+            bvh.MortonLeafIds[i] = i;
         }
 
-        RadixSort.IndexedAscend(bvh.MortonCentroids, bvh.CentroidLeafIds, bvh.RadixSortBuffer, 0, bvh.Leaves.AppendCount);
+        RadixSort.IndexedAscend(bvh.MortonCentroids, bvh.MortonLeafIds, bvh.RadixSortBuffer, 0, bvh.Leaves.AppendCount);
     
         int branchCount = 0;
         float aabbMinX = 0;
@@ -163,7 +147,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         float aabbMaxX = 0;
         float aabbMaxY = 0;
 
-        ConstructBranches(bvh.Branches, bvh.CentroidLeafIds, bvh.Leaves.Aabbs.MinX, bvh.Leaves.Aabbs.MinY, bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, 
+        ConstructBranches(bvh.Branches, bvh.MortonLeafIds, bvh.Leaves.Aabbs.MinX, bvh.Leaves.Aabbs.MinY, bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, 
             0, bvh.Leaves.AppendCount, ref branchCount, ref aabbMinX, ref aabbMinY, ref aabbMaxX, ref aabbMaxY
         );
 
@@ -475,14 +459,11 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
         Soa_Leaf.Dispose(bvh.Leaves);
         bvh.Leaves = null;
-
-        Soa_Vector2.Dispose(bvh.LeafCentroids);
-        bvh.LeafCentroids = null;
         
         Soa_QueryResult.Dispose(bvh.SpatialPairQueryBuffer);
         bvh.SpatialPairQueryBuffer = null;
         
-        bvh.CentroidLeafIds = null;
+        bvh.MortonLeafIds = null;
         
         bvh.MortonCentroids = null;
 

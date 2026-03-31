@@ -34,6 +34,38 @@ public class Soa_Vector2Test
     }
 
     [Fact]
+    public void Append_Test()
+    {
+        for(int length = 0; length < 5; length++)
+        {
+            Soa_Vector2 soa = new(length);
+            int j = 0;
+            for(int i = 0; i < length; i++)
+            {
+                float x = j++;
+                float y = j++;
+                Soa_Vector2.Append(soa, x, y);
+                Soa_Vector2Assert.EntryEqual(x, y, i, soa);
+                Assert.Equal(i+1, soa.AppendCount);
+            }
+        }
+    }
+
+    [Fact]
+    public void ResetCount_Test()
+    {
+        int length = 6;
+        Soa_Vector2 soa = new(length);
+        for(int i = 0; i < length; i++)
+        {
+            Soa_Vector2.Append(soa, i, i);
+        }
+        Assert.Equal(length, soa.AppendCount);
+        Soa_Vector2.ResetCount(soa);
+        Assert.Equal(0, soa.AppendCount);
+    }
+
+    [Fact]
     public void Disposal_Test()
     {
         Soa_Vector2 soa = new(12);

@@ -1,7 +1,4 @@
 using Howl.DataStructures.Bvh;
-using Howl.ECS;
-using Howl.Math;
-using Howl.Math.Shapes;
 using Howl.Test.ECS;
 using Howl.Test.Math;
 using Howl.Test.Math.Shapes;
@@ -9,36 +6,40 @@ using Howl.Test.Math.Shapes;
 public static class Soa_LeafAssert
 {
     /// <summary>
-    /// Asserts the equality of a buffer entry and expected values.
+    /// Asserts the equality of a soa entry and expected values.
     /// </summary>
-    /// <param name="minX">the expected minimum x value.</param>
-    /// <param name="minY">the expected minimum y value.</param>
-    /// <param name="maxX">the expected maximum x value.</param>
-    /// <param name="maxY">the expected maximum y value.</param>
+    /// <param name="minX">the expected x-component of the minimum vertex.</param>
+    /// <param name="minY">the expected y-component of the minimum vertex.</param>
+    /// <param name="maxX">the expected x-component of the maximum vertex.</param>
+    /// <param name="maxY">the expected y-component of the maximum vertex.</param>
+    /// <param name="centroidX">the expected x-component of the centroid vertex.</param>
+    /// <param name="centroidY">the expected x-component of the centroid vertex.</param>
     /// <param name="index">the expected index value.</param>
     /// <param name="generation">the expected generation value.</param>
     /// <param name="flags">the expected flags value.</param>
     /// <param name="entryIndex">the index of the entry in the buffer to assert equality against.</param>
-    /// <param name="buffer">the buffer containing the entry to assert.</param>
-    public static void EntryEqual(float minX, float minY, float maxX, float maxY, int index, int generation, 
-        int flags, int entryIndex, Soa_Leaf buffer
+    /// <param name="soa">the soa instance containing the entry to assert.</param>
+    public static void EntryEqual(float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int index, int generation, 
+        int flags, int entryIndex, Soa_Leaf soa
     )
     {
-        Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, entryIndex, buffer.Aabbs);
-        Soa_GenIndexAssert.EntryEqual(index, generation, entryIndex, buffer.GenIndices);
-        Assert.Equal(flags, buffer.Flags[entryIndex]);
+        Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, entryIndex, soa.Aabbs);
+        Soa_GenIndexAssert.EntryEqual(index, generation, entryIndex, soa.GenIndices);
+        Soa_Vector2Assert.EntryEqual(centroidX, centroidY, entryIndex, soa.Centroids);
+        Assert.Equal(flags, soa.Flags[entryIndex]);
     }
 
     /// <summary>
-    /// Asserts the equality of array lengths in a buffer instance.
+    /// Asserts the equality of array lengths in a soa instance.
     /// </summary>
     /// <param name="length">the expected length of the backing arrays.</param>
-    /// <param name="buffer">the buffer instance.</param>
-    public static void LengthEqual(int length, Soa_Leaf buffer)
+    /// <param name="soa">the soa instance.</param>
+    public static void LengthEqual(int length, Soa_Leaf soa)
     {
-        Soa_AabbAssert.LengthEqual(length, buffer.Aabbs);
-        Soa_GenIndexAssert.LengthEqual(length, buffer.GenIndices);
-        Assert.Equal(length, buffer.Flags.Length);
-        Assert.Equal(length, buffer.Length);
+        Soa_AabbAssert.LengthEqual(length, soa.Aabbs);
+        Soa_GenIndexAssert.LengthEqual(length, soa.GenIndices);
+        Soa_Vector2Assert.LengthEqual(length, soa.Centroids);
+        Assert.Equal(length, soa.Flags.Length);
+        Assert.Equal(length, soa.Length);
     }
 }

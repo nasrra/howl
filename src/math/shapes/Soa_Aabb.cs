@@ -87,11 +87,11 @@ public class Soa_Aabb : IDisposable
     }
 
     /// <summary>
-    /// Sets a soa instance's count to zero.
+    /// Sets a soa instance's <c>AppendCount</c> to zero.
     /// </summary>
-    /// <param name="soa">the soa instance to clear.</param>
+    /// <param name="soa">the soa instance to reset.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Clear(Soa_Aabb soa)
+    public static void ResetCount(Soa_Aabb soa)
     {
         soa.AppendCount = 0;
     }

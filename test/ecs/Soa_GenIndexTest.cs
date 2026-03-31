@@ -34,6 +34,43 @@ public class Soa_GenIndexTest
     }
 
     [Fact]
+    public void Append_Test()
+    {
+        for(int length = 0; length < 10; length++)
+        {
+            int q = 0;
+            Soa_GenIndex soa = new(length);
+            for(int j = 0; j < length; j++)
+            {
+                int index = q++;
+                int gen = q++;
+                Soa_GenIndex.Append(soa, index, gen);
+                Soa_GenIndexAssert.EntryEqual(index, gen, j, soa);
+                Assert.Equal(j+1, soa.AppendCount);
+            }
+        }
+    }
+
+    [Fact]
+    public void ResetCount_Test()
+    {
+        for(int length = 0; length < 10; length++)
+        {
+            int q = 0;
+            Soa_GenIndex soa = new(length);
+            for(int j = 0; j < length; j++)
+            {
+                int index = q++;
+                int gen = q++;
+                Soa_GenIndex.Append(soa, index, gen);
+            }            
+            Assert.Equal(length, soa.AppendCount);
+            Soa_GenIndex.ResetCount(soa);            
+            Assert.Equal(0, soa.AppendCount);
+        }
+    }
+
+    [Fact]
     public void Disposal_Test()
     {   
         Soa_GenIndex soa = new(12);

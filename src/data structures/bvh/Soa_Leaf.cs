@@ -20,6 +20,11 @@ public class Soa_Leaf : IDisposable
     public Soa_GenIndex GenIndices;
 
     /// <summary>
+    /// The centroids of the Aabbs.
+    /// </summary>
+    public Soa_Vector2 Centroids;
+
+    /// <summary>
     /// The user-defined flags.
     /// </summary>
     public int[] Flags;
@@ -48,6 +53,7 @@ public class Soa_Leaf : IDisposable
         Aabbs = new(length);
         GenIndices = new(length);
         Flags = new int[length];
+        Centroids = new(length);
         Length = length;
     }
 
@@ -59,19 +65,18 @@ public class Soa_Leaf : IDisposable
     /// <param name="minY">the the y-component of the aabb minimum vertex.</param>
     /// <param name="maxX">the the x-component of the aabb maximum vertex.</param>
     /// <param name="maxY">the the y-component of the aabb maximum vertex.</param>
+    /// <param name="centroidX">the x-component of the aabb centroid.</param>
+    /// <param name="centroidY">the y-component of the aabb centroid.</param>
     /// <param name="index">the index of the data to associate with the leaf.</param>
     /// <param name="generation">the generation of the data to associate with the leaf.</param>
     /// <param name="flags">the user-defined flags to associate with the leaf.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append(Soa_Leaf soa, float minX, float minY, float maxX, float maxY, int index, int generation, int flags)
+    public static void Append(Soa_Leaf soa, float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int index, int generation, int flags)
     {
         int count = soa.AppendCount;
-        soa.Aabbs.MinX[count] = minX;
-        soa.Aabbs.MinY[count] = minY;
-        soa.Aabbs.MaxX[count] = maxX;
-        soa.Aabbs.MaxY[count] = maxY;
-        soa.GenIndices.Indices[count] = index;
-        soa.GenIndices.Generations[count] = generation;
+        Soa_Aabb.Append(soa.Aabbs, minX, minY, maxX, maxY);
+        Soa_GenIndex.Append(soa.GenIndices, index, generation);
+        Soa_Vector2.Append(soa.Centroids, centroidX, centroidY);
         soa.Flags[count] = flags;
         soa.AppendCount++;
     }
@@ -79,10 +84,13 @@ public class Soa_Leaf : IDisposable
     /// <summary>
     /// Sets a soa instance's <c>AppendCount</c> to zero.
     /// </summary>
-    /// <param name="soa">the soa instance to clear.</param>
+    /// <param name="soa">the soa instance to reset.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Clear(Soa_Leaf soa)
+    public static void ResetCount(Soa_Leaf soa)
     {
+        Soa_Aabb.ResetCount(soa.Aabbs);
+        Soa_GenIndex.ResetCount(soa.GenIndices);
+        Soa_Vector2.ResetCount(soa.Centroids);
         soa.AppendCount = 0;
     }
 
@@ -139,25 +147,28 @@ public class Soa_Leaf : IDisposable
         Dispose(this);
     }
 
-    public static void Dispose(Soa_Leaf buffer)
+    public static void Dispose(Soa_Leaf soa)
     {
-        if(buffer.Disposed)
+        if(soa.Disposed)
             return;
 
-        buffer.Disposed = true;
+        soa.Disposed = true;
         
-        Soa_Aabb.Dispose(buffer.Aabbs);
-        buffer.Aabbs = null;
+        Soa_Aabb.Dispose(soa.Aabbs);
+        soa.Aabbs = null;
         
-        Soa_GenIndex.Dispose(buffer.GenIndices);
-        buffer.GenIndices = null;
-                        
-        buffer.Flags = null;
-                
-        buffer.Length = 0;
-        buffer.AppendCount = 0;
+        Soa_GenIndex.Dispose(soa.GenIndices);
+        soa.GenIndices = null;
 
-        GC.SuppressFinalize(buffer);
+        Soa_Vector2.Dispose(soa.Centroids);
+        soa.Centroids = null;
+                        
+        soa.Flags = null;
+                
+        soa.Length = 0;
+        soa.AppendCount = 0;
+
+        GC.SuppressFinalize(soa);
     }
 
     ~Soa_Leaf()
