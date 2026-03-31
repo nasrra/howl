@@ -43,8 +43,9 @@ public class Soa_BranchTest
                 int rightLeafIndex = j++;
                 int subtreeSize = j++;
                 int leafCount = j++;
-                Soa_Branch.Insert(soa, i, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount);
-                Soa_BranchAssert.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, i, soa);
+                int parentIndex = j++;
+                Soa_Branch.Insert(soa, i, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex);
+                Soa_BranchAssert.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex, i, soa);
                 Assert.Equal(0, soa.AppendCount);
             }
         }        
@@ -68,8 +69,9 @@ public class Soa_BranchTest
                 int rightLeafIndex = j++;
                 int subtreeSize = j++;
                 int leafCount = j++;
-                Soa_Branch.Append(soa, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount);
-                Soa_BranchAssert.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, i, soa);
+                int parentIndex = j++;
+                Soa_Branch.Append(soa, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex);
+                Soa_BranchAssert.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex, i, soa);
                 Assert.Equal(i+1, soa.AppendCount);
             }
         }
@@ -82,21 +84,12 @@ public class Soa_BranchTest
         {            
             Soa_Branch buffer = new(capacity);
 
-            int j = 0;
             for(int i = 0; i < capacity; i++)
             {
-                float minX = j++;
-                float minY = j++;
-                float maxX = j++;
-                float maxY = j++;
-                int leftLeafIndex = j++;
-                int rightLeafIndex = j++;
-                int subtreeSize = j++;
-                int leafCount = j++;
-                Soa_Branch.Append(buffer, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount);
+                Soa_Branch.Append(buffer, 0,0,0,0,0,0,0,0,0);
             }        
             Assert.Equal(capacity, buffer.AppendCount);
-            Soa_Branch.Clear(buffer);
+            Soa_Branch.ResetCount(buffer);
             Assert.Equal(0, buffer.AppendCount);
         }
     }

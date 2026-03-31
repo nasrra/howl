@@ -16,10 +16,11 @@ public static class Soa_BranchAssert
     /// <param name="rightLeafIndex">the expected right leaf index.</param>
     /// <param name="subtreeSize">the expected sub tree size value.</param>
     /// <param name="leafCount">the expected leaf count value.</param>
+    /// <param name="parentIndex">the expected parent index</param>
     /// <param name="entryIndex">the index of the entry in the buffer to assert equality against.</param>
     /// <param name="soa">the soa instance. containing the entry to assert.</param>
     public static void EntryEqual(float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex,
-        int subtreeSize, int leafCount, int entryIndex, Soa_Branch soa
+        int subtreeSize, int leafCount, int parentIndex, int entryIndex, Soa_Branch soa
     )
     {
         Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, entryIndex, soa.Aabbs);
@@ -27,6 +28,7 @@ public static class Soa_BranchAssert
         Assert.Equal(rightLeafIndex, soa.RightLeafIndices[entryIndex]);
         Assert.Equal(subtreeSize, soa.SubtreeSizes[entryIndex]);
         Assert.Equal(leafCount, soa.LeafCounts[entryIndex]);
+        Assert.Equal(parentIndex, soa.ParentIndices[entryIndex]);
     } 
 
     /// <summary>
@@ -41,6 +43,7 @@ public static class Soa_BranchAssert
         Assert.Equal(length, soa.RightLeafIndices.Length);
         Assert.Equal(length, soa.SubtreeSizes.Length);
         Assert.Equal(length, soa.LeafCounts.Length);
+        Assert.Equal(length, soa.ParentIndices.Length);
         Assert.Equal(length, soa.Length);
     }
 }

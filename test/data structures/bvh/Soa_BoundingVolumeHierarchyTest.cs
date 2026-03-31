@@ -36,7 +36,7 @@ public class Soa_BoundingVolumeHierarchyTest
             for(int i = 0 ; i < length; i++)
             {
                 Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0,0,0,0);
-                Soa_Branch.Append(bvh.Branches, 0,0,0,0,0,0,0,0);
+                Soa_Branch.Append(bvh.Branches, 0,0,0,0,0,0,0,0,0);
             }
 
             Assert.Equal(length, bvh.Leaves.AppendCount);
@@ -229,8 +229,9 @@ public class Soa_BoundingVolumeHierarchyTest
             float[] eMaxY           = [maxY4,maxY1,maxY4,maxY2,maxY4];
             int[] eLeftLeafIndices  = [0,1,0,2,3];
             int[] eRightLeafIndices = [0,0,0,0,4];
-            int[] eSubtreeSize      = [5,1,3,1,1];
-            int[] eLeafCount        = [0,2,0,1,2];
+            int[] eSubtreeSizes     = [5,1,3,1,1];
+            int[] eLeafCounts       = [0,2,0,1,2];
+            int[] eParentIndices    = [0,0,1,1,1];
 
             // construct.
             Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
@@ -239,7 +240,9 @@ public class Soa_BoundingVolumeHierarchyTest
             Assert.Equal(5, bvh.Branches.AppendCount);
             for(int i = 0; i < bvh.Branches.AppendCount; i++)
             {
-                Soa_BranchAssert.EntryEqual(eMinX[i], eMinY[i], eMaxX[i], eMaxY[i], eLeftLeafIndices[i], eRightLeafIndices[i], eSubtreeSize[i], eLeafCount[i], i, bvh.Branches);
+                Soa_BranchAssert.EntryEqual(eMinX[i], eMinY[i], eMaxX[i], eMaxY[i], eLeftLeafIndices[i], 
+                    eRightLeafIndices[i], eSubtreeSizes[i], eLeafCounts[i], eParentIndices[i], i, bvh.Branches
+                );
             } 
         }
 
@@ -254,7 +257,7 @@ public class Soa_BoundingVolumeHierarchyTest
             for(int i = 0; i < length; i++)
             {
                 Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0,0,0,0);
-                Soa_Branch.Append(bvh.Branches, 0,0,0,0,0,0,0,0);
+                Soa_Branch.Append(bvh.Branches, 0,0,0,0,0,0,0,0,0);
             }
 
             Soa_BoundingVolumeHierarchy.Dispose(bvh);

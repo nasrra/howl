@@ -88,7 +88,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     public static void Clear(Soa_BoundingVolumeHierarchy bvh)
     {
         Soa_Leaf.ResetCount(bvh.Leaves);
-        Soa_Branch.Clear(bvh.Branches);
+        Soa_Branch.ResetCount(bvh.Branches);
     }
 
 
@@ -109,7 +109,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="bvh">the bvh instance.</param>
     public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
     {
-        Soa_Branch.Clear(bvh.Branches);
+        Soa_Branch.ResetCount(bvh.Branches);
         
         // get the spatial data for morton code calculations.
         float minX = float.MaxValue;
@@ -142,13 +142,14 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         RadixSort.IndexedAscend(bvh.MortonCentroids, bvh.MortonLeafIds, bvh.RadixSortBuffer, 0, bvh.Leaves.AppendCount);
     
         int branchCount = 0;
+        int parentIndex = -1; // this will have to change to zero when we start enforcing Nils.
         float aabbMinX = 0;
         float aabbMinY = 0;
         float aabbMaxX = 0;
         float aabbMaxY = 0;
 
         ConstructBranches(bvh.Branches, bvh.MortonLeafIds, bvh.Leaves.Aabbs.MinX, bvh.Leaves.Aabbs.MinY, bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, 
-            0, bvh.Leaves.AppendCount, ref branchCount, ref aabbMinX, ref aabbMinY, ref aabbMaxX, ref aabbMaxY
+            0, bvh.Leaves.AppendCount, parentIndex, ref branchCount, ref aabbMinX, ref aabbMinY, ref aabbMaxX, ref aabbMaxY
         );
 
         // we set the branch count manually as the branches are inserted into the soa manually
@@ -181,7 +182,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="aabbMaxY">the y-component of the maximum vertex of the currently constructed branch.</param>
     public static void ConstructBranches(Soa_Branch branches, Span<int> leafIndices, 
         Span<float> leavesMinX, Span<float> leavesMinY, Span<float> leavesMaxX, Span<float> leavesMaxY, 
-        int start, int length, ref int writeIndex, ref float aabbMinX, ref float aabbMinY, ref float aabbMaxX, ref float aabbMaxY
+        int start, int length, int parentIndex, ref int writeIndex, ref float aabbMinX, ref float aabbMinY, ref float aabbMaxX, ref float aabbMaxY
     )
     {
         // reserve space.
@@ -216,7 +217,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
             // insert the leaf.
             // note: subtree size for leaves is always one as subtree size is inclusive of then entry; and a leaf is the final in a branch chain.
-            Soa_Branch.Insert(branches, branchIndex, aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, leftLeafIndex, rightLeafIndex, 1, leafCount);
+            Soa_Branch.Insert(branches, branchIndex, aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, leftLeafIndex, rightLeafIndex, 1, leafCount, parentIndex);
         }
         else
         {
@@ -241,14 +242,16 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
             // == recurse (children are written contiguously after parent). ==
 
+            parentIndex++;
+
             // left branch.
             ConstructBranches(branches, leafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, 
-                leftStart, leftLength, ref writeIndex, ref leftMinX, ref leftMinY, ref leftMaxX, ref leftMaxY
+                leftStart, leftLength, parentIndex, ref writeIndex, ref leftMinX, ref leftMinY, ref leftMaxX, ref leftMaxY
             );
 
             // right branch.
             ConstructBranches(branches, leafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, 
-                rightStart, rightLength, ref writeIndex, ref rightMinX, ref rightMinY, ref rightMaxX, ref rightMaxY
+                rightStart, rightLength, parentIndex, ref writeIndex, ref rightMinX, ref rightMinY, ref rightMaxX, ref rightMaxY
             );
 
             // get the aabb of both branches.
@@ -262,7 +265,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             int subtreeSize = writeIndex - branchIndex;
 
             // set the branch.
-            Soa_Branch.Insert(branches, branchIndex, aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, 0, 0, subtreeSize, 0);
+            Soa_Branch.Insert(branches, branchIndex, aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, 0, 0, subtreeSize, 0, parentIndex);
         }
 
     }
@@ -315,6 +318,53 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
                 Soa_SpatialPair.Append(spatialPairs, ownerIndex, ownerGeneration, ownerFlag, otherIndex, results.GenIndices.Generations[j], results.Flags[j]);
             }
+        }
+    }
+
+
+    public static void ConstructSpatialPairs_Fast(Soa_Branch branches, Soa_Leaf leaves, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
+    {
+        Soa_QueryResult.Clear(results);
+        Span<float> branchMinX = branches.Aabbs.MinX;
+        Span<float> branchMinY = branches.Aabbs.MinY;
+        Span<float> branchMaxX = branches.Aabbs.MaxX;
+        Span<float> branchMaxY = branches.Aabbs.MaxY;
+        Span<int> branchSubtreeSizes = branches.SubtreeSizes;
+        Span<int> branchLeafCounts = branches.LeafCounts;
+        Span<int> leftLeafIndices = branches.LeftLeafIndices;
+        Span<int> rightLeafIndices = branches.RightLeafIndices;
+
+        int i = 0;
+        while(i < branches.AppendCount)
+        {
+            if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[i], branchMinY[i], branchMaxX[i], branchMaxY[i]))
+            {
+                // skip the entire subtree.
+                i+= branchSubtreeSizes[i];
+                continue;
+            }
+
+            int leafCount = branchLeafCounts[i];
+
+            switch (leafCount)
+            {
+                case 1:
+                    // left leaf index should always be populated for branches with leaf(s) attatched.
+                    Soa_Leaf.Query(leaves, results, [leftLeafIndices[i]], minX, minY, maxX, maxY);
+                    break;
+                case 2:
+                    Soa_Leaf.Query(leaves, results, [leftLeafIndices[i], rightLeafIndices[i]], minX, minY, maxX, maxY);
+                    break;
+                case 0:
+                    // do nothing..., just go to next branch in the tree..
+                    break;
+                default:
+                    System.Diagnostics.Debug.Assert(false);
+                    break;
+            }
+
+            // go to next branch in the tree.
+            i++;
         }
     }
 

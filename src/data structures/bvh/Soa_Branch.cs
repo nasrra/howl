@@ -37,6 +37,11 @@ public class Soa_Branch : IDisposable
     public int[] LeafCounts;
 
     /// <summary>
+    /// The indices for the parent branch of all branches.
+    /// </summary>
+    public int[] ParentIndices;
+
+    /// <summary>
     /// The count of allocated entries from appending.
     /// </summary>
     public int AppendCount;
@@ -62,6 +67,7 @@ public class Soa_Branch : IDisposable
         RightLeafIndices = new int[length];
         SubtreeSizes = new int[length];
         LeafCounts = new int[length];
+        ParentIndices = new int[length];
         Length = length;
     }
 
@@ -77,11 +83,12 @@ public class Soa_Branch : IDisposable
     /// <param name="rightLeafIndex">the index of the right leaf.</param>
     /// <param name="subtreeSize">the subtree size.</param>
     /// <param name="leafCount">the amount of leaves attached to the branch.</param>
+    /// <param name="parentIndex">the index within this soa instance of the branch that this branch is a child of.</param>
     public static void Append(Soa_Branch soa, float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex, 
-        int subtreeSize, int leafCount
+        int subtreeSize, int leafCount, int parentIndex
     )
     {
-        Insert(soa, soa.AppendCount, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount);
+        Insert(soa, soa.AppendCount, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex);
         soa.AppendCount++;
     }
 
@@ -98,8 +105,9 @@ public class Soa_Branch : IDisposable
     /// <param name="rightLeafIndex">the index of the right leaf.</param>
     /// <param name="subtreeSize">the subtree size.</param>
     /// <param name="leafCount">the amount of leaves attached to the branch.</param>
+    /// <param name="parentIndex">the index within this soa instance of the branch that this branch is a child of.</param>
     public static void Insert(Soa_Branch soa, int insertIndex, float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex, 
-        int subtreeSize, int leafCount
+        int subtreeSize, int leafCount, int parentIndex
     )
     {
         soa.Aabbs.MinX[insertIndex] = minX;
@@ -109,14 +117,15 @@ public class Soa_Branch : IDisposable
         soa.LeftLeafIndices[insertIndex] = leftLeafIndex;
         soa.RightLeafIndices[insertIndex] = rightLeafIndex;
         soa.SubtreeSizes[insertIndex] = subtreeSize;
-        soa.LeafCounts[insertIndex] = leafCount;        
+        soa.LeafCounts[insertIndex] = leafCount;       
+        soa.ParentIndices[insertIndex] = parentIndex;
     }
 
     /// <summary>
-    /// Sets a soa's append count to zero.
+    /// Sets a soa's <c>AppendCount</c> to zero.
     /// </summary>
-    /// <param name="soa">the buffer to clear.</param>
-    public static void Clear(Soa_Branch soa)
+    /// <param name="soa">the soa instance to clear.</param>
+    public static void ResetCount(Soa_Branch soa)
     {
         soa.AppendCount = 0;
     }
@@ -151,6 +160,7 @@ public class Soa_Branch : IDisposable
         soa.RightLeafIndices = null;
         soa.SubtreeSizes = null;
         soa.LeafCounts = null;
+        soa.ParentIndices = null;
         soa.AppendCount = 0;
         soa.Length = 0;
 
