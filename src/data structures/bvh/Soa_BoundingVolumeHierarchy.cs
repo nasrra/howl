@@ -49,6 +49,8 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
     public uint[] LeafRadixCentroidY;
 
+    public uint[] MortonCentroid;
+
     /// <summary>
     /// The swapping buffer used for in-place permutation swapping of <c>LeafCentroids</c> xy-components.
     /// </summary>
@@ -160,7 +162,11 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         c.Stop();
 
         double cms = c.Elapsed.TotalMilliseconds;
-    
+    }
+
+    public static void ConstructTree_Fast(Soa_BoundingVolumeHierarchy bvh)
+    {
+        Soa_Aabb.CalculateCentroids(bvh.Leaves.Aabbs, bvh.LeafCentroids.X, bvh.LeafCentroids.Y, 0, bvh.Leaves.AppendCount);
     }
 
     public static void ConstructBranches(RadixSortBuffer radixSortBuffer, Soa_Branch branches, Span<float> leavesMinX, Span<float> leavesMinY, 

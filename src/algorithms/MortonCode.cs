@@ -38,8 +38,8 @@ public static class MortonCode
     /// into a discrete 65536 x 65536 grid. This ensures that the bit-interleaving 
     /// process utilizes the maximum precision available in a 32-bit Morton code.
     /// </remarks>
-    /// <param name="rangeX">The range of the highest to lowest value in the 'x' dataset/collection.</param>
-    /// <param name="rangeY">The range of the highest to lowest value in the 'y' dataset/collection.</param>
+    /// <param name="rangeX">The range of the highest to lowest value in the <c>x</c> dataset/collection.</param>
+    /// <param name="rangeY">The range of the highest to lowest value in the <c>y</c> dataset/collection.</param>
     /// <param name="scaleX">output for the calculated x-scaling factor for calculating a morton code.</param>
     /// <param name="scaleY">output for the calculated y-scaling factor for calcualting a morton code.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -66,11 +66,15 @@ public static class MortonCode
     /// <param name="y">the y-value of the 32-bit pair.</param>
     /// <param name="minX">the minimum x-value in the pair's dataset/collection.</param>
     /// <param name="minY">the minimum x-value in the pair's dataset/collection.</param>
-    /// <param name="scaleX">the x-component of the morton code scaling factor.</param>
-    /// <param name="scaleY">the y-component of the morton code scaling factor.</param>
-    /// <returns></returns>
-    public static uint CalculateMortonCode(float x, float y, float minX, float minY, float scaleX, float scaleY)
+    /// <param name="rangeX">The range of the highest to lowest value in the <c>x</c> dataset/collection.</param>
+    /// <param name="rangeY">The range of the highest to lowest value in the <c>y</c> dataset/collection.</param>
+    /// <returns>the calculated morton code.</returns>
+    public static uint CalculateMortonCode(float x, float y, float minX, float minY, float rangeX, float rangeY)
     {
+        float scaleX = 0;
+        float scaleY = 0;
+        CalculateScaleFactor(rangeX, rangeY, ref scaleX, ref scaleY);
+
         // normalise coordinates to [0, 65535] (16 bit range.)
         // this is done as a morton code is two 16-bit numbers interleaved together to form a 32 bit number.
         uint ux = (uint)((x - minX) * scaleX);
@@ -93,5 +97,5 @@ public static class MortonCode
         // (expanded uy << 1) | exp ux  = 00000000 00000000 00110010 00110011
         // ------------------------------------------------------------------
         return ExpandBits(uy) << 1 | ExpandBits(ux);
-    }  
+    }
 }
