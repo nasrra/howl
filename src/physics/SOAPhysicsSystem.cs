@@ -88,9 +88,7 @@ public static class SoaPhysicsSystem
 
             // Reconstruct Bvh.
             state.BvhReconstructionStopwatch.Restart();
-            ReconstructBvhTree(state.WorldVertices, state.WorldRadii, state.FirstVertexIndices, 
-                state.NextVertexIndices, state.Generations, state.Flags, state.Bvh, state.MaxPhysicsBodyVertexCount
-            );
+            ReconstructBvhTree(state.MinAABBVertices, state.MaxAABBVertices, state.Generations, state.Flags, state.Bvh);
             state.BvhReconstructionStopwatch.Stop();
 
             // Filter bvh into collision manifold.
@@ -1023,90 +1021,29 @@ public static class SoaPhysicsSystem
     /// </remarks>
     /// <param name="vertices">the vertices of all physics bodies to insert into the bounding volume hierarchy.</param>
     /// <param name="radii">the radii of circle physics bodies to calculate the bounding box necessary for insertion in the bounding volume hierarchy.</param>
-    /// <param name="firstVertexIndices">the first vertex indices for each physics body.</param>
-    /// <param name="nextVertexIndices">the next vertex indices for each vertex in transform vertices.</param>
     /// <param name="generations">the generation for each physics body.</param>
     /// <param name="flags">the flags for each physics body.</param>
     /// <param name="bvh">the bounding volume hierarchy.</param>
-    /// <param name="maxPhysicsBodyVertexCount">the max amount of vertices that a physics body shape can have.</param>
-    public static void ReconstructBvhTree(
-        Soa_Vector2 vertices, 
-        Span<float> radii,
-        Span<int> firstVertexIndices, 
-        Span<int> nextVertexIndices, 
-        Span<int> generations,
-        Span<PhysicsBodyFlags> flags, 
-        Soa_BoundingVolumeHierarchy bvh,
-        int maxPhysicsBodyVertexCount
+    public static void ReconstructBvhTree(Soa_Vector2 minAabbs, Soa_Vector2 maxAabbs, Span<int> generations, Span<PhysicsBodyFlags> flags, 
+        Soa_BoundingVolumeHierarchy bvh
     )
     {   
         // clear the previous bvh data.
         Soa_BoundingVolumeHierarchy.Clear(bvh);
 
-        // create spans of the maximum amount of vertices a given 
-        // body shape can store.
-        Span<float> x = stackalloc float[maxPhysicsBodyVertexCount];
-        Span<float> y = stackalloc float[maxPhysicsBodyVertexCount];
-
         for(int i = 0; i < flags.Length; i++)
         {
             ref PhysicsBodyFlags flag = ref flags[i];
-            ref int firstVerticeIndex = ref firstVertexIndices[i];
             if((flag & PhysicsBodyFlags.Allocated) != 0 && (flag & PhysicsBodyFlags.Active) != 0)
             {
-                float minX;
-                float minY;
-                float maxX;
-                float maxY;
-
-                if((flag & PhysicsBodyFlags.RectangleShape) != 0)
-                {
-                    // get the body's shape vertices.
-                    int verticeCount = 0;
-                    int verticeIndex = firstVerticeIndex;
-                    
-                    while (true)
-                    {
-                        // store the vertice data.
-                        x[verticeCount] = vertices.X[verticeIndex];
-                        y[verticeCount] = vertices.Y[verticeIndex];
-                        
-                        // go to the next vertice.
-                        verticeCount++;
-                        verticeIndex = nextVertexIndices[verticeIndex];
-                        
-                        // break when looping back to the start.
-                        if(verticeIndex == firstVerticeIndex)
-                            break;    
-                    }
-
-                    // get the min and max vertices of the current body.
-                    GetMinMaxVectors(
-                        x.Slice(0, verticeCount), // only read the valid vertices data.
-                        y.Slice(0, verticeCount), // only read the valid vertices data.
-                        out minX,
-                        out minY,
-                        out maxX,
-                        out maxY
-                    );
-                    
-                }
-                else // circle
-                {
-                    Circle.GetMinMaxVectors(
-                        vertices.X[firstVerticeIndex],
-                        vertices.Y[firstVerticeIndex],
-                        radii[i],
-                        out minX,
-                        out minY,
-                        out maxX,
-                        out maxY
-                    );
-                }
+                float minX = minAabbs.X[i];
+                float minY = minAabbs.Y[i];
+                float maxX = maxAabbs.X[i];
+                float maxY = maxAabbs.Y[i];
 
                 // insert into the bvh.
                 Soa_Leaf.Append(
-                    bvh.Leaves, minX, minY, maxX, maxY, i, generations[i], (int)flag // <-- this is okay as PhysicsBodyFlags is a int under the hood.
+                    bvh.Leaves, minX, minY, maxX, maxY, i, generations[i], (int)flag // <-- this is okay as PhysicsBodyFlags is a 'int' under the hood.
                 );
             }
         }
