@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Howl.Algorithms;
 using Howl.Algorithms.Sorting;
 using Howl.Math;
@@ -43,10 +44,14 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// </remarks>
     public Soa_Vector2 LeafCentroids;
 
+    public uint[] LeafRadixCentroidX;
+
+    public uint[] LeafRadixCentroidY;
+
     /// <summary>
     /// The swapping buffer used for in-place permutation swapping of <c>LeafCentroids</c> xy-components.
     /// </summary>
-    public float[] LeafCentroidsSwapBuffer;
+    public uint[] LeafRadixCentroidsSwapBuffer;
 
     /// <summary>
     /// Used as an index for a centroid element in <c>Centroids</c> to get its associated leaf data in <c>Leaves</c>.
@@ -71,8 +76,10 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         Branches = new(length*2);
         SpatialPairQueryBuffer = new(spatialPairsLength);
         LeafCentroids = new(length);
+        LeafRadixCentroidX = new uint[length];
+        LeafRadixCentroidY = new uint[length];
+        LeafRadixCentroidsSwapBuffer = new uint[length];
         CentroidLeafIds = new int[length];
-        LeafCentroidsSwapBuffer = new float[length];
         RadixSortBuffer = new(length);
         SpatialPairs = new(spatialPairsLength);
     }
@@ -87,18 +94,30 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         Soa_Branch.Clear(bvh.Branches);
     }
 
+    static Stopwatch a = new();
+    static Stopwatch b = new();
+    static Stopwatch c = new();
+
     public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
     {
+        a.Restart();
         int start = 0;
         int length = bvh.Leaves.AppendCount;
 
         Soa_Branch.Clear(bvh.Branches);
         Soa_Aabb.CalculateCentroids(bvh.Leaves.Aabbs, bvh.LeafCentroids.X, bvh.LeafCentroids.Y, start, length);
+        RadixSortF.ToSortableUint(bvh.LeafCentroids.X, bvh.LeafRadixCentroidX);
+        RadixSortF.ToSortableUint(bvh.LeafCentroids.Y, bvh.LeafRadixCentroidY);
         // set centroid indices.
         for(int i = start; i < length; i++)
         {
             bvh.CentroidLeafIds[i] = i;
         }
+        a.Stop();
+
+        double ams = a.Elapsed.TotalMilliseconds;
+
+        b.Restart();
 
         int BranchCount = 0;
         float aabbMinX = 0;
@@ -107,22 +126,32 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         float aabbMaxY = 0;
 
         ConstructBranches(bvh.RadixSortBuffer, bvh.Branches, bvh.Leaves.Aabbs.MinX, bvh.Leaves.Aabbs.MinY, 
-            bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, bvh.LeafCentroids, 
-            bvh.CentroidLeafIds, bvh.LeafCentroidsSwapBuffer, start, length, ref BranchCount, ref aabbMinX, 
+            bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, bvh.LeafRadixCentroidX, bvh.LeafRadixCentroidY, 
+            bvh.CentroidLeafIds, bvh.LeafRadixCentroidsSwapBuffer, start, length, ref BranchCount, ref aabbMinX, 
             ref aabbMinY, ref aabbMaxX, ref aabbMaxY
         );
-
         // we set the branch count manually as the branches are inserted into the soa manually
         // without using the Append() function; this is okay as branch insertion in Construct branches
         // inserts branches in a 'subtree size' relative order for each branch; meaning, at the end of the 
         // construction of all branches, the data is contiguous (no holes in the array entries).
         bvh.Branches.AppendCount = BranchCount;
 
+        b.Stop();
+
+        double bms = b.Elapsed.TotalMilliseconds;
+        
+        c.Restart();
+
         ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, bvh.SpatialPairQueryBuffer);
+
+        c.Stop();
+
+        double cms = c.Elapsed.TotalMilliseconds;
+    
     }
 
     public static void ConstructBranches(RadixSortBuffer radixSortBuffer, Soa_Branch branches, Span<float> leavesMinX, Span<float> leavesMinY, 
-        Span<float> leavesMaxX, Span<float> leavesMaxY, Soa_Vector2 leafCentroids, Span<int> centroidLeafIndices, Span<float> centroidPermuteSwapBuffer, 
+        Span<float> leavesMaxX, Span<float> leavesMaxY, Span<uint> radixLeafCentroidX, Span<uint> radixLeafCentroidY, Span<int> centroidLeafIndices, Span<uint> centroidPermuteSwapBuffer, 
         int start, int length, ref int writeIndex, ref float aabbMinX, ref float aabbMinY, ref float aabbMaxX, ref float aabbMaxY
     )
     {
@@ -170,23 +199,13 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             float maxX = float.MinValue;
             float maxY = float.MinValue;
             
-            float centroidX;
-            float centroidY;
-
-            for(int i = start; i < length; i++)
-            {
-                centroidX = leafCentroids.X[i];
-                centroidY = leafCentroids.Y[i];
-                if(centroidX < minX && centroidY < minY)
-                {
-                    minX = centroidX;
-                    minY = centroidY;
-                }
-                if(centroidX > maxX && centroidY > maxY)
-                {
-                    maxX = centroidX;
-                    maxY = centroidY;
-                }
+            for (int i = start; i < start + length; i++) {
+                float cx = radixLeafCentroidX[i];
+                float cy = radixLeafCentroidY[i];
+                if (cx < minX) minX = cx;
+                if (cx > maxX) maxX = cx;
+                if (cy < minY) minY = cy;
+                if (cy > maxY) maxY = cy;
             }
 
             float width = maxX - minX;
@@ -196,14 +215,14 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             if (width >= height)
             {
                 // vertical split.
-                RadixSortF.IndexedAscend(leafCentroids.X, centroidLeafIndices, radixSortBuffer, start, length);
-                Swap.PermuteInPlace(leafCentroids.Y, centroidLeafIndices, centroidPermuteSwapBuffer, start, length);
+                RadixSort.IndexedAscend(radixLeafCentroidX, centroidLeafIndices, radixSortBuffer, start, length);
+                Swap.PermuteInPlace(radixLeafCentroidY, centroidLeafIndices, centroidPermuteSwapBuffer, start, length);
             }
             else
             {
                 // horizontal split.
-                RadixSortF.IndexedAscend(leafCentroids.Y, centroidLeafIndices, radixSortBuffer, start, length);
-                Swap.PermuteInPlace(leafCentroids.X, centroidLeafIndices, centroidPermuteSwapBuffer, start, length);
+                RadixSort.IndexedAscend(radixLeafCentroidY, centroidLeafIndices, radixSortBuffer, start, length);
+                Swap.PermuteInPlace(radixLeafCentroidX, centroidLeafIndices, centroidPermuteSwapBuffer, start, length);
             }
 
             // split at the mid point.
@@ -227,13 +246,13 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
             // left branch.
             ConstructBranches(radixSortBuffer, branches, leavesMinX, leavesMinY, 
-                leavesMaxX, leavesMaxY, leafCentroids, centroidLeafIndices, centroidPermuteSwapBuffer, 
+                leavesMaxX, leavesMaxY, radixLeafCentroidX, radixLeafCentroidY, centroidLeafIndices, centroidPermuteSwapBuffer, 
                 leftStart, leftLength, ref writeIndex, ref leftMinX, ref leftMinY, ref leftMaxX, ref leftMaxY
             );
 
             // right branch.
             ConstructBranches(radixSortBuffer, branches, leavesMinX, leavesMinY, 
-                leavesMaxX, leavesMaxY, leafCentroids, centroidLeafIndices, centroidPermuteSwapBuffer, 
+                leavesMaxX, leavesMaxY, radixLeafCentroidX, radixLeafCentroidY, centroidLeafIndices, centroidPermuteSwapBuffer, 
                 rightStart, rightLength, ref writeIndex, ref rightMinX, ref rightMinY, ref rightMaxX, ref rightMaxY
             );
 
@@ -454,7 +473,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         
         bvh.CentroidLeafIds = null;
         
-        bvh.LeafCentroidsSwapBuffer = null;
+        bvh.LeafRadixCentroidsSwapBuffer = null;
 
         GC.SuppressFinalize(bvh);
     }

@@ -64,12 +64,51 @@ public static class RadixSortF
     /// </remarks>
     /// <param name="input">the input floating-point values to convert into their sortable uint representations.</param>
     /// <param name="output">output for the newly converted sortable uint values.</param>
-    public static void ToSortableUint(Span<float> input, Span<uint> output)
+    public static void ToSortableUint_Sisd(Span<float> input, Span<uint> output, int start)
     {
-        for(int i = 0; i < input.Length; i++)
+        for(int i = start; i < input.Length; i++)
         {
             output[i] = ToSortableUint(input[i]);
         }
+    }
+
+    public static void ToSortableUint_Simd(Span<float> input, Span<uint> output, ref int tailIndex)
+    {
+        int simdSize = System.Numerics.Vector<float>.Count;
+
+        int i = 0;
+        for (; i <= input.Length - simdSize; i += simdSize)
+        {            
+            // Load the data as ints to enable Arithmetic Shifting
+            System.Numerics.Vector<int> bits = System.Numerics.Vector.LoadUnsafe(ref Unsafe.As<float, int>(ref input[i]));
+
+            System.Numerics.Vector<uint> signMask = new System.Numerics.Vector<uint>(0x80000000);
+
+            // Generate the mask: 
+            // Negative numbers become 0xFFFFFFFF (-1), Positives become 0x00000000 (0)
+            System.Numerics.Vector<int> mask = System.Numerics.Vector.ShiftRightArithmetic(bits, 31);
+
+            // REINTERPRET: Note the capital 'U' and 'I' in UInt32
+            System.Numerics.Vector<uint> uBits = System.Numerics.Vector.AsVectorUInt32(bits);
+            System.Numerics.Vector<uint> uMask = System.Numerics.Vector.AsVectorUInt32(mask);
+
+            // Transform Logic: 
+            // If Neg: bits ^ (0xFFFFFFFF | 0x80000000) => bits ^ 0xFFFFFFFF => ~bits
+            // If Pos: bits ^ (0x00000000 | 0x80000000) => bits ^ 0x80000000 => flip sign bit
+            System.Numerics.Vector<uint> transformer = System.Numerics.Vector.BitwiseOr(uMask, signMask);
+            System.Numerics.Vector<uint> result = System.Numerics.Vector.Xor(uBits, transformer);
+
+            // Store the result
+            System.Numerics.Vector.StoreUnsafe(result, ref output[i]);
+        }
+        tailIndex = i;
+    }
+
+    public static void ToSortableUint(Span<float> input, Span<uint> output)
+    {
+        int tailIndex = 0;
+        ToSortableUint_Simd(input, output, ref tailIndex);
+        ToSortableUint_Sisd(input, output, tailIndex);
     }
 
     /// <summary>
@@ -267,7 +306,7 @@ public static class RadixSortF
     {
         Span<float> valuesSlice = values.Slice(start, length);
         Span<uint> transSlice = translated.Slice(start, length);
-        Span<uint> tempValuesSlice = tempValues.Slice(start, length);        
+        Span<uint> tempValuesSlice = tempValues.Slice(start, length);
         Span<int> indicesSlice = indices.Slice(start, length);
         Span<int> tempIndicesSlice = tempIndices.Slice(start, length);
         IndexedAscend(valuesSlice, transSlice, tempValuesSlice, indicesSlice, tempIndicesSlice, byteCount);

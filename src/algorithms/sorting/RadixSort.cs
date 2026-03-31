@@ -170,6 +170,46 @@ public static class RadixSort
             dstIndices = indicesSwap;
         }
     }
+
+    /// <summary>
+    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// </summary>
+    /// <remarks>
+    /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
+    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// <list type="bullet">
+    /// <item><paramref name="indices"/></item>
+    /// <item><paramref name="tempIndices"/></item>
+    /// <item><paramref name="values"/></item>
+    /// <item><paramref name="tempValues"/></item> 
+    /// <item><paramref name="translated"/></item> 
+    /// </list>
+    /// </remarks>
+    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
+    /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
+    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="start">the index of the first element to process.</param>
+    /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void IndexedAscend(Span<uint> values, Span<uint> tempValues, Span<int> indices, Span<int> tempIndices, Span<int> byteCount, 
+        int start, int length
+    )
+    {
+        Span<uint> valuesSlice = values.Slice(start, length);
+        Span<uint> tempValuesSlice = tempValues.Slice(start, length);
+        Span<int> indicesSlice = indices.Slice(start, length);
+        Span<int> tempIndicesSlice = tempIndices.Slice(start, length);
+        IndexedAscend(valuesSlice, tempValuesSlice, indicesSlice, tempIndicesSlice, byteCount, length);
+    }
+
+    public static void IndexedAscend(Span<uint> values, Span<int> indices, RadixSortBuffer buffer, int start, int length
+    )
+    {
+        IndexedAscend(values, buffer.TempValues, indices, buffer.TempIndices, buffer.ByteCount, start, length);
+    }
     
 
 
