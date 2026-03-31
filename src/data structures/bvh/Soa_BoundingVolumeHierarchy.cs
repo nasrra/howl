@@ -19,16 +19,25 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <summary>
     /// The spatial pairs of leaves in the constructed tree.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>spatialPairIndex</c> integer to access elements.
+    /// </remarks>
     public Soa_SpatialPair SpatialPairs;
 
     /// <summary>
     /// The constructed branches from the inserted leaves.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>branchIndex</c> integer to access elements.
+    /// </remarks>
     public Soa_Branch Branches;
 
     /// <summary>
     /// The leaves to construct branches from.
     /// </summary>
+    /// <remarks>
+    /// Use a <c>leafIndex</c> integer to get access elements.
+    /// </remarks>
     public Soa_Leaf Leaves;
 
     /// <summary>
@@ -45,16 +54,13 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// </remarks>
     public Soa_Vector2 LeafCentroids;
 
-    public uint[] LeafRadixCentroidX;
-
-    public uint[] LeafRadixCentroidY;
-
-    public uint[] MortonCentroids;
-
     /// <summary>
-    /// The swapping buffer used for in-place permutation swapping of <c>LeafCentroids</c> xy-components.
+    /// The morton codes for all leaf centroids.
     /// </summary>
-    public uint[] LeafRadixCentroidsSwapBuffer;
+    /// <remarks>
+    /// Use a <c>CentroidLeafIds</c> entry to access elements.
+    /// </remarks>
+    public uint[] MortonCentroids;
 
     /// <summary>
     /// Used as an index for a centroid element in <c>Centroids</c> to get its associated leaf data in <c>Leaves</c>.
@@ -80,9 +86,6 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         SpatialPairQueryBuffer = new(spatialPairsLength);
         MortonCentroids = new uint[length];
         LeafCentroids = new(length);
-        LeafRadixCentroidX = new uint[length];
-        LeafRadixCentroidY = new uint[length];
-        LeafRadixCentroidsSwapBuffer = new uint[length];
         CentroidLeafIds = new int[length];
         RadixSortBuffer = new(length);
         SpatialPairs = new(spatialPairsLength);
@@ -109,6 +112,11 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
 
 
+
+    /// <summary>
+    /// Constructs a tree of branches from the leaves store in a bvh instance.
+    /// </summary>
+    /// <param name="bvh">the bvh instance.</param>
     public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
     {
         Soa_Branch.Clear(bvh.Branches);
@@ -168,7 +176,26 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, bvh.SpatialPairQueryBuffer);        
     }
 
-    public static void ConstructBranches(Soa_Branch branches, Span<int> centroidLeafIndices, 
+    /// <summary>
+    /// A recursive function that constructs branches from a given data set of leaves.
+    /// </summary>
+    /// <remarks>
+    /// Note: this is a destructive process on <paramref name="branches"/>, entries within the soa instance will be overwritten.
+    /// </remarks>
+    /// <param name="branches">output soa instance for writing generated branches to.</param>
+    /// <param name="leafIndices">A span of leaf indices sorted so that neighbouring entries are neighbouring leaves (within close proximity) in world-space.</param>
+    /// <param name="leavesMinX">the x-component of all leaves minimum vertices.</param>
+    /// <param name="leavesMinY">the y-component of all leaves minimum vertices.</param>
+    /// <param name="leavesMaxX">the x-component of all leaves maximum vertices.</param>
+    /// <param name="leavesMaxY">the y-component of all leaves maximum vertices.</param>
+    /// <param name="start">the index to start at when processing the leaf indices.</param>
+    /// <param name="length">the total amount of leaf indices to process after <c><paramref name="start"/></c></param>
+    /// <param name="writeIndex">the index of the most recently written entry in <c><paramref name="branches"/></c>.</param>
+    /// <param name="aabbMinX">the x-component of the minimum vertex of the currently constructed branch.</param>
+    /// <param name="aabbMinY">the y-component of the minimum vertex of the currently constructed branch.</param>
+    /// <param name="aabbMaxX">the x-component of the maximum vertex of the currently constructed branch.</param>
+    /// <param name="aabbMaxY">the y-component of the maximum vertex of the currently constructed branch.</param>
+    public static void ConstructBranches(Soa_Branch branches, Span<int> leafIndices, 
         Span<float> leavesMinX, Span<float> leavesMinY, Span<float> leavesMaxX, Span<float> leavesMaxY, 
         int start, int length, ref int writeIndex, ref float aabbMinX, ref float aabbMinY, ref float aabbMaxX, ref float aabbMaxY
     )
@@ -180,7 +207,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         if (length <= 2)
         {
             // build leaf aabb.
-            int leftLeafIndex = centroidLeafIndices[start];
+            int leftLeafIndex = leafIndices[start];
             int rightLeafIndex = 0;
             int leafCount;
             aabbMinX = leavesMinX[leftLeafIndex];
@@ -191,7 +218,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             if(length == 2)
             {
                 // union the sibling leaf if there is one.
-                rightLeafIndex = centroidLeafIndices[start + 1];
+                rightLeafIndex = leafIndices[start + 1];
                 Aabb.Union(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY,
                     leavesMinX[rightLeafIndex], leavesMinY[rightLeafIndex], leavesMaxX[rightLeafIndex], leavesMaxY[rightLeafIndex],
                     out aabbMinX, out aabbMinY, out aabbMaxX, out aabbMaxY
@@ -231,12 +258,12 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             // == recurse (children are written contiguously after parent). ==
 
             // left branch.
-            ConstructBranches(branches, centroidLeafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, 
+            ConstructBranches(branches, leafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, 
                 leftStart, leftLength, ref writeIndex, ref leftMinX, ref leftMinY, ref leftMaxX, ref leftMaxY
             );
 
             // right branch.
-            ConstructBranches(branches, centroidLeafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, 
+            ConstructBranches(branches, leafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, 
                 rightStart, rightLength, ref writeIndex, ref rightMinX, ref rightMinY, ref rightMaxX, ref rightMaxY
             );
 
@@ -457,8 +484,6 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         
         bvh.CentroidLeafIds = null;
         
-        bvh.LeafRadixCentroidsSwapBuffer = null;
-
         bvh.MortonCentroids = null;
 
         GC.SuppressFinalize(bvh);

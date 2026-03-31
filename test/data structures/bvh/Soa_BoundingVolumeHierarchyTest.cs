@@ -18,8 +18,9 @@ public class Soa_BoundingVolumeHierarchyTest
             Soa_SpatialPairAssert.LengthEqual(1024, bvh.SpatialPairs);
             Soa_BranchAssert.LengthEqual(length*2, bvh.Branches);
             Soa_LeafAssert.LengthEqual(length, bvh.Leaves);
+            Soa_QueryResultAssert.LengthEqual(1024, bvh.SpatialPairQueryBuffer);
             Soa_Vector2Assert.LengthEqual(length, bvh.LeafCentroids);
-            Assert.Equal(length, bvh.LeafRadixCentroidsSwapBuffer.Length);
+            Assert.Equal(length, bvh.MortonCentroids.Length);
             Assert.Equal(length, bvh.CentroidLeafIds.Length);
             
             Assert.False(bvh.Disposed);
@@ -226,9 +227,10 @@ public class Soa_BoundingVolumeHierarchyTest
             Assert.Null(bvh.SpatialPairs);
             Assert.Null(bvh.Branches);
             Assert.Null(bvh.Leaves);
+            Assert.Null(bvh.SpatialPairQueryBuffer);
             Assert.Null(bvh.LeafCentroids);
+            Assert.Null(bvh.MortonCentroids);
             Assert.Null(bvh.CentroidLeafIds);
-            Assert.Null(bvh.LeafRadixCentroidsSwapBuffer);
 
             Assert.True(bvh.Disposed);
         }
