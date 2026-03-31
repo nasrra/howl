@@ -3,6 +3,7 @@ using Howl.DataStructures.Bvh;
 using Howl.Math;
 using Howl.Test.Math;
 using Howl.Math.Shapes;
+using Howl.DataStructures;
 
 namespace Howl.Test.DataStructures.Bvh;
 
@@ -221,8 +222,10 @@ public class Soa_BoundingVolumeHierarchyTest
             Aabb.CalculateCentroid(minX4, minY4, maxX4, maxY4, out float centroidX4, out float centroidY4);
             Soa_Leaf.Append(bvh.Leaves, minX4, minY4, maxX4, maxY4, centroidX4, centroidY4, index4, gen4, flags4);
 
-
-            // expected min and maxes of the constructed aabbs.
+            // construct.
+            Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
+            
+            // expected branch data.
             float[] eMinX           = [minX1,minX1,minX2,minX2,minX3];
             float[] eMinY           = [minY1,minY1,minY2,minY2,minY3];
             float[] eMaxX           = [maxX4,maxX1,maxX4,maxX2,maxX4];
@@ -233,10 +236,7 @@ public class Soa_BoundingVolumeHierarchyTest
             int[] eLeafCounts       = [0,2,0,1,2];
             int[] eParentIndices    = [0,0,1,1,1];
 
-            // construct.
-            Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
-            
-            // check construction output.
+            // check constructed branch output.
             Assert.Equal(5, bvh.Branches.AppendCount);
             for(int i = 0; i < bvh.Branches.AppendCount; i++)
             {
@@ -244,6 +244,15 @@ public class Soa_BoundingVolumeHierarchyTest
                     eRightLeafIndices[i], eSubtreeSizes[i], eLeafCounts[i], eParentIndices[i], i, bvh.Branches
                 );
             } 
+
+            // expected leaf data.
+            int[] eLeafBranchIndices = [1,1,3,4,4];
+
+            // check constructed leaf output.
+            for(int i = 0; i < bvh.Leaves.AppendCount; i++)
+            {
+                Assert.Equal(eLeafBranchIndices[i], bvh.Leaves.BranchIndices[i]);
+            }
         }
 
     }

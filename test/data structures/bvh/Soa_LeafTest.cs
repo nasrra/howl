@@ -36,9 +36,10 @@ public class Soa_LeafTest
                 int flags = j++;
                 int centroidX = j++;
                 int centroidY = j++;
+                int branchIndex = 0;
 
                 Soa_Leaf.Append(buffer, minX, minY, maxX, maxY, centroidX, centroidY, index, generation, flags);
-                Soa_LeafAssert.EntryEqual( minX, minY, maxX, maxY, centroidX, centroidY, index, generation, flags, i, buffer);
+                Soa_LeafAssert.EntryEqual( minX, minY, maxX, maxY, centroidX, centroidY, index, generation, flags, branchIndex, i, buffer);
                 Assert.Equal(i+1, buffer.AppendCount);
             }
         }
@@ -137,6 +138,7 @@ public class Soa_LeafTest
         Assert.Null(buffer.Aabbs);
         Assert.Null(buffer.GenIndices);
         Assert.Null(buffer.Flags);
+        Assert.Null(buffer.BranchIndices);
         Assert.Equal(0, buffer.AppendCount);
         Assert.Equal(0, buffer.Length);
         Assert.True(buffer.Disposed);

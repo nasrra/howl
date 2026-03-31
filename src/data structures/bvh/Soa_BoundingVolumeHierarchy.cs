@@ -149,7 +149,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         float aabbMaxY = 0;
 
         ConstructBranches(bvh.Branches, bvh.MortonLeafIds, bvh.Leaves.Aabbs.MinX, bvh.Leaves.Aabbs.MinY, bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, 
-            0, bvh.Leaves.AppendCount, parentIndex, ref branchCount, ref aabbMinX, ref aabbMinY, ref aabbMaxX, ref aabbMaxY
+            bvh.Leaves.BranchIndices, 0, bvh.Leaves.AppendCount, parentIndex, ref branchCount, ref aabbMinX, ref aabbMinY, ref aabbMaxX, ref aabbMaxY
         );
 
         // we set the branch count manually as the branches are inserted into the soa manually
@@ -173,15 +173,17 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="leavesMinY">the y-component of all leaves minimum vertices.</param>
     /// <param name="leavesMaxX">the x-component of all leaves maximum vertices.</param>
     /// <param name="leavesMaxY">the y-component of all leaves maximum vertices.</param>
+    /// <param name="leafBranchIndices">a span containing the branch indices that all leaves are parented to.</param>
     /// <param name="start">the index to start at when processing the leaf indices.</param>
     /// <param name="length">the total amount of leaf indices to process after <c><paramref name="start"/></c></param>
+    /// <param name="parentIndex">the index of the branch that this newly constructed branch will be parented to.</param>
     /// <param name="writeIndex">the index of the most recently written entry in <c><paramref name="branches"/></c>.</param>
     /// <param name="aabbMinX">the x-component of the minimum vertex of the currently constructed branch.</param>
     /// <param name="aabbMinY">the y-component of the minimum vertex of the currently constructed branch.</param>
     /// <param name="aabbMaxX">the x-component of the maximum vertex of the currently constructed branch.</param>
     /// <param name="aabbMaxY">the y-component of the maximum vertex of the currently constructed branch.</param>
     public static void ConstructBranches(Soa_Branch branches, Span<int> leafIndices, 
-        Span<float> leavesMinX, Span<float> leavesMinY, Span<float> leavesMaxX, Span<float> leavesMaxY, 
+        Span<float> leavesMinX, Span<float> leavesMinY, Span<float> leavesMaxX, Span<float> leavesMaxY, Span<int> leafBranchIndices,
         int start, int length, int parentIndex, ref int writeIndex, ref float aabbMinX, ref float aabbMinY, ref float aabbMaxX, ref float aabbMaxY
     )
     {
@@ -199,6 +201,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             aabbMinY = leavesMinY[leftLeafIndex];
             aabbMaxX = leavesMaxX[leftLeafIndex];
             aabbMaxY = leavesMaxY[leftLeafIndex];
+            leafBranchIndices[leftLeafIndex] = branchIndex;
 
             if(length == 2)
             {
@@ -207,7 +210,11 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
                 Aabb.Union(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY,
                     leavesMinX[rightLeafIndex], leavesMinY[rightLeafIndex], leavesMaxX[rightLeafIndex], leavesMaxY[rightLeafIndex],
                     out aabbMinX, out aabbMinY, out aabbMaxX, out aabbMaxY
-                );                
+                );
+                 
+                // set the leaf branch.
+                leafBranchIndices[rightLeafIndex] = branchIndex;
+
                 leafCount = 2;
             }
             else
@@ -245,12 +252,12 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             parentIndex++;
 
             // left branch.
-            ConstructBranches(branches, leafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, 
+            ConstructBranches(branches, leafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, leafBranchIndices,
                 leftStart, leftLength, parentIndex, ref writeIndex, ref leftMinX, ref leftMinY, ref leftMaxX, ref leftMaxY
             );
 
             // right branch.
-            ConstructBranches(branches, leafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, 
+            ConstructBranches(branches, leafIndices, leavesMinX, leavesMinY, leavesMaxX, leavesMaxY, leafBranchIndices,
                 rightStart, rightLength, parentIndex, ref writeIndex, ref rightMinX, ref rightMinY, ref rightMaxX, ref rightMaxY
             );
 

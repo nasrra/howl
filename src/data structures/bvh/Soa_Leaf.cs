@@ -30,6 +30,14 @@ public class Soa_Leaf : IDisposable
     public int[] Flags;
 
     /// <summary>
+    /// Gets the indices of branches that leaves are parented to.
+    /// </summary>
+    /// <remarks>
+    /// Elements in this array should be valid after a Bounding Volume Hierarchy has been constructed.
+    /// </remarks>
+    public int[] BranchIndices;
+
+    /// <summary>
     /// The count of allocated entries from appending.
     /// </summary>
     public int AppendCount;
@@ -54,6 +62,7 @@ public class Soa_Leaf : IDisposable
         GenIndices = new(length);
         Flags = new int[length];
         Centroids = new(length);
+        BranchIndices = new int[length];
         Length = length;
     }
 
@@ -162,6 +171,8 @@ public class Soa_Leaf : IDisposable
 
         Soa_Vector2.Dispose(soa.Centroids);
         soa.Centroids = null;
+
+        soa.BranchIndices = null;
                         
         soa.Flags = null;
                 
