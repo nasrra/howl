@@ -4,17 +4,17 @@ using Howl.Physics;
 using Howl.Math;
 using Howl.DataStructures;
 using Howl.Generic;
-using static Howl.Physics.SoaPhysicsSystem;
+using static Howl.Physics.PhysicsSystem;
 using static Howl.Math.Shapes.Rectangle;
 using static System.Runtime.InteropServices.CollectionsMarshal;
-using static Howl.Test.Physics.SoaSpatialPairHelpers;
+using static Howl.Test.Physics.Soa_SpatialPairHelpers;
 using static Howl.Physics.PhysicsBody;
 using Howl.Test.Math;
 
 
 namespace Howl.Test.Physics;
 
-public class SOAPhysicsSystemTest
+public class PhysicsSystemTest
 {
     int maxBodies = 10;
     int maxBodyShapeVertices = 100;
@@ -37,7 +37,7 @@ public class SOAPhysicsSystemTest
     /// <param name="state">the physics system state that holds the material data.</param>
     /// <param name="physicsMaterial">the specified matieral to check equality against.</param>
     /// <param name="genIndex">the gen index used to look up the stored material data.</param>
-    private static void AssertPhysicsMaterial(SoaPhysicsSystemState state, in PhysicsMaterial physicsMaterial, GenIndex genIndex)
+    private static void AssertPhysicsMaterial(PhysicsSystemState state, in PhysicsMaterial physicsMaterial, GenIndex genIndex)
     {
         Assert.Equal(physicsMaterial.KineticFriction, GetKinematicFriction(state, genIndex), precision: 4);
         Assert.Equal(physicsMaterial.StaticFriction, GetStaticFriction(state, genIndex), precision: 4);
@@ -60,7 +60,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AddVertices_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);        
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);        
         
         // first data set test.
 
@@ -82,7 +82,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void SetTransform_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
 
         GenIndex genIndex = new GenIndex(1,0);
         float posX = -2.5f;
@@ -124,7 +124,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateCircleCollider_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
         
         float posX;
         float posY;
@@ -175,7 +175,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateCircleRigidBody_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
                 
         float posX;
         float posY;
@@ -255,7 +255,7 @@ public class SOAPhysicsSystemTest
     /// <param name="firstVerticeIndex">the index of the first vertice of a physics body shape.</param>
     /// <param name="rectangle">the rectangle shape to check against the inserted vertices.</param>
     private static void AssertRectangleVerticesClockwise(
-        SoaPhysicsSystemState state,
+        PhysicsSystemState state,
         int firstVerticeIndex,
         in Rectangle rectangle
     )
@@ -291,7 +291,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateRectangleCollider_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
 
         float posX;
         float posY;
@@ -354,7 +354,7 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void AllocateRectangleRigidBody_Test()
     {
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
 
         float posX;
         float posY;
@@ -430,7 +430,7 @@ public class SOAPhysicsSystemTest
     public void TransformPhysicsBodyVertices_Test()
     {        
         
-        SoaPhysicsSystemState state = new SoaPhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
         
         // define and insert circle.
 
@@ -483,10 +483,10 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void SyncEntityTransformsToPhysicsBodies_Test()
     {
-        SoaPhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
         GenIndexAllocator allocator = new();
         ComponentRegistry registry = new(allocator);
-        SoaPhysicsSystem.RegisterComponents(registry);
+        PhysicsSystem.RegisterComponents(registry);
 
         GenIndexList<PhysicsBodyId> physicsBodyIds = registry.Get<PhysicsBodyId>();
         GenIndexList<Transform> transforms = registry.Get<Transform>();
@@ -510,10 +510,10 @@ public class SOAPhysicsSystemTest
     [Fact]
     public void SyncPhysicsBodiesToEntityTransforms_Test()
     {
-        SoaPhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
         GenIndexAllocator allocator = new();
         ComponentRegistry registry = new(allocator);
-        SoaPhysicsSystem.RegisterComponents(registry);
+        PhysicsSystem.RegisterComponents(registry);
         GenIndex cBodyGenIndex = default;
 
         // allocate circle entity and rigidbody.

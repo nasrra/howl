@@ -8,7 +8,7 @@ using Howl.Math.Shapes;
 
 namespace Howl.DataStructures.Bvh;
 
-public class Soa_BoundingVolumeHierarchy : IDisposable
+public class BoundingVolumeHierarchy : IDisposable
 {
 
     /// <summary>
@@ -70,7 +70,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// Creates a new bounding volume hierarchy instance.
     /// </summary>
     /// <param name="length"></param>
-    public Soa_BoundingVolumeHierarchy(int length, int spatialPairsLength)
+    public BoundingVolumeHierarchy(int length, int spatialPairsLength)
     {
         Leaves = new(length);
         Branches = new(length*2);
@@ -85,7 +85,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// Sets the count of the bounding volume hierarchy's internal arrays to zero.
     /// </summary>
     /// <param name="bvh">the bvh to clear.</param>
-    public static void Clear(Soa_BoundingVolumeHierarchy bvh)
+    public static void Clear(BoundingVolumeHierarchy bvh)
     {
         Soa_Leaf.ResetCount(bvh.Leaves);
         Soa_Branch.ResetCount(bvh.Branches);
@@ -110,7 +110,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// Constructs a tree of branches from the leaves store in a bvh instance.
     /// </summary>
     /// <param name="bvh">the bvh instance.</param>
-    public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
+    public static void ConstructTree(BoundingVolumeHierarchy bvh)
     {
 
 
@@ -446,7 +446,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="minY">the y-component of the query area minimum vertex.</param>
     /// <param name="maxX">the x-component of the query area maximum vertex.</param>
     /// <param name="maxY">the y-component of the query area maximum vertex.</param>
-    public static void AreaQuery(Soa_BoundingVolumeHierarchy bvh, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
+    public static void AreaQuery(BoundingVolumeHierarchy bvh, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
     {
         AreaQuery(bvh.Branches, bvh.Leaves, results, minX, minY, maxX, maxY);
     }
@@ -518,7 +518,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="raycastStart">The starting position of the raycast.</param>
     /// <param name="raycastEnd">The end position of the raycast.</param>
     /// <returns>the resultant data found stored in the query location.</returns>
-    public static Soa_QueryResult RaycastQuery(Soa_BoundingVolumeHierarchy bvh, Vector2 raycastStart, Vector2 raycastEnd)
+    public static Soa_QueryResult RaycastQuery(BoundingVolumeHierarchy bvh, Vector2 raycastStart, Vector2 raycastEnd)
     {
         RaycastQuery(bvh.SpatialPairQueryBuffer, bvh.Branches, bvh.Leaves, raycastStart.X, raycastStart.Y, raycastEnd.X, raycastEnd.Y);
         return bvh.SpatialPairQueryBuffer;
@@ -586,7 +586,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
 
 
-    public static void DrawBranches(Howl.Graphics.Camera camera, Soa_BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
+    public static void DrawBranches(Howl.Graphics.Camera camera, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
     {
 
         for(int i = 0; i < bvh.Branches.AppendCount; i++)
@@ -621,7 +621,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         Dispose(this);
     }
 
-    public static void Dispose(Soa_BoundingVolumeHierarchy bvh)
+    public static void Dispose(BoundingVolumeHierarchy bvh)
     {
         if(bvh.Disposed)
             return;
@@ -650,7 +650,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         GC.SuppressFinalize(bvh);
     }
 
-    ~Soa_BoundingVolumeHierarchy()
+    ~BoundingVolumeHierarchy()
     {
         Dispose(this);
     }

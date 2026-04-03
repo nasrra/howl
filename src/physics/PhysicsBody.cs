@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using Howl.ECS;
 using Howl.Math;
 using Howl.Math.Shapes;
-using static Howl.Physics.SoaPhysicsSystem;
+using static Howl.Physics.PhysicsSystem;
 
 namespace Howl.Physics;
 
@@ -30,7 +30,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to query.</param>
     /// <param name="genIndex">the gen index of the physics body.</param>
     /// <returns>a copy of the static friction value.</returns>
-    public static float GetStaticFriction(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static float GetStaticFriction(PhysicsSystemState state, GenIndex genIndex)
     {
         return state.PhysicsMaterials.StaticFriction[genIndex.Index];
     }
@@ -41,7 +41,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to query.</param>
     /// <param name="genIndex">the gen index of the physics body.</param>
     /// <returns>a copy of the kinematic friction value.</returns>
-    public static float GetKinematicFriction(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static float GetKinematicFriction(PhysicsSystemState state, GenIndex genIndex)
     {
         return state.PhysicsMaterials.KineticFriction[genIndex.Index];
     }
@@ -52,7 +52,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to query.</param>
     /// <param name="genIndex">the gen index of the physics body.</param>
     /// <returns>a copy of the density value.</returns>
-    public static float GetDensity(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static float GetDensity(PhysicsSystemState state, GenIndex genIndex)
     {
         return state.PhysicsMaterials.Density[genIndex.Index];
     }
@@ -63,7 +63,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to query.</param>
     /// <param name="genIndex">the gen index of the physics body.</param>
     /// <returns>a copy of the restitution value.</returns>
-    public static float GetRestitution(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static float GetRestitution(PhysicsSystemState state, GenIndex genIndex)
     {
         return state.PhysicsMaterials.Restitution[genIndex.Index];
     }
@@ -91,7 +91,7 @@ public static class PhysicsBody
     /// <param name="state">the physics state storing the body to check.</param>
     /// <param name="genIndex">the gen index used to look up the body.</param>
     /// <returns>true, if the physics body is active; otherwise false.</returns>
-    public static bool IsActive(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static bool IsActive(PhysicsSystemState state, GenIndex genIndex)
     {
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Active) != 0;
     }
@@ -119,7 +119,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state storing the body to check.</param>
     /// <param name="genIndex">the gen index used to look up the body.</param>
     /// <returns>true, if the physics body is of the behavioural mode 'kinematic'; otherwise false.</returns>
-    public static bool IsKinematic(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static bool IsKinematic(PhysicsSystemState state, GenIndex genIndex)
     {
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Kinematic) != 0;
     }
@@ -150,7 +150,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state storing the body to check.</param>
     /// <param name="genIndex">the gen index used to look up the body.</param>
     /// <returns>true, if the physics body slot has been allocated data; otherwise false.</returns>
-    public static bool IsAllocated(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static bool IsAllocated(PhysicsSystemState state, GenIndex genIndex)
     {
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Allocated) != 0;
     }
@@ -178,7 +178,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state storing the body to check.</param>
     /// <param name="genIndex">the gen index used to look up the body.</param>
     /// <returns>true, if the collider mode is 'trigger'; otherwise false.</returns>
-    public static bool IsTrigger(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static bool IsTrigger(PhysicsSystemState state, GenIndex genIndex)
     {
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.Trigger) != 0;        
     }
@@ -189,7 +189,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to query.</param>
     /// <param name="genIndex">the gen index of the physics body.</param>
     /// <returns>true, if the physics body is using rotational physics; otherwise false.</returns>
-    public static bool UsesRotationalPhysics(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static bool UsesRotationalPhysics(PhysicsSystemState state, GenIndex genIndex)
     {
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.RotationalPhysics) != 0;
     }
@@ -217,7 +217,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state storing the body to check.</param>
     /// <param name="genIndex">the gen index used to look up the body.</param>
     /// <returns>true, if the body has a rigidbody; otherwise false.</returns>
-    public static bool HasRigidBody(SoaPhysicsSystemState state, GenIndex genIndex)
+    public static bool HasRigidBody(PhysicsSystemState state, GenIndex genIndex)
     {
         return (state.Flags[genIndex.Index] & PhysicsBodyFlags.RigidBody) != 0;
     }
@@ -278,7 +278,7 @@ public static class PhysicsBody
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateCircleCollider(SoaPhysicsSystemState state, Circle shape, Transform transform, 
+    public static void AllocateCircleCollider(PhysicsSystemState state, Circle shape, Transform transform, 
         bool isKinematic, bool isTrigger, ref GenIndex genIndex
     )
     {
@@ -316,7 +316,7 @@ public static class PhysicsBody
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateCircleRigidBody(SoaPhysicsSystemState state, Circle shape, PhysicsMaterial physicsMaterial, Transform transform,
+    public static void AllocateCircleRigidBody(PhysicsSystemState state, Circle shape, PhysicsMaterial physicsMaterial, Transform transform,
         bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenIndex genIndex
     )
     {
@@ -416,7 +416,7 @@ public static class PhysicsBody
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleCollider(SoaPhysicsSystemState state, Rectangle shape, Transform transform, 
+    public static void AllocateRectangleCollider(PhysicsSystemState state, Rectangle shape, Transform transform, 
         bool isKinematic, bool isTrigger, ref GenIndex genIndex
     )
     {
@@ -454,7 +454,7 @@ public static class PhysicsBody
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genIndex">the associated gen index to the newly allocated body.</param>
-    public static void AllocateRectangleRigidBody(SoaPhysicsSystemState state, Rectangle shape, PhysicsMaterial physicsMaterial, Transform transform, 
+    public static void AllocateRectangleRigidBody(PhysicsSystemState state, Rectangle shape, PhysicsMaterial physicsMaterial, Transform transform, 
         bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenIndex genIndex
     )
     {

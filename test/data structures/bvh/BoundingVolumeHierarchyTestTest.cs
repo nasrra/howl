@@ -8,14 +8,14 @@ using Howl.ECS;
 
 namespace Howl.Test.DataStructures.Bvh;
 
-public class Soa_BoundingVolumeHierarchyTest
+public class BoundingVolumeHierarchyTest
 {
     [Fact]
     public void Constructor_Test()
     {
         for(int length = 0; length < 6; length++)
         {            
-            Soa_BoundingVolumeHierarchy bvh = new(length, 1024);
+            BoundingVolumeHierarchy bvh = new(length, 1024);
 
             RadixSortBufferAssert.LengthEqual(length, bvh.RadixSortBuffer);
             Soa_SpatialPairAssert.LengthEqual(1024, bvh.SpatialPairs);
@@ -34,7 +34,7 @@ public class Soa_BoundingVolumeHierarchyTest
     {
         for(int length = 0; length < 25; length++)
         {            
-            Soa_BoundingVolumeHierarchy bvh = new(length, 1024);
+            BoundingVolumeHierarchy bvh = new(length, 1024);
             for(int i = 0 ; i < length; i++)
             {
                 Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0,0,0,0);
@@ -43,7 +43,7 @@ public class Soa_BoundingVolumeHierarchyTest
 
             Assert.Equal(length, bvh.Leaves.AppendCount);
             Assert.Equal(length, bvh.Branches.AppendCount);
-            Soa_BoundingVolumeHierarchy.Clear(bvh);
+            BoundingVolumeHierarchy.Clear(bvh);
             Assert.Equal(0, bvh.Leaves.AppendCount);
             Assert.Equal(0, bvh.Branches.AppendCount);
         }
@@ -54,7 +54,7 @@ public class Soa_BoundingVolumeHierarchyTest
     {
         int length = 6;
         Soa_QueryResult results = new(length*2);
-        Soa_BoundingVolumeHierarchy bvh = new(length, 1024);
+        BoundingVolumeHierarchy bvh = new(length, 1024);
         
         for(int i = 0; i < length; i++)
         {
@@ -69,16 +69,16 @@ public class Soa_BoundingVolumeHierarchyTest
             Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidX, centroidY, index, generation, flags);
         }
         
-        Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
+        BoundingVolumeHierarchy.ConstructTree(bvh);
 
         // bvh query.
-        Soa_BoundingVolumeHierarchy.AreaQuery(bvh, results, 0,0,2,2);
+        BoundingVolumeHierarchy.AreaQuery(bvh, results, 0,0,2,2);
         Assert.Equal(2,results.AppendCount);
         Soa_QueryResultAssert.EntryEquals(1,2,3,0,results);
         Soa_QueryResultAssert.EntryEquals(2,3,4,1,results);
     
         // decomposed bvh query.
-        Soa_BoundingVolumeHierarchy.AreaQuery(bvh.Branches, bvh.Leaves, results, 2,2,5,5);
+        BoundingVolumeHierarchy.AreaQuery(bvh.Branches, bvh.Leaves, results, 2,2,5,5);
         Assert.Equal(3,results.AppendCount);
         Soa_QueryResultAssert.EntryEquals(3,4,5,0,results);
         Soa_QueryResultAssert.EntryEquals(4,5,6,1,results);
@@ -90,7 +90,7 @@ public class Soa_BoundingVolumeHierarchyTest
     {        
         int length = 5;
         Soa_QueryResult results = new(length*2);
-        Soa_BoundingVolumeHierarchy bvh = new(length, 1024);
+        BoundingVolumeHierarchy bvh = new(length, 1024);
         
         Span<int> eOwnerIndices     = [1,2,3,4];
         Span<int> eOwnerGenerations = [2,3,4,5];
@@ -114,9 +114,9 @@ public class Soa_BoundingVolumeHierarchyTest
             Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidX, centroidY, index, generation, flags);
         }        
 
-        Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
+        BoundingVolumeHierarchy.ConstructTree(bvh);
 
-        Soa_BoundingVolumeHierarchy.ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, results);
+        BoundingVolumeHierarchy.ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, results);
     
         Assert.Equal(4, bvh.SpatialPairs.AppendCount);
         for(int i = 0; i < bvh.SpatialPairs.AppendCount; i++)
@@ -131,14 +131,14 @@ public class Soa_BoundingVolumeHierarchyTest
 
         // == no spatial pairs found. ==
         
-        Soa_BoundingVolumeHierarchy.Clear(bvh);
+        BoundingVolumeHierarchy.Clear(bvh);
 
         for(int i = 0; i < length; i++)
         {
             Soa_Leaf.Append(bvh.Leaves, i, i, i, i, i, i, i+1, i+2, i+3);
         }
 
-        Soa_BoundingVolumeHierarchy.ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, results);
+        BoundingVolumeHierarchy.ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, results);
 
         Assert.Equal(0, bvh.SpatialPairs.AppendCount);
     }
@@ -161,12 +161,12 @@ public class Soa_BoundingVolumeHierarchyTest
         //          - Branch (leaf 3-4)
         //
         
-        Soa_BoundingVolumeHierarchy bvh = new(12, 1024);
+        BoundingVolumeHierarchy bvh = new(12, 1024);
         int j = 0;
 
         for(int q = 0; q < 2; q++)
         {
-            Soa_BoundingVolumeHierarchy.Clear(bvh);
+            BoundingVolumeHierarchy.Clear(bvh);
 
             // leaf 0.
             float minX0 = 0;
@@ -224,7 +224,7 @@ public class Soa_BoundingVolumeHierarchyTest
             Soa_Leaf.Append(bvh.Leaves, minX4, minY4, maxX4, maxY4, centroidX4, centroidY4, index4, gen4, flags4);
 
             // construct.
-            Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
+            BoundingVolumeHierarchy.ConstructTree(bvh);
             
             // expected branch data.
             float[] eMinX           = [minX1,minX1,minX2,minX2,minX3];
@@ -261,7 +261,7 @@ public class Soa_BoundingVolumeHierarchyTest
     [Fact]
     public void RaycastQuery_Test()
     {
-        Soa_BoundingVolumeHierarchy bvh = new(100, 256);
+        BoundingVolumeHierarchy bvh = new(100, 256);
 
         // leaf 1 
         Aabb leaf1AABB = new Aabb(0,0,10,10);
@@ -281,22 +281,22 @@ public class Soa_BoundingVolumeHierarchyTest
             leaf2GenIndex.Index, leaf2GenIndex.Generation, leaf2Flag
         );
 
-        Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
+        BoundingVolumeHierarchy.ConstructTree(bvh);
 
         // fail to interset.
         // Span<QueryResult> zeroResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(-1,-1), new Vector2(-10,-10));
-        Soa_QueryResult zeroResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(-1,-1), new Vector2(-10,-10));
+        Soa_QueryResult zeroResult = BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(-1,-1), new Vector2(-10,-10));
         Assert.Equal(0, zeroResult.AppendCount);
 
         // find single intersect.
-        Soa_QueryResult singleResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(5,0), new Vector2(5,30));
+        Soa_QueryResult singleResult = BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(5,0), new Vector2(5,30));
         Assert.Equal(1, singleResult.AppendCount);
         Assert.Equal(leaf1GenIndex.Index, singleResult.GenIndices.Indices[0]);
         Assert.Equal(leaf1GenIndex.Generation, singleResult.GenIndices.Generations[0]);
         Assert.Equal(leaf1Flag, singleResult.Flags[0]);
 
         // find double intersect.
-        Soa_QueryResult doubleResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(0,0), new Vector2(40,40));
+        Soa_QueryResult doubleResult = BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(0,0), new Vector2(40,40));
         Assert.Equal(2, doubleResult.AppendCount);
         Assert.Equal(leaf1GenIndex.Index, doubleResult.GenIndices.Indices[0]);
         Assert.Equal(leaf1GenIndex.Generation, doubleResult.GenIndices.Generations[0]);
@@ -311,14 +311,14 @@ public class Soa_BoundingVolumeHierarchyTest
     {
         for(int length = 0; length < 6; length++)
         {
-            Soa_BoundingVolumeHierarchy bvh = new(length, 1024);
+            BoundingVolumeHierarchy bvh = new(length, 1024);
             for(int i = 0; i < length; i++)
             {
                 Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0,0,0,0);
                 Soa_Branch.Append(bvh.Branches, 0,0,0,0,0,0,0,0,0);
             }
 
-            Soa_BoundingVolumeHierarchy.Dispose(bvh);
+            BoundingVolumeHierarchy.Dispose(bvh);
             
             Assert.Null(bvh.RadixSortBuffer);                
             Assert.Null(bvh.SpatialPairs);

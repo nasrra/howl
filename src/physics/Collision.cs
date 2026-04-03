@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Runtime.InteropServices;
-using Howl.ECS;
-using Howl.Math;
 
 namespace Howl.Physics;
 
@@ -12,7 +8,7 @@ public unsafe struct Collision
     /// <summary>
     /// A comparer to sort collisions in an ascending order in relation to the owners index.
     /// </summary>
-    public static Comparer<Collision> AscendingOwnerIndexComparer = Comparer<Collision>.Create((a, b) => a.Owner.Index.CompareTo(b.Owner.Index));
+    public static Comparer<Collision> AscendingOwnerIndexComparer = Comparer<Collision>.Create((a, b) => a.OwnerIndex.CompareTo(b.OwnerIndex));
 
     /// <summary>
     /// Gets the maximum amount of contact points for a collision.
@@ -23,24 +19,34 @@ public unsafe struct Collision
     public const int MaxContactPoints = 2;
 
     /// <summary>
-    /// Gets the owning collider of this collision.
+    /// Gets the index of the owning physics body for this collision.
     /// </summary>
-    public GenIndex Owner;
+    public int OwnerIndex;
 
     /// <summary>
-    /// Gets the other collider of this collision.
+    /// Gets and sets the generation of the owning physics body for this collision.
     /// </summary>
-    public GenIndex Other;
+    public int OwnerGeneration;
 
     /// <summary>
-    /// Gets the owner's parameters.
+    /// Gets and sets the index of the other physics body of this collision.
     /// </summary>
-    public ColliderParameters OwnerParameters;
+    public int OtherIndex;
 
     /// <summary>
-    /// Gets the other's parameters.
+    /// Gets and sets the generation of the other physics body for this collision.
     /// </summary>
-    public ColliderParameters OtherParameters;
+    public int OtherGeneration;
+
+    /// <summary>
+    /// Gets and sets a cyop of the owner's physics body flags.
+    /// </summary>
+    public PhysicsBodyFlags OwnerFlags;
+
+    /// <summary>
+    /// Gets and sets a copy of the other's physics body flags.
+    /// </summary>
+    public PhysicsBodyFlags OtherFlags;
 
     /// <summary>
     /// Gets and sets the x-component of the collision normal.
@@ -115,34 +121,39 @@ public unsafe struct Collision
     /// <param name="yContactPoints">the y-positional value for the contact points.</param>
     /// <param name="ownerColliderShapeCenter">the center of the owner's collider shape</param>
     /// <param name="otherColliderShapeCenter">the center of the other's collider shape</param>
-    /// <param name="normal">the normal of the collision.</param>
+    /// <param name="normalY">the normal of the collision.</param>
     /// <param name="depth">the depth of the collision.</param>
     public Collision(
-        GenIndex owner, 
-        GenIndex other, 
-        ColliderParameters ownerParameters, 
-        ColliderParameters otherParameters, 
+        int ownerIndex,
+        int ownerGeneration,
+        int otherIndex,
+        int otherGeneration,
+        PhysicsBodyFlags ownerFlags, 
+        PhysicsBodyFlags otherFlags, 
         Span<float> xContactPoints,
         Span<float> yContactPoints,
         float normalX,
         float normalY,
-        float ownerColliderShapeCenterX,
-        float ownerColliderShapeCenterY,
-        float otherColliderShapeCenterX,
-        float otherColliderShapeCenterY,
-        float depth)
+        float ownerShapeCenterX,
+        float ownerShapeCenterY,
+        float otherShapeCenterX,
+        float otherShapeCenterY,
+        float depth
+    )
     {
-        Owner = owner;
-        Other = other;
-        OwnerParameters = ownerParameters;
-        OtherParameters = otherParameters;
+        OwnerIndex      = ownerIndex;
+        OwnerGeneration = ownerGeneration;
+        OtherIndex      = otherIndex;
+        OtherGeneration = otherGeneration;
+        OwnerFlags      = ownerFlags;
+        OtherFlags      = otherFlags;
         NormalX = normalX;
         NormalY = normalY;
         Depth = depth;
-        OwnerColliderShapeCenterX = ownerColliderShapeCenterX;
-        OwnerColliderShapeCenterY = ownerColliderShapeCenterY;
-        OtherColliderShapeCenterX = otherColliderShapeCenterX;
-        OtherColliderShapeCenterY = otherColliderShapeCenterY;
+        OwnerColliderShapeCenterX = ownerShapeCenterX;
+        OwnerColliderShapeCenterY = ownerShapeCenterY;
+        OtherColliderShapeCenterX = otherShapeCenterX;
+        OtherColliderShapeCenterY = otherShapeCenterY;
         SetContactPoints(ref this, xContactPoints, yContactPoints);
     }
 

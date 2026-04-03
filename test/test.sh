@@ -27,7 +27,7 @@ TEST_NAME=$1
 declare -A TEST_MAP
 TEST_MAP=(
     ["AABB"]="${SHAPES_NAMESPACE}AABBTest"
-    ["BoundingVolumeHierarchy"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Soa_BoundingVolumeHierarchyTest"
+    ["BoundingVolumeHierarchy"]="${DATA_STRUCTURES_NAMESPACE}Bvh.BoundingVolumeHierarchyTest"
     ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
     ["ComponentType"]="${ECS_NAMESPACE}ComponentTypeTest"
     ["Circle"]="${SHAPES_NAMESPACE}CircleTest"
@@ -44,7 +44,7 @@ TEST_MAP=(
     ["MonoGameVector2Ext"]="${MONOGAME_MATH_NAMESPACE}Vector2ExtensionsTest"
     ["MonoGameVector3Ext"]="${MONOGAME_MATH_NAMESPACE}Vector3ExtensionsTest"
     ["MortonCode"]="${ALGORITHMS_NAMESPACE}MortonCode"
-    ["PhysicsSystem"]="${PHYSICS_NAMESPACE}SOAPhysicsSystemTest"
+    ["PhysicsSystem"]="${PHYSICS_NAMESPACE}PhysicsSystemTest"
     ["Polygon16"]="${SHAPES_NAMESPACE}Polygon16Test"
     ["PolygonRectangle"]="${SHAPES_NAMESPACE}PolygonRectangleTest"
     ["RadixSort"]="${SORTING_NAMESPACE}RadixSortTest"
