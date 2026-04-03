@@ -13,6 +13,7 @@ GRAPHICS_NAMESPACE="${NAMESPACE}Graphics."
 DATA_STRUCTURES_NAMESPACE="${NAMESPACE}DataStructures."
 ALGORITHMS_NAMESPACE="${NAMESPACE}Algorithms."
 SORTING_NAMESPACE="${ALGORITHMS_NAMESPACE}Sorting."
+COLLECTIONS_NAMESPACE="${NAMESPACE}Collections."
 
 VENDORS_NAMESPACE="${NAMESPACE}Vendors."
 
@@ -65,6 +66,7 @@ TEST_MAP=(
     ["Soa_Vector2"]="${MATH_NAMESPACE}Soa_Vector2Test"
     ["Soa_Vector2Slice"]="${MATH_NAMESPACE}Soa_Vector2SliceTest"
     ["Swap"]="${ALGORITHMS_NAMESPACE}SwapTest"
+    ["SwapBackArray"]="${COLLECTIONS_NAMESPACE}SwapBackArray_Test"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"
     ["Text4096"]="${GRAPHICS_NAMESPACE}Text.Text4096Test"
     ["Transform"]="${MATH_NAMESPACE}TransformTest"
