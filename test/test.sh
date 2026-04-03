@@ -65,6 +65,7 @@ TEST_MAP=(
     ["Soa_Transform"]="${MATH_NAMESPACE}Soa_TransformTest"
     ["Soa_Vector2"]="${MATH_NAMESPACE}Soa_Vector2Test"
     ["Soa_Vector2Slice"]="${MATH_NAMESPACE}Soa_Vector2SliceTest"
+    ["StackArray"]="${COLLECTIONS_NAMESPACE}StackArray_Test"
     ["Swap"]="${ALGORITHMS_NAMESPACE}SwapTest"
     ["SwapBackArray"]="${COLLECTIONS_NAMESPACE}SwapBackArray_Test"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"

@@ -110,6 +110,8 @@ public class SwapBackArray<T> : IDisposable
 
         array.Data = null;
 
+        array.Count = 0;
+
         GC.SuppressFinalize(array);
     }
 

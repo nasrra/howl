@@ -96,6 +96,9 @@ public class SwapBackArray_Test
             Assert.Equal(length, nums.Count);
 
             SwapBackArray.Dispose(nums);
+
+            Assert.Equal(0, nums.Count);
+            Assert.True(nums.Disposed);
         }
     }
 }
