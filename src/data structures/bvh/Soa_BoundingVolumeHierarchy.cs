@@ -138,11 +138,13 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         float scaleX = 0;
         float scaleY = 0;
         MortonCode.CalculateScaleFactor(rangeX, rangeY, ref scaleX, ref scaleY);
+        // MortonCode.CalculateMortonCodes(bvh.Leaves.Centroids.X, bvh.Leaves.Centroids.Y, bvh.MortonCentroids, minX, minY, scaleX, scaleY, 
+        //     bvh.MortonCentroids.Length
+        // );
         for(int i = 0; i < bvh.Leaves.AppendCount; i++)
         {
             bvh.MortonCentroids[i] = MortonCode.CalculateMortonCode(bvh.Leaves.Centroids.X[i], bvh.Leaves.Centroids.Y[i], minX, minY, scaleX, scaleY);
         }
-
         a.Stop();
 
         double at = a.Elapsed.TotalMilliseconds;
@@ -156,7 +158,7 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
 
 
         
-        b.Restart();
+        // b.Restart();
         
         RadixSort.IndexedAscend(bvh.MortonCentroids, bvh.MortonLeafIds, bvh.RadixSortBuffer, 0, bvh.Leaves.AppendCount);
     
@@ -167,11 +169,11 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         float aabbMaxX = 0;
         float aabbMaxY = 0;
 
-        b.Stop();
+        // b.Stop();
 
-        double bt = b.Elapsed.TotalMilliseconds;
+        // double bt = b.Elapsed.TotalMilliseconds;
 
-        c.Restart();
+        // c.Restart();
 
         ConstructBranches(bvh.Branches, bvh.MortonLeafIds, bvh.Leaves.Aabbs.MinX, bvh.Leaves.Aabbs.MinY, bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, 
             bvh.Leaves.BranchIndices, 0, bvh.Leaves.AppendCount, parentIndex, ref branchCount, ref aabbMinX, ref aabbMinY, ref aabbMaxX, ref aabbMaxY
@@ -183,14 +185,14 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         // construction of all branches, the data is contiguous (no holes in the array entries).
         bvh.Branches.AppendCount = branchCount;
 
-        c.Stop();
-        double ct = c.Elapsed.TotalMilliseconds;
+        // c.Stop();
+        // double ct = c.Elapsed.TotalMilliseconds;
 
 
-        d.Restart();
-        ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, bvh.SpatialPairQueryBuffer);        
-        d.Stop();
-        double dt = d.Elapsed.TotalMilliseconds;
+        // d.Restart();
+        ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, bvh.SpatialPairQueryBuffer);
+        // d.Stop();
+        // double dt = d.Elapsed.TotalMilliseconds;
 
     }
 
@@ -362,51 +364,16 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     }
 
 
-    public static void ConstructSpatialPairs_Fast(Soa_Branch branches, Soa_Leaf leaves, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
-    {
-        Soa_QueryResult.Clear(results);
-        Span<float> branchMinX = branches.Aabbs.MinX;
-        Span<float> branchMinY = branches.Aabbs.MinY;
-        Span<float> branchMaxX = branches.Aabbs.MaxX;
-        Span<float> branchMaxY = branches.Aabbs.MaxY;
-        Span<int> branchSubtreeSizes = branches.SubtreeSizes;
-        Span<int> branchLeafCounts = branches.LeafCounts;
-        Span<int> leftLeafIndices = branches.LeftLeafIndices;
-        Span<int> rightLeafIndices = branches.RightLeafIndices;
 
-        int i = 0;
-        while(i < branches.AppendCount)
-        {
-            if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[i], branchMinY[i], branchMaxX[i], branchMaxY[i]))
-            {
-                // skip the entire subtree.
-                i+= branchSubtreeSizes[i];
-                continue;
-            }
 
-            int leafCount = branchLeafCounts[i];
+    /*******************
+    
+        Area Querying.
+    
+    ********************/
 
-            switch (leafCount)
-            {
-                case 1:
-                    // left leaf index should always be populated for branches with leaf(s) attatched.
-                    Soa_Leaf.Query(leaves, results, [leftLeafIndices[i]], minX, minY, maxX, maxY);
-                    break;
-                case 2:
-                    Soa_Leaf.Query(leaves, results, [leftLeafIndices[i], rightLeafIndices[i]], minX, minY, maxX, maxY);
-                    break;
-                case 0:
-                    // do nothing..., just go to next branch in the tree..
-                    break;
-                default:
-                    System.Diagnostics.Debug.Assert(false);
-                    break;
-            }
 
-            // go to next branch in the tree.
-            i++;
-        }
-    }
+
 
     /// <summary>
     /// Queries a constructed tree of branches for any that overlap within a given area.
@@ -482,6 +449,129 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     public static void AreaQuery(Soa_BoundingVolumeHierarchy bvh, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
     {
         AreaQuery(bvh.Branches, bvh.Leaves, results, minX, minY, maxX, maxY);
+    }
+
+
+
+
+    /*******************
+    
+        Raycasting.
+    
+    ********************/
+
+
+
+
+    /// <summary>
+    /// Queries a span of leaves for any data the may overlap a given raycast.
+    /// </summary>
+    /// <remarks>
+    /// Note: result writing is non-destructive, any found data will be appended to the results list.
+    /// </remarks>
+    /// <param name="results">The list of results to write to.</param>
+    /// <param name="leaves">the leaf data set.</param>
+    /// <param name="leafIndices">The leaves to query.</param>
+    /// <param name="raycastStart">The starting position of the raycast.</param>
+    /// <param name="raycastEnd">The end position of the raycast.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void RaycastLeaves(Soa_QueryResult results, Soa_Leaf leaves, Span<int> leafIndices, Vector2 raycastStart, Vector2 raycastEnd)
+    {
+        RaycastLeaves(results, leaves, leafIndices, raycastStart.X, raycastStart.Y, raycastEnd.X, raycastEnd.Y);
+    }
+
+    /// <summary>
+    /// Queries a span of leaves for any data the may overlap a given raycast.
+    /// </summary>
+    /// <remarks>
+    /// Note: result writing is non-destructive, any found data will be appended to the results list.
+    /// </remarks>
+    /// <param name="results">The list of results to write to.</param>
+    /// <param name="leaves">the leaf data set.</param>
+    /// <param name="leafIndices">The leaves to query.</param>
+    /// <param name="raycastStartX">the raycast start position x-component.</param>
+    /// <param name="raycastStartY">the raycast start position y-component.</param>
+    /// <param name="raycastEndX">the raycast end position x-component.</param>
+    /// <param name="raycastEndY">the raycast end position y-component.</param>
+    private static void RaycastLeaves(Soa_QueryResult results, Soa_Leaf leaves, Span<int> leafIndices, float raycastStartX, float raycastStartY, float raycastEndX, float raycastEndY)
+    {        
+        for(int i = 0; i < leafIndices.Length; i++)
+        {
+            int leaf = leafIndices[i];
+            if(Aabb.LineIntersect(
+                leaves.Aabbs.MinX[leaf], leaves.Aabbs.MinY[leaf], leaves.Aabbs.MaxX[leaf], leaves.Aabbs.MaxY[leaf], 
+                raycastStartX, raycastStartY, raycastEndX, raycastEndY
+            ))
+            {
+                Soa_QueryResult.Append(results, leaves.GenIndices.Indices[leaf], leaves.GenIndices.Generations[leaf], leaves.Flags[leaf]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Queries the a built bounding-volume-hierarchy tree for any given leaves that may overlap a given raycast.
+    /// </summary>
+    /// <remarks>
+    /// Note: this function should not be called in parallel.
+    /// </remarks>
+    /// <param name="bvh">the bounding volume hierarchy.</param>
+    /// <param name="raycastStart">The starting position of the raycast.</param>
+    /// <param name="raycastEnd">The end position of the raycast.</param>
+    /// <returns>the resultant data found stored in the query location.</returns>
+    public static Soa_QueryResult RaycastQuery(Soa_BoundingVolumeHierarchy bvh, Vector2 raycastStart, Vector2 raycastEnd)
+    {
+        RaycastQuery(bvh.SpatialPairQueryBuffer, bvh.Branches, bvh.Leaves, raycastStart.X, raycastStart.Y, raycastEnd.X, raycastEnd.Y);
+        return bvh.SpatialPairQueryBuffer;
+    }
+
+    /// <summary>
+    /// Queries the a built bounding-volume-hierarchy tree for any given leaves that may overlap a given raycast.
+    /// </summary>
+    /// <remarks>
+    /// Note: result writing is destructive, the list will be cleared before writing to it.
+    /// </remarks>    
+    /// <param name="results">The list of results to write to.</param>
+    /// <param name="branches">the branches to query.</param>
+    /// <param name="leaves">the leaf data associated with each branch.</param>
+    /// <param name="raycastStartX">the x-component of the raycast starting position.</param>
+    /// <param name="raycastStartY">the y-component of the raycast starting position.</param>
+    /// <param name="raycastEndX">the x-component of the raycast ending position.</param>
+    /// <param name="raycastEndY">the y-component of the raycast ending position.</param>
+    public static void RaycastQuery(Soa_QueryResult results, Soa_Branch branches, Soa_Leaf leaves, float raycastStartX, float raycastStartY, float raycastEndX, float raycastEndY)
+    {
+        Soa_QueryResult.Clear(results);
+
+        int i = 0;
+
+        while (i < branches.AppendCount)
+        {
+            if (Aabb.LineIntersect(branches.Aabbs.MinX[i], branches.Aabbs.MinY[i], branches.Aabbs.MaxX[i], branches.Aabbs.MaxY[i], raycastStartX, raycastStartY, raycastEndX, raycastEndY) == false)
+            {
+                // skip entire subtree
+                i += branches.SubtreeSizes[i];
+                continue;
+            }
+
+            int leafCount = branches.LeafCounts[i];
+
+            if (leafCount > 0)
+            {
+                if(leafCount > 0)
+                {
+                    RaycastLeaves(results, leaves, [branches.LeftLeafIndices[i], branches.RightLeafIndices[i]], raycastStartX, raycastStartY, raycastEndX, raycastEndY);                    
+                }
+                else
+                {                    
+                    RaycastLeaves(results, leaves, [branches.LeftLeafIndices[i]], raycastStartX, raycastStartY, raycastEndX, raycastEndY);
+                }
+                i++;
+            }
+            else
+            {
+                // descend to left child (always i + 1)
+                i++;
+            }
+        }
     }
 
 

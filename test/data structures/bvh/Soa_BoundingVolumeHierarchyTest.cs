@@ -4,6 +4,7 @@ using Howl.Math;
 using Howl.Test.Math;
 using Howl.Math.Shapes;
 using Howl.DataStructures;
+using Howl.ECS;
 
 namespace Howl.Test.DataStructures.Bvh;
 
@@ -255,6 +256,54 @@ public class Soa_BoundingVolumeHierarchyTest
             }
         }
 
+    }
+
+    [Fact]
+    public void RaycastQuery_Test()
+    {
+        Soa_BoundingVolumeHierarchy bvh = new(100, 256);
+
+        // leaf 1 
+        Aabb leaf1AABB = new Aabb(0,0,10,10);
+        Vector2 leaf1Centroid = Aabb.CalculateCentroid(leaf1AABB);
+        GenIndex leaf1GenIndex = new GenIndex(0,0);
+        int leaf1Flag = 0;
+        Soa_Leaf.Append(bvh.Leaves, leaf1AABB.MinX, leaf1AABB.MinY, leaf1AABB.MaxX, leaf1AABB.MaxY, leaf1Centroid.X, leaf1Centroid.Y, 
+            leaf1GenIndex.Index, leaf1GenIndex.Generation, leaf1Flag
+        );
+
+        // leaf 2
+        Aabb leaf2AABB = new Aabb(10,10,20,20);
+        Vector2 leaf2Centroid = Aabb.CalculateCentroid(leaf2AABB);
+        GenIndex leaf2GenIndex = new GenIndex(1,0);
+        int leaf2Flag = 0;
+        Soa_Leaf.Append(bvh.Leaves, leaf2AABB.MinX, leaf2AABB.MinY, leaf2AABB.MaxX, leaf2AABB.MaxY, leaf2Centroid.X, leaf2Centroid.Y, 
+            leaf2GenIndex.Index, leaf2GenIndex.Generation, leaf2Flag
+        );
+
+        Soa_BoundingVolumeHierarchy.ConstructTree(bvh);
+
+        // fail to interset.
+        // Span<QueryResult> zeroResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(-1,-1), new Vector2(-10,-10));
+        Soa_QueryResult zeroResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(-1,-1), new Vector2(-10,-10));
+        Assert.Equal(0, zeroResult.AppendCount);
+
+        // find single intersect.
+        Soa_QueryResult singleResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(5,0), new Vector2(5,30));
+        Assert.Equal(1, singleResult.AppendCount);
+        Assert.Equal(leaf1GenIndex.Index, singleResult.GenIndices.Indices[0]);
+        Assert.Equal(leaf1GenIndex.Generation, singleResult.GenIndices.Generations[0]);
+        Assert.Equal(leaf1Flag, singleResult.Flags[0]);
+
+        // find double intersect.
+        Soa_QueryResult doubleResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(0,0), new Vector2(40,40));
+        Assert.Equal(2, doubleResult.AppendCount);
+        Assert.Equal(leaf1GenIndex.Index, doubleResult.GenIndices.Indices[0]);
+        Assert.Equal(leaf1GenIndex.Generation, doubleResult.GenIndices.Generations[0]);
+        Assert.Equal(leaf1Flag, doubleResult.Flags[0]);
+        Assert.Equal(leaf2GenIndex.Index, doubleResult.GenIndices.Indices[1]);
+        Assert.Equal(leaf2GenIndex.Generation, doubleResult.GenIndices.Generations[1]);
+        Assert.Equal(leaf2Flag, doubleResult.Flags[1]);
     }
 
     [Fact]

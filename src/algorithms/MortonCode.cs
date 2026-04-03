@@ -1,9 +1,16 @@
+using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 
 namespace Howl.Algorithms;
 
 public static class MortonCode
 {
+    public const uint ExpandBitsMask1 = 0x00FF00FF;
+    public const uint ExpandBitsMask2 = 0x0F0F0F0F;
+    public const uint ExpandBitsMask3 = 0x33333333;
+    public const uint ExpandBitsMask4 = 0x55555555;
+
     /// <summary>
     /// Spreads 16 bits into 32 bits by inserting a 0 between each bit.
     /// </summary>
@@ -22,11 +29,22 @@ public static class MortonCode
         // expanded = 00000000 00000000 00010001 00010001
         // ----------------------------------------------
 
-        value = (value | (value << 8)) & 0x00FF00FF;
-        value = (value | (value << 4)) & 0x0F0F0F0F;
-        value = (value | (value << 2)) & 0x33333333;
-        value = (value | (value << 1)) & 0x55555555;
-        return value;
+        // note: bmi2 is used here instead of SIMD morton codes as 
+        // bit shifting is the biggest operation here, which is a 'horizontal'
+        // problem. Bits in the same memory location need to be shifted from right to left.
+        // SIMD is good for 'vertical' problems, like array to array math, where each 'lane'
+        // of the Vector is operted on together.
+
+        if (Bmi2.IsSupported)
+        {
+            // 0x55555555 is the mask for every other bit.
+            return Bmi2.ParallelBitDeposit(value, 0x55555555);
+        }
+        value = (value | (value << 8)) & ExpandBitsMask1;
+        value = (value | (value << 4)) & ExpandBitsMask2;
+        value = (value | (value << 2)) & ExpandBitsMask3;
+        value = (value | (value << 1)) & ExpandBitsMask4;
+        return value;            
     }  
 
     /// <summary>
@@ -93,5 +111,30 @@ public static class MortonCode
         // (expanded uy << 1) | exp ux  = 00000000 00000000 00110010 00110011
         // ------------------------------------------------------------------
         return ExpandBits(uy) << 1 | ExpandBits(ux);
+    }
+
+    /// <summary>
+    /// Interleaves the bits of pairs of 32-bit values (x,y) into 1-dimensional 32-bit Morton codes.
+    /// </summary>
+    /// <remarks>
+    /// <c><paramref name="x"/></c> values should never be lower than <c><paramref name="minX"/></c>.
+    /// <c><paramref name="y"/></c> values should never be lower than <c><paramref name="minY"/></c>
+    /// </remarks>
+    /// <param name="x">the x-values of the 32-bit pairs</param>
+    /// <param name="y">the y-values of the 32-bit pairs.</param>
+    /// <param name="mortonCodes">output for the calculated morton codes.</param>
+    /// <param name="minX">the minimum x-value in the pair's dataset/collection.</param>
+    /// <param name="minY">the minimum x-value in the pair's dataset/collection.</param>
+    /// <param name="scaleX">the scaling factor for the pair's dataset/collection to keep the x value within a 16-bit range.</param>
+    /// <param name="scaleY">the scaling factor for the pair's dataset/collection to keep the y value within a 16-bit range.</param>
+    /// <param name="length">the total amount of pairs to process.</param>
+    public static void CalculateMortonCodes(Span<float> x, Span<float> y, Span<uint> mortonCodes, float minX, float minY, float scaleX, float scaleY, 
+        int length
+    )
+    {
+        for(int i = 0; i < length; i++)
+        {
+            mortonCodes[i] = CalculateMortonCode(x[i], y[i], minX, minY, scaleX, scaleY);
+        }   
     }
 }
