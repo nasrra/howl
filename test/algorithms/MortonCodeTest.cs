@@ -55,7 +55,10 @@ public class MortonCodeTest
 
         float rangeX = Howl.Math.Math.Abs(maxX - minX);
         float rangeY = Howl.Math.Math.Abs(maxY - minY);
+        float scaleX = 0;
+        float scaleY = 0;
 
-        Assert.Equal((uint)3557148913, MortonCode.CalculateMortonCode(13, 63, minX, minY, rangeX, rangeY));
+        MortonCode.CalculateScaleFactor(rangeX, rangeY, ref scaleX, ref scaleY);
+        Assert.Equal((uint)3557148913, MortonCode.CalculateMortonCode(13, 63, minX, minY, scaleX, scaleY));
     }
 }

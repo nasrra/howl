@@ -101,7 +101,10 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     ********************/
 
 
-
+    static Stopwatch a =  new();
+    static Stopwatch b =  new();
+    static Stopwatch c =  new();
+    static Stopwatch d =  new();
 
     /// <summary>
     /// Constructs a tree of branches from the leaves store in a bvh instance.
@@ -109,6 +112,8 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
     /// <param name="bvh">the bvh instance.</param>
     public static void ConstructTree(Soa_BoundingVolumeHierarchy bvh)
     {
+
+
         Soa_Branch.ResetCount(bvh.Branches);
         
         // get the spatial data for morton code calculations.
@@ -127,11 +132,20 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         float rangeX = Math.Math.Abs(maxX - minX);
         float rangeY = Math.Math.Abs(maxY - minY);
 
+        a.Restart();
+
         // get the morton code for sorting each of the centroids.
+        float scaleX = 0;
+        float scaleY = 0;
+        MortonCode.CalculateScaleFactor(rangeX, rangeY, ref scaleX, ref scaleY);
         for(int i = 0; i < bvh.Leaves.AppendCount; i++)
         {
-            bvh.MortonCentroids[i] = MortonCode.CalculateMortonCode(bvh.Leaves.Centroids.X[i], bvh.Leaves.Centroids.Y[i], minX, minY, rangeX, rangeY);
+            bvh.MortonCentroids[i] = MortonCode.CalculateMortonCode(bvh.Leaves.Centroids.X[i], bvh.Leaves.Centroids.Y[i], minX, minY, scaleX, scaleY);
         }
+
+        a.Stop();
+
+        double at = a.Elapsed.TotalMilliseconds;
 
         // reset leaf indices.
         for(int i = 0; i < bvh.Leaves.AppendCount; i++)
@@ -139,6 +153,11 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
             bvh.MortonLeafIds[i] = i;
         }
 
+
+
+        
+        b.Restart();
+        
         RadixSort.IndexedAscend(bvh.MortonCentroids, bvh.MortonLeafIds, bvh.RadixSortBuffer, 0, bvh.Leaves.AppendCount);
     
         int branchCount = 0;
@@ -147,6 +166,12 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         float aabbMinY = 0;
         float aabbMaxX = 0;
         float aabbMaxY = 0;
+
+        b.Stop();
+
+        double bt = b.Elapsed.TotalMilliseconds;
+
+        c.Restart();
 
         ConstructBranches(bvh.Branches, bvh.MortonLeafIds, bvh.Leaves.Aabbs.MinX, bvh.Leaves.Aabbs.MinY, bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, 
             bvh.Leaves.BranchIndices, 0, bvh.Leaves.AppendCount, parentIndex, ref branchCount, ref aabbMinX, ref aabbMinY, ref aabbMaxX, ref aabbMaxY
@@ -158,7 +183,15 @@ public class Soa_BoundingVolumeHierarchy : IDisposable
         // construction of all branches, the data is contiguous (no holes in the array entries).
         bvh.Branches.AppendCount = branchCount;
 
+        c.Stop();
+        double ct = c.Elapsed.TotalMilliseconds;
+
+
+        d.Restart();
         ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, bvh.SpatialPairQueryBuffer);        
+        d.Stop();
+        double dt = d.Elapsed.TotalMilliseconds;
+
     }
 
     /// <summary>
