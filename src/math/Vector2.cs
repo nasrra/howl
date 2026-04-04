@@ -159,8 +159,8 @@ public struct Vector2
     /// <summary>
     /// Checks if the object is equal to this vector.
     /// </summary>
-    /// <param name="obj">The object to check against.</param>
-    /// <returns>true, if both are equal; otherwise false.</returns>
+    /// <param name="obj">the object to check equality against.</param>
+    /// <returns>true, if the object is equal to this; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public override bool Equals(object obj)
     {

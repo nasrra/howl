@@ -36,26 +36,26 @@ public struct GenId
     public const int UniqueGenerationsCount = 1 << 12; // 4,096; 
 
     /// <summary>
-    /// The bit-wise mask used to extract the index value from the gen id.
+    ///     The bit-wise mask used to extract the index value from the gen id.
     /// </summary>
     public const uint IndexMask = 0xFFFFF; // binary: 0000 0000 0000 1111 1111 1111 1111 1111.
 
     /// <summary>
-    /// The bit-wise mask used to extract the generation value from the gen id.
+    ///     The bit-wise mask used to extract the generation value from the gen id.
     /// </summary>
     public const uint GenerationMask = 0xFFF; // binary: 0000 0000 0000 0000 0000 1111 1111 1111.
 
     /// <summary>
-    /// The decimal value of the bitwised packed index and generation values.
+    ///     The decimal value of the bitwised packed index and generation values.
     /// </summary>
     public uint Value;
 
     /// <summary>
-    /// Constructs a GenId.
+    ///     Constructs a GenId.
     /// </summary>
     /// <remarks>
-    /// <c><paramref name="index"/></c> must be between 0 and 1,048,576. <c><paramref name="generation"/></c> must be between
-    /// 0 and 4,096.
+    ///     <c><paramref name="index"/></c> must be between 0 and 1,048,576. <c><paramref name="generation"/></c> must be between
+    ///     0 and 4,096.
     /// </remarks>
     /// <param name="index">the index value.</param>
     /// <param name="generation">the generation value.</param>
@@ -72,10 +72,10 @@ public struct GenId
     }
 
     /// <summary>
-    /// Increments the generational value of a gen id by one.
+    ///     Increments the generational value of a gen id by one.
     /// </summary>
     /// <remarks>
-    /// the generational slice of the integer will be wrapped around automatically when exceeding its max value.
+    ///     the generational slice of the integer will be wrapped around automatically when exceeding its max value.
     /// </remarks>
     /// <param name="genId">the gen id to increment.</param>
     /// <returns>the newly constructed incremented gen id.</returns>
@@ -90,7 +90,7 @@ public struct GenId
     }
 
     /// <summary>
-    /// Increments the index value of a gen id by one.
+    ///     Increments the index value of a gen id by one.
     /// </summary>
     /// <param name="genId">the gen id to increment.</param>
     /// <returns>the newly constructed incremented gen id.</returns>
@@ -105,7 +105,7 @@ public struct GenId
     }
 
     /// <summary>
-    /// Gets the index value that is packed inside a gen id.
+    ///     Gets the index value that is packed inside a gen id.
     /// </summary>
     /// <param name="genId">the gen id to extract an index from.</param>
     /// <returns>the extracted index value.</returns>
@@ -115,12 +115,49 @@ public struct GenId
     }
 
     /// <summary>
-    /// Gets the generation value that is packed inside of a gen id.
+    ///     Gets the generation value that is packed inside of a gen id.
     /// </summary>
     /// <param name="genId">the gen id to extract a generation value from.</param>
     /// <returns>the extracted generation value.</returns>
     public static int GetGeneration(GenId genId)
     {
         return (int)genId.Value >> 20;
+    }
+
+    /// <summary>
+    ///     Checks if two gen ids are equal. 
+    /// </summary>
+    /// <param name="a">gen id a.</param>
+    /// <param name="b">gen id b.</param>
+    /// <returns>true, if both are equal; otherwise false.</returns>
+    public static bool operator ==(GenId a, GenId b)
+    {
+        return a.Value == b.Value;
+    }
+
+    /// <summary>
+    ///     Checks if two gen ids are not equal.
+    /// </summary>
+    /// <param name="a">gen id a.</param>
+    /// <param name="b">gen id b.</param>
+    /// <returns>true, if both are not equal; otherwise false.</returns>
+    public static bool operator !=(GenId a, GenId b)
+    {
+        return a.Value != b.Value;
+    }
+
+    /// <summary>
+    ///     Checks if an object is equal to this gen id.
+    /// </summary>
+    /// <param name="obj">the object to check equality against.</param>
+    /// <returns>true, if the object is equal to this; otherwise false.</returns>
+    public override bool Equals(object obj)
+    {
+        return obj is GenId other && other == this; 
+    }
+
+    public override int GetHashCode()
+    {
+        return Value.GetHashCode();
     }
 }

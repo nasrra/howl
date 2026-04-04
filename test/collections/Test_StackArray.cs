@@ -2,7 +2,7 @@ using Howl.Collections;
 
 namespace Howl.Test.Collections;
 
-public class StackArray_Test
+public class Test_StackArray
 {
     [Fact]
     public void Constructor_Test()
@@ -10,7 +10,7 @@ public class StackArray_Test
         for(int length = 0; length < 3; length++)
         {
             StackArray<float> array = new(length);
-            StackArray_Assert.LengthEqual(length, array);
+            Assert_StackArray.LengthEqual(length, array);
             Assert.False(array.Disposed);
         }
     }
@@ -93,7 +93,8 @@ public class StackArray_Test
             StackArray.Dispose(nums);
 
             Assert.Equal(0, nums.Count);
-            Assert.True(nums.Disposed);
+
+            Assert_StackArray.Disposed(nums);
         }
     }
 }

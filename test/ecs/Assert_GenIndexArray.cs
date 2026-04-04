@@ -17,7 +17,7 @@ public class Assert_GenIndexArray{
         Assert.Equal(length, array.Flags.Length);
         Assert.Equal(length, array.Generations.Length);
         Assert.Equal(length, array.Allocated.Length);
-        StackArray_Assert.LengthEqual(length, array.FreeSlots);
+        Assert_StackArray.LengthEqual(length, array.FreeSlots);
     }
 
     /// <summary>
