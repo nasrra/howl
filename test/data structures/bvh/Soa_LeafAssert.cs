@@ -18,7 +18,7 @@ public static class Soa_LeafAssert
     /// <param name="generation">the expected generation value.</param>
     /// <param name="flags">the expected flags value.</param>
     /// <param name="branchIndex">the expected branch index.</param>
-    /// <param name="entryIndex">the index of the entry in the buffer to assert equality against.</param>
+    /// <param name="entryIndex">the index of the entry in the soa to assert equality against.</param>
     /// <param name="soa">the soa instance containing the entry to assert.</param>
     public static void EntryEqual(float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int index, int generation, 
         int flags, int branchIndex, int entryIndex, Soa_Leaf soa

@@ -30,5 +30,10 @@ public enum GenIndexResult : byte
     /// <summary>
     /// Returned when querying a GenIndexList finds a dense entry of a previous generation.
     /// </summary>
-    StaleDenseAllocation
+    StaleDenseAllocation,
+
+    /// <summary>
+    /// Returned when the amount of allocated memory of a given GenIndexArray has been reached; meaning that all slots in the backing arrays are allocated.
+    /// </summary>
+    MemoryLimitHit
 }

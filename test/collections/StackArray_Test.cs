@@ -10,7 +10,7 @@ public class StackArray_Test
         for(int length = 0; length < 3; length++)
         {
             StackArray<float> array = new(length);
-            Assert.Equal(length, array.Data.Length);
+            StackArray_Assert.LengthEqual(length, array);
             Assert.False(array.Disposed);
         }
     }
