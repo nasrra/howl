@@ -29,6 +29,7 @@ declare -A TEST_MAP
 TEST_MAP=(
     ["AABB"]="${SHAPES_NAMESPACE}AABBTest"
     ["BoundingVolumeHierarchy"]="${DATA_STRUCTURES_NAMESPACE}Bvh.BoundingVolumeHierarchyTest"
+    ["ComponentArray"]="${ECS_NAMESPACE}Test_ComponentArray"
     ["ComponentRegistry"]="${ECS_NAMESPACE}ComponentRegistryTest"
     ["ComponentType"]="${ECS_NAMESPACE}ComponentTypeTest"
     ["Circle"]="${SHAPES_NAMESPACE}CircleTest"
@@ -54,7 +55,6 @@ TEST_MAP=(
     ["RadixSortF"]="${SORTING_NAMESPACE}RadixSortFTest"
     ["RadixSortBuffer"]="${SORTING_NAMESPACE}RadixSortBuffer"
     ["Rectangle"]="${SHAPES_NAMESPACE}RectangleTest"
-    ["RigidBody"]="${PHYSICS_NAMESPACE}RigidBodyTest"
     ["SAT"]="${SHAPES_NAMESPACE}SATTest"
     ["Soa_Aabb"]="${SHAPES_NAMESPACE}Soa_AabbTest"
     ["Soa_AabbSlice"]="${SHAPES_NAMESPACE}Soa_AabbSliceTest"
