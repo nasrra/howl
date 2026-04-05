@@ -143,6 +143,17 @@ public class EntityRegistry : IDisposable
         return GenIdResult.Ok;
     }
 
+    /// <summary>
+    ///     Gets whether or not a gen id is stale within a entity registry instance.
+    /// </summary>
+    /// <param name="registry">the entity registry instance to query.</param>
+    /// <param name="genId">the specified gen id.</param>
+    /// <returns>true, if the gen id is stale; otherwise false</returns>
+    public static bool GenIdIsStale(EntityRegistry registry, GenId genId)
+    {
+        return registry.GenIds[GenId.GetIndex(genId)] != genId;
+    }
+
 
 
 

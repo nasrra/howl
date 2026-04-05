@@ -1,4 +1,5 @@
 using System;
+using Howl.Generic;
 
 public class ComponentArray<T> : IDisposable
 {
@@ -89,6 +90,18 @@ public class ComponentArray<T> : IDisposable
     }
 
     /// <summary>
+    ///     Allocates data into the backing data array.
+    /// </summary>
+    /// <param name="array">the gen index array to allocate into.</param>
+    /// <param name="index">the index in the backing array to allocate into.</param>
+    /// <param name="data">the data to allocate.</param>
+    /// <param name="flags">the user-defined flags to distinguish the entry from others.</param>
+    public static void Allocate(ComponentArray<T> array, GenId index, T data, int flags)
+    {
+        Allocate(array, GenId.GetIndex(index), data, flags);
+    }
+
+    /// <summary>
     ///     Sets the allocated bool at a given index to false.
     /// </summary>
     /// <param name="array">the component array to deallocate from.</param>
@@ -107,12 +120,64 @@ public class ComponentArray<T> : IDisposable
     }
 
     /// <summary>
+    ///     Sets the allocated bool at a given index to false.
+    /// </summary>
+    /// <param name="array">the component array to deallocate from.</param>
+    /// <param name="index">the index of the element to deallocate.</param>
+    /// <returns>true, if the entry was successfully deallocated; otherwise false if it is already deallocated.</returns>
+    public static bool Deallocate(ComponentArray<T> array, GenId index)
+    {
+        return Deallocate(array, GenId.GetIndex(index));
+    }
+
+    /// <summary>
     ///     Sets the component array count to zero.
     /// </summary>
     /// <param name="array">the component array to clear.</param>
     public static void ClearCount(ComponentArray<T> array)
     {
         array.Count = 0;
+    }
+
+    /// <summary>
+    ///     Gets the data associated with a gen id in a components array.
+    /// </summary>
+    /// <param name="components">the components array housing the data.</param>
+    /// <param name="entities"></param>
+    /// <param name="genId"></param>
+    /// <param name="data"></param>
+    /// <returns>
+    ///     <list type="bullet">
+    ///         <item> 
+    ///             <see cref="GenIdResult.Ok"/>
+    ///         </item>
+    ///         <item>
+    ///             <see cref="GenIdResult.StaleGenId"/>
+    ///         </item>
+    ///         <item>
+    ///             <see cref="GenIdResult.ComponentNotAllocated"/>
+    ///         </item>
+    ///     </list>    
+    /// </returns>
+    public static GenIdResult GetData(ComponentArray<T> components, EntityRegistry entities, GenId genId, ref T data)
+    {
+        // verify that the gen id is valid.
+        if(EntityRegistry.GenIdIsStale(entities, genId))
+        {
+            return GenIdResult.StaleGenId;
+        }
+
+        int index = GenId.GetIndex(genId);
+        
+        // ensure that the data in the slot is not garbage.
+        if(components.Allocated[index] == false)
+        {
+            return GenIdResult.ComponentNotAllocated;
+        }
+        
+        // return the data.
+        data = components.Data[index];
+        return GenIdResult.Ok;
     }
 
 
@@ -171,6 +236,40 @@ public static class ComponentArray
     }
 
     /// <summary>
+    ///     Allocates data into the backing data array.
+    /// </summary>
+    /// <param name="array">the gen index array to allocate into.</param>
+    /// <param name="index">the index in the backing array to allocate into.</param>
+    /// <param name="data">the data to allocate.</param>
+    /// <param name="flags">the user-defined flags to distinguish the entry from others.</param>
+    public static void Allocate<T>(this ComponentArray<T> array, GenId index, T data, int flags)
+    {
+        ComponentArray<T>.Allocate(array, index, data, flags);
+    }
+
+    /// <summary>
+    ///     Allocates data into the backing data array.
+    /// </summary>
+    /// <param name="array">the gen index array to allocate into.</param>
+    /// <param name="index">the index in the backing array to allocate into.</param>
+    /// <param name="data">the data to allocate.</param>
+    public static void Allocate<T>(this ComponentArray<T> array, int index, T data)
+    {
+        ComponentArray<T>.Allocate(array, index, data, 0);
+    }
+
+    /// <summary>
+    ///     Allocates data into the backing data array.
+    /// </summary>
+    /// <param name="array">the gen index array to allocate into.</param>
+    /// <param name="index">the index in the backing array to allocate into.</param>
+    /// <param name="data">the data to allocate.</param>
+    public static void Allocate<T>(this ComponentArray<T> array, GenId index, T data)
+    {
+        ComponentArray<T>.Allocate(array, index, data, 0);
+    }
+
+    /// <summary>
     ///     Sets the allocated bool at a given index to false.
     /// </summary>
     /// <param name="array">the component array to deallocate from.</param>
@@ -188,6 +287,31 @@ public static class ComponentArray
     public static void ClearCount<T>(this ComponentArray<T> array)
     {
         array.Count = 0;
+    }
+
+    /// <summary>
+    ///     Gets the data associated with a gen id in a components array.
+    /// </summary>
+    /// <param name="components">the components array housing the data.</param>
+    /// <param name="entities"></param>
+    /// <param name="genId"></param>
+    /// <param name="data"></param>
+    /// <returns>
+    ///     <list type="bullet">
+    ///         <item> 
+    ///             <see cref="GenIdResult.Ok"/>
+    ///         </item>
+    ///         <item>
+    ///             <see cref="GenIdResult.StaleGenId"/>
+    ///         </item>
+    ///         <item>
+    ///             <see cref="GenIdResult.ComponentNotAllocated"/>
+    ///         </item>
+    ///     </list>    
+    /// </returns>
+    public static GenIdResult GetData<T>(this ComponentArray<T> components, EntityRegistry entities, GenId genId, ref T data)
+    {
+        return ComponentArray<T>.GetData(components, entities, genId, ref data);
     }
 
     public static void Dispose<T>(this ComponentArray<T> array)

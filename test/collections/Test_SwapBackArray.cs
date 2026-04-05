@@ -2,7 +2,7 @@ using Howl.Collections;
 
 namespace Howl.Test.Collections;
 
-public class SwapBackArray_Test
+public class Test_SwapBackArray
 {
     [Fact]
     public void Constructor_Test()
@@ -77,6 +77,53 @@ public class SwapBackArray_Test
                 int removeIndex = j / length;
                 SwapBackArray.RemoveAt(nums, removeIndex);
                 Assert.Equal(last, nums[removeIndex]);
+            }
+        }
+    }
+
+    [Fact]
+    public void AsSpan_Test()
+    {
+        for(int length = 0; length < 12; length++)
+        {
+            SwapBackArray<float> nums = new(length);
+
+            // populate.
+            for(int i = 0; i < length; i++)
+            {
+                SwapBackArray.Append(nums, i);
+            }
+
+            Span<float> span = SwapBackArray.AsSpan(nums);
+
+            // assert entries.
+            for(int i = 0; i < length; i++)
+            {
+                Assert.Equal(i, span[i]);
+            }
+        }
+    }
+
+    [Fact]
+    public void Slice_Test()
+    {
+        for(int length = 0; length < 12; length++)
+        {
+            SwapBackArray<float> nums = new(length);
+
+            // populate.
+            for(int i = 0; i < length; i++)
+            {
+                SwapBackArray.Append(nums, i);
+            }
+
+            Span<float> span = SwapBackArray.Slice(nums, 0, length / 2);
+
+            // assert entries.
+            Assert.Equal(length / 2, span.Length);
+            for(int i = 0; i < length / 2; i++)
+            {
+                Assert.Equal(i, span[i]);                
             }
         }
     }

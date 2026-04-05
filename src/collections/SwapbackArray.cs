@@ -81,6 +81,28 @@ public class SwapBackArray<T> : IDisposable
         array.Count = 0;
     }
 
+    /// <summary>
+    ///     Gets the underlying array of a swapback array as a span.
+    /// </summary>
+    /// <param name="array">the swapback array instance to get as a span.</param>
+    /// <returns>The span of the underlying array.</returns>
+    public static Span<T> AsSpan(SwapBackArray<T> array)
+    {
+        return array.Data;
+    }
+
+    /// <summary>
+    ///     Gets a span slice of a swapback array's underlying array.
+    /// </summary>
+    /// <param name="array">the swapback array to get a slice of.</param>
+    /// <param name="start">The zero-based index at which to begin this slice.</param>
+    /// <param name="length">The desired length for the slice (exclusive).</param>
+    /// <returns></returns>
+    public static Span<T> Slice(SwapBackArray<T> array, int start, int length)
+    {
+        return AsSpan(array).Slice(start, length);
+    }
+
 
 
 
@@ -153,6 +175,28 @@ public static class SwapBackArray
     public static void ClearCount<T>(this SwapBackArray<T> array)
     {
         SwapBackArray<T>.ClearCount(array);
+    }
+
+    /// <summary>
+    ///     Gets the underlying array of a swapback array as a span.
+    /// </summary>
+    /// <param name="array">the swapback array instance to get as a span.</param>
+    /// <returns>The span of the underlying array.</returns>
+    public static Span<T> AsSpan<T>(this SwapBackArray<T> array)
+    {
+        return SwapBackArray<T>.AsSpan(array);
+    }
+
+    /// <summary>
+    ///     Gets a span slice of a swapback array's underlying array.
+    /// </summary>
+    /// <param name="array">the swapback array to get a slice of.</param>
+    /// <param name="start">The zero-based index at which to begin this slice.</param>
+    /// <param name="length">The desired length for the slice (exclusive).</param>
+    /// <returns></returns>
+    public static Span<T> Slice<T>(this SwapBackArray<T> array, int start, int length)
+    {
+        return SwapBackArray<T>.Slice(array, start, length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

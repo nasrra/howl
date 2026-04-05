@@ -64,6 +64,27 @@ public class Test_ComponentArray
     }
 
     [Fact]
+    public void GetData_Test()
+    {
+        int maxEntities = 12;
+        float data = 0;
+        ComponentArray<float> nums = new(maxEntities);
+        EntityRegistry entities = new(maxEntities);
+
+        GenId validId = default;
+        GenId staleId = new(10,13);
+        EntityRegistry.Allocate(entities, ref validId);
+
+        // fail cases.
+        Assert.Equal(GenIdResult.StaleGenId, ComponentArray.GetData(nums, entities, staleId, ref data));
+        Assert.Equal(GenIdResult.ComponentNotAllocated, ComponentArray.GetData(nums, entities, validId, ref data));
+    
+        // success cases.
+        ComponentArray.Allocate(nums, validId, data);
+        Assert.Equal(GenIdResult.Ok, ComponentArray.GetData(nums, entities, validId, ref data));
+    }
+
+    [Fact]
     public void ClearCount_Test()
     {
         for(int length = 0; length < 9; length++)
