@@ -23,10 +23,9 @@ public unsafe sealed class HowlApp : IDisposable
     public GenIndexAllocator GenIndexAllocator {get; private set;}
 
     /// <summary>
-    /// Gets the ComponentRegistry used for gameplay.
+    ///     Gets the EcsState.
     /// </summary>
-    public ComponentRegistry ComponentRegistry {get; private set;}
-
+    public EcsState EcsState;
 
     /// <summary>
     /// Gets and sets the update-step stopwatch.
@@ -66,7 +65,7 @@ public unsafe sealed class HowlApp : IDisposable
     /// <summary>
     /// Gets and sets the draw procedures for the renderering backend.
     /// </summary>
-    private delegate*<ComponentRegistry, IRendererState, void> RendererDraw;
+    private delegate*<EcsState, IRendererState, void> RendererDraw;
 
     /// <summary>
     /// Gets and sets the monogame app.
@@ -90,15 +89,14 @@ public unsafe sealed class HowlApp : IDisposable
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
-    public HowlApp(RendererBackend rendererBackend, Resolution resolution)
+    public HowlApp(RendererBackend rendererBackend, Resolution resolution, int maxEntities)
     {
         // instantiate debug stop watches.
         UpdateStepStopwatch         = new();
         FixedUpdateStepStopwatch    = new();
         DrawStepStopwatch           = new();
-    
-        GenIndexAllocator = new();
-        ComponentRegistry = new(GenIndexAllocator);
+
+        EcsState = new EcsState(maxEntities);
 
         switch (rendererBackend)
         {
@@ -163,7 +161,7 @@ public unsafe sealed class HowlApp : IDisposable
     public void Render(float deltaTime)
     {
         Draw(deltaTime);
-        RendererDraw(ComponentRegistry, RendererState);
+        RendererDraw(EcsState, RendererState);
     }
 
     /// <summary>
@@ -190,8 +188,8 @@ public unsafe sealed class HowlApp : IDisposable
             RendererState.Dispose();
             RendererState = null;
 
-            ComponentRegistry.Dispose();
-            ComponentRegistry = null;
+            EcsState.Dispose();
+            EcsState = null;
 
             monoGameApp?.Dispose();
             monoGameApp = null;

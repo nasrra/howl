@@ -56,55 +56,47 @@ public static class Draw
 
 
     /// <summary>
-    /// Draws a line between to points.
+    ///     Draws a line between to points.
     /// </summary>
-    /// <param name="componentRegistry"></param>
+    /// <param name="ecs"></param>
     /// <param name="a">The point to start the line segment from.</param>
     /// <param name="b">The point to end the line segment at.</param>
     /// <param name="thickness">The thickness of the line segment.</param>
     /// <param name="color">The color od the line segment.</param>
     /// <param name="scaleThickness">Scale the thickness by the camera zoom.</param>
-    public static void Line(
-        ComponentRegistry componentRegistry,
-        Vector2 a, 
-        Vector2 b, 
-        Colour colour, 
-        float thickness = DefaultWireframeThickness, 
-        bool scaleThickness = true
+    public static void Line(EcsState ecs, Vector2 a, Vector2 b, Colour colour, 
+        float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {
-        Line(componentRegistry, CameraSystem.MainCameraId, a, b, colour, thickness, scaleThickness);
+        Line(ecs, CameraSystem.MainCameraId, a, b, colour, thickness, scaleThickness);
     }
 
     /// <summary>
-    /// Draws a line between to points.
+    ///     Draws a line between to points.
     /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera.</param> 
+    /// <param name="ecs"></param>
+    /// <param name="cameraId">The gen id associated with the camera.</param> 
     /// <param name="a">The point to start the line segment from.</param>
     /// <param name="b">The point to end the line segment at.</param>
     /// <param name="thickness">The thickness of the line segment.</param>
     /// <param name="color">The color od the line segment.</param>
     /// <param name="scaleThickness">Scale the thickness by the camera zoom.</param>
-    public static void Line(
-        ComponentRegistry componentRegistry,
-        GenIndex cameraId,
-        Vector2 a, 
-        Vector2 b, 
-        Colour colour, 
-        float thickness = DefaultWireframeThickness, 
-        bool scaleThickness = true
+    public static void Line(EcsState ecs,GenId cameraId,Vector2 a, Vector2 b, Colour colour, 
+        float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {
-        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, cameraId, ref result);
+
+        if(result == GenIdResult.Ok)
         {
             Line(camera, a, b, colour, thickness, scaleThickness);
         }
     }
 
     /// <summary>
-    /// Draws a line between to points.
+    ///     Draws a line between to points.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="start">The point to start the line segment from.</param>
@@ -112,13 +104,8 @@ public static class Draw
     /// <param name="thickness">The thickness of the line segment.</param>
     /// <param name="color">The color od the line segment.</param>
     /// <param name="scaleThickness">Scale the thickness by the camera zoom.</param>
-    public static void Line(
-        in Camera camera, 
-        Vector2 start, 
-        Vector2 end, 
-        Colour colour, 
-        float thickness = DefaultWireframeThickness, 
-        bool scaleThickness = true
+    public static void Line(in Camera camera, Vector2 start, Vector2 end, Colour colour, 
+        float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {
         Line(colour, camera.Zoom, camera.Position.X, camera.Position.Y, start.X, start.Y, end.X, end.Y, thickness, scaleThickness);
@@ -223,51 +210,45 @@ public static class Draw
 
 
     /// <summary>
-    /// Draws a wireframe shape in relation to the main camera.
+    ///     Draws a wireframe shape in relation to the main camera.
     /// </summary>
-    /// <param name="componentRegistry"></param>
+    /// <param name="ecs"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        ComponentRegistry componentRegistry,
-        in Transform transform,
-        in Rectangle rectangle,
-        in Colour colour, 
+    public static void Wireframe(EcsState ecs, in Transform transform, in Rectangle rectangle, in Colour colour, 
         float thickness = DefaultWireframeThickness
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, rectangle, colour, thickness);
+        Wireframe(ecs, CameraSystem.MainCameraId, transform, rectangle, colour, thickness);
     }
 
     /// <summary>
-    /// Draws a wireframe shape.
+    ///     Draws a wireframe shape.
     /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
+    /// <param name="ecs"></param>
+    /// <param name="cameraId">The gen id associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        ComponentRegistry componentRegistry,
-        GenIndex cameraId,
-        in Transform transform,
-        in Rectangle rectangle,
-        in Colour colour,
-        float thickness = DefaultWireframeThickness
+    public static void Wireframe(EcsState ecs, GenId cameraId, in Transform transform, in Rectangle rectangle,
+        in Colour colour, float thickness = DefaultWireframeThickness
     )
     {
-        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, cameraId, ref result);
+
+        if(result == GenIdResult.Ok)
         {
             Wireframe(camera, transform, rectangle, colour, thickness);
         }
     }
 
     /// <summary>
-    /// Draws a wireframe shape.
+    ///     Draws a wireframe shape.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
@@ -275,11 +256,7 @@ public static class Draw
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     /// <exception cref="OverflowException">throws when too many primitive vertices are pushed to the monogame app.</exception>
-    public static void Wireframe(
-        in Camera camera,
-        in Transform transform, 
-        in Rectangle rectangle,
-        in Colour colour, 
+    public static void Wireframe(in Camera camera, in Transform transform, in Rectangle rectangle, in Colour colour, 
         float thickness = DefaultWireframeThickness
     )
     {
@@ -303,58 +280,45 @@ public static class Draw
     }
 
     /// <summary>
-    /// Draws a filled shape in relation to the main camera.
+    ///     Draws a filled shape in relation to the main camera.
     /// </summary>
-    /// <param name="componentRegistry"></param>
+    /// <param name="ecs"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
     /// <param name="colour">the colour used to draw the filled area.</param>
-    public static void Filled(
-        ComponentRegistry componentRegistry,
-        in Transform transform,
-        in Rectangle rectangle,
-        in Colour colour
-    )
+    public static void Filled(EcsState ecs, in Transform transform, in Rectangle rectangle,in Colour colour)
     {
-        Filled(componentRegistry, CameraSystem.MainCameraId, transform, rectangle, colour);
+        Filled(ecs, CameraSystem.MainCameraId, transform, rectangle, colour);
     }
 
     /// <summary>
-    /// Draws a filled shape.
+    ///     Draws a filled shape.
     /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
+    /// <param name="ecs"></param>
+    /// <param name="cameraId">The gen id associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
     /// <param name="colour">the colour used to draw the filled area.</param>
-    public static void Filled(
-        ComponentRegistry componentRegistry,
-        GenIndex cameraId,
-        in Transform transform,
-        in Rectangle rectangle,
-        in Colour colour
-    )
+    public static void Filled(EcsState ecs, GenId cameraId, in Transform transform, in Rectangle rectangle, in Colour colour)
     {
-        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, cameraId, ref result);
+
+        if(result == GenIdResult.Ok)
         {
             Filled(camera, transform, rectangle, colour);
         }
     }
 
     /// <summary>
-    /// Draws a filled shape to the currently bound render target.
+    ///     Draws a filled shape to the currently bound render target.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="rectangle">the rectangle data.</param>
     /// <param name="colour">the colour used to draw the filled area.</param>
-    public static void Filled(
-        in Camera camera,
-        in Transform transform, 
-        in Rectangle rectangle,
-        in Colour colour
-    )
+    public static void Filled(in Camera camera, in Transform transform, in Rectangle rectangle, in Colour colour)
     {
         // Note: triangle vertices and indexes are done in
         // a clockwise motion. 
@@ -412,51 +376,43 @@ public static class Draw
 
 
     /// <summary>
-    /// Draws a filled shape in relation to the main camera.
+    ///     Draws a filled shape in relation to the main camera.
     /// </summary>
-    /// <param name="componentRegistry"></param>
+    /// <param name="ecs"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
     /// <param name="colour">the colour used to draw the filled area.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
-    public static void Filled(
-        ComponentRegistry componentRegistry,
-        in Transform transform,
-        in Circle circle,
-        in Colour colour,
-        int verticeCount = DefaultCirclePointAmount
-    )
+    public static void Filled(EcsState ecs, in Transform transform, in Circle circle, in Colour colour, int verticeCount = DefaultCirclePointAmount)
     {
-        Filled(componentRegistry, CameraSystem.MainCameraId, transform, circle, colour, verticeCount);
+        Filled(ecs, CameraSystem.MainCameraId, transform, circle, colour, verticeCount);
     }
 
     /// <summary>
-    /// Draws a filled shape.
+    ///     Draws a filled shape.
     /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates..</param> 
+    /// <param name="ecs"></param>
+    /// <param name="cameraId">The gen id associated with the camera to use for transforming coordinates..</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
     /// <param name="colour">the colour used to draw the filled area.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
-    public static void Filled(
-        ComponentRegistry componentRegistry,
-        GenIndex cameraId,
-        in Transform transform,
-        in Circle circle,
-        in Colour colour,
+    public static void Filled(EcsState ecs, GenId cameraId, in Transform transform, in Circle circle, in Colour colour, 
         int verticeCount = DefaultCirclePointAmount
     )
     {
-        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, cameraId, ref result);
+
+        if(result == GenIdResult.Ok)
         {
             Filled(camera, transform, circle, colour, verticeCount);
         }
     }
 
     /// <summary>
-    /// Draws a filled shape.
+    ///     Draws a filled shape.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
@@ -464,13 +420,7 @@ public static class Draw
     /// <param name="colour">the colour used to draw the filled area.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <exception cref="ArgumentException"></exception>
-    public static void Filled(
-        in Camera camera,
-        in Transform transform, 
-        in Circle circle,
-        in Colour colour, 
-        int verticeCount = DefaultCirclePointAmount
-    )
+    public static void Filled(in Camera camera, in Transform transform, in Circle circle, in Colour colour, int verticeCount = DefaultCirclePointAmount)
     {
         if(verticeCount == System.Math.Clamp(verticeCount, 3, int.MaxValue))
         {
@@ -522,55 +472,47 @@ public static class Draw
     }
 
     /// <summary>
-    /// Draws a wireframe shape in relation to the main camera.
+    ///     Draws a wireframe shape in relation to the main camera.
     /// </summary>
-    /// <param name="componentRegistry"></param>
+    /// <param name="ecs"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        ComponentRegistry componentRegistry,
-        in Transform transform,
-        in Circle circle,
-        in Colour colour,
-        int verticeCount = DefaultCirclePointAmount,
-        float thickness = DefaultWireframeThickness
+    public static void Wireframe(EcsState ecs, in Transform transform, in Circle circle, in Colour colour,
+        int verticeCount = DefaultCirclePointAmount, float thickness = DefaultWireframeThickness
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, circle, colour, verticeCount, thickness);
+        Wireframe(ecs, CameraSystem.MainCameraId, transform, circle, colour, verticeCount, thickness);
     }
 
     /// <summary>
-    /// Draws a wireframe shape.
+    ///     Draws a wireframe shape.
     /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
+    /// <param name="ecs"></param>
+    /// <param name="cameraId">The gen-id associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="circle">the circle data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        ComponentRegistry componentRegistry,
-        GenIndex cameraId,
-        in Transform transform,
-        in Circle circle,
-        in Colour colour,
-        int verticeCount = DefaultCirclePointAmount,
-        float thickness = DefaultWireframeThickness
+    public static void Wireframe(EcsState ecs, GenId cameraId, in Transform transform, in Circle circle,
+        in Colour colour, int verticeCount = DefaultCirclePointAmount, float thickness = DefaultWireframeThickness
     )
     {
-        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, cameraId, ref result);
+
+        if(result == GenIdResult.Ok)
         {
             Wireframe(camera, transform, circle, colour, verticeCount, thickness);
         }
     }
 
     /// <summary>
-    /// Draws a wireframe shape.
+    ///     Draws a wireframe shape.
     /// </summary>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">the transformation to apply to the shape.</param>
@@ -579,13 +521,8 @@ public static class Draw
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
     /// <exception cref="ArgumentException"></exception>
-    public static void Wireframe(
-        in Camera camera,
-        in Transform transform, 
-        in Circle circle,
-        in Colour colour,
-        int verticeCount = DefaultCirclePointAmount,
-        float thickness = DefaultWireframeThickness
+    public static void Wireframe(in Camera camera, in Transform transform, in Circle circle, in Colour colour,
+        int verticeCount = DefaultCirclePointAmount, float thickness = DefaultWireframeThickness
     )   
     {
         if(verticeCount == System.Math.Clamp(verticeCount, 3, int.MaxValue))
@@ -752,42 +689,35 @@ public static class Draw
     /// <summary>
     /// Draws a wireframe shape in relation to the main camera.
     /// </summary>
-    /// <param name="componentRegistry"></param>
+    /// <param name="ecs"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="polygon">the polygon data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        ComponentRegistry componentRegistry,
-        in Transform transform,
-        in Polygon16 polygon,
-        in Colour colour,
+    public static void Wireframe(EcsState ecs, in Transform transform, in Polygon16 polygon, in Colour colour,
         float thickness = DefaultWireframeThickness
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, polygon, colour, thickness);
+        Wireframe(ecs, CameraSystem.MainCameraId, transform, polygon, colour, thickness);
     }
 
     /// <summary>
     /// Draws a wireframe shape.
     /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
+    /// <param name="ecs"></param>
+    /// <param name="cameraId">The gen-id associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="polygon">the polygon data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        ComponentRegistry componentRegistry,
-        GenIndex cameraId,
-        in Transform transform,
-        in Polygon16 polygon,
-        in Colour colour,
+    public static void Wireframe(EcsState ecs, GenId cameraId, in Transform transform, in Polygon16 polygon, in Colour colour,
         float thickness = DefaultWireframeThickness
     )
     {
-        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, cameraId, ref result);
+        if(result == GenIdResult.Ok)
         {
             Wireframe(camera, transform, polygon, colour, thickness);
         }
@@ -801,11 +731,7 @@ public static class Draw
     /// <param name="polygon">the polygon data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        in Camera camera,
-        in Transform transform, 
-        in Polygon16 polygon,
-        in Colour colour, 
+    public static void Wireframe(in Camera camera, in Transform transform, in Polygon16 polygon, in Colour colour, 
         float thickness = DefaultWireframeThickness
     )
     {
@@ -834,42 +760,36 @@ public static class Draw
     /// <summary>
     /// Draws a wireframe shape in relation to the main camera.
     /// </summary>
-    /// <param name="componentRegistry"></param>
+    /// <param name="ecs"></param>
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="polygon">the polygon data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        ComponentRegistry componentRegistry,
-        in Transform transform,
-        in Polygon4 polygon,
-        in Colour colour,
+    public static void Wireframe(EcsState ecs, in Transform transform, in Polygon4 polygon, in Colour colour,
         float thickness = DefaultWireframeThickness
     )
     {
-        Wireframe(componentRegistry, CameraSystem.MainCameraId, transform, polygon, colour, thickness);
+        Wireframe(ecs, CameraSystem.MainCameraId, transform, polygon, colour, thickness);
     }
 
     /// <summary>
     /// Draws a wireframe shape.
     /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="cameraId">The gen index associated with the camera to use for transforming coordinates.</param> 
+    /// <param name="ecs"></param>
+    /// <param name="cameraId">The gen-id associated with the camera to use for transforming coordinates.</param> 
     /// <param name="transform">the transformation to apply to the shape.</param>
     /// <param name="polygon">the polygon data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        ComponentRegistry componentRegistry,
-        GenIndex cameraId,
-        in Transform transform,
-        in Polygon4 polygon,
-        in Colour colour,
-        float thickness = DefaultWireframeThickness
+    public static void Wireframe(EcsState ecs, GenId cameraId, in Transform transform, in Polygon4 polygon,
+        in Colour colour, float thickness = DefaultWireframeThickness
     )
     {
-        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>(); 
-        if(GetDenseRef(cameraComponents, cameraId, out Ref<Camera> camera).Ok())
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, cameraId, ref result);
+        
+        if(result == GenIdResult.Ok)
         {
             Wireframe(camera, transform, polygon, colour, thickness);
         }
@@ -883,11 +803,7 @@ public static class Draw
     /// <param name="polygon">the polygon data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="thickness">the thickness of the wireframe.</param>
-    public static void Wireframe(
-        in Camera camera,
-        in Transform transform, 
-        in Polygon4 polygon,
-        in Colour colour, 
+    public static void Wireframe(in Camera camera, in Transform transform, in Polygon4 polygon, in Colour colour, 
         float thickness = DefaultWireframeThickness
     )
     {

@@ -31,21 +31,19 @@ public static class PhysicsSystem
     public static readonly Vector<float> VectorRectangleRotationalInertia = new(RectangleRotationalInertia);
     public static readonly Vector<float> VectorCircleRotationalInertia = new(CircleRotationalInertia);
 
-    public static void RegisterComponents(ComponentRegistry registry)
+    public static void RegisterComponents(ComponentRegistryNew registry)
     {
-        registry.RegisterComponent<Transform>();
-        registry.RegisterComponent<PhysicsBodyId>();
+        ComponentRegistryNew.RegisterComponent<Transform>(registry);
+        ComponentRegistryNew.RegisterComponent<PhysicsBodyId>(registry);
     }
 
-    public static void FixedUpdate(ComponentRegistry registry, PhysicsSystemState state, float deltaTime, int subSteps)
+    public static void FixedUpdate(EcsState ecs, PhysicsSystemState state, float deltaTime, int subSteps)
     {
         state.FixedUpdateStepStopwatch.Restart();
 
         // Sync Colliders to Transforms Step.
         state.SyncTransformsToEntitiesStopwatch.Restart();
-        SyncTransformsToEntityTransforms(registry.Get<Transform>(), registry.Get<PhysicsBodyId>(), 
-            state.Transforms, state.Generations
-        );
+        SyncTransformsToEntityTransforms(ecs, state.Transforms, state.Generations);
         state.SyncTransformsToEntitiesStopwatch.Stop();
 
         state.IntegrateBodyPropertiesStopwatch.Restart();
@@ -178,9 +176,16 @@ public static class PhysicsSystem
         state.FixedUpdateStepStopwatch.Stop();
     }
 
-    public static void Draw(ComponentRegistry registry, PhysicsSystemState state, float deltaTime)
+    public static void Draw(EcsState ecs, PhysicsSystemState state, float deltaTime)
     {
-        GetDenseRef(registry.Get<Camera>(), CameraSystem.MainCameraId, out Ref<Camera> camera);
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, CameraSystem.MainCameraId, ref result);
+
+        if(result != GenIdResult.Ok)
+        {
+            return;
+        }
 
         if(state.DrawBvhBranches)
         {
@@ -240,32 +245,28 @@ public static class PhysicsSystem
     /// <summary>
     /// Syncs an SoaTransform collection to entities that contain both a transform component and a physics body id component. 
     /// </summary>
-    /// <param name="componentRegistry">the component registry housing the entity components.</param>
+    /// <param name="ecs">the ecs state with the component registry housing the entity components.</param>
     /// <param name="soaTransform">the structure-of-array transforms to mutate in relation to the entity data.</param>
     /// <param name="generation">the generations for each entry in the SOA transform's.</param>
-    public static void SyncTransformsToEntityTransforms(GenIndexList<Transform> transforms, 
-        GenIndexList<PhysicsBodyId> bodyIds, Soa_Transform soaTransform, Span<int> generation
-    )
+    public static void SyncTransformsToEntityTransforms(EcsState ecs, Soa_Transform soaTransform, Span<int> generation)
     {
-        Span<DenseEntry<PhysicsBodyId>> denseEntries = GetDenseAsSpan(bodyIds);
-
-        // loop through all body id's.
-        for(int i = 0; i < denseEntries.Length; i++)
+        ComponentArray<PhysicsBodyId> tagged = EcsState.GetComponents<PhysicsBodyId>(ecs);
+        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
+        
+        for(int i = 1; i < tagged.Active.Count; i++)
         {
-            ref DenseEntry<PhysicsBodyId> entry = ref denseEntries[i];
-            ref PhysicsBodyId bodyId = ref entry.Value;
-            GetGenIndex(bodyIds, entry.sparseIndex, out GenIndex genIndex);
+            GenId genId = tagged.Active[i];
+            ref PhysicsBodyId tag = ref ComponentArray.GetDataUnsafe(tagged, genId);            
 
             // skip if the physics body id isn't valid.
-            if(generation[bodyId.GenIndex.Index] != bodyId.GenIndex.Generation)
+            if(generation[tag.GenIndex.Index] != tag.GenIndex.Generation)
                 continue;
             
             // sync the transform data to the physics simulation 
             // if it has an associated physics body id.
-            
-            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Ok())
-                SetTransform(soaTransform, generation, genIndex, transformRef);
-        } 
+            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
+            SetTransform(soaTransform, generation, tag.GenIndex, transform);
+        }
     }
 
     /// <summary>

@@ -11,18 +11,15 @@ public class EcsState : IDisposable
     
     public EntityRegistry Entities;
 
-    public SwapBackArray<GenId> QueryGenIds;
-
     public bool Disposed;
 
     public EcsState(int maxEntities)
     {
         Entities = new(maxEntities);
         Components = new(maxEntities);
-        QueryGenIds = new(maxEntities);
     }
 
-    public static ComponentArray<T> GetComponentsArray<T>(EcsState state)
+    public static ComponentArray<T> GetComponents<T>(EcsState state)
     {
         return ComponentRegistryNew.GetComponents<T>(state.Components);
     }

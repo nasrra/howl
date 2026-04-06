@@ -9,7 +9,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Howl.Vendors.MonoGame.Text;
 using Howl.Math;
 using Microsoft.Xna.Framework;
-using static Howl.ECS.GenIndexListProc;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
@@ -17,16 +16,16 @@ public static class RendererSystem
 {    
 
     /// <summary>
-    /// Registers all necessary components for this system in a component registry.
+    /// Registers all necessary components for this system into a .
     /// </summary>
-    /// <param name="componentRegistry">the specified component registry.</param>
-    public static void RegisterComponents(ComponentRegistry componentRegistry)
+    /// <param name="ecs">the specified component registry.</param>
+    public static void RegisterComponents(ComponentRegistryNew registry)
     {
-        componentRegistry.RegisterComponent<Sprite>();
-        componentRegistry.RegisterComponent<Text16>();
-        componentRegistry.RegisterComponent<Text32>();
-        componentRegistry.RegisterComponent<Text4096>();
-        componentRegistry.RegisterComponent<Transform>();
+        ComponentRegistryNew.RegisterComponent<Sprite>(registry);
+        ComponentRegistryNew.RegisterComponent<Text16>(registry);
+        ComponentRegistryNew.RegisterComponent<Text32>(registry);
+        ComponentRegistryNew.RegisterComponent<Text4096>(registry);
+        ComponentRegistryNew.RegisterComponent<Transform>(registry);
     }
 
     /// <summary>
@@ -35,33 +34,35 @@ public static class RendererSystem
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public static void Draw(ComponentRegistry componentRegistry, IRendererState rendererState)
+    public static void Draw(EcsState ecs, IRendererState rendererState)
     {
         RendererState state = (RendererState)rendererState;
-        GenIndexList<Camera> cameraComponents = componentRegistry.Get<Camera>();
 
-        // get the main camera.
-        if(GetDenseRef(cameraComponents, CameraSystem.MainCameraId, out Ref<Camera> mainCamera).Fail())
+        GenIdResult result = default;
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+
+        ref Camera mainCamera = ref ComponentArray.GetData(cameras, ecs, CameraSystem.MainCameraId, ref result);
+        if(result != GenIdResult.Ok)
         {
             System.Diagnostics.Debug.Assert(false);
-            return;
+            return;            
         }
         
-        // get the ui camera.
-        if(GetDenseRef(cameraComponents, CameraSystem.GuiCameraId, out Ref<Camera> guiCamera).Fail())
+        ref Camera guiCamera = ref ComponentArray.GetData(cameras, ecs, CameraSystem.GuiCameraId, ref result);
+        if(result != GenIdResult.Ok)
         {
             System.Diagnostics.Debug.Assert(false);
             return;
         }
 
         state.MonoGameApp.GraphicsDevice.SetRenderTarget(state.FinalRenderTarget);                    
-        state.MonoGameApp.GraphicsDevice.Clear(mainCamera.Value.ClearColour.ToMonoGame());
+        state.MonoGameApp.GraphicsDevice.Clear(mainCamera.ClearColour.ToMonoGame());
         
-        DrawSprites(componentRegistry, state, ref mainCamera.Value, WorldSpace.World);
-        DrawTexts(componentRegistry, state, ref mainCamera.Value, WorldSpace.World);
+        DrawSprites(ecs, state, ref mainCamera, WorldSpace.World);
+        DrawTexts(ecs, state, ref mainCamera, WorldSpace.World);
         DrawPrimitives(state);
-        DrawSprites(componentRegistry, state, ref guiCamera.Value, WorldSpace.Gui);
-        DrawTexts(componentRegistry, state, ref guiCamera.Value, WorldSpace.Gui);
+        DrawSprites(ecs, state, ref guiCamera, WorldSpace.Gui);
+        DrawTexts(ecs, state, ref guiCamera, WorldSpace.Gui);
         
         state.MonoGameApp.GraphicsDevice.SetRenderTarget(null);
 
@@ -83,15 +84,14 @@ public static class RendererSystem
     /// <summary>
     /// Draws all sprites to the currently bound render target.
     /// </summary>
-    /// <param name="componentRegistry">The componenst registry where the sprites are stored.</param>
+    /// <param name="ecs">The ecs state where the sprites are stored.</param>
     /// <param name="state">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
     /// <param name="worldSpace">filters sprites; drawing sprites that are within the specified world space.</param>
-    private static void DrawSprites(ComponentRegistry componentRegistry, RendererState state, ref Camera camera, WorldSpace worldSpace)
+    private static void DrawSprites(EcsState ecs, RendererState state, ref Camera camera, WorldSpace worldSpace)
     {
-        GenIndexList<Transform> transformComponents = componentRegistry.Get<Transform>();
-        GenIndexList<Sprite> spritesComponents = componentRegistry.Get<Sprite>();
-        Span<DenseEntry<Sprite>> spriteDenseEntries = GetDenseAsSpan(spritesComponents);
+        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
+        ComponentArray<Sprite> sprites = EcsState.GetComponents<Sprite>(ecs);
 
         // update effects to use the new projection matrix.        
         state.EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
@@ -104,27 +104,24 @@ public static class RendererSystem
         );   
 
         // draw sprites in relation to it.
-        for(int i = 0; i < spriteDenseEntries.Length; i++)
+        for(int i = 1; i < sprites.Active.Count; i++)
         {
-
-            ref DenseEntry<Sprite> spriteDenseEntry = ref spriteDenseEntries[i];
-            ref Sprite sprite = ref spriteDenseEntry.Value;
+            GenId genId = sprites.Active[i];
             
+            ref Sprite sprite = ref ComponentArray.GetDataUnsafe(sprites, genId);
             if(sprite.WorldSpace != worldSpace)
+            {
                 continue;
-            
-            GetGenIndex(spritesComponents, spriteDenseEntry.sparseIndex, out GenIndex genIndex);
+            }
 
-            if(GetDenseReadOnlyRef(transformComponents, genIndex, out ReadOnlyRef<Transform> transformRef).Fail())
-                continue;
-            
-            if(DrawSprite(state, ref camera, ref transformRef.Value, ref sprite).Fail())
+            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
+        
+            if(DrawSprite(state, ref camera, ref transform, ref sprite).Fail())
             {
                 System.Diagnostics.Debug.Assert(false);
-                continue;    
+                continue;
             }
         }
-
         state.SpriteBatch.End();
     }
 
@@ -283,17 +280,16 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
     /// <summary>
     /// Draws all texts to the currently bound render target.
     /// </summary>
-    /// <param name="componentRegistry">The componenst registry where the sprites are stored.</param>
+    /// <param name="ecs">The ecs state where the texts are stored.</param>
     /// <param name="state">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
-    /// <param name="worldSpace">filters sprites; drawing sprites that are within the specified world space.</param>
-    public static void DrawTexts(ComponentRegistry componentRegistry, RendererState state, ref Camera camera, WorldSpace worldSpace)
+    /// <param name="worldSpace">filters text; drawing texts that are within the specified world space.</param>
+    public static void DrawTexts(EcsState ecs, RendererState state, ref Camera camera, WorldSpace worldSpace)
     {
-        GenIndexList<Transform> transformComponents = componentRegistry.Get<Transform>();            
-        
-        // draw text 16.
-        GenIndexList<Text16> text16Components = componentRegistry.Get<Text16>();
-        Span<DenseEntry<Text16>> text16DenseEntries = GetDenseAsSpan(text16Components);
+        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
+        ComponentArray<Text16> text16 = EcsState.GetComponents<Text16>(ecs);
+        ComponentArray<Text32> text32 = EcsState.GetComponents<Text32>(ecs);
+        ComponentArray<Text4096> text4096 = EcsState.GetComponents<Text4096>(ecs);        
 
         state.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
@@ -302,60 +298,52 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
             effect: state.EffectManager.DefaultSpriteEffect
         );
 
-        for(int i = 0; i < text16DenseEntries.Length; i++)
+        // draw text 16.
+        for(int i = 1; i < text16.Active.Count; i++)
         {
-            ref DenseEntry<Text16> denseEntry = ref text16DenseEntries[i];
-            ref Text16 text = ref denseEntry.Value;
-            GetGenIndex(text16Components, denseEntry.sparseIndex, out GenIndex genIndex);
-            
-            if(text.TextParameters.WorldSpace != worldSpace)
-                continue;
+            GenId genId = text16.Active[i];
+            ref Text16 text = ref ComponentArray.GetDataUnsafe(text16, genId);
 
-            if(GetDenseReadOnlyRef(transformComponents, genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+            if(text.TextParameters.WorldSpace != worldSpace)
             {
-                System.Diagnostics.Debug.Assert(false);
                 continue;
             }
 
-            DrawText(state, ref camera, ref transformReadOnlyRef.Value, text.AsSpanUsed(), ref text.TextParameters);
+            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
+
+            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
         }
 
         // draw text 32.
-        GenIndexList<Text32> text32Components = componentRegistry.Get<Text32>();
-        Span<DenseEntry<Text32>> text32DenseEntries = GetDenseAsSpan(text32Components);
-
-        for(int i = 0; i < text32DenseEntries.Length; i++)
+        for(int i = 1; i < text32.Active.Count; i++)
         {
-            ref DenseEntry<Text32> denseEntry = ref text32DenseEntries[i];
-            ref Text32 text = ref denseEntry.Value;
-            GetGenIndex(text32Components, denseEntry.sparseIndex, out GenIndex genIndex);
-            
-            if(text.TextParameters.WorldSpace != worldSpace)
-                continue;
+            GenId genId = text32.Active[i];
+            ref Text32 text = ref ComponentArray.GetDataUnsafe(text32, genId);
 
-            if(GetDenseReadOnlyRef(transformComponents, genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
+            if(text.TextParameters.WorldSpace != worldSpace)
             {
-                System.Diagnostics.Debug.Assert(false);
                 continue;
             }
 
-            DrawText(state, ref camera, ref transformReadOnlyRef.Value, text.AsSpanUsed(), ref text.TextParameters);
+            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
+
+            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
         }
 
-        // draw text 4096
-        GenIndexList<Text4096> text4096Components = componentRegistry.Get<Text4096>();
-        Span<DenseEntry<Text4096>> text4096DenseEntries = GetDenseAsSpan(text4096Components);
-        
-        for(int i = 0; i < text4096DenseEntries.Length; i++)
+        // draw text 4096.
+        for(int i = 1; i < text4096.Active.Count; i++)
         {
-            ref DenseEntry<Text4096> denseEntry = ref text4096DenseEntries[i];
-            ref Text4096 text = ref denseEntry.Value;
-            GetGenIndex(text16Components, denseEntry.sparseIndex, out GenIndex genIndex);
-            
-            if(GetDenseReadOnlyRef(transformComponents, genIndex, out ReadOnlyRef<Transform> transformReadOnlyRef).Fail())
-                continue;
+            GenId genId = text4096.Active[i];
+            ref Text4096 text = ref ComponentArray.GetDataUnsafe(text4096, genId);
 
-            DrawText(state, ref camera, ref transformReadOnlyRef.Value, text.AsSpanUsed(), ref text.TextParameters);
+            if(text.TextParameters.WorldSpace != worldSpace)
+            {
+                continue;
+            }
+
+            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
+
+            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
         }
 
         state.SpriteBatch.End();
