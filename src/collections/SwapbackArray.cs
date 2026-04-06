@@ -6,27 +6,33 @@ namespace Howl.Collections;
 public class SwapBackArray<T> : IDisposable
 {
     /// <summary>
-    /// The data of type stored by this 
+    ///     The data of type stored by this 
     /// </summary>
     public T[] Data;
 
     /// <summary>
-    /// The total number of allocated entries after index zero.  
+    ///     The total number of allocated entries after index zero.  
     /// </summary>
     public int Count;
 
     /// <summary>
-    /// Whether or not this instance has been disposed of.
+    ///     Gets the total number of elements in all the dimensions of the Array.
+    /// </summary>
+    public int Length;
+
+    /// <summary>
+    ///     Whether or not this instance has been disposed of.
     /// </summary>
     public bool Disposed;
 
     /// <summary>
-    /// Creates a new SwapbackArray instance.
+    ///     Creates a new SwapbackArray instance.
     /// </summary>
     /// <param name="length">the length of the backing array.</param>
     public SwapBackArray(int length)
     {
         Data = new T[length];
+        Length = length;
     }
 
     public T this[int index]
@@ -42,7 +48,7 @@ public class SwapBackArray<T> : IDisposable
     }
 
     /// <summary>
-    /// Appends a value to a swapback array.
+    ///     Appends a value to a swapback array.
     /// </summary>
     /// <param name="array">the swapback array instance to append to.</param>
     /// <param name="value">the value to append.</param>
@@ -54,7 +60,7 @@ public class SwapBackArray<T> : IDisposable
     }
 
     /// <summary>
-    /// Removes an entry at a given index from a swapback array.
+    ///     Removes an entry at a given index from a swapback array.
     /// </summary>
     /// <param name="array">the swapback array instance.</param>
     /// <param name="index">the index to remove at.</param>
@@ -73,7 +79,7 @@ public class SwapBackArray<T> : IDisposable
     }
 
     /// <summary>
-    /// Sets the <c>Count</c> of a swap back array to zero.
+    ///     Sets the <c>Count</c> of a swap back array to zero.
     /// </summary>
     /// <param name="array">the swap back array instance to clear.</param>
     public static void ClearCount(SwapBackArray<T> array)
@@ -134,6 +140,8 @@ public class SwapBackArray<T> : IDisposable
 
         array.Count = 0;
 
+        array.Length = 0;
+
         GC.SuppressFinalize(array);
     }
 
@@ -146,7 +154,7 @@ public class SwapBackArray<T> : IDisposable
 public static class SwapBackArray
 {
     /// <summary>
-    /// Appends a value to a swapback array.
+    ///     Appends a value to a swapback array.
     /// </summary>
     /// <param name="array">the swapback array instance to append to.</param>
     /// <param name="value">the value to append.</param>
@@ -157,7 +165,7 @@ public static class SwapBackArray
     }
 
     /// <summary>
-    /// Removes an entry at a given index from a swapback array.
+    ///     Removes an entry at a given index from a swapback array.
     /// </summary>
     /// <param name="array">the swapback array instance.</param>
     /// <param name="index">the index to remove at.</param>
@@ -168,7 +176,7 @@ public static class SwapBackArray
     }
 
     /// <summary>
-    /// Sets the <c>Count</c> of a swap back array to zero.
+    ///     Sets the <c>Count</c> of a swap back array to zero.
     /// </summary>
     /// <param name="array">the swap back array instance to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

@@ -1,25 +1,26 @@
+using Howl.Collections;
+
 namespace Howl.Test.Collections;
 
-public static class Assert_StackArray
+public static class Assert_SwapBackArray
 {
     /// <summary>
-    ///     Asserts the equality of array lengths in a StackArray instance. 
+    ///     Asserts the eqaulity of array lengths in a SwapBackArray instance.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     /// <param name="length">the expected length of the backing arrays.</param>
-    /// <param name="array">the stack array instance.</param>
-    public static void LengthEqual<T>(int length, StackArray<T> array)
+    /// <param name="array">the swapback array instance.</param>
+    public static void LengthEqual<T>(int length, SwapBackArray<T> array)
     {
         Assert.Equal(length, array.Data.Length);
         Assert.Equal(length, array.Length);
     }
 
     /// <summary>
-    ///     Asserts that a stack array instance is disposed.
+    ///     Asserts that a swapback array instance is disposed.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="array">the array instance.</param>
-    public static void Disposed<T>(this StackArray<T> array)
+    public static void Disposed<T>(this SwapBackArray<T> array)
     {
         Assert.Null(array.Data);
         Assert.True(array.Count == 0);
