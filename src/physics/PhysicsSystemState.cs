@@ -523,13 +523,13 @@ public sealed class PhysicsSystemState : IDisposable
 
 
 
-    public PhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount, int maxCollisions)
+    public PhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount)
     {
         MaxPhysicsBodyCount = physicsBodyCount;
 
         // Utility.
-        Bvh = new(physicsBodyCount, maxCollisions);
-        CollisionManifold = new(maxCollisions);
+        Bvh = new(physicsBodyCount);
+        CollisionManifold = new(physicsBodyCount);
 
         // Physics body data.
         Flags                       = new PhysicsBodyFlags[physicsBodyCount];

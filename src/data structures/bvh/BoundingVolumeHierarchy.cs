@@ -70,10 +70,13 @@ public class BoundingVolumeHierarchy : IDisposable
     /// Creates a new bounding volume hierarchy instance.
     /// </summary>
     /// <param name="length"></param>
-    public BoundingVolumeHierarchy(int length, int spatialPairsLength)
+    public BoundingVolumeHierarchy(int length)
     {
+        // mapping each spatial pair onto one another (without duplicates) gives a length * 2 possible spatial pairs.
+        int spatialPairsLength = length*2;
+        
         Leaves = new(length);
-        Branches = new(length*2);
+        Branches = new(spatialPairsLength);
         SpatialPairQueryBuffer = new(spatialPairsLength);
         MortonCentroids = new uint[length];
         MortonLeafIds = new int[length];

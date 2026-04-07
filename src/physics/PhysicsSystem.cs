@@ -272,30 +272,28 @@ public static class PhysicsSystem
     /// <summary>
     /// Syncs a entities that contain both a transform and physics body id component to an soa transform collection.
     /// </summary>
-    /// <param name="transforms">the gen index list that stores the entity transform components to mutate..</param>
-    /// <param name="bodyIds">the gen index list that stores the entity physics body id components to mutate..</param>
+    /// <param name="transforms">the entity transform components to mutate.</param>
+    /// <param name="bodyIds">the entity physics body id components to mutate.</param>
     /// <param name="soaTransform">the soa transforms to copy into the entity transform components.</param>
     /// <param name="generation">the generation of each soa transform entry.</param>
-    public static void SyncEntityTransformsToPhysicsBodies(GenIndexList<Transform> transforms,
-        GenIndexList<PhysicsBodyId> bodyIds, Soa_Transform soaTransform, Span<int> generation)
+    public static void SyncEntityTransformsToPhysicsBodies(EcsState ecs, Soa_Transform soaTransform, Span<int> generation)
     {
-        Span<DenseEntry<PhysicsBodyId>> denseEntries = GetDenseAsSpan(bodyIds);
-        
-        for(int i = 0; i < denseEntries.Length; i++)
+        ComponentArray<PhysicsBodyId> tags = EcsState.GetComponents<PhysicsBodyId>(ecs);
+        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
+
+        for(int i = 1; i < tags.Active.Count; i++)
         {
-            ref DenseEntry<PhysicsBodyId> entry = ref denseEntries[i];
-            ref PhysicsBodyId bodyId = ref entry.Value;
-            GetGenIndex(bodyIds, entry.sparseIndex, out GenIndex genIndex);
+            GenId genId = tags.Active[i];
+            ref PhysicsBodyId tag = ref ComponentArray.GetDataUnsafe(tags, genId);
 
-            // skip if the physics body id isn't valid.
-            if(generation[bodyId.GenIndex.Index] != bodyId.GenIndex.Generation)
+            // skip the tag if it is stale.
+            if(tag.GenIndex.Generation != generation[tag.GenIndex.Index])
+            {
                 continue;
+            }
 
-            // sync the transform data to the physics simulation 
-            // if it has an associated physics body id.
-            
-            if(GetDenseRef(transforms, genIndex, out Ref<Transform> transformRef).Ok())
-                CopySoaToTransform(soaTransform, ref transformRef.Value, bodyId.GenIndex.Index);
+            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
+            CopySoaToTransform(soaTransform, ref transform, tag.GenIndex.Index);
         }
     }
 

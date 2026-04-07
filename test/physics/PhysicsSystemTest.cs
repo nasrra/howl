@@ -14,12 +14,11 @@ using Howl.Test.Math;
 
 namespace Howl.Test.Physics;
 
-public class PhysicsSystemTest
+public class Test_PhysicsSystem
 {
     int maxBodies = 10;
     int maxBodyShapeVertices = 100;
     int maxBodyShapeVerticeCount = 5;
-    int maxCollisions = 65535;
 
 
 
@@ -60,7 +59,7 @@ public class PhysicsSystemTest
     [Fact]
     public void AddVertices_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);        
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
         
         // first data set test.
 
@@ -82,7 +81,7 @@ public class PhysicsSystemTest
     [Fact]
     public void SetTransform_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
 
         GenIndex genIndex = new GenIndex(1,0);
         float posX = -2.5f;
@@ -124,7 +123,7 @@ public class PhysicsSystemTest
     [Fact]
     public void AllocateCircleCollider_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount);
         
         float posX;
         float posY;
@@ -175,7 +174,7 @@ public class PhysicsSystemTest
     [Fact]
     public void AllocateCircleRigidBody_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
                 
         float posX;
         float posY;
@@ -291,7 +290,7 @@ public class PhysicsSystemTest
     [Fact]
     public void AllocateRectangleCollider_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
 
         float posX;
         float posY;
@@ -354,7 +353,7 @@ public class PhysicsSystemTest
     [Fact]
     public void AllocateRectangleRigidBody_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
 
         float posX;
         float posY;
@@ -430,7 +429,7 @@ public class PhysicsSystemTest
     public void TransformPhysicsBodyVertices_Test()
     {        
         
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
         
         // define and insert circle.
 
@@ -483,23 +482,25 @@ public class PhysicsSystemTest
     [Fact]
     public void SyncEntityTransformsToPhysicsBodies_Test()
     {
-        PhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount, maxCollisions);
-        GenIndexAllocator allocator = new();
-        ComponentRegistry registry = new(allocator);
-        PhysicsSystem.RegisterComponents(registry);
+        PhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        
+        EcsState ecs = new(8);
+        PhysicsSystem.RegisterComponents(ecs.Components);
 
-        GenIndexList<PhysicsBodyId> physicsBodyIds = registry.Get<PhysicsBodyId>();
-        GenIndexList<Transform> transforms = registry.Get<Transform>();
+        // pull components into scope.
+        ComponentArray<PhysicsBodyId> tags = EcsState.GetComponents<PhysicsBodyId>(ecs);
+        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
 
         Transform expected = new Transform(0,9,8,7,6,5,4);
 
-        allocator.Allocate(out GenIndex entityGenIndex, out _);
-        GenIndex bodyGenIndex = default;
+        GenId genId = default;
+        EntityRegistry.Allocate(ecs.Entities, ref genId);
 
         // allocate entity.
+        GenIndex bodyGenIndex = default;
         AllocateRectangleCollider(state, new Rectangle(0,0,2,2), expected, true, false, ref bodyGenIndex);
-        GenIndexListProc.Allocate(physicsBodyIds, entityGenIndex, new(bodyGenIndex));
-        GenIndexListProc.Allocate(transforms, entityGenIndex, new Transform(1,2,3,4,5,6,7));
+        ComponentArray.Allocate(tags, ecs.Entities, genId, new(bodyGenIndex));
+        ComponentArray.Allocate(transforms, ecs.Entities, genId, new Transform(1,2,3,4,5,6,7));
     
         SyncEntityTransformsToPhysicsBodies(transforms, physicsBodyIds, state.Transforms, state.Generations);
 

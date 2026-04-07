@@ -66,8 +66,11 @@ public class CollisionManifold : IDisposable
     /// Creates a new Collision Manifold instance.
     /// </summary>
     /// <param name="maxCollisions"></param>
-    public CollisionManifold(int maxCollisions)
+    public CollisionManifold(int totalColliderCount)
     {
+        // mapping each collider (within a matrix structure) onto one another gives a squared length/count.
+        int maxCollisions = totalColliderCount * totalColliderCount;
+
         CircleSpatialPairs          = new SpatialPairBuffer(maxCollisions);
         PolygonSpatialPairs         = new SpatialPairBuffer(maxCollisions);
         PolygonToCircleSpatialPairs = new SpatialPairBuffer(maxCollisions);
@@ -78,107 +81,40 @@ public class CollisionManifold : IDisposable
         Collisions                          = new Soa_Collision(maxCollisions);
     }
 
-
-    //     /// <summary>
-    // /// Sorts this manifold's collisions in a GenIndex index ascending order 
-    // /// </summary>
-    // /// <remarks>
-    // /// Note: This is done so that the retrieve collision method can binary search for collisions.
-    // /// </remarks>
-    // public void Sort()
+    // public static void Update(CollisionManifold manifold)
     // {
-    //     Collisions.Sort((a,b) => a.Owner.Index.CompareTo(b.Owner.Index));
-    // }
+    //     Span<CollisionType> span = manifold.Collisions;
 
-    // /// <summary>
-    // /// Retrieves all collisions associated with a given GenIndex
-    // /// </summary>
-    // /// <remarks>
-    // /// Note: this method uses binary search, ensure that the collisions list has been sorted
-    // /// using the sort utility function before attempting to retrieve any collisions. 
-    // /// </remarks>
-    // /// <param name="genIndex"></param>
-    // /// <returns></returns>
-    // public ReadOnlySpan<Collision> RetrieveCollisions(GenIndex genIndex)
-    // {
-    //     ReadOnlySpan<Collision> collisionSpan = CollectionsMarshal.AsSpan(Collisions);
-    //     ReadOnlySpan<Collision> result;
-
-    //     int index = BinarySearch(collisionSpan, genIndex);
-
-    //     if(index != -1)
+    //     for(int i = 0; i < span.Length; i++)
     //     {
-    //         int length = 1;
-    //         int start = index;
-            
-    //         // get the collision entries in the upper span.
-    //         for(int i = index + 1; i < collisionSpan.Length; i++)
+    //         ref CollisionType collision = ref span[i];
+    //         if((collision & CollisionType.SetThisStep) == 0)
     //         {
-    //             if(collisionSpan[i].Owner == genIndex)
-    //             {
-    //                 length++;
-    //             }
-    //             else
-    //             {
+    //             collision = default;
+    //             continue;
+    //         }
+
+    //         // remove the set this step flag for switch statement.
+    //         collision &= ~CollisionType.SetThisStep;
+
+    //         switch (collision)
+    //         {
+    //             case CollisionType.CollisionEnter:
+    //                 collision = CollisionType.Colliding;
     //                 break;
-    //             }
-    //         }
-
-    //         // get the collision entries in the lower span.
-    //         for(int i = index - 1; i > 0; i--)
-    //         {
-    //             if(collisionSpan[i].Owner == genIndex)
-    //             {
-    //                 length++;
-    //                 start = i;
-    //             }
-    //             else
-    //             {
+    //             case CollisionType.CollisionExit:
+    //                 collision = default;
     //                 break;
-    //             }
+    //             case CollisionType.TriggerEnter:
+    //                 collision = CollisionType.Triggering;
+    //                 break;
+    //             case CollisionType.TriggerExit:
+    //                 collision = default;
+    //                 break;
     //         }
-
-    //         // assign a slice of all found collisions as the result.
-    //         result = collisionSpan.Slice(start, length);
     //     }
-    //     else
-    //     {
-    //         result = new ReadOnlySpan<Collision>();
-    //     }
-
-    //     return result;
     // }
 
-    // /// <summary>
-    // /// Searches a collision span for the first found entry containing the queried GenIndex.
-    // /// </summary>
-    // /// <param name="collisionSpan">The span of collisions to search</param>
-    // /// <param name="genIndex">The gen index</param>
-    // /// <returns></returns>
-    // private int BinarySearch(ReadOnlySpan<Collision> collisionSpan, GenIndex genIndex)
-    // {
-    //     int left = 0;
-    //     int right = collisionSpan.Length -1;
-
-    //     while(left <= right)
-    //     {
-    //         int mid = (left + right) / 2;
-
-    //         if (collisionSpan[mid].Owner == genIndex)
-    //         {
-    //             return mid;
-    //         }
-    //         else if (collisionSpan[mid].Owner.Index < genIndex.Index)
-    //         {
-    //             left = mid + 1;
-    //         }
-    //         else
-    //         {
-    //             right = mid - 1;                
-    //         }
-    //     }
-    //     return -1;
-    // }
 
 
 

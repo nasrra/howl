@@ -8,20 +8,21 @@ using Howl.ECS;
 
 namespace Howl.Test.DataStructures.Bvh;
 
-public class BoundingVolumeHierarchyTest
+public class Test_BoundingVolumeHierarchy
 {
     [Fact]
     public void Constructor_Test()
     {
         for(int length = 0; length < 6; length++)
         {            
-            BoundingVolumeHierarchy bvh = new(length, 1024);
+            BoundingVolumeHierarchy bvh = new(length);
+            int doubleLength = length*2;
 
             RadixSortBufferAssert.LengthEqual(length, bvh.RadixSortBuffer);
-            Soa_SpatialPairAssert.LengthEqual(1024, bvh.SpatialPairs);
-            Soa_BranchAssert.LengthEqual(length*2, bvh.Branches);
+            Soa_SpatialPairAssert.LengthEqual(doubleLength, bvh.SpatialPairs);
+            Soa_BranchAssert.LengthEqual(doubleLength, bvh.Branches);
             Soa_LeafAssert.LengthEqual(length, bvh.Leaves);
-            Soa_QueryResultAssert.LengthEqual(1024, bvh.SpatialPairQueryBuffer);
+            Soa_QueryResultAssert.LengthEqual(doubleLength, bvh.SpatialPairQueryBuffer);
             Assert.Equal(length, bvh.MortonCentroids.Length);
             Assert.Equal(length, bvh.MortonLeafIds.Length);
             
@@ -34,7 +35,7 @@ public class BoundingVolumeHierarchyTest
     {
         for(int length = 0; length < 25; length++)
         {            
-            BoundingVolumeHierarchy bvh = new(length, 1024);
+            BoundingVolumeHierarchy bvh = new(length);
             for(int i = 0 ; i < length; i++)
             {
                 Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0,0,0,0);
@@ -54,7 +55,7 @@ public class BoundingVolumeHierarchyTest
     {
         int length = 6;
         Soa_QueryResult results = new(length*2);
-        BoundingVolumeHierarchy bvh = new(length, 1024);
+        BoundingVolumeHierarchy bvh = new(length);
         
         for(int i = 0; i < length; i++)
         {
@@ -90,7 +91,7 @@ public class BoundingVolumeHierarchyTest
     {        
         int length = 5;
         Soa_QueryResult results = new(length*2);
-        BoundingVolumeHierarchy bvh = new(length, 1024);
+        BoundingVolumeHierarchy bvh = new(length);
         
         Span<int> eOwnerIndices     = [1,2,3,4];
         Span<int> eOwnerGenerations = [2,3,4,5];
@@ -161,7 +162,7 @@ public class BoundingVolumeHierarchyTest
         //          - Branch (leaf 3-4)
         //
         
-        BoundingVolumeHierarchy bvh = new(12, 1024);
+        BoundingVolumeHierarchy bvh = new(12);
         int j = 0;
 
         for(int q = 0; q < 2; q++)
@@ -261,7 +262,7 @@ public class BoundingVolumeHierarchyTest
     [Fact]
     public void RaycastQuery_Test()
     {
-        BoundingVolumeHierarchy bvh = new(100, 256);
+        BoundingVolumeHierarchy bvh = new(100);
 
         // leaf 1 
         Aabb leaf1AABB = new Aabb(0,0,10,10);
@@ -311,7 +312,7 @@ public class BoundingVolumeHierarchyTest
     {
         for(int length = 0; length < 6; length++)
         {
-            BoundingVolumeHierarchy bvh = new(length, 1024);
+            BoundingVolumeHierarchy bvh = new(length);
             for(int i = 0; i < length; i++)
             {
                 Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0,0,0,0);
