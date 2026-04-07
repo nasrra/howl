@@ -11,9 +11,9 @@ public enum GenIdResult : byte
     StaleGenId,
 
     /// <summary>
-    ///     Returned when a GenId accesses an unallocated component in a component array when attempting to return an allocated entry. 
+    ///     Returned when a GenId accesses an unallocated value in a array when attempting to return an allocated entry. 
     /// </summary>
-    ComponentNotAllocated,
+    NotAllocated,
 
     /// <summary>
     ///     Returned when the amount of allocated memory of a given GenIndexArray has been reached; meaning that all slots in the backing arrays are allocated.

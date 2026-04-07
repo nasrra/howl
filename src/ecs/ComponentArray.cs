@@ -115,7 +115,7 @@ public class ComponentArray<T> : IDisposable
     /// </returns>
     public static GenIdResult Allocate(ComponentArray<T> array, EntityRegistry entities, GenId genId, T component)
     {
-        if (EntityRegistry.GenIdIsStale(entities, genId))
+        if (EntityRegistry.IsGenIdStale(entities, genId))
         {
             return GenIdResult.StaleGenId;
         }
@@ -147,7 +147,7 @@ public class ComponentArray<T> : IDisposable
     ///             <see cref="GenIdResult.Ok"/>
     ///         </item>
     ///         <item>
-    ///             <see cref="GenIdResult.ComponentNotAllocated"/>
+    ///             <see cref="GenIdResult.NotAllocated"/>
     ///         </item>
     ///         <item>
     ///             <see cref="GenIdResult.StaleGenId"/>
@@ -156,7 +156,7 @@ public class ComponentArray<T> : IDisposable
     /// </returns>
     public static GenIdResult Deallocate(ComponentArray<T> array, EntityRegistry entities, GenId genId)
     {
-        if (EntityRegistry.GenIdIsStale(entities, genId))
+        if (EntityRegistry.IsGenIdStale(entities, genId))
         {
             return GenIdResult.StaleGenId;
         }
@@ -165,7 +165,7 @@ public class ComponentArray<T> : IDisposable
 
         if(array.Allocated[sparseIndex] == false)
         {
-            return GenIdResult.ComponentNotAllocated;
+            return GenIdResult.NotAllocated;
         }
 
         // order matters here, set inactive before deallocation so that no systems access 
@@ -203,7 +203,7 @@ public class ComponentArray<T> : IDisposable
     ///         <see cref="GenIdResult.Ok"/>
     ///     </item>
     ///     <item>
-    ///         <see cref="GenIdResult.ComponentNotAllocated"/>
+    ///         <see cref="GenIdResult.NotAllocated"/>
     ///     </item>
     ///         <item>
     ///             <see cref="GenIdResult.StaleGenId"/>
@@ -213,14 +213,14 @@ public class ComponentArray<T> : IDisposable
     {
         int sparseIndex = GenId.GetIndex(genId);
 
-        if(EntityRegistry.GenIdIsStale(entities, genId))
+        if(EntityRegistry.IsGenIdStale(entities, genId))
         {
             return GenIdResult.StaleGenId;
         }
 
         if (array.Allocated[sparseIndex] == false)
         {
-            return GenIdResult.ComponentNotAllocated;
+            return GenIdResult.NotAllocated;
         }
                 
         SetActiveUnsafe(array, genId, sparseIndex);
@@ -273,7 +273,7 @@ public class ComponentArray<T> : IDisposable
     ///             <see cref="GenIdResult.Ok"/>
     ///         </item>
     ///         <item>
-    ///             <see cref="GenIdResult.ComponentNotAllocated"/>
+    ///             <see cref="GenIdResult.NotAllocated"/>
     ///         </item>
     ///         <item>
     ///             <see cref="GenIdResult.StaleGenId"/>
@@ -282,7 +282,7 @@ public class ComponentArray<T> : IDisposable
     /// </returns>
     public static GenIdResult SetInactive(ComponentArray<T> array, EntityRegistry entities, GenId genId)
     {
-        if(EntityRegistry.GenIdIsStale(entities, genId))
+        if(EntityRegistry.IsGenIdStale(entities, genId))
         {
             return GenIdResult.StaleGenId;
         }
@@ -291,7 +291,7 @@ public class ComponentArray<T> : IDisposable
 
         if (array.Allocated[sparseIndex] == false)
         {
-            return GenIdResult.ComponentNotAllocated;
+            return GenIdResult.NotAllocated;
         }
         
         SetInactiveUnsafe(array, sparseIndex);
@@ -364,7 +364,7 @@ public class ComponentArray<T> : IDisposable
     /// </returns>
     public static ref T GetData(ComponentArray<T> components, EntityRegistry entities, GenId genId, ref GenIdResult result)
     {
-        if (EntityRegistry.GenIdIsStale(entities, genId))
+        if (EntityRegistry.IsGenIdStale(entities, genId))
         {
             // return the Nil.
             result = GenIdResult.StaleGenId;
@@ -377,7 +377,7 @@ public class ComponentArray<T> : IDisposable
         if(components.Allocated[sparseIndex] == false)
         {
             // return the Nil.
-            result = GenIdResult.ComponentNotAllocated;
+            result = GenIdResult.NotAllocated;
             return ref GetDataUnsafe(components, 0);
         }
 
@@ -564,7 +564,7 @@ public static class ComponentArray
     ///             <see cref="GenIdResult.Ok"/>
     ///         </item>
     ///         <item>
-    ///             <see cref="GenIdResult.ComponentNotAllocated"/>
+    ///             <see cref="GenIdResult.NotAllocated"/>
     ///         </item>
     ///         <item>
     ///             <see cref="GenIdResult.StaleGenId"/>
@@ -603,7 +603,7 @@ public static class ComponentArray
     ///         <see cref="GenIdResult.Ok"/>
     ///     </item>
     ///     <item>
-    ///         <see cref="GenIdResult.ComponentNotAllocated"/>
+    ///         <see cref="GenIdResult.NotAllocated"/>
     ///     </item>
     ///         <item>
     ///             <see cref="GenIdResult.StaleGenId"/>
@@ -649,7 +649,7 @@ public static class ComponentArray
     ///             <see cref="GenIdResult.Ok"/>
     ///         </item>
     ///         <item>
-    ///             <see cref="GenIdResult.ComponentNotAllocated"/>
+    ///             <see cref="GenIdResult.NotAllocated"/>
     ///         </item>
     ///         <item>
     ///             <see cref="GenIdResult.StaleGenId"/>

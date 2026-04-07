@@ -4,7 +4,7 @@ using Howl.Math;
 
 namespace Howl.Test.Math;
 
-public class Soa_TransformTest
+public class Test_Soa_Transform
 {
     [Fact]
     public void Constructor_Test()
@@ -36,7 +36,7 @@ public class Soa_TransformTest
         Soa_Transform soa = new(10);
         Transform transform = new Transform(1,2,3,4,5,6,7);
         CopyTransformToSoa(soa, ref transform, 2);
-        Soa_TransformAssert.EntryEquals(soa, ref transform, 2, 4);
+        Assert_Soa_Transform.EntryEqual(transform, 4, 2, soa);
     }
     
     [Fact]
@@ -47,6 +47,6 @@ public class Soa_TransformTest
         Transform result = default;
         CopyTransformToSoa(soa, ref expected, 2);
         CopySoaToTransform(soa, ref result, 2);
-        TransformAssert.Equals(ref expected, ref result, 4);
+        Assert_Transform.Equals(ref expected, ref result, 4);
     }
 }

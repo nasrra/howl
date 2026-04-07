@@ -149,7 +149,7 @@ public class EntityRegistry : IDisposable
     /// <param name="registry">the entity registry instance to query.</param>
     /// <param name="genId">the specified gen id.</param>
     /// <returns>true, if the gen id is stale; otherwise false</returns>
-    public static bool GenIdIsStale(EntityRegistry registry, GenId genId)
+    public static bool IsGenIdStale(EntityRegistry registry, GenId genId)
     {
         return registry.GenIds[GenId.GetIndex(genId)] != genId;
     }

@@ -88,7 +88,7 @@ public class Test_ComponentArray
 
                 // unsuccessfuly deallocate.
                 // entry has already been deallocated.
-                Assert.Equal(GenIdResult.ComponentNotAllocated, ComponentArray.Deallocate(nums, entities, deallocate));
+                Assert.Equal(GenIdResult.NotAllocated, ComponentArray.Deallocate(nums, entities, deallocate));
 
                 // ensure it is no longer active.
                 Assert_ComponentArray.EntryIsInactive(deallocate, nums);
@@ -115,7 +115,7 @@ public class Test_ComponentArray
         Assert.Equal(GenIdResult.StaleGenId, result);
 
         ComponentArray.GetData(nums, entities, validId, ref result);
-        Assert.Equal(GenIdResult.ComponentNotAllocated, result);
+        Assert.Equal(GenIdResult.NotAllocated, result);
     
         // success cases.
         ComponentArray.Allocate(nums, entities, validId, component);

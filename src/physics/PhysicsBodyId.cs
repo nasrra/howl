@@ -6,16 +6,16 @@ using Howl.ECS;
 public struct PhysicsBodyId
 {
     /// <summary>
-    /// Gets and sets the gen index of the associated physics body in the physics simulation.
+    /// Gets and sets the gen id of the associated physics body in the physics simulation.
     /// </summary>
-    public GenIndex GenIndex;
+    public GenId GenId;
 
     /// <summary>
     /// Constructs a new Physics Body Id.
     /// </summary>
-    /// <param name="genIndex">The gen index of the associated physics body in the physics simulation</param>
-    public PhysicsBodyId(GenIndex genIndex)
+    /// <param name="genId">The gen id of the associated physics body in the physics simulation</param>
+    public PhysicsBodyId(GenId genId)
     {
-        GenIndex = genIndex;
+        GenId = genId;
     }
 }

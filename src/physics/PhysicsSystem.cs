@@ -259,13 +259,13 @@ public static class PhysicsSystem
             ref PhysicsBodyId tag = ref ComponentArray.GetDataUnsafe(tagged, genId);            
 
             // skip if the physics body id isn't valid.
-            if(generation[tag.GenIndex.Index] != tag.GenIndex.Generation)
+            if(generation[GenId.GetIndex(tag.GenId)] != GenId.GetGeneration(tag.GenId))
                 continue;
             
             // sync the transform data to the physics simulation 
             // if it has an associated physics body id.
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-            SetTransform(soaTransform, generation, tag.GenIndex, transform);
+            Soa_Transform.CopyTransformToSoa(soaTransform, ref transform, GenId.GetIndex(genId));
         }
     }
 
@@ -287,13 +287,13 @@ public static class PhysicsSystem
             ref PhysicsBodyId tag = ref ComponentArray.GetDataUnsafe(tags, genId);
 
             // skip the tag if it is stale.
-            if(tag.GenIndex.Generation != generation[tag.GenIndex.Index])
+            if(generation[GenId.GetIndex(tag.GenId)] != GenId.GetGeneration(tag.GenId))
             {
                 continue;
             }
 
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-            CopySoaToTransform(soaTransform, ref transform, tag.GenIndex.Index);
+            CopySoaToTransform(soaTransform, ref transform, GenId.GetIndex(tag.GenId));
         }
     }
 

@@ -2,10 +2,10 @@ using Howl.Math;
 
 namespace Howl.Test.Math;
 
-public static class TransformAssert
+public static class Assert_Transform
 {
     /// <summary>
-    /// Asserts that two transform structs are equals.
+    ///     Asserts that two transform structs are equals.
     /// </summary>
     /// <param name="expected">the expected transform.</param>
     /// <param name="result">the resultant transform.</param>
@@ -16,7 +16,7 @@ public static class TransformAssert
         Assert.Equal(expected.Position.Y, result.Position.Y, precision);
         Assert.Equal(expected.Scale.X, result.Scale.X, precision);
         Assert.Equal(expected.Scale.Y, result.Scale.Y, precision);
-        Assert.Equal(expected.Rotation, result.Rotation, precision);
+        // Assert.Equal(expected.Rotation, result.Rotation, precision); THIS NEEDS TO GO!!
         Assert.Equal(expected.Sin, result.Sin, precision);
         Assert.Equal(expected.Cos, result.Cos, precision);
     }

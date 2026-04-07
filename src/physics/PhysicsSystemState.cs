@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Howl.DataStructures;
 using Howl.DataStructures.Bvh;
-using Howl.ECS;
 using Howl.Graphics;
 using Howl.Math;
 
@@ -195,11 +193,6 @@ public sealed class PhysicsSystemState : IDisposable
     /// The generation of a physics body id.
     /// </summary>
     public int[] Generations;
-    
-    /// <summary>
-    /// Gets and sets the physics body indices available for reuse and allocation.
-    /// </summary>
-    public Stack<int> FreePhysicsBodyIndex;
 
     /// <summary>
     /// Gets and sets the vertice indices available for reuse and allocation.
@@ -219,12 +212,17 @@ public sealed class PhysicsSystemState : IDisposable
 
 
     /// <summary>
-    /// Gets the bounding volume hierarchy for a collision system.
+    ///     The gen-id allocator for all phsyics bodies.
+    /// </summary>
+    public EntityRegistry Entities;
+
+    /// <summary>
+    ///     Gets the bounding volume hierarchy for a collision system.
     /// </summary>
     public BoundingVolumeHierarchy Bvh;
 
     /// <summary>
-    /// Gets the collision manifold.
+    ///     Gets the collision manifold.
     /// </summary>
     public CollisionManifold CollisionManifold;
 
@@ -530,11 +528,12 @@ public sealed class PhysicsSystemState : IDisposable
         // Utility.
         Bvh = new(physicsBodyCount);
         CollisionManifold = new(physicsBodyCount);
+        Entities = new(physicsBodyCount);
 
         // Physics body data.
         Flags                       = new PhysicsBodyFlags[physicsBodyCount];
-        LocalVertices                    = new Soa_Vector2(physicsBodyVerticesCount);
-        WorldVertices         = new Soa_Vector2(physicsBodyVerticesCount);
+        LocalVertices               = new Soa_Vector2(physicsBodyVerticesCount);
+        WorldVertices               = new Soa_Vector2(physicsBodyVerticesCount);
         Transforms                  = new Soa_Transform(physicsBodyCount);
         Forces                      = new Soa_Vector2(physicsBodyCount);
         LinearVelocities            = new Soa_Vector2(physicsBodyCount);
@@ -545,16 +544,15 @@ public sealed class PhysicsSystemState : IDisposable
         AngularVelocities           = new float[physicsBodyCount];
         Masses                      = new float[physicsBodyCount];
         InverseMasses               = new float[physicsBodyCount];
-        LocalWidths                      = new float[physicsBodyCount];
-        LocalHeights                     = new float[physicsBodyCount];
-        LocalRadii                       = new float[physicsBodyCount];
-        WorldRadii            = new float[physicsBodyCount];
+        LocalWidths                 = new float[physicsBodyCount];
+        LocalHeights                = new float[physicsBodyCount];
+        LocalRadii                  = new float[physicsBodyCount];
+        WorldRadii                  = new float[physicsBodyCount];
         RotationalInertia           = new float[physicsBodyCount];
         InverseRotationalInertia    = new float[physicsBodyCount];
         FirstVertexIndices          = new int[physicsBodyCount];
         NextVertexIndices           = new int[physicsBodyVerticesCount];
         Generations                 = new int[physicsBodyCount];
-        FreePhysicsBodyIndex        = new();
         FreeVertexIndex             = new();
 
         // Debug diagnostic stopwatches.
@@ -595,10 +593,7 @@ public sealed class PhysicsSystemState : IDisposable
         // Counters.
         MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;
 
-        for(int i = physicsBodyCount-1; i >= 0; i--)
-            FreePhysicsBodyIndex.Push(i); // push all available indices to the stack.
-
-        for(int i = physicsBodyVerticesCount-1; i >= 0; i--)
+        for(int i = physicsBodyVerticesCount-1; i > 0; i--) // dont push zero as that is Nil
             FreeVertexIndex.Push(i); // push all available indices to the stack.
     }
 
