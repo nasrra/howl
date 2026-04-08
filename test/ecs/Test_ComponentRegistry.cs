@@ -4,16 +4,68 @@ namespace Howl.Test.Ecs;
 
 public class Test_ComponentRegistry
 {
-    public struct Foo()
+    public struct Foo
     {
-        public float x;
-        public float y;
+        public float X;
+        public float Y;
+        
+        public Foo(float x, float y)
+        {
+            X = x ;
+            Y = y;
+        }
+
+        public static bool operator ==(Foo a, Foo b)
+        {
+            return a.X == b.X && a.Y == b.Y;
+        }
+
+        public static bool operator !=(Foo a, Foo b)
+        {
+            return a.X != b.X && a.Y != b.Y;            
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Foo other && other == this;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
     }
 
-    public struct Loo()
+    public struct Loo
     {
-        public float x;
-        public float y;        
+        public float X;
+        public float Y;  
+
+        public Loo(float x, float y)
+        {
+            X = x ;
+            Y = y;
+        }
+
+        public static bool operator ==(Loo a, Loo b)
+        {
+            return a.X == b.X && a.Y == b.Y;
+        }
+
+        public static bool operator !=(Loo a, Loo b)
+        {
+            return a.X != b.X && a.Y != b.Y;            
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Loo other && other == this;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
     }
 
     [Fact]
@@ -39,6 +91,26 @@ public class Test_ComponentRegistry
         Assert.IsType<ComponentArray<Loo>>(ComponentRegistryNew.GetComponents<Loo>(registry));
         Assert.IsType<ComponentArray<Foo>>(ComponentRegistryNew.GetComponents<Foo>(registry));
     } 
+
+    [Fact]
+    public void EnforceNils_Test()
+    {
+        ComponentRegistryNew registry = new ComponentRegistryNew(ComponentRegistryNew.MinComponentArrayLength + 13);
+
+        ComponentRegistryNew.RegisterComponent<Foo>(registry);
+        ComponentRegistryNew.RegisterComponent<Loo>(registry);
+
+        ComponentArray<Loo> loos = ComponentRegistryNew.GetComponents<Loo>(registry);
+        ComponentArray<Foo> foos = ComponentRegistryNew.GetComponents<Foo>(registry);
+
+        loos.Sparse[0] = new(13, 24);
+        foos.Sparse[0] = new(98, 78);
+
+        ComponentRegistryNew.EnforceNil(registry);
+    
+        Assert.True(loos.Sparse[0] == default);
+        Assert.True(foos.Sparse[0] == default);
+    }
 
     [Fact]
     public void Disposal_Test()
