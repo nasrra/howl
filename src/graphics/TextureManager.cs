@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Generic;
 using Howl.Math;
 

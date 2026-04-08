@@ -1,5 +1,5 @@
 using Howl.Math;
-using Howl.ECS;
+using Howl.Ecs;
 
 namespace Howl.Graphics.Text;
 

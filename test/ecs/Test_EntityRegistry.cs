@@ -1,4 +1,4 @@
-namespace Howl.Test.ECS;
+namespace Howl.Test.Ecs;
 
 public class Test_EntityRegistry
 {

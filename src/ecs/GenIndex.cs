@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 public struct GenIndex
 {

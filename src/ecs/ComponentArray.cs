@@ -1,11 +1,11 @@
 using System;
-using System.Formats.Tar;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
-using Howl.ECS;
-using Howl.Generic;
+using Howl.Ecs;
 
-public class ComponentArray<T> : IDisposable
+namespace Howl.Ecs;
+
+public class ComponentArray<T> : IComponentArray
 {
     /// <summary>
     ///     The backing storage for actual elements.
@@ -492,6 +492,11 @@ public class ComponentArray<T> : IDisposable
         array.Length = 0;
 
         GC.SuppressFinalize(array);
+    }
+
+    public void EnforceNil()
+    {
+        Nil.Enforce(Sparse);
     }
 
     ~ComponentArray()

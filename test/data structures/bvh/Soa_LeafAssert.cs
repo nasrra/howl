@@ -1,5 +1,5 @@
 using Howl.DataStructures.Bvh;
-using Howl.Test.ECS;
+using Howl.Test.Ecs;
 using Howl.Test.Math;
 using Howl.Test.Math.Shapes;
 

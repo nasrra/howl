@@ -1,7 +1,7 @@
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Test.Collections;
 
-namespace Howl.Test.ECS;
+namespace Howl.Test.Ecs;
 
 public class Assert_GenIndexArray{
     

@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Howl.ECS;
+
+namespace Howl.Ecs;
 
 public class ComponentRegistryNew : IDisposable
 {
@@ -21,7 +22,7 @@ public class ComponentRegistryNew : IDisposable
     /// <remarks>
     ///     Note: static casting is required to get the underlying component array.
     /// </remarks>
-    public List<IDisposable> Components;
+    public List<IComponentArray> Components;
 
     /// <summary>
     ///     Whether this instance has been disposed of.
@@ -93,7 +94,7 @@ public class ComponentRegistryNew : IDisposable
     /// <returns>the component array of the specified type stored by the component registry.</returns>
     public static ComponentArray<T> GetComponents<T>(ComponentRegistryNew registry)
     {
-        Span<IDisposable> span = CollectionsMarshal.AsSpan(registry.Components);
+        Span<IComponentArray> span = CollectionsMarshal.AsSpan(registry.Components);
 
         int id = ComponentType<T>.GetId();
         
@@ -106,6 +107,19 @@ public class ComponentRegistryNew : IDisposable
 
         return span[id] as ComponentArray<T>;
     } 
+
+    /// <summary>
+    ///     Enforces a nil value on all component arrays in a component registry.
+    /// </summary>
+    /// <param name="registry"></param>
+    public static void EnforceNil(ComponentRegistryNew registry)
+    {
+        Span<IComponentArray> span = CollectionsMarshal.AsSpan(registry.Components);
+        for(int i = 0; i < span.Length; i++)
+        {
+            span[i].EnforceNil();
+        }        
+    }
 
 
 

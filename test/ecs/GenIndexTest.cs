@@ -1,9 +1,9 @@
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Generic;
 using Xunit;
-using static Howl.ECS.GenIndexListProc;
+using static Howl.Ecs.GenIndexListProc;
 
-namespace Howl.Test.ECS;
+namespace Howl.Test.Ecs;
 
 public class GenIndexTest
 {

@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Howl.Collections;
 using Howl.DataStructures.Bvh;
 using Howl.Graphics;
 using Howl.Math;
 
 namespace Howl.Physics;
 
-public sealed class PhysicsSystemState : IDisposable
+public sealed class PhysicsSystemState
 {
 
 
@@ -597,6 +598,36 @@ public sealed class PhysicsSystemState : IDisposable
             FreeVertexIndex.Push(i); // push all available indices to the stack.
     }
 
+    /// <summary>
+    ///     Enforces a <c>Nil</c> entry for all underling arrays of a physics system state instance.
+    /// </summary>
+    /// <param name="state">the physics system state instance.</param>
+    public static void EnforceNil(PhysicsSystemState state)
+    {
+        Nil.Enforce(state.Flags);
+        Soa_Vector2.EnforceNil(state.LocalVertices);
+        Soa_Vector2.EnforceNil(state.WorldVertices);    
+        Soa_Transform.EnforceNil(state.Transforms);
+        Soa_Vector2.EnforceNil(state.Forces);
+        Soa_Vector2.EnforceNil(state.LinearVelocities);
+        Soa_Vector2.EnforceNil(state.Centroids);
+        Soa_Vector2.EnforceNil(state.MaxAABBVertices);
+        Soa_Vector2.EnforceNil(state.MinAABBVertices);
+        Soa_PhysicsMaterial.EnforceNil(state.PhysicsMaterials);
+        Nil.Enforce(state.AngularVelocities);
+        Nil.Enforce(state.Masses);
+        Nil.Enforce(state.InverseMasses);
+        Nil.Enforce(state.LocalWidths);
+        Nil.Enforce(state.LocalHeights);
+        Nil.Enforce(state.LocalRadii);
+        Nil.Enforce(state.WorldRadii);
+        Nil.Enforce(state.RotationalInertia);
+        Nil.Enforce(state.InverseRotationalInertia); 
+        Nil.Enforce(state.FirstVertexIndices);
+        Nil.Enforce(state.NextVertexIndices);    
+        Nil.Enforce(state.Generations);
+    }
+
 
 
 
@@ -608,24 +639,6 @@ public sealed class PhysicsSystemState : IDisposable
 
 
 
-
-    /// <summary>
-    /// Throws an exception if an physics system state instance is disposed.
-    /// </summary>
-    /// <exception cref="ObjectDisposedException"></exception>
-    public static void ThrowIfDisposed(PhysicsSystemState state)
-    {
-        if (state.IsDisposed)
-            throw new ObjectDisposedException($"{nameof(PhysicsSystemState)}");
-    }
-
-    /// <summary>
-    /// Disposes this instance.
-    /// </summary>
-    public void Dispose()
-    {
-        Dispose(this);
-    }
 
     /// <summary>
     /// Disposes an physics system instance. instance.

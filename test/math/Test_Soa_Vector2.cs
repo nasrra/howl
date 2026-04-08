@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Howl.Test.Math;
 
-public class Soa_Vector2Test
+public class Test_Soa_Vector2
 {
     [Fact]
     public void Constructor_Test()
@@ -63,6 +63,21 @@ public class Soa_Vector2Test
         Assert.Equal(length, soa.AppendCount);
         Soa_Vector2.ResetCount(soa);
         Assert.Equal(0, soa.AppendCount);
+    }
+
+    [Fact]
+    public void EnforceNil_Test()
+    {
+        Debug.Log.Suppress = true;
+     
+        Soa_Vector2 soa = new(2);
+        soa.X[0] = 213;
+        soa.Y[0] = 190;
+        Soa_Vector2.EnforceNil(soa);
+        Assert.Equal(0, soa.X[0]);
+        Assert.Equal(0, soa.Y[0]);
+     
+        Debug.Log.Suppress = false;
     }
 
     [Fact]

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math.Shapes;
 using Howl.Math;
-using static Howl.ECS.GenIndexListProc;
+using static Howl.Ecs.GenIndexListProc;
 using static Howl.Math.Shapes.Rectangle;
 using static Howl.Math.Math;
 using System.Runtime.CompilerServices;

@@ -1,6 +1,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Howl.Collections;
 
 namespace Howl.Math;
 
@@ -75,6 +76,16 @@ public class Soa_Vector2 : IDisposable
     public static void ResetCount(Soa_Vector2 soa)
     {
         soa.AppendCount = 0;
+    }
+
+    /// <summary>
+    ///     Enforces a <c>Nil</c> entry for all underling arrays of a soa instance.
+    /// </summary>
+    /// <param name="soa">the soa instance.</param>
+    public static void EnforceNil(Soa_Vector2 soa)
+    {
+        Nil.Enforce(soa.X);
+        Nil.Enforce(soa.Y);
     }
 
 

@@ -1,6 +1,6 @@
-using Howl.ECS;
+using Howl.Ecs;
 
-namespace Howl.Test.ECS;
+namespace Howl.Test.Ecs;
 
 public static class Assert_GenIndex
 {

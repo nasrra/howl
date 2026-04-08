@@ -1,4 +1,4 @@
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Math.Shapes;
 using Howl.Physics;
 using Howl.Math;

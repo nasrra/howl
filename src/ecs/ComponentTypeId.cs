@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics.Metrics;
 using System.Threading;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 internal static class ComponentTypeId
 {

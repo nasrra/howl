@@ -1,9 +1,9 @@
 using System;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Generic;
 using Howl.Graphics.Text;
 using Microsoft.Xna.Framework.Graphics;
-using static Howl.ECS.GenIndexListProc;
+using static Howl.Ecs.GenIndexListProc;
 
 namespace Howl.Vendors.MonoGame.Text;
 

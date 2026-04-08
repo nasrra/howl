@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Howl.ECS;
+using Howl.Ecs;
 
 public static class GenIndexResultExtensions
 {

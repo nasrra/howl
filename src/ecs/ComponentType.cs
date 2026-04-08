@@ -2,7 +2,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 // Static fields in a generic class are per-closed type. That means:
 // ComponentType<Position>   // has its own static fields

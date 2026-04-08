@@ -1,7 +1,7 @@
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Math.Shapes;
 
-namespace Howl.Test.ECS;
+namespace Howl.Test.Ecs;
 
 public class Soa_GenIndexSliceTest
 {

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Howl.Physics;
@@ -67,28 +68,41 @@ public struct PhysicsMaterial
     }
 
     /// <summary>
-    /// Sets a kinetic friction value.
+    ///     Asserts that a kinetic friction value is betwen <c><see cref="MinFriction"/></c> and <c><see cref="MaxFriction"/></c>
     /// </summary>
     /// <remarks>
-    /// Note: this function clamps kinetic friction within physics material's min and max friction values.
+    ///     Calls to this function are compiled out entirely when not in <c>DEBUG</c> builds.
+    /// </remarks>
+    /// <param name="value">the kinetic friction value.</param>
+    [Conditional("DEBUG")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void AssertKineticFrictionInRange(float value)
+    {
+        System.Diagnostics.Debug.Assert(value >= MinFriction && value <= MaxDensity, 
+            $"Kinetic Friction '{value}' is not within the range of '{MinFriction}' and '{MaxFriction}'"
+        );
+    }
+
+    /// <summary>
+    ///     Sets a kinetic friction value.
+    /// </summary>
+    /// <remarks>
+    ///     Note: this function clamps kinetic friction within physics material's min and max friction values.
     /// </remarks>
     /// <param name="kineticFriction">the kinetic friction value to mutate.</param>
     /// <param name="value">the new kinetic friction value.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void SetKineticFriction(ref float kineticFriction, float value)
     {
+        AssertKineticFrictionInRange(value);
         kineticFriction = Math.Math.Clamp(value, MinFriction, MaxFriction);
-#if DEBUG
-        if(kineticFriction != value)
-            System.Diagnostics.Debug.Assert(false, $"Kinetic Friction '{value}' is not within the range of '{MinFriction}' and '{MaxFriction}'");
-#endif
     }
 
     /// <summary>
     /// Sets the kinetic friction value of a physics material.
     /// </summary>
     /// <remarks>
-    /// Note: this function clamps kinetic friction within physics material's min and max friction values.
+    ///     Note: this function clamps kinetic friction within physics material's min and max friction values.
     /// </remarks>
     /// <param name="material">the physics material to mutate.</param>
     /// <param name="value">the new kinetic friction value.</param>
@@ -99,10 +113,27 @@ public struct PhysicsMaterial
     }
 
     /// <summary>
-    /// Sets a static friction value.
+    ///     Asserts that a static friction value is between <c><paramref name="kineticFriction"/></c> and <c><see cref="MaxDensity"/></c>.
     /// </summary>
     /// <remarks>
-    /// Note: this function clamps static friction within the kinetic friction value and physic material's max friction value.
+    ///     Calls to this function are compiled out entirely when not in <c>DEBUG</c> builds.
+    /// </remarks>
+    /// <param name="value">the static friction value.</param>
+    /// <param name="kineticFriction">the kinetic friction value.</param>
+    [Conditional("DEBUG")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void AssertStaticFrictionInRange(float value, float kineticFriction)
+    {
+        System.Diagnostics.Debug.Assert(value >=  kineticFriction && value <= MaxFriction, 
+            $"Static Friction '{value}' is not within the range of '{kineticFriction}' and '{MaxFriction}'"
+        );
+    }
+
+    /// <summary>
+    ///     Sets a static friction value.
+    /// </summary>
+    /// <remarks>
+    ///     Note: this function clamps static friction within the kinetic friction value and physic material's max friction value.
     /// </remarks>
     /// <param name="staticFriction">the static friction value to mutate.</param>
     /// <param name="kineticFriction">the kinetic friction value used as the minimum static friction value.</param>
@@ -110,18 +141,15 @@ public struct PhysicsMaterial
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void SetStaticFriction(ref float staticFriction, ref float kineticFriction, float value)
     {
+        AssertStaticFrictionInRange(value, kineticFriction);
         staticFriction = Math.Math.Clamp(value, kineticFriction, MaxFriction);
-#if DEBUG
-        if(staticFriction != value)
-            System.Diagnostics.Debug.Assert(false, $"Static Friction '{value}' is not within the range of '{kineticFriction}' and '{MaxFriction}'");
-#endif
     }
 
     /// <summary>
-    /// Sets the static friction value of a physics material.
+    ///     Sets the static friction value of a physics material.
     /// </summary>
     /// <remarks>
-    /// Note: this function clamps static friction within the kinetic friction value and physic material's max friction value.
+    ///     Note: this function clamps static friction within the kinetic friction value and physic material's max friction value.
     /// </remarks>
     /// <param name="material">the physics material to mutate.</param>
     /// <param name="value">the new static friction value.</param>
@@ -132,25 +160,38 @@ public struct PhysicsMaterial
     }
 
     /// <summary>
-    /// Sets a density value.
+    ///     Asserts that a density value is between <c><see cref="MinDensity"/></c> and <c><see cref="MaxDensity"/></c>.
     /// </summary>
     /// <remarks>
-    /// Note: this function clamps density within physics material's min and max density values.
+    ///     Calls to this function are compiled out entirely when not in <c>DEBUG</c> builds.
+    /// </remarks>
+    /// <param name="value">the density value.</param>
+    [Conditional("DEBUG")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void AssertDensityInRange(float value)
+    {
+        System.Diagnostics.Debug.Assert(value >= MinDensity && value <= MaxDensity, 
+            $"Density '{value}' is not within the range of '{MinDensity}' and '{MaxDensity}'"
+        );
+    }
+
+    /// <summary>
+    ///     Sets a density value.
+    /// </summary>
+    /// <remarks>
+    ///     Note: this function clamps density within physics material's min and max density values.
     /// </remarks>
     /// <param name="density">the density value to mutate.</param>
     /// <param name="value">the new density value.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void SetDensity(ref float density, float value)
     {
+        AssertDensityInRange(value);
         density = Math.Math.Clamp(value, MinDensity, MaxDensity);
-#if DEBUG
-        if(density != value)
-            System.Diagnostics.Debug.Assert(false, $"Density '{value}' is not within the range of '{MinDensity}' and '{MaxDensity}'");
-#endif
     }
 
     /// <summary>
-    /// Sets a physics material's density value.
+    ///     Sets a physics material's density value.
     /// </summary>
     /// <param name="material">the physics material to mutate.</param>
     /// <param name="value">the new density value.</param>
@@ -161,28 +202,41 @@ public struct PhysicsMaterial
     }
 
     /// <summary>
-    /// Sets a restitution value.
+    ///     Asserts that a restitution value is between <c><see cref="MinRestitution"/></c> and <c><see cref="MaxDensity"/></c>.
     /// </summary>
     /// <remarks>
-    /// Note: this function clamps restitution within physics material's min and max restitution values.
+    ///     Calls to this function are compiled out entirely when not in <c>DEBUG</c> builds.
+    /// </remarks>
+    /// <param name="value">the restitution value.</param>
+    [Conditional("DEBUG")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void AssertRestitutionInRange(float value)
+    {        
+        System.Diagnostics.Debug.Assert(value >= MinRestitution && value <= MaxRestitution, 
+            $"Restitution '{value}' is not within the range of '{MinRestitution}' and '{MaxRestitution}'"
+        );
+    }
+
+    /// <summary>
+    ///     Sets a restitution value.
+    /// </summary>
+    /// <remarks>
+    ///     Note: this function clamps restitution within physics material's min and max restitution values.
     /// </remarks>
     /// <param name="restitution">the restitution value to mutate.</param>
     /// <param name="value">the new restitution value.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void SetRestitution(ref float restitution, float value)
     {
+        AssertRestitutionInRange(value);
         restitution = Math.Math.Clamp(value, MinRestitution, MaxRestitution);
-#if DEBUG
-        if(restitution != value)
-            System.Diagnostics.Debug.Assert(false, $"Restitution '{value}' is not within the range of '{MinRestitution}' and '{MaxRestitution}'");
-#endif
     }
 
     /// <summary>
-    /// Sets a physics material's restitution value.
+    ///     Sets a physics material's restitution value.
     /// </summary>
     /// <remarks>
-    /// Note: this function clamps restitution within physics material's min and max restitution values.
+    ///     Note: this function clamps restitution within physics material's min and max restitution values.
     /// </remarks>
     /// <param name="material">the physics material to mutate.</param>
     /// <param name="value">the new restitution value.</param>

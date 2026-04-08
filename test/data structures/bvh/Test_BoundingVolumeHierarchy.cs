@@ -4,7 +4,7 @@ using Howl.Math;
 using Howl.Test.Math;
 using Howl.Math.Shapes;
 using Howl.DataStructures;
-using Howl.ECS;
+using Howl.Ecs;
 
 namespace Howl.Test.DataStructures.Bvh;
 

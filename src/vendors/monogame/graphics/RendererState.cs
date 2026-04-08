@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Graphics;
 using Howl.Graphics.Text;
 using Howl.Input;

@@ -1,5 +1,5 @@
 using Howl.DataStructures.Bvh;
-using Howl.Test.ECS;
+using Howl.Test.Ecs;
 
 public static class Soa_QueryResultAssert
 {

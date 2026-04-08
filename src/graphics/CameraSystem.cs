@@ -1,8 +1,8 @@
 using System;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Generic;
 using Howl.Math;
-using static Howl.ECS.GenIndexListProc;
+using static Howl.Ecs.GenIndexListProc;
 
 namespace Howl.Graphics;
 

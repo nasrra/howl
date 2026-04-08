@@ -1,12 +1,12 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Generic;
 using Howl.Graphics;
 using Howl.Math;
 using Microsoft.Xna.Framework.Graphics;
-using static Howl.ECS.GenIndexListProc;
+using static Howl.Ecs.GenIndexListProc;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 

@@ -1,4 +1,4 @@
-using Howl.ECS;
+using Howl.Ecs;
 
 namespace Howl.DataStructures;
 

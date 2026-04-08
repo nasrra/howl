@@ -1,14 +1,12 @@
 using System;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Math;
 using Howl.Math.Shapes;
-using Howl.Generic;
 using Howl.DataStructures;
 using Howl.Graphics;
 using System.Runtime.CompilerServices;
 using System.Numerics;
 using static Howl.Math.Math;
-using static Howl.ECS.GenIndexListProc;
 using static Howl.Math.Shapes.Aabb;
 using static Howl.Math.Shapes.ShapeUtils;
 using static Howl.Physics.Soa_Collision;
@@ -265,7 +263,7 @@ public static class PhysicsSystem
             // sync the transform data to the physics simulation 
             // if it has an associated physics body id.
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-            Soa_Transform.CopyTransformToSoa(soaTransform, ref transform, GenId.GetIndex(genId));
+            Soa_Transform.Insert(soaTransform, GenId.GetIndex(genId), transform);
         }
     }
 

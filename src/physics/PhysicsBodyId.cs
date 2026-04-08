@@ -1,4 +1,4 @@
-using Howl.ECS;
+using Howl.Ecs;
 
 /// <summary>
 /// This is used as a component link between Howl ECS and the Howl physics simulation.

@@ -3,7 +3,7 @@ using System.ComponentModel;
 using Howl.Collections;
 using Howl.Generic;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 public class EcsState : IDisposable
 {

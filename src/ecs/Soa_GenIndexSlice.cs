@@ -1,5 +1,5 @@
 using System;
-using Howl.ECS;
+using Howl.Ecs;
 
 namespace Howl.Math.Shapes;
 

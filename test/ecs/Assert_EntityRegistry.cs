@@ -1,6 +1,6 @@
 using Howl.Test.Collections;
 
-namespace Howl.Test.ECS;
+namespace Howl.Test.Ecs;
 
 public static class Assert_EntityRegistry
 {

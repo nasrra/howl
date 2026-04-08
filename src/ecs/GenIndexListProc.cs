@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Howl.Collections;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Generic;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 public static class GenIndexListProc
 {

@@ -1,6 +1,6 @@
 using System;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 public class Soa_GenIndex : IDisposable
 {

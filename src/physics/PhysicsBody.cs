@@ -2,7 +2,7 @@ using System;
 using System.Formats.Tar;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Math;
 using Howl.Math.Shapes;
 using static Howl.Physics.PhysicsSystem;
@@ -1161,7 +1161,7 @@ public static class PhysicsBody
         AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
         state.FirstVertexIndices[physicsBodyIndex] = verticesFirstIndex;
         SetTransformUnsafe(state, physicsBodyIndex, transform);
-        Soa_PhysicsMaterial.SetPhysicsMaterial(state.PhysicsMaterials, physicsMaterial, physicsBodyIndex);
+        Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, physicsMaterial, physicsBodyIndex);
         state.LocalRadii[physicsBodyIndex] = shape.Radius;
 
         // reset forces
@@ -1310,7 +1310,7 @@ public static class PhysicsBody
         SetTransformUnsafe(state, physicsBodyIndex, transform);
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
-        Soa_PhysicsMaterial.SetPhysicsMaterial(state.PhysicsMaterials, physicsMaterial, physicsBodyIndex);
+        Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, physicsMaterial, physicsBodyIndex);
 
         // reset forces.
         ClearForcesAndVelocities(state, physicsBodyIndex);

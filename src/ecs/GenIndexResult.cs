@@ -1,4 +1,4 @@
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 public enum GenIndexResult : byte
 {

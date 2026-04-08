@@ -7,7 +7,7 @@ PROJECT_PATH="Howl.Test.csproj"
 NAMESPACE="Howl.Test."
 MATH_NAMESPACE="${NAMESPACE}Math."
 SHAPES_NAMESPACE="${MATH_NAMESPACE}Shapes."
-ECS_NAMESPACE="${NAMESPACE}ECS."
+ECS_NAMESPACE="${NAMESPACE}Ecs."
 PHYSICS_NAMESPACE="${NAMESPACE}Physics."
 GRAPHICS_NAMESPACE="${NAMESPACE}Graphics."
 DATA_STRUCTURES_NAMESPACE="${NAMESPACE}DataStructures."
@@ -50,6 +50,7 @@ TEST_MAP=(
     ["MonoGameVector3Ext"]="${MONOGAME_MATH_NAMESPACE}Vector3ExtensionsTest"
     ["MortonCode"]="${ALGORITHMS_NAMESPACE}MortonCode"
     ["PhysicsSystem"]="${PHYSICS_NAMESPACE}Test_PhysicsSystem"
+    ["PhysicsSystemState"]="${PHYSICS_NAMESPACE}Test_PhysicsSystemState"
     ["Polygon16"]="${SHAPES_NAMESPACE}Polygon16Test"
     ["PolygonRectangle"]="${SHAPES_NAMESPACE}PolygonRectangleTest"
     ["RadixSort"]="${SORTING_NAMESPACE}RadixSortTest"
@@ -63,10 +64,11 @@ TEST_MAP=(
     ["Soa_GenIndex"]="${ECS_NAMESPACE}Soa_GenIndexTest"
     ["Soa_GenIndexSlice"]="${ECS_NAMESPACE}Soa_GenIndexSliceTest"
     ["Soa_Leaf"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Soa_LeafTest"
+    ["Soa_PhysicsMaterial"]="${PHYSICS_NAMESPACE}Test_Soa_PhysicsMaterial"
     ["Soa_QueryResult"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Soa_QueryResultTest"
     ["Soa_SpatialPair"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Soa_SpatialPairTest"
     ["Soa_Transform"]="${MATH_NAMESPACE}Test_Soa_Transform"
-    ["Soa_Vector2"]="${MATH_NAMESPACE}Soa_Vector2Test"
+    ["Soa_Vector2"]="${MATH_NAMESPACE}Test_Soa_Vector2"
     ["Soa_Vector2Slice"]="${MATH_NAMESPACE}Soa_Vector2SliceTest"
     ["StackArray"]="${COLLECTIONS_NAMESPACE}Test_StackArray"
     ["Swap"]="${ALGORITHMS_NAMESPACE}SwapTest"
@@ -95,7 +97,7 @@ fi
 
 # check if the test exists in the map
 if [[ -n "${TEST_MAP[$TEST_NAME]}" ]]; then
-    dotnet test "$PROJECT_PATH" -c Debug --filter "FullyQualifiedName~${TEST_MAP[$TEST_NAME]}"
+    dotnet test "$PROJECT_PATH" --filter "FullyQualifiedName~${TEST_MAP[$TEST_NAME]}"
 else
     echo "Unknown test: $TEST_NAME"
     echo "Please run the script with no test name to see available tests."

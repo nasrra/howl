@@ -1,4 +1,6 @@
-namespace Howl.Test.ECS;
+using Howl.Ecs;
+
+namespace Howl.Test.Ecs;
 
 public class Test_ComponentRegistry
 {

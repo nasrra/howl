@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 // Note:
 // may want to store multiple component registers inside this.

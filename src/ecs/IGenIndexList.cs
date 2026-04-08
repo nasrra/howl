@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 internal interface IGenIndexList : IDisposable
 {

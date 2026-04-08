@@ -1,5 +1,5 @@
 using System;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Graphics;
 using Howl.Input;
 

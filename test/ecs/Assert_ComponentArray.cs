@@ -1,7 +1,8 @@
 using Howl.Collections;
 using Howl.Test.Collections;
+using Howl.Ecs;
 
-namespace Howl.Test.ECS;
+namespace Howl.Test.Ecs;
 
 public static class Assert_ComponentArray
 {

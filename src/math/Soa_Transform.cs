@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Howl.Collections;
 using static Howl.Math.Shapes.ShapeUtils;
 
 namespace Howl.Math;
@@ -55,19 +56,48 @@ public class Soa_Transform
     }
 
     /// <summary>
-    /// Copies an transform struct into a soa transform slot.
+    ///     Inserts a transform into a soa instance.
     /// </summary>
-    /// <param name="soa">the soa collection to copy the transform to.</param>
-    /// <param name="transform">the transform to copy.</param>
-    /// <param name="index">the index in the soa collection to mutate.</param>
+    /// <param name="soa">the soa instance to insert into..</param>
+    /// <param name="transform">the transform to insert.</param>
+    /// <param name="insertIndex">the index in the soa backing arrays to insert into.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void CopyTransformToSoa(Soa_Transform soa, ref Transform transform, int index)
+    public static void Insert(Soa_Transform soa, int insertIndex, Transform transform)
     {
-        soa.Positions.X[index] = transform.Position.X;
-        soa.Positions.Y[index] = transform.Position.Y;
-        soa.Scales.X[index] = transform.Scale.X;
-        soa.Scales.Y[index] = transform.Scale.Y;
-        soa.Sins[index] = transform.Sin;
-        soa.Coses[index] = transform.Cos;
+        Insert(soa, insertIndex, transform.Position.X, transform.Position.Y, transform.Scale.X, transform.Scale.X, transform.Sin, transform.Cos);
+    }
+
+    /// <summary>
+    ///     Inserts a transform into a soa instance.
+    /// </summary>
+    /// <param name="soa">the soa instance to insert into.</param>
+    /// <param name="insertIndex">the index in the soa backing arrays to insert into.</param>
+    /// <param name="posX">the x-component of the position.</param>
+    /// <param name="posY">the y-component of the position.</param>
+    /// <param name="scaleX">the x-component of the scale.</param>
+    /// <param name="scaleY">the y-component of the scale.</param>
+    /// <param name="sin">the sin of rotation.</param>
+    /// <param name="cos">the cos of roation.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Insert(Soa_Transform soa, int insertIndex, float posX, float posY, float scaleX, float scaleY, float sin, float cos)
+    {
+        soa.Positions.X[insertIndex] = posX;
+        soa.Positions.Y[insertIndex] = posY;
+        soa.Scales.X[insertIndex] = scaleX;
+        soa.Scales.Y[insertIndex] = scaleY;
+        soa.Sins[insertIndex] = sin;
+        soa.Coses[insertIndex] = cos;        
+    }
+
+    /// <summary>
+    ///     Enforces a <c>Nil</c> entry in all underlying arrays of a soa instance.
+    /// </summary>
+    /// <param name="soa">the soa instance.</param>
+    public static void EnforceNil(Soa_Transform soa)
+    {
+        Nil.Enforce(soa.Coses);
+        Nil.Enforce(soa.Sins);
+        Soa_Vector2.EnforceNil(soa.Positions);
+        Soa_Vector2.EnforceNil(soa.Scales);
     }
 }

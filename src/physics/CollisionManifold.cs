@@ -1,7 +1,7 @@
 using System;
 using Howl.Collections;
 using Howl.DataStructures;
-using Howl.ECS;
+using Howl.Ecs;
 using Howl.Physics;
 using static Howl.Physics.Soa_Collision;
 

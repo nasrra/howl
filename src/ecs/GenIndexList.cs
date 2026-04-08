@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Howl.Collections;
 
-namespace Howl.ECS;
+namespace Howl.Ecs;
 
 public sealed class GenIndexList<T> : IGenIndexList
 {
