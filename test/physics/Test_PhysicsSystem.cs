@@ -5,7 +5,6 @@ using Howl.Math;
 using Howl.DataStructures;
 using Howl.Generic;
 using static System.Runtime.InteropServices.CollectionsMarshal;
-using static Howl.Test.Physics.Soa_SpatialPairHelpers;
 using Howl.Test.Math;
 
 

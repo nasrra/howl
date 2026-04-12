@@ -10,23 +10,6 @@ public class CollisionManifold : IDisposable
 
 
 
-    /*******************
-    
-        Spatial Pairs.
-    
-    ********************/
-
-
-
-
-    public SpatialPairBuffer CircleSpatialPairs;
-
-    public SpatialPairBuffer PolygonSpatialPairs;
-
-    public SpatialPairBuffer PolygonToCircleSpatialPairs;
-
-
-
 
     /*******************
     
@@ -36,21 +19,6 @@ public class CollisionManifold : IDisposable
 
 
 
-
-    /// <summary>
-    /// Gets and sets the circle to circle collisions to resolve.
-    /// </summary>
-    public Soa_Collision CircleCollisionsToResolve;
-
-    /// <summary>
-    /// Gets and sets the polygon to polygon collisions to resolve.
-    /// </summary>
-    public Soa_Collision PolygonCollisionsToResolve;
-
-    /// <summary>
-    /// Gets and sets the polyon to circle collisions to resolve.
-    /// </summary>
-    public Soa_Collision PolygonToCircleCollisionsToResolve;
 
     /// <summary>
     /// Gets and sets all found collisions.
@@ -70,15 +38,7 @@ public class CollisionManifold : IDisposable
     {
         // mapping each collider (within a matrix structure) onto one another gives a squared length/count.
         int maxCollisions = totalColliderCount * totalColliderCount;
-
-        CircleSpatialPairs          = new SpatialPairBuffer(maxCollisions);
-        PolygonSpatialPairs         = new SpatialPairBuffer(maxCollisions);
-        PolygonToCircleSpatialPairs = new SpatialPairBuffer(maxCollisions);
-
-        CircleCollisionsToResolve           = new Soa_Collision(maxCollisions);
-        PolygonCollisionsToResolve          = new Soa_Collision(maxCollisions);
-        PolygonToCircleCollisionsToResolve  = new Soa_Collision(maxCollisions);
-        Collisions                          = new Soa_Collision(maxCollisions);
+        Collisions = new Soa_Collision(maxCollisions);
     }
 
     // public static void Update(CollisionManifold manifold)

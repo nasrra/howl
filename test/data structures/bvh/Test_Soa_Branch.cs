@@ -4,7 +4,7 @@ using Howl.Test.DataStructures.Bvh;
 
 namespace Howl.Test.DataStructures.Bvh;
 
-public class Soa_BranchTest
+public class Test_Soa_Branch
 {
     [Fact]
     public void Constructor_Test()
@@ -45,7 +45,7 @@ public class Soa_BranchTest
                 int leafCount = j++;
                 int parentIndex = j++;
                 Soa_Branch.Insert(soa, i, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex);
-                Soa_BranchAssert.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex, i, soa);
+                Assert_Soa_Branch.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex, i, soa);
                 Assert.Equal(0, soa.AppendCount);
             }
         }        
@@ -71,7 +71,7 @@ public class Soa_BranchTest
                 int leafCount = j++;
                 int parentIndex = j++;
                 Soa_Branch.Append(soa, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex);
-                Soa_BranchAssert.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex, i, soa);
+                Assert_Soa_Branch.EntryEqual(minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex, i, soa);
                 Assert.Equal(i+1, soa.AppendCount);
             }
         }

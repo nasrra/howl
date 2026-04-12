@@ -64,7 +64,7 @@ public class Soa_Transform
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void Insert(Soa_Transform soa, int insertIndex, Transform transform)
     {
-        Insert(soa, insertIndex, transform.Position.X, transform.Position.Y, transform.Scale.X, transform.Scale.X, transform.Sin, transform.Cos);
+        Insert(soa, insertIndex, transform.Position.X, transform.Position.Y, transform.Scale.X, transform.Scale.Y, transform.Sin, transform.Cos);
     }
 
     /// <summary>

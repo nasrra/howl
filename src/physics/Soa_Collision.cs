@@ -9,14 +9,14 @@ namespace Howl.Physics;
 public class Soa_Collision
 {
     /// <summary>
-    /// Gets and sets the gen indices of the owner physics body of a collision.
+    /// Gets and sets the gen ids of the owner physics body of a collision.
     /// </summary>
-    public Soa_GenIndex OwnerGenIndices;
+    public GenId[] OwnerGenIds;
 
     /// <summary>
-    /// Gets and sets the gen indices of the other physics body of a collision.
+    /// Gets and sets the gen ids of the other physics body of a collision.
     /// </summary>
-    public Soa_GenIndex OtherGenIndices;
+    public GenId[] OtherGenIds;
 
     /// <summary>
     /// Gets and sets the normal vector of a collision.
@@ -89,8 +89,8 @@ public class Soa_Collision
     /// <param name="depth">the depth of the collision.</param>
     public Soa_Collision(int maxCollisions)
     {
-        OwnerGenIndices             = new Soa_GenIndex(maxCollisions);
-        OtherGenIndices             = new Soa_GenIndex(maxCollisions);
+        OwnerGenIds                 = new GenId[maxCollisions];
+        OtherGenIds                 = new GenId[maxCollisions];
         Normals                     = new Soa_Vector2(maxCollisions);
         OwnerCentroids           = new Soa_Vector2(maxCollisions);
         OtherCentroids           = new Soa_Vector2(maxCollisions);
@@ -103,13 +103,11 @@ public class Soa_Collision
     }
 
     /// <summary>
-    /// Appends a collision with a single contact point.
+    ///     Appends a collision with a single contact point.
     /// </summary>
     /// <param name="buffer">the SOA collision buffer to append to.</param>
-    /// <param name="ownerIndex">the index of the owner.</param>
-    /// <param name="ownerGeneration">the generation of the owner.</param>
-    /// <param name="otherIndex">the index of the other.</param>
-    /// <param name="otherGeneration">the generation of the other.</param>
+    /// <param name="ownerId">the gen id of the <c>owner</c> of the collision.</param>
+    /// <param name="otherId">the gen id of the <c>other</c> of the collision.</param>
     /// <param name="normalX">the x-component of the normal vector.</param>
     /// <param name="normalY">the y-component of the normal vector.</param>
     /// <param name="ownerShapeCenterX">the x-component of the owner's shape center vector.</param>
@@ -118,22 +116,19 @@ public class Soa_Collision
     /// <param name="otherShapeCenterY">the y-component of the other's shape center vector.</param>
     /// <param name="contactPointX">the x-component of the contact point vector.</param>
     /// <param name="contactPointY">the y-component of the contact point vector.</param>
-    /// <param name="depth"></param>
-    /// <param name="ownerFlags"></param>
-    /// <param name="otherFlags"></param>
+    /// <param name="depth">the depth of the collision.</param>
+    /// <param name="ownerFlags">the physics body flags of the <c>owner</c>.</param>
+    /// <param name="otherFlags">the physics body flags of the <c>other</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendCollision(Soa_Collision buffer, int ownerIndex, int ownerGeneration, 
-        int otherIndex, int otherGeneration, float normalX, float normalY, float ownerShapeCenterX,
+    public static void AppendCollision(Soa_Collision buffer, GenId ownerId, GenId otherId, float normalX, float normalY, float ownerShapeCenterX,
         float ownerShapeCenterY, float otherShapeCenterX, float otherShapeCenterY, float contactPointX,
         float contactPointY, float depth, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
         int count = buffer.Count;
         
-        buffer.OwnerGenIndices.Indices[count] = ownerIndex;
-        buffer.OwnerGenIndices.Generations[count] = ownerGeneration;
-        buffer.OtherGenIndices.Indices[count] = otherIndex;
-        buffer.OtherGenIndices.Generations[count] = otherGeneration;
+        buffer.OwnerGenIds[count] = ownerId;
+        buffer.OtherGenIds[count] = otherId;
         buffer.Normals.X[count] = normalX;
         buffer.Normals.Y[count] = normalY;
         buffer.OwnerCentroids.X[count] = ownerShapeCenterX;
@@ -151,13 +146,11 @@ public class Soa_Collision
     }
 
     /// <summary>
-    /// Appends a collision with two contact points.
+    ///     Appends a collision with two contact points.
     /// </summary>
     /// <param name="buffer">the SOA collision buffer to append to.</param>
-    /// <param name="ownerIndex">the index of the owner.</param>
-    /// <param name="ownerGeneration">the generation of the owner.</param>
-    /// <param name="otherIndex">the index of the other.</param>
-    /// <param name="otherGeneration">the generation of the other.</param>
+    /// <param name="ownerId">the gen id of the <c>owner</c> of the collision.</param>
+    /// <param name="otherId">the gen id of the <c>other</c> of the collision.</param>
     /// <param name="normalX">the x-component of the normal vector.</param>
     /// <param name="normalY">the y-component of the normal vector.</param>
     /// <param name="ownerShapeCenterX">the x-component of the owner's shape center vector.</param>
@@ -172,33 +165,16 @@ public class Soa_Collision
     /// <param name="ownerFlags">the flags of the owner physics body.</param>
     /// <param name="otherFlags">the flags of the other physics body.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void AppendCollision(
-        Soa_Collision buffer, 
-        int ownerIndex, 
-        int ownerGeneration, 
-        int otherIndex,
-        int otherGeneration,
-        float normalX,
-        float normalY,
-        float ownerShapeCenterX,
-        float ownerShapeCenterY,
-        float otherShapeCenterX,
-        float otherShapeCenterY,
-        float firstContactPointX,
-        float firstContactPointY,
-        float secondContactPointX,
-        float secondContactPointY,
-        float depth,
-        PhysicsBodyFlags ownerFlags,
+    public static void AppendCollision(Soa_Collision buffer, GenId ownerId, GenId otherId, float normalX, float normalY, float ownerShapeCenterX,
+        float ownerShapeCenterY, float otherShapeCenterX, float otherShapeCenterY, float firstContactPointX,
+        float firstContactPointY, float secondContactPointX, float secondContactPointY, float depth, PhysicsBodyFlags ownerFlags, 
         PhysicsBodyFlags otherFlags
     )
     {
         int count = buffer.Count;
         
-        buffer.OwnerGenIndices.Indices[count] = ownerIndex;
-        buffer.OwnerGenIndices.Generations[count] = ownerGeneration;
-        buffer.OtherGenIndices.Indices[count] = otherIndex;
-        buffer.OtherGenIndices.Generations[count] = otherGeneration;
+        buffer.OwnerGenIds[count] = ownerId;
+        buffer.OtherGenIds[count] = otherId;
         buffer.Normals.X[count] = normalX;
         buffer.Normals.Y[count] = normalY;
         buffer.OwnerCentroids.X[count] = ownerShapeCenterX;
@@ -215,11 +191,6 @@ public class Soa_Collision
         buffer.TwoContactPoints[count] = true;
         
         buffer.Count++;
-    }
-
-    public static void SortByOwnerGenIndex(Soa_Collision collisions)
-    {
-        throw new NotImplementedException();
     }
 
     public static void Clear(Soa_Collision soa)

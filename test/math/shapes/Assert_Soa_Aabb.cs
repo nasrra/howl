@@ -3,10 +3,10 @@ using Howl.Math.Shapes;
 
 namespace Howl.Test.Math.Shapes;
 
-public static class Soa_AabbAssert
+public static class Assert_Soa_Aabb
 {
     /// <summary>
-    /// Asserts the equality of array lengths in a soa aabb instance.
+    ///     Asserts the equality of array lengths in a soa aabb instance.
     /// </summary>
     /// <param name="soa">the soa aabb instance to assert against.</param>
     /// <param name="length">the expected length of the backing arrays.</param>
@@ -20,7 +20,7 @@ public static class Soa_AabbAssert
     }
 
     /// <summary>
-    /// Asserts the equality of values for a soa entry and expected values.
+    ///     Asserts the equality of values for a soa entry and expected values.
     /// </summary>
     /// <param name="minX">the expected minimum x value.</param>
     /// <param name="minY">the epeceted minimum y value.</param>

@@ -5,24 +5,26 @@ using Howl.Test.Math;
 using Howl.Math.Shapes;
 using Howl.DataStructures;
 using Howl.Ecs;
+using Howl.Test.Physics;
 
 namespace Howl.Test.DataStructures.Bvh;
 
 public class Test_BoundingVolumeHierarchy
 {
+    public const int MaxOverlaps = 65535;
+    
     [Fact]
     public void Constructor_Test()
     {
         for(int length = 0; length < 6; length++)
         {            
-            BoundingVolumeHierarchy bvh = new(length);
+            BoundingVolumeHierarchy bvh = new(length, MaxOverlaps);
             int doubleLength = length*2;
 
             RadixSortBufferAssert.LengthEqual(length, bvh.RadixSortBuffer);
-            Soa_SpatialPairAssert.LengthEqual(doubleLength, bvh.SpatialPairs);
-            Soa_BranchAssert.LengthEqual(doubleLength, bvh.Branches);
-            Soa_LeafAssert.LengthEqual(length, bvh.Leaves);
-            Soa_QueryResultAssert.LengthEqual(doubleLength, bvh.SpatialPairQueryBuffer);
+            Assert_Soa_Branch.LengthEqual(doubleLength, bvh.Branches);
+            Assert_Soa_Overlap.LengthEqual(MaxOverlaps, bvh.Overlaps);
+            Assert_Soa_Leaf.LengthEqual(length, bvh.Leaves);
             Assert.Equal(length, bvh.MortonCentroids.Length);
             Assert.Equal(length, bvh.MortonLeafIds.Length);
             
@@ -35,10 +37,10 @@ public class Test_BoundingVolumeHierarchy
     {
         for(int length = 0; length < 25; length++)
         {            
-            BoundingVolumeHierarchy bvh = new(length);
+            BoundingVolumeHierarchy bvh = new(length, MaxOverlaps);
             for(int i = 0 ; i < length; i++)
             {
-                Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0,0,0,0);
+                Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0);
                 Soa_Branch.Append(bvh.Branches, 0,0,0,0,0,0,0,0,0);
             }
 
@@ -48,100 +50,6 @@ public class Test_BoundingVolumeHierarchy
             Assert.Equal(0, bvh.Leaves.AppendCount);
             Assert.Equal(0, bvh.Branches.AppendCount);
         }
-    }
-
-    [Fact]
-    public void AreaQuery_Test()
-    {
-        int length = 6;
-        Soa_QueryResult results = new(length*2);
-        BoundingVolumeHierarchy bvh = new(length);
-        
-        for(int i = 0; i < length; i++)
-        {
-            float minX = i; 
-            float minY = i; 
-            float maxX = i+1; 
-            float maxY = i+1; 
-            int index = i+1;
-            int generation = i+2;
-            int flags = i+3;
-            Aabb.CalculateCentroid(minX, minY, maxX, maxY, out float centroidX, out float centroidY);
-            Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidX, centroidY, index, generation, flags);
-        }
-        
-        BoundingVolumeHierarchy.ConstructTree(bvh);
-
-        // bvh query.
-        BoundingVolumeHierarchy.AreaQuery(bvh, results, 0,0,2,2);
-        Assert.Equal(2,results.AppendCount);
-        Soa_QueryResultAssert.EntryEquals(1,2,3,0,results);
-        Soa_QueryResultAssert.EntryEquals(2,3,4,1,results);
-    
-        // decomposed bvh query.
-        BoundingVolumeHierarchy.AreaQuery(bvh.Branches, bvh.Leaves, results, 2,2,5,5);
-        Assert.Equal(3,results.AppendCount);
-        Soa_QueryResultAssert.EntryEquals(3,4,5,0,results);
-        Soa_QueryResultAssert.EntryEquals(4,5,6,1,results);
-        Soa_QueryResultAssert.EntryEquals(5,6,7,2,results);
-    }
-
-    [Fact]
-    public void ConstructSpatialPairs_Test()
-    {        
-        int length = 5;
-        Soa_QueryResult results = new(length*2);
-        BoundingVolumeHierarchy bvh = new(length);
-        
-        Span<int> eOwnerIndices     = [1,2,3,4];
-        Span<int> eOwnerGenerations = [2,3,4,5];
-        Span<int> eOwnerFlags       = [3,4,5,6];
-        Span<int> eOtherIndices     = [2,3,4,5];
-        Span<int> eOtherGenerations = [3,4,5,6];
-        Span<int> eOtherFlags       = [4,5,6,7];
-
-        // == spatial pairs found. ==
-
-        for(int i = 0; i < length; i++)
-        {
-            float minX = i; 
-            float minY = i; 
-            float maxX = i+1.5f; 
-            float maxY = i+1.5f; 
-            int index = i+1;
-            int generation = i+2;
-            int flags = i+3;
-            Aabb.CalculateCentroid(minX, minY, maxX, maxY, out float centroidX, out float centroidY);
-            Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidX, centroidY, index, generation, flags);
-        }        
-
-        BoundingVolumeHierarchy.ConstructTree(bvh);
-
-        BoundingVolumeHierarchy.ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, results);
-    
-        Assert.Equal(4, bvh.SpatialPairs.AppendCount);
-        for(int i = 0; i < bvh.SpatialPairs.AppendCount; i++)
-        {
-            Assert.Equal(eOwnerIndices[i], bvh.SpatialPairs.OwnerGenIndices.Indices[i]);
-            Assert.Equal(eOwnerGenerations[i], bvh.SpatialPairs.OwnerGenIndices.Generations[i]);
-            Assert.Equal(eOwnerFlags[i], bvh.SpatialPairs.OwnerFlags[i]);
-            Assert.Equal(eOtherIndices[i], bvh.SpatialPairs.OtherGenIndices.Indices[i]);
-            Assert.Equal(eOtherGenerations[i], bvh.SpatialPairs.OtherGenIndices.Generations[i]);
-            Assert.Equal(eOtherFlags[i], bvh.SpatialPairs.OtherFlags[i]);
-        }
-
-        // == no spatial pairs found. ==
-        
-        BoundingVolumeHierarchy.Clear(bvh);
-
-        for(int i = 0; i < length; i++)
-        {
-            Soa_Leaf.Append(bvh.Leaves, i, i, i, i, i, i, i+1, i+2, i+3);
-        }
-
-        BoundingVolumeHierarchy.ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, results);
-
-        Assert.Equal(0, bvh.SpatialPairs.AppendCount);
     }
 
     [Fact]
@@ -162,9 +70,7 @@ public class Test_BoundingVolumeHierarchy
         //          - Branch (leaf 3-4)
         //
         
-        BoundingVolumeHierarchy bvh = new(12);
-        int j = 0;
-
+        BoundingVolumeHierarchy bvh = new(12, MaxOverlaps);
         for(int q = 0; q < 2; q++)
         {
             BoundingVolumeHierarchy.Clear(bvh);
@@ -174,55 +80,40 @@ public class Test_BoundingVolumeHierarchy
             float minY0 = 0;
             float maxX0 = 1;
             float maxY0 = 2;
-            int index0 = j++;
-            int gen0 = j++;
-            int flags0 = j++;
             Aabb.CalculateCentroid(minX0, minY0, maxX0, maxY0, out float centroidX0, out float centroidY0);
-            Soa_Leaf.Append(bvh.Leaves, minX0, minY0, maxX0, maxY0, centroidX0, centroidY0, index0, gen0, flags0);
+            Soa_Leaf.Append(bvh.Leaves, minX0, minY0, maxX0, maxY0, centroidX0, centroidY0);
 
             // leaf 1.
             float minX1 = -10;
             float minY1 = -12;
             float maxX1 = 3;
             float maxY1 = 3;
-            int index1 = j++;
-            int gen1 = j++;
-            int flags1 = j++;
             Aabb.CalculateCentroid(minX1, minY1, maxX1, maxY1, out float centroidX1, out float centroidY1);
-            Soa_Leaf.Append(bvh.Leaves, minX1, minY1, maxX1, maxY1, centroidX1, centroidY1, index1, gen1, flags1);
+            Soa_Leaf.Append(bvh.Leaves, minX1, minY1, maxX1, maxY1, centroidX1, centroidY1);
             
             // leaf 2.
             float minX2 = 10;
             float minY2 = 12;
             float maxX2 = 33;
             float maxY2 = 34;
-            int index2 = j++;
-            int gen2 = j++;
-            int flags2 = j++;
             Aabb.CalculateCentroid(minX2, minY2, maxX2, maxY2, out float centroidX2, out float centroidY2);
-            Soa_Leaf.Append(bvh.Leaves, minX2, minY2, maxX2, maxY2, centroidX2, centroidY2, index2, gen2, flags2);
+            Soa_Leaf.Append(bvh.Leaves, minX2, minY2, maxX2, maxY2, centroidX2, centroidY2);
             
             // leaf 3.
             float minX3 = 100;
             float minY3 = 102;
             float maxX3 = 123;
             float maxY3 = 124;
-            int index3 = j++;
-            int gen3 = j++;
-            int flags3 = j++;
             Aabb.CalculateCentroid(minX3, minY3, maxX3, maxY3, out float centroidX3, out float centroidY3);
-            Soa_Leaf.Append(bvh.Leaves, minX3, minY3, maxX3, maxY3, centroidX3, centroidY3, index3, gen3, flags3);
+            Soa_Leaf.Append(bvh.Leaves, minX3, minY3, maxX3, maxY3, centroidX3, centroidY3);
 
             // leaf 4.
             float minX4 = 200;
             float minY4 = 220;
             float maxX4 = 430;
             float maxY4 = 440;
-            int index4 = j++;
-            int gen4 = j++;
-            int flags4 = j++;
             Aabb.CalculateCentroid(minX4, minY4, maxX4, maxY4, out float centroidX4, out float centroidY4);
-            Soa_Leaf.Append(bvh.Leaves, minX4, minY4, maxX4, maxY4, centroidX4, centroidY4, index4, gen4, flags4);
+            Soa_Leaf.Append(bvh.Leaves, minX4, minY4, maxX4, maxY4, centroidX4, centroidY4);
 
             // construct.
             BoundingVolumeHierarchy.ConstructTree(bvh);
@@ -242,7 +133,7 @@ public class Test_BoundingVolumeHierarchy
             Assert.Equal(5, bvh.Branches.AppendCount);
             for(int i = 0; i < bvh.Branches.AppendCount; i++)
             {
-                Soa_BranchAssert.EntryEqual(eMinX[i], eMinY[i], eMaxX[i], eMaxY[i], eLeftLeafIndices[i], 
+                Assert_Soa_Branch.EntryEqual(eMinX[i], eMinY[i], eMaxX[i], eMaxY[i], eLeftLeafIndices[i], 
                     eRightLeafIndices[i], eSubtreeSizes[i], eLeafCounts[i], eParentIndices[i], i, bvh.Branches
                 );
             } 
@@ -260,51 +151,117 @@ public class Test_BoundingVolumeHierarchy
     }
 
     [Fact]
+    public void ConstructOverlaps_Test()
+    {        
+        int length = 5;
+        BoundingVolumeHierarchy bvh = new(length, MaxOverlaps);
+        
+        Span<int> eOwnerLeafIndices = [0,1,2,3];
+        Span<int> eOtherLeafIndices = [1,2,3,4];
+
+        // == spatial pairs found. ==
+
+        for(int i = 0; i < length; i++)
+        {
+            float minX = i; 
+            float minY = i; 
+            float maxX = i+1.5f; 
+            float maxY = i+1.5f; 
+            Aabb.CalculateCentroid(minX, minY, maxX, maxY, out float centroidX, out float centroidY);
+            Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidX, centroidY);
+        }        
+
+        BoundingVolumeHierarchy.ConstructTree(bvh);
+    
+        Assert.Equal(4, bvh.Overlaps.AppendCount);
+
+        for(int i = 0; i < bvh.Overlaps.AppendCount; i++)
+        {
+            Assert_Soa_Overlap.EntryEqual(eOwnerLeafIndices[i], eOtherLeafIndices[i], i, bvh.Overlaps);
+        }
+
+        // == no spatial pairs found. ==
+        
+        BoundingVolumeHierarchy.Clear(bvh);
+
+        for(int i = 0; i < length; i++)
+        {
+            Soa_Leaf.Append(bvh.Leaves, i, i, i, i, i, i);
+        }
+
+        BoundingVolumeHierarchy.ConstructTree(bvh);
+
+        Assert.Equal(0, bvh.Overlaps.AppendCount);
+    }
+
+    [Fact]
+    public void AreaQuery_Test()
+    {
+        int[] overlaps = new int[MaxOverlaps];
+        int appendedOverlaps = 0;
+
+        int length = 6;
+        BoundingVolumeHierarchy bvh = new(length, MaxOverlaps);
+        
+        for(int i = 0; i < length; i++)
+        {
+            float minX = i; 
+            float minY = i; 
+            float maxX = i+1; 
+            float maxY = i+1; 
+            Aabb.CalculateCentroid(minX, minY, maxX, maxY, out float centroidX, out float centroidY);
+            Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidX, centroidY);
+        }
+        
+        BoundingVolumeHierarchy.ConstructTree(bvh);
+
+        // bvh query.
+        BoundingVolumeHierarchy.AreaQuery(bvh, overlaps, ref appendedOverlaps, 0,0,2,2);
+        Assert.Equal(2, appendedOverlaps);
+        Assert.Equal(0, overlaps[0]);
+        Assert.Equal(1, overlaps[1]);
+    
+        // decomposed bvh query.
+        BoundingVolumeHierarchy.AreaQuery(bvh, overlaps, ref appendedOverlaps, 2,2,5,5);
+        Assert.Equal(3, appendedOverlaps);
+        Assert.Equal(2, overlaps[0]);
+        Assert.Equal(3, overlaps[1]);
+        Assert.Equal(4, overlaps[2]);
+    }
+
+    [Fact]
     public void RaycastQuery_Test()
     {
-        BoundingVolumeHierarchy bvh = new(100);
+        int[] overlaps = new int[MaxOverlaps];
+        int appendedOverlaps = 0;
+        BoundingVolumeHierarchy bvh = new(100, MaxOverlaps);
 
         // leaf 1 
         Aabb leaf1AABB = new Aabb(0,0,10,10);
         Vector2 leaf1Centroid = Aabb.CalculateCentroid(leaf1AABB);
-        GenIndex leaf1GenIndex = new GenIndex(0,0);
-        int leaf1Flag = 0;
-        Soa_Leaf.Append(bvh.Leaves, leaf1AABB.MinX, leaf1AABB.MinY, leaf1AABB.MaxX, leaf1AABB.MaxY, leaf1Centroid.X, leaf1Centroid.Y, 
-            leaf1GenIndex.Index, leaf1GenIndex.Generation, leaf1Flag
-        );
+        Soa_Leaf.Append(bvh.Leaves, leaf1AABB.MinX, leaf1AABB.MinY, leaf1AABB.MaxX, leaf1AABB.MaxY, leaf1Centroid.X, leaf1Centroid.Y);
 
         // leaf 2
         Aabb leaf2AABB = new Aabb(10,10,20,20);
         Vector2 leaf2Centroid = Aabb.CalculateCentroid(leaf2AABB);
-        GenIndex leaf2GenIndex = new GenIndex(1,0);
-        int leaf2Flag = 0;
-        Soa_Leaf.Append(bvh.Leaves, leaf2AABB.MinX, leaf2AABB.MinY, leaf2AABB.MaxX, leaf2AABB.MaxY, leaf2Centroid.X, leaf2Centroid.Y, 
-            leaf2GenIndex.Index, leaf2GenIndex.Generation, leaf2Flag
-        );
+        Soa_Leaf.Append(bvh.Leaves, leaf2AABB.MinX, leaf2AABB.MinY, leaf2AABB.MaxX, leaf2AABB.MaxY, leaf2Centroid.X, leaf2Centroid.Y);
 
         BoundingVolumeHierarchy.ConstructTree(bvh);
 
         // fail to interset.
-        // Span<QueryResult> zeroResult = Soa_BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(-1,-1), new Vector2(-10,-10));
-        Soa_QueryResult zeroResult = BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(-1,-1), new Vector2(-10,-10));
-        Assert.Equal(0, zeroResult.AppendCount);
+        BoundingVolumeHierarchy.RaycastQuery(bvh, overlaps, ref appendedOverlaps, -1, -1, -10, -10);
+        Assert.Equal(0, appendedOverlaps);
 
         // find single intersect.
-        Soa_QueryResult singleResult = BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(5,0), new Vector2(5,30));
-        Assert.Equal(1, singleResult.AppendCount);
-        Assert.Equal(leaf1GenIndex.Index, singleResult.GenIndices.Indices[0]);
-        Assert.Equal(leaf1GenIndex.Generation, singleResult.GenIndices.Generations[0]);
-        Assert.Equal(leaf1Flag, singleResult.Flags[0]);
+        BoundingVolumeHierarchy.RaycastQuery(bvh, overlaps, ref appendedOverlaps, 5, 0, 5, 30);
+        Assert.Equal(1, appendedOverlaps);
+        Assert.Equal(0, overlaps[0]);
 
         // find double intersect.
-        Soa_QueryResult doubleResult = BoundingVolumeHierarchy.RaycastQuery(bvh, new Vector2(0,0), new Vector2(40,40));
-        Assert.Equal(2, doubleResult.AppendCount);
-        Assert.Equal(leaf1GenIndex.Index, doubleResult.GenIndices.Indices[0]);
-        Assert.Equal(leaf1GenIndex.Generation, doubleResult.GenIndices.Generations[0]);
-        Assert.Equal(leaf1Flag, doubleResult.Flags[0]);
-        Assert.Equal(leaf2GenIndex.Index, doubleResult.GenIndices.Indices[1]);
-        Assert.Equal(leaf2GenIndex.Generation, doubleResult.GenIndices.Generations[1]);
-        Assert.Equal(leaf2Flag, doubleResult.Flags[1]);
+        BoundingVolumeHierarchy.RaycastQuery(bvh, overlaps, ref appendedOverlaps, 0, 0, 40, 40);
+        Assert.Equal(2, appendedOverlaps);
+        Assert.Equal(0, overlaps[0]);
+        Assert.Equal(1, overlaps[1]);
     }
 
     [Fact]
@@ -312,20 +269,19 @@ public class Test_BoundingVolumeHierarchy
     {
         for(int length = 0; length < 6; length++)
         {
-            BoundingVolumeHierarchy bvh = new(length);
+            BoundingVolumeHierarchy bvh = new(length, MaxOverlaps);
             for(int i = 0; i < length; i++)
             {
-                Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0,0,0,0);
+                Soa_Leaf.Append(bvh.Leaves, 0,0,0,0,0,0);
                 Soa_Branch.Append(bvh.Branches, 0,0,0,0,0,0,0,0,0);
             }
 
             BoundingVolumeHierarchy.Dispose(bvh);
             
             Assert.Null(bvh.RadixSortBuffer);                
-            Assert.Null(bvh.SpatialPairs);
+            Assert.Null(bvh.Overlaps);
             Assert.Null(bvh.Branches);
             Assert.Null(bvh.Leaves);
-            Assert.Null(bvh.SpatialPairQueryBuffer);
             Assert.Null(bvh.MortonCentroids);
             Assert.Null(bvh.MortonLeafIds);
 

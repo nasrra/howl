@@ -200,6 +200,14 @@ public sealed class PhysicsSystemState
     /// </summary>
     public Stack<int> FreeVertexIndex;
 
+    /// <summary>
+    ///     The indices of all physics bodies in a bvh tree.
+    /// </summary>
+    /// <remarks>
+    ///     Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
+    public int[] BvhIndices;
+
 
 
 
@@ -527,7 +535,8 @@ public sealed class PhysicsSystemState
         MaxPhysicsBodyCount = physicsBodyCount;
 
         // Utility.
-        Bvh = new(physicsBodyCount);
+        int maxCollisions = physicsBodyCount*physicsBodyCount;
+        Bvh = new(physicsBodyCount, maxCollisions);
         CollisionManifold = new(physicsBodyCount);
         Entities = new(physicsBodyCount);
 
@@ -555,6 +564,7 @@ public sealed class PhysicsSystemState
         NextVertexIndices           = new int[physicsBodyVerticesCount];
         Generations                 = new int[physicsBodyCount];
         FreeVertexIndex             = new();
+        BvhIndices                  = new int[physicsBodyCount];
 
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();

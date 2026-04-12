@@ -3,7 +3,7 @@ using Howl.Test.Simd;
 
 namespace Howl.Test.Math.Shapes;
 
-public class Soa_AabbTest
+public class Test_Soa_Aabb
 {
     [Fact]
     public void Contructor_Test()
@@ -11,7 +11,7 @@ public class Soa_AabbTest
         for(int length = 0; length < 24; length++)
         {            
             Soa_Aabb soa = new(length);
-            Soa_AabbAssert.LengthEqual(length, soa);
+            Assert_Soa_Aabb.LengthEqual(length, soa);
             Assert.Equal(0, soa.AppendCount);
             Assert.Equal(length, soa.Length);
             Assert.False(soa.Disposed);
@@ -33,7 +33,7 @@ public class Soa_AabbTest
                 float maxX = j++;
                 float maxY = j++;
                 Soa_Aabb.Insert(soa, i, minX, minY, maxX, maxY);
-                Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, i, soa);
+                Assert_Soa_Aabb.EntryEqual(minX, minY, maxX, maxY, i, soa);
             }
         }
     }
@@ -53,7 +53,7 @@ public class Soa_AabbTest
                 float maxX = j++;
                 float maxY = j++;
                 Soa_Aabb.Append(soa, minX, minY, maxX, maxY);
-                Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, i, soa);
+                Assert_Soa_Aabb.EntryEqual(minX, minY, maxX, maxY, i, soa);
                 Assert.Equal(i+1, soa.AppendCount);
             }
         }

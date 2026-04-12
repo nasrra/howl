@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Howl.Algorithms;
@@ -12,23 +13,20 @@ public class BoundingVolumeHierarchy : IDisposable
 {
 
     /// <summary>
-    /// The radix sort buffer used when sorting this leaf buffer.
+    ///     The radix sort buffer used when sorting this leaf buffer.
     /// </summary>
     public RadixSortBuffer RadixSortBuffer;
 
     /// <summary>
-    /// The spatial pairs of leaves in the constructed tree.
+    ///     The found overlapping leaves after the bvh has been constructed.
     /// </summary>
-    /// <remarks>
-    /// Use a <c>spatialPairIndex</c> integer to access elements.
-    /// </remarks>
-    public Soa_SpatialPair SpatialPairs;
+    public Soa_Overlap Overlaps;
 
     /// <summary>
-    /// The constructed branches from the inserted leaves.
+    ///     The constructed branches from the inserted leaves.
     /// </summary>
     /// <remarks>
-    /// Use a <c>branchIndex</c> integer to access elements.
+    ///     Use a <c>branchIndex</c> integer to access elements.
     /// </remarks>
     public Soa_Branch Branches;
 
@@ -41,23 +39,18 @@ public class BoundingVolumeHierarchy : IDisposable
     public Soa_Leaf Leaves;
 
     /// <summary>
-    /// The query result buffer for constructing spaial pairs after tree construction.
-    /// </summary>
-    public Soa_QueryResult SpatialPairQueryBuffer;
-
-    /// <summary>
-    /// The morton codes for all leaf centroids.
+    ///     The morton codes for all leaf centroids.
     /// </summary>
     /// <remarks>
-    /// Use a <c>MortonLeafIds</c> entry to access elements.
+    ///     Use a <c>MortonLeafIds</c> entry to access elements.
     /// </remarks>
     public uint[] MortonCentroids;
 
     /// <summary>
-    /// Used as an index for an element in <c>MortonCentroids</c> to get its associated leaf data in <c>Leaves</c>.
+    ///     Used as an index for an element in <c>MortonCentroids</c> to get its associated leaf data in <c>Leaves</c>.
     /// </summary>
     /// <remarks>
-    /// Elements in <c>MortonLeafIds</c> and <c>MortonCentroids</c> are associated via index.
+    ///     Elements in <c>MortonLeafIds</c> and <c>MortonCentroids</c> are associated via index.
     /// </remarks>
     public int[] MortonLeafIds;
 
@@ -70,18 +63,17 @@ public class BoundingVolumeHierarchy : IDisposable
     /// Creates a new bounding volume hierarchy instance.
     /// </summary>
     /// <param name="length"></param>
-    public BoundingVolumeHierarchy(int length)
+    public BoundingVolumeHierarchy(int length, int maxOverlaps)
     {
         // mapping each spatial pair onto one another (without duplicates) gives a length * 2 possible spatial pairs.
-        int spatialPairsLength = length*2;
+        int branchesLength = length*2;
         
         Leaves = new(length);
-        Branches = new(spatialPairsLength);
-        SpatialPairQueryBuffer = new(spatialPairsLength);
+        Branches = new(branchesLength);
         MortonCentroids = new uint[length];
         MortonLeafIds = new int[length];
         RadixSortBuffer = new(length);
-        SpatialPairs = new(spatialPairsLength);
+        Overlaps = new(maxOverlaps);
     }
 
     /// <summary>
@@ -115,8 +107,6 @@ public class BoundingVolumeHierarchy : IDisposable
     /// <param name="bvh">the bvh instance.</param>
     public static void ConstructTree(BoundingVolumeHierarchy bvh)
     {
-
-
         Soa_Branch.ResetCount(bvh.Branches);
         
         // get the spatial data for morton code calculations.
@@ -193,7 +183,7 @@ public class BoundingVolumeHierarchy : IDisposable
 
 
         // d.Restart();
-        ConstructSpatialPairs(bvh.Branches, bvh.Leaves, bvh.SpatialPairs, bvh.SpatialPairQueryBuffer);
+        FindOverlaps(bvh.Branches, bvh.Leaves, bvh.Overlaps);
         // d.Stop();
         // double dt = d.Elapsed.TotalMilliseconds;
 
@@ -316,52 +306,84 @@ public class BoundingVolumeHierarchy : IDisposable
     }
 
     /// <summary>
-    /// Constructs the spatial pair list from a given leaf set.
+    ///     Finds any leaves that overlap with eachother within a set of constructed branches and leaves.
     /// </summary>
-    /// <remarks>
-    /// Note: 
-    /// - <paramref name="results"/> and <paramref name="spatialPairs"/> writing is destructive, the soa buffers will be cleared and output with this funcitons results.
-    /// - This method does not produce duplicate spatial pairings.
-    /// </remarks>
     /// <param name="branches">the constructed tree of branches to query.</param>
     /// <param name="leaves">the leaf data associated with the branches.</param>
-    /// <param name="spatialPairs">the buffer of spatial pairs to write overlap data to.</param>
-    /// <param name="results">the buffer of results to write temporary overlap data to.</param>
-    public static void ConstructSpatialPairs(Soa_Branch branches, Soa_Leaf leaves, Soa_SpatialPair spatialPairs, Soa_QueryResult results)
+    /// <param name="overlaps">output for the overlap data.</param>
+    public static void FindOverlaps(Soa_Branch branches, Soa_Leaf leaves, Soa_Overlap overlaps)
     {
-        Soa_SpatialPair.Clear(spatialPairs);
-        Span<int> leafIndices = leaves.GenIndices.Indices;
-        Span<int> leafGenerations = leaves.GenIndices.Generations;
-        Span<int> leafFlags = leaves.Flags; 
+        // clear any garbage data.
+        Soa_Overlap.ClearAppendCount(overlaps);
+
+        // hoisting of inavriance.
         Span<float> leafMinX = leaves.Aabbs.MinX;
         Span<float> leafMinY = leaves.Aabbs.MinY;
         Span<float> leafMaxX = leaves.Aabbs.MaxX;
         Span<float> leafMaxY = leaves.Aabbs.MaxY;
+        Span<float> branchMinX = branches.Aabbs.MinX;
+        Span<float> branchMinY = branches.Aabbs.MinY;
+        Span<float> branchMaxX = branches.Aabbs.MaxX;
+        Span<float> branchMaxY = branches.Aabbs.MaxY;
+        Span<int> branchSubtreeSizes = branches.SubtreeSizes;
+        Span<int> branchLeafCounts = branches.LeafCounts;
+        Span<int> leftLeafIndices = branches.LeftLeafIndices;
+        Span<int> rightLeafIndices = branches.RightLeafIndices;
+        float minX;
+        float minY; 
+        float maxX;
+        float maxY;
+        int otherLeaf;
 
-        int ownerIndex;
-        int ownerGeneration;
-        int ownerFlag;
-
-        for(int i = 0; i < leaves.AppendCount; i++)
+        for(int ownerLeaf = 0; ownerLeaf < leaves.AppendCount; ownerLeaf++)
         {
-            ownerIndex = leafIndices[i];
-            ownerGeneration = leafGenerations[i];
-            ownerFlag = leafFlags[i];
+            minX = leafMinX[ownerLeaf];
+            minY = leafMinY[ownerLeaf];
+            maxX = leafMaxX[ownerLeaf];
+            maxY = leafMaxY[ownerLeaf];
 
-            // get all near colliders to the owner leaf AABB.
-            AreaQuery(branches, leaves, results, leafMinX[i], leafMinY[i], leafMaxX[i], leafMaxY[i]);
-
-            for(int j = 0; j < results.AppendCount; j++)
+            int otherBranch = 0;
+            while(otherBranch < branches.AppendCount)
             {
-                int otherIndex = results.GenIndices.Indices[j];
-                
-                // ensure that spatial pairs are not added twice.
-                if(ownerIndex >= otherIndex)
+                if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[otherBranch], branchMinY[otherBranch], branchMaxX[otherBranch], branchMaxY[otherBranch]))
                 {
+                    // skip the entire subtree.
+                    otherBranch+= branchSubtreeSizes[otherBranch];
                     continue;
                 }
 
-                Soa_SpatialPair.Append(spatialPairs, ownerIndex, ownerGeneration, ownerFlag, otherIndex, results.GenIndices.Generations[j], results.Flags[j]);
+                int leafCount = branchLeafCounts[otherBranch];
+
+                switch (leafCount)
+                {
+                    case 1:
+                        // left leaf index should always be set to a leaf index for branches with leaf(s) attatched; it is the default leaf to set first.
+                        otherLeaf = leftLeafIndices[otherBranch];
+                        if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                            Soa_Overlap.Append(overlaps, ownerLeaf, otherLeaf);
+                        }
+                        break;
+                    case 2:
+                        otherLeaf = leftLeafIndices[otherBranch];
+                        // ensure that there are no duplicates.
+                        if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                            Soa_Overlap.Append(overlaps, ownerLeaf, otherLeaf);
+                        }
+                        otherLeaf = rightLeafIndices[otherBranch];
+                        // ensure that there are no duplicates.
+                        if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                            Soa_Overlap.Append(overlaps, ownerLeaf, otherLeaf);
+                        }
+                        break;
+                    case 0:
+                        // do nothing..., just go to next branch in the tree..
+                        break;
+                    default:
+                        System.Diagnostics.Debug.Assert(false);
+                        break;
+                }
+
+                otherBranch++;
             }
         }
     }
@@ -379,21 +401,25 @@ public class BoundingVolumeHierarchy : IDisposable
 
 
     /// <summary>
-    /// Queries a constructed tree of branches for any that overlap within a given area.
+    ///     Queries a constructed tree of branches for any leaves that overlap within a given area.
     /// </summary>
     /// <remarks>
-    /// Appending to <paramref name="results"/> is a destructive process; the buffer will be cleared before it appends.
+    ///     <paramref name="overlaps"/> is overwritten from index 0 onwards for the amount of overlaps appended; it is a destructive process.
     /// </remarks>
     /// <param name="branches">the constructed tree of branches to query.</param>
     /// <param name="leaves">the leaf data associated with the branches.</param>
-    /// <param name="results">the buffer of results to write overlap data to.</param>
+    /// <param name="overlaps">output for the indices of the overlapping leaves found.</param>
+    /// <param name="appendedOverlaps">output for the amount of indices that were appended to the overlaps array.</param>
     /// <param name="minX">the x-component of the query area minimum vertex.</param>
     /// <param name="minY">the y-component of the query area minimum vertex.</param>
     /// <param name="maxX">the x-component of the query area maximum vertex.</param>
     /// <param name="maxY">the y-component of the query area maximum vertex.</param>
-    public static void AreaQuery(Soa_Branch branches, Soa_Leaf leaves, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
+    public static void AreaQuery(Soa_Branch branches, Soa_Leaf leaves, Span<int> overlaps, ref int appendedOverlaps, float minX, float minY, float maxX, float maxY)
     {
-        Soa_QueryResult.Clear(results);
+        // reset to remove any garbage data.
+        appendedOverlaps = 0;
+
+        // hoisting of invariance.
         Span<float> branchMinX = branches.Aabbs.MinX;
         Span<float> branchMinY = branches.Aabbs.MinY;
         Span<float> branchMaxX = branches.Aabbs.MaxX;
@@ -402,27 +428,45 @@ public class BoundingVolumeHierarchy : IDisposable
         Span<int> branchLeafCounts = branches.LeafCounts;
         Span<int> leftLeafIndices = branches.LeftLeafIndices;
         Span<int> rightLeafIndices = branches.RightLeafIndices;
+                
+        int otherLeaf;
 
-        int i = 0;
-        while(i < branches.AppendCount)
+        int otherBranch = 0;
+        while(otherBranch < branches.AppendCount)
         {
-            if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[i], branchMinY[i], branchMaxX[i], branchMaxY[i]))
+            if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[otherBranch], branchMinY[otherBranch], branchMaxX[otherBranch], branchMaxY[otherBranch]))
             {
                 // skip the entire subtree.
-                i+= branchSubtreeSizes[i];
+                otherBranch+= branchSubtreeSizes[otherBranch];
                 continue;
             }
 
-            int leafCount = branchLeafCounts[i];
+            int leafCount = branchLeafCounts[otherBranch];
 
             switch (leafCount)
             {
                 case 1:
-                    // left leaf index should always be populated for branches with leaf(s) attatched.
-                    Soa_Leaf.Query(leaves, results, [leftLeafIndices[i]], minX, minY, maxX, maxY);
+                    // left leaf index should always be set to a leaf index for branches with leaf(s) attatched; it is the default leaf to set first.
+                    otherLeaf = leftLeafIndices[otherBranch];
+                    if(Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                        overlaps[appendedOverlaps] = otherLeaf;
+                        appendedOverlaps+=1;
+                    }
+                    // incemrent appended overlaps
                     break;
                 case 2:
-                    Soa_Leaf.Query(leaves, results, [leftLeafIndices[i], rightLeafIndices[i]], minX, minY, maxX, maxY);
+                    // add the left leaf.
+                    otherLeaf = leftLeafIndices[otherBranch];
+                    if(Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                        overlaps[appendedOverlaps] = otherLeaf;
+                        appendedOverlaps+=1;
+                    }
+                    // add the right leaf.
+                    otherLeaf = rightLeafIndices[otherBranch];
+                    if(Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                        overlaps[appendedOverlaps] = otherLeaf;
+                        appendedOverlaps+=1;
+                    }
                     break;
                 case 0:
                     // do nothing..., just go to next branch in the tree..
@@ -432,26 +476,26 @@ public class BoundingVolumeHierarchy : IDisposable
                     break;
             }
 
-            // go to next branch in the tree.
-            i++;
+            otherBranch++;
         }
     }
 
     /// <summary>
-    /// Queries a build bounding-volume-hierarchy tree for leaves that overlap within a given area. 
+    ///     Queries a constructed tree of branches for any leaves that overlap within a given area.
     /// </summary>
     /// <remarks>
-    /// Appending to <paramref name="results"/> is a destructive process; the buffer will be cleared before it appends.
+    ///     <paramref name="overlaps"/> is overwritten from index 0 onwards for the amount of overlaps appended; it is a destructive process.
     /// </remarks>
     /// <param name="bvh">the bounding-volume-hierarchy instance.</param>
-    /// <param name="results">output buffer to write overlap data to.</param>
+    /// <param name="overlaps">output for the indices of the overlapping leaves found.</param>
+    /// <param name="appendedOverlaps">output for the amount of indices that were appended to the overlaps array.</param>
     /// <param name="minX">the x-component of the query area minimum vertex.</param>
     /// <param name="minY">the y-component of the query area minimum vertex.</param>
     /// <param name="maxX">the x-component of the query area maximum vertex.</param>
     /// <param name="maxY">the y-component of the query area maximum vertex.</param>
-    public static void AreaQuery(BoundingVolumeHierarchy bvh, Soa_QueryResult results, float minX, float minY, float maxX, float maxY)
+    public static void AreaQuery(BoundingVolumeHierarchy bvh, Span<int> overlaps, ref int appendedOverlaps, float minX, float minY, float maxX, float maxY)
     {
-        AreaQuery(bvh.Branches, bvh.Leaves, results, minX, minY, maxX, maxY);
+        AreaQuery(bvh.Branches, bvh.Leaves, overlaps, ref appendedOverlaps, minX, minY, maxX, maxY);
     }
 
 
@@ -465,116 +509,102 @@ public class BoundingVolumeHierarchy : IDisposable
 
 
 
-
     /// <summary>
-    /// Queries a span of leaves for any data the may overlap a given raycast.
+    ///     Queries a constructed tree of branches for any leaves that overlap with a raycast.
     /// </summary>
     /// <remarks>
-    /// Note: result writing is non-destructive, any found data will be appended to the results list.
+    ///     <paramref name="overlaps"/> is overwritten from index 0 onwards for the amount of overlaps appended; it is a destructive process.
     /// </remarks>
-    /// <param name="results">The list of results to write to.</param>
-    /// <param name="leaves">the leaf data set.</param>
-    /// <param name="leafIndices">The leaves to query.</param>
-    /// <param name="raycastStart">The starting position of the raycast.</param>
-    /// <param name="raycastEnd">The end position of the raycast.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void RaycastLeaves(Soa_QueryResult results, Soa_Leaf leaves, Span<int> leafIndices, Vector2 raycastStart, Vector2 raycastEnd)
+    /// <param name="branches">the constructed tree of branches to query.</param>
+    /// <param name="leaves">the leaf data associated with the branches.</param>
+    /// <param name="overlaps">output for the indices of the overlapping leaves found.</param>
+    /// <param name="appendedOverlaps">output for the amount of indices that were appended to the overlaps array.</param>
+    /// <param name="startX">the x-component of the query rqycast starting vertex.</param>
+    /// <param name="startY">the y-component of the query rqycast starting vertex.</param>
+    /// <param name="endX">the x-component of the query rqycast ending vertex.</param>
+    /// <param name="endY">the y-component of the query rqycast ending vertex.</param>
+    public static void RaycastQuery(Soa_Branch branches, Soa_Leaf leaves, Span<int> overlaps, ref int appendedOverlaps, float startX, float startY, float endX, float endY)
     {
-        RaycastLeaves(results, leaves, leafIndices, raycastStart.X, raycastStart.Y, raycastEnd.X, raycastEnd.Y);
-    }
+        // reset to remove any garbage data.
+        appendedOverlaps = 0;
 
-    /// <summary>
-    /// Queries a span of leaves for any data the may overlap a given raycast.
-    /// </summary>
-    /// <remarks>
-    /// Note: result writing is non-destructive, any found data will be appended to the results list.
-    /// </remarks>
-    /// <param name="results">The list of results to write to.</param>
-    /// <param name="leaves">the leaf data set.</param>
-    /// <param name="leafIndices">The leaves to query.</param>
-    /// <param name="raycastStartX">the raycast start position x-component.</param>
-    /// <param name="raycastStartY">the raycast start position y-component.</param>
-    /// <param name="raycastEndX">the raycast end position x-component.</param>
-    /// <param name="raycastEndY">the raycast end position y-component.</param>
-    private static void RaycastLeaves(Soa_QueryResult results, Soa_Leaf leaves, Span<int> leafIndices, float raycastStartX, float raycastStartY, float raycastEndX, float raycastEndY)
-    {        
-        for(int i = 0; i < leafIndices.Length; i++)
-        {
-            int leaf = leafIndices[i];
-            if(Aabb.LineIntersect(
-                leaves.Aabbs.MinX[leaf], leaves.Aabbs.MinY[leaf], leaves.Aabbs.MaxX[leaf], leaves.Aabbs.MaxY[leaf], 
-                raycastStartX, raycastStartY, raycastEndX, raycastEndY
-            ))
-            {
-                Soa_QueryResult.Append(results, leaves.GenIndices.Indices[leaf], leaves.GenIndices.Generations[leaf], leaves.Flags[leaf]);
-            }
-        }
-    }
+        // hoisting of invariance.
+        Span<float> branchMinX = branches.Aabbs.MinX;
+        Span<float> branchMinY = branches.Aabbs.MinY;
+        Span<float> branchMaxX = branches.Aabbs.MaxX;
+        Span<float> branchMaxY = branches.Aabbs.MaxY;
+        Span<int> branchSubtreeSizes = branches.SubtreeSizes;
+        Span<int> branchLeafCounts = branches.LeafCounts;
+        Span<int> leftLeafIndices = branches.LeftLeafIndices;
+        Span<int> rightLeafIndices = branches.RightLeafIndices;
+                
+        int otherLeaf;
 
-    /// <summary>
-    /// Queries the a built bounding-volume-hierarchy tree for any given leaves that may overlap a given raycast.
-    /// </summary>
-    /// <remarks>
-    /// Note: this function should not be called in parallel.
-    /// </remarks>
-    /// <param name="bvh">the bounding volume hierarchy.</param>
-    /// <param name="raycastStart">The starting position of the raycast.</param>
-    /// <param name="raycastEnd">The end position of the raycast.</param>
-    /// <returns>the resultant data found stored in the query location.</returns>
-    public static Soa_QueryResult RaycastQuery(BoundingVolumeHierarchy bvh, Vector2 raycastStart, Vector2 raycastEnd)
-    {
-        RaycastQuery(bvh.SpatialPairQueryBuffer, bvh.Branches, bvh.Leaves, raycastStart.X, raycastStart.Y, raycastEnd.X, raycastEnd.Y);
-        return bvh.SpatialPairQueryBuffer;
-    }
-
-    /// <summary>
-    /// Queries the a built bounding-volume-hierarchy tree for any given leaves that may overlap a given raycast.
-    /// </summary>
-    /// <remarks>
-    /// Note: result writing is destructive, the list will be cleared before writing to it.
-    /// </remarks>    
-    /// <param name="results">The list of results to write to.</param>
-    /// <param name="branches">the branches to query.</param>
-    /// <param name="leaves">the leaf data associated with each branch.</param>
-    /// <param name="raycastStartX">the x-component of the raycast starting position.</param>
-    /// <param name="raycastStartY">the y-component of the raycast starting position.</param>
-    /// <param name="raycastEndX">the x-component of the raycast ending position.</param>
-    /// <param name="raycastEndY">the y-component of the raycast ending position.</param>
-    public static void RaycastQuery(Soa_QueryResult results, Soa_Branch branches, Soa_Leaf leaves, float raycastStartX, float raycastStartY, float raycastEndX, float raycastEndY)
-    {
-        Soa_QueryResult.Clear(results);
+        int otherBranch = 0;
 
         int i = 0;
-
-        while (i < branches.AppendCount)
+        while (otherBranch < branches.AppendCount)
         {
-            if (Aabb.LineIntersect(branches.Aabbs.MinX[i], branches.Aabbs.MinY[i], branches.Aabbs.MaxX[i], branches.Aabbs.MaxY[i], raycastStartX, raycastStartY, raycastEndX, raycastEndY) == false)
+            if (Aabb.LineIntersect(branchMinX[i], branchMinY[i], branchMaxX[i], branchMaxY[i], startX, startY, endX, endY) == false)
             {
                 // skip entire subtree
-                i += branches.SubtreeSizes[i];
+                otherBranch += branchSubtreeSizes[i];
                 continue;
             }
 
-            int leafCount = branches.LeafCounts[i];
-
-            if (leafCount > 0)
+            int leafCount = branchLeafCounts[i];
+            switch (leafCount)
             {
-                if(leafCount > 0)
-                {
-                    RaycastLeaves(results, leaves, [branches.LeftLeafIndices[i], branches.RightLeafIndices[i]], raycastStartX, raycastStartY, raycastEndX, raycastEndY);                    
-                }
-                else
-                {                    
-                    RaycastLeaves(results, leaves, [branches.LeftLeafIndices[i]], raycastStartX, raycastStartY, raycastEndX, raycastEndY);
-                }
-                i++;
+                case 1:
+                    // left leaf index should always be set to a leaf index for branches with leaf(s) attatched; it is the default leaf to set first.
+                    otherLeaf = leftLeafIndices[otherBranch];
+                    if(Soa_Leaf.LineIntersects(leaves, otherLeaf, startX, startY, endX, endY)){
+                        overlaps[appendedOverlaps] = otherLeaf;
+                        appendedOverlaps+=1;
+                    }
+                    break;
+                case 2:
+                    // add the left leaf.
+                    otherLeaf = leftLeafIndices[otherBranch];
+                    if(Soa_Leaf.LineIntersects(leaves, otherLeaf, startX, startY, endX, endY)){
+                        overlaps[appendedOverlaps] = otherLeaf;
+                        appendedOverlaps+=1;
+                    }
+                    // add the right leaf.
+                    otherLeaf = rightLeafIndices[otherBranch];
+                    if(Soa_Leaf.LineIntersects(leaves, otherLeaf, startX, startY, endX, endY)){
+                        overlaps[appendedOverlaps] = otherLeaf;
+                        appendedOverlaps+=1;
+                    }
+                    break;
+                case 0:
+                    // do nothing..., just go to next branch in the tree..
+                    break;
+                default:
+                    System.Diagnostics.Debug.Assert(false);
+                    break;
             }
-            else
-            {
-                // descend to left child (always i + 1)
-                i++;
-            }
+            
+            otherBranch++;
         }
+    }
+
+    /// <summary>
+    ///     Queries a constructed tree of branches for any leaves that overlap with a raycast.
+    /// </summary>
+    /// <remarks>
+    ///     <paramref name="overlaps"/> is overwritten from index 0 onwards for the amount of overlaps appended; it is a destructive process.
+    /// </remarks>
+    /// <param name="bvh">the bounding-volume-hierarchy instance.</param>
+    /// <param name="overlaps">output for the indices of the overlapping leaves found.</param>
+    /// <param name="appendedOverlaps">output for the amount of indices that were appended to the overlaps array.</param>
+    /// <param name="startX">the x-component of the query rqycast starting vertex.</param>
+    /// <param name="startY">the y-component of the query rqycast starting vertex.</param>
+    /// <param name="endX">the x-component of the query rqycast ending vertex.</param>
+    /// <param name="endY">the y-component of the query rqycast ending vertex.</param>
+    public static void RaycastQuery(BoundingVolumeHierarchy bvh, Span<int> overlaps, ref int appendedOverlaps, float startX, float startY, float endX, float endY)
+    {
+        RaycastQuery(bvh.Branches, bvh.Leaves, overlaps, ref appendedOverlaps, startX, startY, endX, endY);
     }
 
 
@@ -631,25 +661,21 @@ public class BoundingVolumeHierarchy : IDisposable
         
         bvh.Disposed = true;
         
-        RadixSortBuffer.Dispose(bvh.RadixSortBuffer);
-        bvh.RadixSortBuffer = null;
+        Soa_Leaf.Dispose(bvh.Leaves);
+        bvh.Leaves = null;
 
-        Soa_SpatialPair.Dispose(bvh.SpatialPairs);        
-        bvh.SpatialPairs = null;
-        
         Soa_Branch.Dispose(bvh.Branches);
         bvh.Branches = null;
 
-        Soa_Leaf.Dispose(bvh.Leaves);
-        bvh.Leaves = null;
-        
-        Soa_QueryResult.Dispose(bvh.SpatialPairQueryBuffer);
-        bvh.SpatialPairQueryBuffer = null;
-        
-        bvh.MortonLeafIds = null;
-        
         bvh.MortonCentroids = null;
+        bvh.MortonLeafIds = null;
 
+        RadixSortBuffer.Dispose(bvh.RadixSortBuffer);
+        bvh.RadixSortBuffer = null;
+
+        Soa_Overlap.Dispose(bvh.Overlaps);
+        bvh.Overlaps = null;
+        
         GC.SuppressFinalize(bvh);
     }
 

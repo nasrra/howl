@@ -1,72 +1,117 @@
 using System;
 using System.Runtime.CompilerServices;
 using Howl.Ecs;
+using Howl.Math.Shapes;
 
 namespace Howl.DataStructures.Bvh;
 
 public class Soa_QueryResult : IDisposable
 {
     /// <summary>
-    /// The gen indices.
+    ///     The index of the <c>owner</c> leaves of a query result.
     /// </summary>
-    public Soa_GenIndex GenIndices;
+    /// <remarks>
+    ///     Use a <c>queryResult</c> integer to access elements.
+    /// </remarks>
+    public int[] OwnerLeafIndices;
 
     /// <summary>
-    /// The user-defined flags.
+    ///     The index of the <c>other</c> leaves of a query result.
     /// </summary>
-    public int[] Flags;
+    /// <remarks>
+    ///     Use a <c>queryResult</c> integer to access elements.
+    /// </remarks>
+    public int[] OtherLeafIndices;
 
     /// <summary>
-    /// The count of allocated entries from appending.
+    ///     The index of the <c>owner</c> leaves of a query result.
+    /// </summary>
+    /// <remarks>
+    ///     Use a <c>queryResult</c> integer to access elements.
+    /// </remarks>
+    public Soa_Aabb OwnerAabbs;
+
+    /// <summary>
+    ///     The index of the <c>other</c> leaves of a query result.
+    /// </summary>
+    /// <remarks>
+    ///     Use a <c>queryResult</c> integer to access elements.
+    /// </remarks>
+    public Soa_Aabb OtherAabbs;
+
+    /// <summary>
+    ///     The count of allocated entries from appending.
     /// </summary>
     public int AppendCount;
 
     /// <summary>
-    /// The length of all the backing arrays of this instance.
+    ///     The length of all the backing arrays of this instance.
     /// </summary>
     public int Length;
 
     /// <summary>
-    /// Whether or not this instance has been disposed.
+    ///     Whether or not this instance has been disposed.
     /// </summary>
     public bool Disposed;
 
     /// <summary>
-    /// Creates a soa instance.
+    ///     Creates a soa instance.
     /// </summary>
     /// <param name="length">the length of the backing arrays.</param>
     public Soa_QueryResult(int length)
     {
-        GenIndices = new(length);
-        Flags = new int[length];
+        OwnerLeafIndices = new int[length];
+        OtherLeafIndices = new int[length];
+        OwnerAabbs = new(length);
+        OtherAabbs = new(length);
+        AppendCount = 0;
         Length = length;
     }
 
     /// <summary>
-    /// Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
+    ///     Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
     /// </summary>
     /// <param name="soa">the soa instance to append to.</param>
-    /// <param name="index">the <c>index</c> of the data associated with the query result.</param>
-    /// <param name="generation">the <c>generation</c> of the data associated with the query result.</param>
-    /// <param name="flags">the user-defined flags of the data associated with the query result.</param>
+    /// <param name="ownerLeafIndex">the index of the <c>owner</c> leaf in the bvh.</param>
+    /// <param name="ownerMinX">the x-compoent of the <c>owner</c> aabb's minimum vertex.</param>
+    /// <param name="ownerMinY">the y-compoent of the <c>owner</c> aabb's minimum vertex.</param>
+    /// <param name="ownerMaxX">the x-compoent of the <c>owner</c> aabb's maximum vertex.</param>
+    /// <param name="ownerMaxY">the y-compoent of the <c>owner</c> aabb's maximum vertex.</param>
+    /// <param name="otherLeafIndex">the index of the <c>other</c> leaf in the bvh.</param>
+    /// <param name="otherMinX">the x-compoent of the <c>other</c> aabb's minimum vertex.</param>
+    /// <param name="otherMinY">the y-compoent of the <c>other</c> aabb's minimum vertex.</param>
+    /// <param name="otherMaxX">the x-compoent of the <c>other</c> aabb's maximum vertex.</param>
+    /// <param name="otherMaxY">the y-compoent of the <c>other</c> aabb's maximum vertex.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append(Soa_QueryResult soa, int index, int generation, int flags)
+    public static void Append(Soa_QueryResult soa, int ownerLeafIndex, float ownerMinX, float ownerMinY, float ownerMaxX, 
+        float ownerMaxY, int otherLeafIndex, float otherMinX, float otherMinY, float otherMaxX, float otherMaxY
+    )
     {
         int count = soa.AppendCount;
-        soa.GenIndices.Indices[count] = index;
-        soa.GenIndices.Generations[count] = generation;
-        soa.Flags[count] = flags;
+        
+        soa.OwnerLeafIndices[count] = ownerLeafIndex;
+        soa.OwnerAabbs.MinX[count]  = ownerMinX;
+        soa.OwnerAabbs.MinY[count]  = ownerMinY;
+        soa.OwnerAabbs.MaxX[count]  = ownerMaxX;
+        soa.OwnerAabbs.MaxY[count]  = ownerMaxY;
+        
+        soa.OtherLeafIndices[count] = otherLeafIndex;
+        soa.OtherAabbs.MinX[count]  = otherMinX;
+        soa.OtherAabbs.MinY[count]  = otherMinY;
+        soa.OtherAabbs.MaxX[count]  = otherMaxX;
+        soa.OtherAabbs.MaxY[count]  = otherMaxY;
+        
         soa.AppendCount++;
     }
 
     /// <summary>
-    /// Sets a soa instance's <c>AppendCount</c> to zero.
+    ///     Sets a soa instance's <c>AppendCount</c> to zero.
     /// </summary>
-    /// <param name="buffer">the buffer to clear.</param>
+    /// <param name="soa">the soa to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Clear(Soa_QueryResult buffer)
+    public static void Clear(Soa_QueryResult soa)
     {
-        buffer.AppendCount = 0; 
+        soa.AppendCount = 0; 
     }
 
 
@@ -86,20 +131,26 @@ public class Soa_QueryResult : IDisposable
         throw new NotImplementedException();
     }
 
-    public static void Dispose(Soa_QueryResult buffer)
+    public static void Dispose(Soa_QueryResult soa)
     {
-        if(buffer.Disposed)
+        if(soa.Disposed)
             return;
         
-        buffer.Disposed = true;
+        soa.Disposed = true;
 
-        Soa_GenIndex.Dispose(buffer.GenIndices);
-        buffer.GenIndices = null;
-        buffer.Flags = null;
-        buffer.AppendCount = 0;
-        buffer.Length = 0;
+        soa.OwnerLeafIndices = null;
+        soa.OtherLeafIndices = null;
 
-        GC.SuppressFinalize(buffer);
+        Soa_Aabb.Dispose(soa.OwnerAabbs);
+        soa.OwnerAabbs = null;
+        
+        Soa_Aabb.Dispose(soa.OtherAabbs);
+        soa.OtherAabbs = null;
+
+        soa.AppendCount = 0;
+        soa.Length = 0;
+
+        GC.SuppressFinalize(soa);
     }
 
     ~Soa_QueryResult()

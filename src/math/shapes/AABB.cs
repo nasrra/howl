@@ -371,16 +371,7 @@ public struct Aabb
     /// <param name="bMaxY">the y-component of the maximum vertex from aabbb b.</param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(
-        float aMinX,
-        float aMinY,
-        float aMaxX,
-        float aMaxY,
-        float bMinX,
-        float bMinY,
-        float bMaxX,
-        float bMaxY
-    )
+    public static bool Intersect(float aMinX,float aMinY, float aMaxX, float aMaxY, float bMinX, float bMinY, float bMaxX, float bMaxY)
     {        
         if(aMaxX <= bMinX || bMaxX <= aMinX)
         {

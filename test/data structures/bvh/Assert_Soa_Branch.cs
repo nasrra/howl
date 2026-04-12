@@ -3,10 +3,10 @@ using Howl.Test.Math.Shapes;
 
 namespace Howl.Test.DataStructures.Bvh;
 
-public static class Soa_BranchAssert
+public static class Assert_Soa_Branch
 {
     /// <summary>
-    /// Asserts that the values of a soa entry are equal to the expected values. 
+    ///     Asserts that the values of a soa entry are equal to the expected values. 
     /// </summary>
     /// <param name="minX">the expected minimum x value.</param>
     /// <param name="minY">the expected minimum y value.</param>
@@ -23,7 +23,7 @@ public static class Soa_BranchAssert
         int subtreeSize, int leafCount, int parentIndex, int entryIndex, Soa_Branch soa
     )
     {
-        Soa_AabbAssert.EntryEqual(minX, minY, maxX, maxY, entryIndex, soa.Aabbs);
+        Assert_Soa_Aabb.EntryEqual(minX, minY, maxX, maxY, entryIndex, soa.Aabbs);
         Assert.Equal(leftLeafIndex, soa.LeftLeafIndices[entryIndex]);
         Assert.Equal(rightLeafIndex, soa.RightLeafIndices[entryIndex]);
         Assert.Equal(subtreeSize, soa.SubtreeSizes[entryIndex]);
@@ -32,13 +32,13 @@ public static class Soa_BranchAssert
     } 
 
     /// <summary>
-    /// Asserts the equality of array lengths in a soa instance.
+    ///     Asserts the equality of array lengths in a soa instance.
     /// </summary>
     /// <param name="length">the expected length of the backing arrays.</param>
     /// <param name="soa">the soa instance instance.</param>
     public static void LengthEqual(int length, Soa_Branch soa)
     {
-        Soa_AabbAssert.LengthEqual(length, soa.Aabbs);
+        Assert_Soa_Aabb.LengthEqual(length, soa.Aabbs);
         Assert.Equal(length, soa.LeftLeafIndices.Length);
         Assert.Equal(length, soa.RightLeafIndices.Length);
         Assert.Equal(length, soa.SubtreeSizes.Length);
