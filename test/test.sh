@@ -36,6 +36,7 @@ TEST_MAP=(
     ["DataStructuresNamespace"]="${DATA_STRUCTURES_NAMESPACE}"
     ["ECSNamespace"]="${ECS_NAMESPACE}"
     ["EntityRegistry"]="${ECS_NAMESPACE}Test_EntityRegistry"
+    ["FsSoa_Vector2"]="${MATH_NAMESPACE}Test_FsSoa_Vector2"
     ["DopeVector"]="${COLLECTIONS_NAMESPACE}Test_DopeVector"
     ["GenId"]="${ECS_NAMESPACE}Test_GenId"
     ["GenIndex"]="${ECS_NAMESPACE}GenIndexTest"

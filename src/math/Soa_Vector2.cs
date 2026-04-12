@@ -8,12 +8,12 @@ namespace Howl.Math;
 public class Soa_Vector2 : IDisposable
 {
     /// <summary>
-    /// Gets and sets the x-coordinate values.
+    ///     Gets and sets the x-coordinate values.
     /// </summary>
     public float[] X;
 
     /// <summary>
-    /// Gets and sets the y-coordinate values.
+    ///     Gets and sets the y-coordinate values.
     /// </summary>
     public float[] Y;
 
