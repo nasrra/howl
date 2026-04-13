@@ -63,10 +63,8 @@ public static class PhysicsSystem
 
             // transform physics bodies
             state.TransformPhysicsBodiesStopwatch.Restart();
-            TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
-                state.LocalVertices, state.WorldVertices, state.Transforms, state.Flags, 
-                state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.FirstVertexIndices, state.NextVertexIndices,
-                state.MaxPhysicsBodyVertexCount, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
+            TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices, state.LocalVertices, state.WorldVertices, state.Transforms, 
+                state.Flags, state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
             );
             state.TransformPhysicsBodiesStopwatch.Stop();
 
@@ -77,8 +75,8 @@ public static class PhysicsSystem
 
             // Find collisions.
             state.FindCollisionsStopwatch.Restart();
-            FindCollisions(state.Bvh, state.Entities.GenIds, state.CollisionManifold.Collisions, state.Centroids, state.FirstVertexIndices, 
-                state.NextVertexIndices, state.WorldVertices.X, state.WorldVertices.Y, state.WorldRadii, state.Flags, state.MaxPhysicsBodyVertexCount
+            FindCollisions(state.Bvh, state.Entities.GenIds, state.CollisionManifold.Collisions, state.Centroids, state.WorldVertices, 
+                state.WorldRadii, state.Flags, state.MaxPhysicsBodyVertexCount
             );
             state.FindCollisionsStopwatch.Stop();
 
@@ -117,11 +115,9 @@ public static class PhysicsSystem
         // sub-step iteration does not transform the bodies
         // at the end of it's loop; meaning the final collision
         // resolution wouldn't be applied.
-        TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
-            state.LocalVertices, state.WorldVertices, state.Transforms, state.Flags, 
-            state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.FirstVertexIndices, state.NextVertexIndices,
-            state.MaxPhysicsBodyVertexCount, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
-        );
+            TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices, state.LocalVertices, state.WorldVertices, state.Transforms, 
+                state.Flags, state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
+            );
         state.FixedUpdateStepStopwatch.Stop();
     }
 
@@ -143,13 +139,12 @@ public static class PhysicsSystem
 
         if (state.DrawColliderWireframes)
         {
-            DrawCirclePhysicsBodies(camera, state.WorldVertices, state.WorldRadii, state.FirstVertexIndices, 
-                state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour
+            DrawCirclePhysicsBodies(camera, state.Centroids, state.WorldRadii, state.Flags, state.DynamicPhysicsBodyColour, 
+                state.KinematicPhysicsBodyColour, state.TriggeredPhysicsBodyColour
             );
 
-            DrawPolygonPhysicsBodies(camera, state.WorldVertices, state.FirstVertexIndices, state.NextVertexIndices, 
-                state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, 
-                state.MaxPhysicsBodyVertexCount
+            DrawPolygonPhysicsBodies(camera, state.WorldVertices, state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, 
+                state.TriggerPhysicsBodyColour 
             );
         }
 
@@ -483,28 +478,27 @@ public static class PhysicsSystem
     /// <param name="minAABBVertices">a span to store the generated mininum vertice values of all physics bodies AABB's.</param>
     /// <param name="maxAABBVertices">a span to store the generated maximum vertice values of all physics bodies AABB's.</param>
     /// <param name="localVertices">the local-space vertices of all physics bodies.</param>
-    /// <param name="worldVertices">a span to store the generated world-space vertex values of all physics bodies.</param>
+    /// <param name="worldVertices">output for the generated world-space vertex values of all physics bodies.</param>
     /// <param name="transforms">the world-space transforms of all physics bodies.</param>
     /// <param name="flags">the flags of all physics bodies.</param>
     /// <param name="worldRadii">the world-space radius values of all phsyics bodies.</param>
     /// <param name="localWidths">the local-space width values of all physics bodies.</param>
     /// <param name="localHeights">the local-space height values of all physics bodies.</param>
-    /// <param name="firstVertexIndices">the indices in the vertices span that point to the first vertex of a given physics body.</param>
-    /// <param name="nextVertexIndices">the indices in the vertices span that point to the next vertex of a given vertex index.</param>
-    /// <param name="maxPhysicsBodyVertexCount">the max amount of vertices a physics body can have.</param>
     /// <param name="maxPhysicsBodyCount">the max amount of physics bodies that can be stored.</param>
     /// <param name="physicsBodyCount">the current amount of allocated physics bodies.</param>
     public static void TransformPhysicsBodyVertices(Soa_Vector2 centroids, Soa_Vector2 minAABBVertices, Soa_Vector2 maxAABBVertices,
-        Soa_Vector2 localVertices, Soa_Vector2 worldVertices, Soa_Transform transforms, Span<PhysicsBodyFlags> flags, 
-        Span<float> localRadii, Span<float> worldRadii, Span<float> localWidths, Span<float> localHeights, Span<int> firstVertexIndices, 
-        Span<int> nextVertexIndices, int polygonMaxVertices, int maxPhysicsBodyCount, int physicsBodyCount
+        FsSoa_Vector2 localVertices, FsSoa_Vector2 worldVertices, Soa_Transform transforms, Span<PhysicsBodyFlags> flags, 
+        Span<float> localRadii, Span<float> worldRadii, Span<float> localWidths, Span<float> localHeights,
+        int maxPhysicsBodyCount, int physicsBodyCount
     )
     {
+        FsSoa_Vector2.ClearAppendCounts(worldVertices);
+
         // hoisting invariance.
-        Span<float> verticesX = localVertices.X;
-        Span<float> verticesY = localVertices.Y;
-        Span<float> transformedVerticesX = worldVertices.X;
-        Span<float> transformedVerticesY = worldVertices.Y;
+        Span<float> localVertsX = localVertices.X;
+        Span<float> localVertsY = localVertices.Y;
+        Span<float> worldVertsX = worldVertices.X;
+        Span<float> worldVertsY = worldVertices.Y;
         Span<float> centroidsX = centroids.X;
         Span<float> centroidsY = centroids.Y;
         Span<float> minAABBVectorsX = minAABBVertices.X;
@@ -517,16 +511,14 @@ public static class PhysicsSystem
         Span<float> sin = transforms.Sins;
         Span<float> positionsX = transforms.Positions.X;
         Span<float> positionsY = transforms.Positions.Y;
-
-        Span<float> polygonTransformedVerticesX = stackalloc float[polygonMaxVertices];
-        Span<float> polygonTransformedVerticesY = stackalloc float[polygonMaxVertices];
-        int polygonTransformedVerticesCount = 0;
+        Span<float> polygonX = default;
+        Span<float> polygonY = default;
 
         int physicsBodiesProcessed = 0;
 
-        for(int i = 0; i < maxPhysicsBodyCount; i++)
+        for(int physicsBodyIndex = 0; physicsBodyIndex < maxPhysicsBodyCount; physicsBodyIndex++)
         {
-            PhysicsBodyFlags flag = flags[i];
+            PhysicsBodyFlags flag = flags[physicsBodyIndex];
             
             // if the physics body had been allocated and is active.
             if((flag & PhysicsBodyFlags.Allocated) == 0)
@@ -539,61 +531,57 @@ public static class PhysicsSystem
             if((flag & PhysicsBodyFlags.Active) != 0)
             {
                 // hoisting in variance.
-                ref float scaleX = ref scalesX[i];
-                ref float scaleY = ref scalesY[i];
+                ref float scaleX = ref scalesX[physicsBodyIndex];
+                ref float scaleY = ref scalesY[physicsBodyIndex];
 
                 if((flag & PhysicsBodyFlags.RectangleShape) != 0)
                 {
-                    int first = firstVertexIndices[i]; 
-                    int verticeIndex = first;
-                    while (true)
-                    {
+                    int vertexCount = localVertices.AppendCounts[physicsBodyIndex];
+                    int startIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, localVertices.Stride, 0);                        
+                    for(int vertex = 0; vertex < vertexCount; vertex++){
+                        int currentIndex = vertex + startIndex;
 
                         // transform the base/un-transformed vertice.
-                        TransformVector(verticesX[verticeIndex], verticesY[verticeIndex], scaleX, scaleY,
-                            cos[i], sin[i], positionsX[i], positionsY[i], out float x, out float y
+                        TransformVector(localVertsX[currentIndex], localVertsY[currentIndex], scaleX, scaleY,
+                            cos[physicsBodyIndex], sin[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], 
+                            out float x, out float y
                         );
 
-                        // mutate the transformed vertices array.
-                        transformedVerticesX[verticeIndex] = x;
-                        transformedVerticesY[verticeIndex] = y;
-
-                        // mutate local cache of vertices.
-                        polygonTransformedVerticesX[polygonTransformedVerticesCount] = x;
-                        polygonTransformedVerticesY[polygonTransformedVerticesCount] = y;
-                        polygonTransformedVerticesCount++;
-
-                        verticeIndex = nextVertexIndices[verticeIndex];
-
-                        if (verticeIndex == first)
-                            break;
+                        // store the newly transformed vertex into the world vertices array.
+                        // (TODO): this will need to be changed so that you can append directly to an entry element index
+                        // if you already know the element index. Create a new unsafe function for it.
+                        FsSoa_Vector2.Append(worldVertices, physicsBodyIndex, x, y);
                     }
 
                     // set the new centroid.
-                    GetCentroid(polygonTransformedVerticesX, polygonTransformedVerticesY, ref centroidsX[i], ref centroidsY[i]);
+                    PhysicsBody.GetPolygonVerticesUnsafe(worldVertices, physicsBodyIndex, ref polygonX, ref polygonY);
+
+                    GetCentroid(polygonX, polygonY, ref centroidsX[physicsBodyIndex], ref centroidsY[physicsBodyIndex]);
 
                     // set the new min and max vectors.
-                    GetMinMaxVectors(polygonTransformedVerticesX, polygonTransformedVerticesY, 
-                        out minAABBVectorsX[i], out minAABBVectorsY[i], out maxAABBVectorsX[i], out maxAABBVectorsY[i]
+                    GetMinMaxVectors(polygonX, polygonY, out minAABBVectorsX[physicsBodyIndex], out minAABBVectorsY[physicsBodyIndex], 
+                        out maxAABBVectorsX[physicsBodyIndex], out maxAABBVectorsY[physicsBodyIndex]
                     );
-
-                    // reset for next iteration.
-                    polygonTransformedVerticesCount = 0; 
                 }
                 else // circle shape.
                 {
-                    int vertexIndex = firstVertexIndices[i];
-                    TransformVector(verticesX[vertexIndex],verticesY[vertexIndex],scaleX, scaleY, cos[i], sin[i], positionsX[i], positionsY[i], out float x, out float y);
-                    transformedVerticesX[vertexIndex] = x;
-                    transformedVerticesY[vertexIndex] = y;
+                    int vertexIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, worldVertices.Stride, 0);
+                    TransformVector(localVertsX[vertexIndex], localVertsY[vertexIndex],scaleX, scaleY, cos[physicsBodyIndex], sin[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], out float x, out float y);
+
+                    // store the newly transformed vertex into the world vertices array.
+                    // (TODO): this will need to be changed so that you can append directly to an entry element index
+                    // if you already know the element index. Create a new unsafe function for it.
+                    FsSoa_Vector2.Append(worldVertices, physicsBodyIndex, x, y);
 
                     // set the new centroid.
-                    centroidsX[i] = x;
-                    centroidsY[i] = y;
+                    centroidsX[physicsBodyIndex] = x;
+                    centroidsY[physicsBodyIndex] = y;
+
+                    worldRadii[physicsBodyIndex] = Circle.ScaleRadius(localRadii[physicsBodyIndex], scaleX, scaleY);
 
                     // set the new min and max vectors. 
-                    Circle.GetMinMaxVectors(x, y, worldRadii[i], 
-                        out minAABBVectorsX[i], out minAABBVectorsY[i], out maxAABBVectorsX[i], out maxAABBVectorsY[i]
+                    Circle.GetMinMaxVectors(x, y, worldRadii[physicsBodyIndex], 
+                        out minAABBVectorsX[physicsBodyIndex], out minAABBVectorsY[physicsBodyIndex], out maxAABBVectorsX[physicsBodyIndex], out maxAABBVectorsY[physicsBodyIndex]
                     );
                 }
             }
@@ -993,8 +981,7 @@ public static class PhysicsSystem
     }
 
     public static void FindCollisions(BoundingVolumeHierarchy bvh, GenId[] genIds, Soa_Collision collisions,  Soa_Vector2 centroids, 
-        Span<int> firstVertexIndices, Span<int> nextVertexIndices, Span<float> vertsX, Span<float> vertsY, Span<float> radii, Span<PhysicsBodyFlags> flags, 
-        int maxPolygonVerticeCount
+        FsSoa_Vector2 vertices, Span<float> radii, Span<PhysicsBodyFlags> flags, int maxPolygonVerticeCount
     )
     {
         // hoisting invariance.
@@ -1019,26 +1006,18 @@ public static class PhysicsSystem
             {
                 if((otherFlags & PhysicsBodyFlags.RectangleShape) != 0)
                 {
-                    PolygonBodiesAreColliding(collisions, centroids, vertsX, vertsY, firstVertexIndices, genIds, nextVertexIndices, ownerIndex, otherIndex, 
-                        maxPolygonVerticeCount, ownerFlags, otherFlags
-                    );
+                    PolygonBodiesAreColliding(collisions, centroids, vertices, genIds, ownerIndex, otherIndex, ownerFlags, otherFlags);
                 }
                 else
                 {                    
-                    PolygonToCircleBodiesAreColliding(collisions, centroids, radii, ownerIndex, otherIndex,
-                        vertsX, vertsY, firstVertexIndices, nextVertexIndices, genIds,
-                        ownerFlags, otherFlags, maxPolygonVerticeCount
-                    );
+                    PolygonToCircleBodiesAreColliding(collisions, vertices, centroids, radii, genIds, ownerIndex, otherIndex, ownerFlags, otherFlags);
                 }
             }
             else
             {
                 if((otherFlags & PhysicsBodyFlags.RectangleShape) != 0)
                 {                    
-                    PolygonToCircleBodiesAreColliding(collisions, centroids, radii, otherIndex, ownerIndex,
-                        vertsX, vertsY, firstVertexIndices, nextVertexIndices, genIds,
-                        otherFlags, ownerFlags, maxPolygonVerticeCount
-                    );
+                    PolygonToCircleBodiesAreColliding(collisions, vertices, centroids, radii, genIds, otherIndex, ownerIndex, otherFlags, ownerFlags);
                 }
                 else
                 {
@@ -1048,28 +1027,22 @@ public static class PhysicsSystem
         }
     }
 
-    public static void PolygonToCircleBodiesAreColliding(Soa_Collision collisions, Soa_Vector2 centroids, Span<float> radii,int ownerIndex, int otherIndex,
-        Span<float> vertsX, Span<float> vertsY, Span<int> firstVertexIndices, Span<int> nextVertexIndices, Span<GenId> genIds,
-        PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags, int maxPolygonVerticeCount
+    public static void PolygonToCircleBodiesAreColliding(Soa_Collision collisions, FsSoa_Vector2 vertices, Soa_Vector2 centroids, Span<float> radii, 
+        Span<GenId> genIds, int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
-        float polygonX = centroids.X[ownerIndex];
-        float circleX = centroids.X[otherIndex];
-        float polygonY = centroids.Y[ownerIndex];
-        float circleY = centroids.Y[otherIndex];
-        float circleR = radii[otherIndex];
+        float polyPosX = centroids.X[ownerIndex];
+        float circPosX = centroids.X[otherIndex];
+        float polyPosY = centroids.Y[ownerIndex];
+        float circPosY = centroids.Y[otherIndex];
+        float circRadius = radii[otherIndex];
+        Span<float> polyVertsX = default;
+        Span<float> polyVertsY = default;
 
-        Span<float> polygonVertsX = stackalloc float[maxPolygonVerticeCount];
-        Span<float> polygonVertsY = stackalloc float[maxPolygonVerticeCount];
+        // gather polygon a vertices.
+        PhysicsBody.GetPolygonVerticesUnsafe(vertices, ownerIndex, ref polyVertsX, ref polyVertsY);
 
-        // get polygon data.
-        int polygonVertexCount = 0;
-        GetPolygonVertices(vertsX, vertsY, firstVertexIndices, nextVertexIndices, polygonVertsX, polygonVertsY, ownerIndex, 
-            ref polygonVertexCount
-        );
-
-
-        bool intersect = SAT.PolygonAndCircleIntersect(polygonVertsX, polygonVertsY, polygonX, polygonY, circleX, circleY, circleR, circleX, circleY, 
+        bool intersect = SAT.PolygonAndCircleIntersect(polyVertsX, polyVertsY, polyPosX, polyPosY, circPosX, circPosY, circRadius, circPosX, circPosY, 
             out float normalX, out float normalY, out float depth
         );
         // narrow phase intersect check.
@@ -1079,8 +1052,8 @@ public static class PhysicsSystem
             GenId ownerGenId = genIds[ownerIndex]; 
             GenId otherGenId = genIds[otherIndex]; 
             
-            SAT.FindContactPoints(polygonVertsX, polygonVertsY, circleX, circleY, out float contactPointX, out float contactPointY);
-            Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, polygonX, polygonY, circleX, circleY,
+            SAT.FindContactPoints(polyVertsX, polyVertsY, circPosX, circPosY, out float contactPointX, out float contactPointY);
+            Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, polyPosX, polyPosY, circPosX, circPosY,
                 contactPointX, contactPointY, depth, ownerFlags, otherFlags
             );
         }        
@@ -1091,51 +1064,52 @@ public static class PhysicsSystem
         Span<GenId> genIds, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
-        float ownerX = centroids.X[ownerIndex];
-        float otherX = centroids.X[otherIndex];
-        float ownerY = centroids.Y[ownerIndex];
-        float otherY = centroids.Y[otherIndex];
-        float ownerR = radii[ownerIndex];
-        float otherR = radii[otherIndex];
-        bool satIntersects = SAT.CirclesIntersect(ownerX, ownerY, ownerR, otherX, otherY, otherR, out float normalX, out float normalY, out float depth);
+        float ownerPosX = centroids.X[ownerIndex];
+        float otherPosX = centroids.X[otherIndex];
+        float ownerPosY = centroids.Y[ownerIndex];
+        float otherPosY = centroids.Y[otherIndex];
+        float ownerPosR = radii[ownerIndex];
+        float otherPosR = radii[otherIndex];
+        
+        bool satIntersects = SAT.CirclesIntersect(ownerPosX, ownerPosY, ownerPosR, otherPosX, otherPosY, otherPosR, out float normalX, 
+            out float normalY, out float depth
+        );
+        
         if(satIntersects)
         {
             // submit the collision with contact points if one of the colliders needs them.
-            SAT.FindContactPoints(ownerX, ownerY, ownerR, otherX, otherY, out float contactPointX, out float contactPointY);
+            SAT.FindContactPoints(ownerPosX, ownerPosY, ownerPosR, otherPosX, otherPosY, out float contactPointX, out float contactPointY);
             
             // get the gen ids.
             GenId ownerGenId = genIds[ownerIndex]; 
             GenId otherGenId = genIds[otherIndex]; 
 
-            Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerX, ownerY, otherX, otherY,
+            Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerPosX, ownerPosY, otherPosX, otherPosY,
                 contactPointX, contactPointY, depth, ownerFlags, otherFlags
             );
         }   
     }
 
-    public static void PolygonBodiesAreColliding(Soa_Collision collisions, Soa_Vector2 centroids, Span<float> vertsX, Span<float> vertsY, Span<int> firstVertexIndices, 
-        Span<GenId> genIds, Span<int> nextVertexIndices, int ownerIndex, int otherIndex, int maxPolygonVerticeCount, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
+    public static void PolygonBodiesAreColliding(Soa_Collision collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<GenId> genIds, 
+        int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
-        int vertexCountA  = 0;
-        int vertexCountB  = 0;
-        Span<float> ownerVertsX = stackalloc float[maxPolygonVerticeCount];
-        Span<float> ownerVertsY = stackalloc float[maxPolygonVerticeCount];
-        Span<float> otherVertsX = stackalloc float[maxPolygonVerticeCount];
-        Span<float> otherVertsY = stackalloc float[maxPolygonVerticeCount];
-
-        float ownerX = centroids.X[ownerIndex];
-        float otherX = centroids.X[otherIndex];
-        float ownerY = centroids.Y[ownerIndex];
-        float otherY = centroids.Y[otherIndex];
+        float ownerPosX = centroids.X[ownerIndex];
+        float otherPosX = centroids.X[otherIndex];
+        float ownerPosY = centroids.Y[ownerIndex];
+        float otherPosY = centroids.Y[otherIndex];
+        Span<float> ownerVertsX = default;
+        Span<float> ownerVertsY = default;
+        Span<float> otherVertsX = default;
+        Span<float> otherVertsY = default;
 
         // gather polygon a vertices.
-        GetPolygonVertices(vertsX, vertsY, firstVertexIndices, nextVertexIndices, ownerVertsX, ownerVertsY, ownerIndex, ref vertexCountA);
-        GetPolygonVertices(vertsX, vertsY, firstVertexIndices, nextVertexIndices, otherVertsX, otherVertsY, otherIndex, ref vertexCountB);
+        PhysicsBody.GetPolygonVerticesUnsafe(vertices, ownerIndex, ref ownerVertsX, ref ownerVertsY);
+        PhysicsBody.GetPolygonVerticesUnsafe(vertices, otherIndex, ref otherVertsX, ref otherVertsY);
 
         // narrow phase SAT intersect check.
-        if(SAT.PolygonsIntersect(ownerVertsX, ownerVertsY, otherVertsX, otherVertsY, ownerX, ownerY, 
-            otherX, otherY, out float normalX, out float normalY, out float depth
+        if(SAT.PolygonsIntersect(ownerVertsX, ownerVertsY, otherVertsX, otherVertsY, ownerPosX, ownerPosY, 
+            otherPosX, otherPosY, out float normalX, out float normalY, out float depth
         ))
         {
             SAT.FindContactPoints(ownerVertsX, ownerVertsY, otherVertsX, otherVertsY, SAT.PolygonContactPointEpsilon, 
@@ -1150,12 +1124,12 @@ public static class PhysicsSystem
             switch (contactCount)
             {
                 case 1:
-                    Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerX, ownerY, otherX, otherY,
+                    Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerPosX, ownerPosY, otherPosX, otherPosY,
                         firstContactPointX, firstContactPointY, depth, ownerFlags, otherFlags
                     );
                     break;
                 case 2:
-                    Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerX, ownerY, otherX, otherY,
+                    Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerPosX, ownerPosY, otherPosX, otherPosY,
                         firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, ownerFlags, otherFlags
                     );
                     break;
@@ -1176,20 +1150,19 @@ public static class PhysicsSystem
 
 
     /// <summary>
-    /// Adds un-transformed vertices into a physics system state.
+    ///     Adds un-transformed/local-space vertices into a physics system state.
     /// </summary>
     /// <remarks>
-    /// Note: the next index for a given shape is inserted as a circular intrusive linked list; 
-    /// meaning that the next vertice index of the final vertice will be the first vertice index. 
+    ///     Note: the next index for a given shape is inserted as a circular intrusive linked list; 
+    ///     meaning that the next vertice index of the final vertice will be the first vertice index. 
     /// </remarks>
     /// <param name="state">the physics system state to insert into.</param>
     /// <param name="verticesX">the x-component values of the vertices to insert.</param>
     /// <param name="verticesY">the y-component values of the vertices to insert.</param>
     /// <param name="firstIndex">the index in the physics system state's vertice array that contains the first vertice index in the state's vertice array.</param>
     /// <param name="vertexCount">the amount of vertices added.</param>
-    /// <returns></returns>
     /// <exception cref="ArgumentException">throws if verticesX is not of the same length as verticesY.</exception>
-    public static int AddVertices(PhysicsSystemState state, Span<float> verticesX, Span<float> verticesY, out int firstIndex, out int vertexCount)
+    public static void AddLocalVertices(PhysicsSystemState state, Span<float> verticesX, Span<float> verticesY, out int firstIndex, out int vertexCount)
     {
         if(verticesX.Length != verticesY.Length)
             throw new ArgumentException($"vertices X length '{verticesX.Length}' must be equalt to vertices Y length '{verticesY.Length}'");
@@ -1199,28 +1172,12 @@ public static class PhysicsSystem
         if(vertexCount > state.MaxPhysicsBodyVertexCount)
             throw new ArgumentException($"vertices cannot have a length greater than the state's set max physics body vertice count '{state.MaxPhysicsBodyVertexCount}'");
 
-        // set the first index.
-        firstIndex = state.FreeVertexIndex.Pop();
-        int previousIndex;
-        int index = firstIndex;
-        state.LocalVertices.X[index] = verticesX[0];
-        state.LocalVertices.Y[index] = verticesY[0];
-
-        // add the rest of them.
-        for(int i = 1; i < vertexCount; i++)
+        // add the vertices.
+        firstIndex = StackArray.Pop(state.FreeVertexEntries);
+        for(int i = 0; i < vertexCount; i++)
         {
-            previousIndex = index;
-            index = state.FreeVertexIndex.Pop();
-            state.LocalVertices.X[index] = verticesX[i];
-            state.LocalVertices.Y[index] = verticesY[i];
-            state.NextVertexIndices[previousIndex] = index;
+            FsSoa_Vector2.Append(state.LocalVertices, firstIndex, verticesX[i], verticesY[i]);
         }
-
-        // loop back to the beginning.
-        // note: this is very important, do not remove this.
-        state.NextVertexIndices[index] = firstIndex;
-
-        return firstIndex;
     }
 
     public static void ResolveColliderCollisions(Soa_Collision collisions, Soa_Transform transforms)
@@ -1736,7 +1693,7 @@ public static class PhysicsSystem
 
 
 
-        
+
     /*******************
     
         Debug Drawing.
@@ -1750,20 +1707,18 @@ public static class PhysicsSystem
     /// Draws wireframes for all circle physics bodies.
     /// </summary>
     /// <param name="camera">the camera to draw in relation to.</param>
-    /// <param name="vertices">the soa vector containing the vertices for the circles.</param>
+    /// <param name="centroids">the source containing the centroids for the circles.</param>
     /// <param name="radii">the radii of the circles.</param>
-    /// <param name="firstVertexIndices">the index of a circles  positional vertex in the vertices soa vector.</param>
     /// <param name="flags">a span containing the flags of the circles to draw.</param>
     /// <param name="dynamicColour">the colour to draw any 'dynamic' bodies with.</param>
     /// <param name="kinematicColour">the colour to draw any 'kinematic' bodies with.</param>
     /// <param name="triggerColour">the colour to draw any 'trigger' bodies with.</param>
-    public static void DrawCirclePhysicsBodies(Camera camera, Soa_Vector2 vertices, Span<float> radii, 
-        Span<int> firstVertexIndices, Span<PhysicsBodyFlags> flags, 
+    public static void DrawCirclePhysicsBodies(Camera camera, Soa_Vector2 centroids, Span<float> radii, Span<PhysicsBodyFlags> flags, 
         Colour dynamicColour, Colour kinematicColour, Colour triggerColour
     )
     {
-        Span<float> verticesX = vertices.X;
-        Span<float> verticesY = vertices.Y;
+        Span<float> centroidX = centroids.X;
+        Span<float> centroidY = centroids.Y;
         Colour drawColour;
 
         for(int i = 0; i < flags.Length; i++)
@@ -1791,7 +1746,7 @@ public static class PhysicsSystem
             }
 
             Debug.Draw.WireframeCircle(drawColour, camera.Position.X, camera.Position.Y, camera.Zoom,
-                verticesX[firstVertexIndices[i]], verticesY[firstVertexIndices[i]], radii[i]
+                centroidX[i], centroidY[i], radii[i]
             );
         }    
     }
@@ -1800,25 +1755,18 @@ public static class PhysicsSystem
     /// Draws wireframes for all polygon physics bodies.
     /// </summary>
     /// <param name="camera">the camera to draw in relation to.</param>
-    /// <param name="vertices">the soa vector containing the vertices for the polygons.</param>
-    /// <param name="firstVertexIndices">a span containing the index to the first vertex of a polygon in the vertices soa vector.</param>
-    /// <param name="nextVertexIndices">a span containing the index to the next vertex from a given vertex index in the vertices soa vector.</param>
+    /// <param name="vertices">the vertices for all the polygons.</param>
     /// <param name="flags">a span containing the flags of the polygons to draw.</param>
     /// <param name="dynamicColour">the colour to draw 'dynamic' bodies with.</param>
     /// <param name="kinematicColour">the colour to draw 'kinematic' bodies with.</param>
     /// <param name="triggerColour">the colour to draw 'trigger' bodies with.</param>
-    /// <param name="maxPolygonVertexCount">the maxmimum amount of vertices a polygon physics body can have.</param>
-    public static void DrawPolygonPhysicsBodies(Camera camera, Soa_Vector2 vertices, Span<int> firstVertexIndices, 
-        Span<int> nextVertexIndices, Span<PhysicsBodyFlags> flags, 
-        Colour dynamicColour, Colour kinematicColour, Colour triggerColour, int maxPolygonVertexCount
+    public static void DrawPolygonPhysicsBodies(Camera camera, FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags, 
+        Colour dynamicColour, Colour kinematicColour, Colour triggerColour
     )
     {
-        Span<float> verticesX = vertices.X;
-        Span<float> verticesY = vertices.Y;
+        Span<float> polyVertsX = default;
+        Span<float> polyVertsY = default;
         Colour drawColour;
-        Span<float> polygonX = stackalloc float[maxPolygonVertexCount];
-        Span<float> polygonY = stackalloc float[maxPolygonVertexCount];
-        int vertexCount = 0;
 
         for(int i = 0; i < flags.Length; i++)
         {
@@ -1844,11 +1792,9 @@ public static class PhysicsSystem
                 drawColour = dynamicColour;
             }
 
-            GetPolygonVertices(verticesX, verticesY, firstVertexIndices, nextVertexIndices,
-                polygonX, polygonY, i, ref vertexCount
-            );
+            PhysicsBody.GetPolygonVerticesUnsafe(vertices, i, ref polyVertsX, ref polyVertsY);
 
-            Debug.Draw.WireframePolygon(drawColour, camera, polygonX, polygonY, vertexCount);
+            Debug.Draw.WireframePolygon(drawColour, camera, polyVertsX, polyVertsY, polyVertsX.Length);
         }        
     }
 

@@ -35,6 +35,28 @@ public static class Assert_FsSoa_Vector2
     }
 
     /// <summary>
+    ///     Asserts the equality of entries in the backing arrays of a soa instance.
+    /// </summary>
+    /// <param name="x">the expected x-values.</param>
+    /// <param name="y">the expected y-values.</param>
+    /// <param name="entryIndex">the entry index.</param>
+    /// <param name="soa">the soa instance containing the entry.</param>
+    public static void EntryEqual(Span<float> x, Span<float> y, int entryIndex, FsSoa_Vector2 soa)
+    {
+        int appendCount = soa.AppendCounts[entryIndex];
+
+        System.Diagnostics.Debug.Assert(x.Length <= appendCount);
+        System.Diagnostics.Debug.Assert(y.Length <= appendCount);
+        
+        for(int i = 0; i < appendCount; i++)
+        {
+            int elementIndex = FixedStrideArray.GetElementIndex(entryIndex, soa.Stride, i);
+            Assert.Equal(x[i], soa.X[elementIndex]);
+            Assert.Equal(y[i], soa.Y[elementIndex]);
+        }
+    }
+
+    /// <summary>
     ///     Asserts that a soa instance is disposed.
     /// </summary>
     /// <param name="soa">the soa instance to assert against.</param>

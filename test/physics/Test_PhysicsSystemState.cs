@@ -11,13 +11,15 @@ public class Test_PhysicsSystemState
     {
         Debug.Log.Suppress = true;
 
-        PhysicsSystemState state = new(12, 12, 12);
+        PhysicsSystemState state = new(12, 12);
         
         int insertIndex = 0;
         
-        state.Flags[0] = PhysicsBodyFlags.Allocated;
-        Soa_Vector2.Insert(state.LocalVertices, insertIndex , 2, 3);
-        Soa_Vector2.Insert(state.WorldVertices, insertIndex, 4, 5);
+        state.Flags[insertIndex] = PhysicsBodyFlags.Allocated;
+        state.LocalVertices.X[insertIndex] = 2;
+        state.LocalVertices.Y[insertIndex] = 3;
+        state.WorldVertices.X[insertIndex] = 2;
+        state.WorldVertices.Y[insertIndex] = 3;
         Soa_Transform.Insert(state.Transforms, insertIndex, 1, 2, 3, 4, 5, 6);
         Soa_Vector2.Insert(state.Forces, insertIndex, 1, 2);
         Soa_Vector2.Insert(state.LinearVelocities, insertIndex, 2, 3);
@@ -36,15 +38,15 @@ public class Test_PhysicsSystemState
         state.WorldRadii[insertIndex] = 32;
         state.RotationalInertia[insertIndex] = 1;
         state.InverseRotationalInertia[insertIndex] = 99;
-        state.FirstVertexIndices[insertIndex] = 2;
-        state.NextVertexIndices[insertIndex] = 3;
         state.Generations[insertIndex] = 3;
 
         PhysicsSystemState.EnforceNil(state);
 
         Assert.Equal(PhysicsBodyFlags.None, state.Flags[insertIndex]);
-        Assert_Soa_Vector2.EntryEqual(0, 0, insertIndex, state.LocalVertices);
-        Assert_Soa_Vector2.EntryEqual(0, 0, insertIndex, state.WorldVertices);
+        state.LocalVertices.X[insertIndex] = 0;
+        state.LocalVertices.Y[insertIndex] = 0;
+        state.WorldVertices.X[insertIndex] = 0;
+        state.WorldVertices.Y[insertIndex] = 0;
         Assert_Soa_Transform.EntryEqual(0,0,0,0,0,0,4,insertIndex, state.Transforms);
         Assert_Soa_Vector2.EntryEqual(0, 0, insertIndex, state.Forces);
         Assert_Soa_Vector2.EntryEqual(0, 0, insertIndex, state.LinearVelocities);
@@ -61,8 +63,6 @@ public class Test_PhysicsSystemState
         Assert.Equal(0, state.WorldRadii[insertIndex]);
         Assert.Equal(0, state.RotationalInertia[insertIndex]);
         Assert.Equal(0, state.InverseRotationalInertia[insertIndex]);        
-        Assert.Equal(0, state.FirstVertexIndices[insertIndex]);
-        Assert.Equal(0, state.NextVertexIndices[insertIndex]);
         Assert.Equal(0, state.Generations[insertIndex]);
 
         Debug.Log.Suppress = false;

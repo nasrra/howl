@@ -13,8 +13,7 @@ namespace Howl.Test.Physics;
 public class Test_PhysicsSystem
 {
     int maxBodies = 10;
-    int maxBodyShapeVertices = 100;
-    int maxBodyShapeVerticeCount = 5;
+    int maxBodyColliderVertices = 5;
 
 
 
@@ -29,31 +28,36 @@ public class Test_PhysicsSystem
 
 
     [Fact]
-    public void AddVertices_Test()
+    public void AddLocalVertices_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
-        
-        // first data set test.
 
-        PhysicsSystem.AddVertices(state, [0,1,2,3], [2,3,4,5], out int firstIndex, out int vertexCount);
-        int nextIndex = state.NextVertexIndices[firstIndex];
-        
-        bool circular = false;
-        for(int i = 0; i < vertexCount; i++)
+        for(int bodyCount = 4; bodyCount < 14; bodyCount++)
         {
-            if(nextIndex != firstIndex)
+            for(int maxVerts = 2; maxVerts < 7; maxVerts++)
             {
-                circular = true;
-                break;
-            }            
+                PhysicsSystemState state = new PhysicsSystemState(bodyCount, maxVerts);
+                float j = 0;
+                float[] x = new float[maxVerts];
+                float[] y = new float[maxVerts];
+                
+                for(int entry = 1; entry < bodyCount; entry++) // entry starts at one as there is a Nil.
+                {
+                    for(int element = 0; element < maxVerts; element++)
+                    {
+                        x[element] = j++;
+                        y[element] = j++;                        
+                    }
+                    PhysicsSystem.AddLocalVertices(state, x, y, out int firstIndex, out int vertexCount);
+                    Assert_FsSoa_Vector2.EntryEqual(x, y, entry, state.LocalVertices);
+                }
+            }
         }
-        Assert.True(circular);
     }
 
     [Fact]
     public void SetTransform_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
 
         GenId genId = default;
         EntityRegistry.Allocate(state.Entities, ref genId);
@@ -79,7 +83,7 @@ public class Test_PhysicsSystem
     [Fact]
     public void GetAndSetActive_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -113,7 +117,7 @@ public class Test_PhysicsSystem
     [Fact]
     public void GetAndSetAllocated_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -147,7 +151,7 @@ public class Test_PhysicsSystem
     [Fact]
     public void GetAndSetTrigger_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -181,7 +185,7 @@ public class Test_PhysicsSystem
     [Fact]
     public void GetAndSetKinematic_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -215,7 +219,7 @@ public class Test_PhysicsSystem
     [Fact]
     public void GetAndSetRigidBody_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -249,7 +253,7 @@ public class Test_PhysicsSystem
     [Fact]
     public void SetAndGetRotationalPhysics()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -295,10 +299,12 @@ public class Test_PhysicsSystem
     [Fact]
     public void AllocateCircleCollider_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies,maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         float posX;
         float posY;
+        float[] expectedLocalVertsX;
+        float[] expectedLocalVertsY;
         float radius;
         Circle circle;
         GenId genId = default;
@@ -310,6 +316,8 @@ public class Test_PhysicsSystem
         posX = 12;
         posY = 13;
         radius = 3;
+        expectedLocalVertsX = [posX];
+        expectedLocalVertsY = [posY];
         circle = new(posX, posY, radius);
         transform = new(1,2,3,4,5,6,7);
         PhysicsBody.AllocateCircleCollider(state, circle, transform, true, false, ref genId);
@@ -335,12 +343,16 @@ public class Test_PhysicsSystem
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
         Assert_Soa_Transform.EntryEqual(transform, 4, PhysicsBody.GetPhysicsBodyIndex(genId), state.Transforms);
 
+        Assert_FsSoa_Vector2.EntryEqual(expectedLocalVertsX, expectedLocalVertsY, 1, state.LocalVertices);
+
         // second data set test.
 
         posX = 32;
         posY = -54;
         radius = 67;
         circle = new(posX, posY, radius);
+        expectedLocalVertsX = [posX];
+        expectedLocalVertsY = [posY];
         transform = new(9,8,7,6,5,4,3);
 
         PhysicsBody.AllocateCircleCollider(state, circle, transform, false, true, ref genId);
@@ -365,15 +377,19 @@ public class Test_PhysicsSystem
 
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
         Assert_Soa_Transform.EntryEqual(transform, 4, PhysicsBody.GetPhysicsBodyIndex(genId), state.Transforms);
+
+        Assert_FsSoa_Vector2.EntryEqual(expectedLocalVertsX, expectedLocalVertsY, 2, state.LocalVertices);
     }
 
     [Fact]
     public void AllocateCircleRigidBody_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
                 
         float posX;
         float posY;
+        float[] expectedLocalVertsX;
+        float[] expectedLocalVertsY;
         float radius;
         PhysicsMaterial physicsMaterial;
         Circle circle;
@@ -386,6 +402,8 @@ public class Test_PhysicsSystem
 
         posX = -123;
         posY = 23;
+        expectedLocalVertsX = [posX];
+        expectedLocalVertsY = [posY];
         radius = 32;
         circle = new(posX, posY, radius);
         physicsMaterial = new PhysicsMaterial(0.2f, 0.1f, 15, 0.12f);
@@ -422,11 +440,15 @@ public class Test_PhysicsSystem
 
         Assert_Soa_Transform.EntryEqual(transform, 4, PhysicsBody.GetPhysicsBodyIndex(genId), state.Transforms);
 
+        Assert_FsSoa_Vector2.EntryEqual(expectedLocalVertsX, expectedLocalVertsY, 1, state.LocalVertices);
+
 
         // second data set test.
 
         posX = 234;
         posY = 567;
+        expectedLocalVertsX = [posX];
+        expectedLocalVertsY = [posY];
         radius = 12;
         circle = new(posX, posY, radius);
         physicsMaterial = new PhysicsMaterial(0.9f, 0.5f, 18, 0.1f);
@@ -462,6 +484,8 @@ public class Test_PhysicsSystem
         );
 
         Assert_Soa_Transform.EntryEqual(transform, 4, PhysicsBody.GetPhysicsBodyIndex(genId), state.Transforms);
+
+        Assert_FsSoa_Vector2.EntryEqual(expectedLocalVertsX, expectedLocalVertsY, 2, state.LocalVertices);
     }
 
 
@@ -477,56 +501,20 @@ public class Test_PhysicsSystem
 
 
     /// <summary>
-    /// Ensures that an inserted rectangles vertices are in a clockwise manner.
-    /// </summary>
-    /// <remarks>
-    /// Note: this function assumes that the first vertice passed through is linked to a rectangle body in the simulation.
-    /// there are no checks for this and will provide undfined behaviour if the passsed first vertice index is not for a 
-    /// rectangle shape body.
-    /// </remarks>
-    /// <param name="state">the physics system state storing the rectnagle physics body.</param>
-    /// <param name="firstVerticeIndex">the index of the first vertice of a physics body shape.</param>
-    /// <param name="rectangle">the rectangle shape to check against the inserted vertices.</param>
-    private static void AssertRectangleVerticesClockwise(PhysicsSystemState state, int firstVerticeIndex, in Rectangle rectangle)
-    {
-        float[] expectedX =
-        [
-            Rectangle.Left(rectangle),
-            Rectangle.Right(rectangle),
-            Rectangle.Right(rectangle),
-            Rectangle.Left(rectangle)
-        ];
-
-        float[] expectedY =
-        [
-            Rectangle.Top(rectangle),
-            Rectangle.Top(rectangle),
-            Rectangle.Bottom(rectangle),
-            Rectangle.Bottom(rectangle)
-        ];
-
-        int v = firstVerticeIndex;
-        for (int i = 0; i < 4; i++)
-        {
-            Assert.Equal(expectedX[i], state.LocalVertices.X[v], precision: 1);
-            Assert.Equal(expectedY[i], state.LocalVertices.Y[v], precision: 1);
-            v = state.NextVertexIndices[v];
-        }
-    }
-
-    /// <summary>
     /// Tests the allocation of a rectangle collider into a physics system state.
     /// </summary>
     [Fact]
     public void AllocateRectangleCollider_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
 
         float posX;
         float posY;
+        float[] expectedLocalVertsX;
+        float[] expectedLocalVertsY;
         float width;
         float height;
-        Rectangle rectangle;
+        Rectangle shape;
         Transform transform;
 
         GenId genId = default;
@@ -538,18 +526,17 @@ public class Test_PhysicsSystem
         posY = 65;
         height = 12;
         width = 32;
-        rectangle = new Rectangle(posX, posY, width, height);
+        shape = new Rectangle(posX, posY, width, height);
+        expectedLocalVertsX = [Rectangle.Left(shape), Rectangle.Right(shape), Rectangle.Right(shape), Rectangle.Left(shape)];
+        expectedLocalVertsY = [Rectangle.Top(shape), Rectangle.Top(shape), Rectangle.Bottom(shape), Rectangle.Bottom(shape)];
         transform = new(1,2,3,4,5,6,7);
-        PhysicsBody.AllocateRectangleCollider(state, rectangle, transform, false, true, ref genId);
+        PhysicsBody.AllocateRectangleCollider(state, shape, transform, false, true, ref genId);
         
         int physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
         Assert.Equal(1, physicsBodyIndex);
         Assert.Equal(0, GenId.GetGeneration(genId));
-        
-        Assert.Equal(1, state.FirstVertexIndices[physicsBodyIndex]);
-        AssertRectangleVerticesClockwise(state, state.FirstVertexIndices[physicsBodyIndex], rectangle);
-        
+                
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
 
@@ -569,6 +556,8 @@ public class Test_PhysicsSystem
         
         Assert_Soa_Transform.EntryEqual(transform, 4, physicsBodyIndex, state.Transforms);
 
+        Assert_FsSoa_Vector2.EntryEqual(expectedLocalVertsX, expectedLocalVertsY, 1, state.LocalVertices);
+
 
         // second data set test.
 
@@ -576,18 +565,17 @@ public class Test_PhysicsSystem
         posY = -45;
         height = 98;
         width = 54;
-        rectangle = new Rectangle(posX, posY, width, height);
+        shape = new Rectangle(posX, posY, width, height);
+        expectedLocalVertsX = [Rectangle.Left(shape), Rectangle.Right(shape), Rectangle.Right(shape), Rectangle.Left(shape)];
+        expectedLocalVertsY = [Rectangle.Top(shape), Rectangle.Top(shape), Rectangle.Bottom(shape), Rectangle.Bottom(shape)];
         transform = new(0,9,8,7,6,5,4);  
 
-        PhysicsBody.AllocateRectangleCollider(state, rectangle, transform, false, true, ref genId);
+        PhysicsBody.AllocateRectangleCollider(state, shape, transform, false, true, ref genId);
         
         physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
         Assert.Equal(2, physicsBodyIndex);
         Assert.Equal(0, GenId.GetGeneration(genId));
-
-        Assert.Equal(5, state.FirstVertexIndices[physicsBodyIndex]);
-        AssertRectangleVerticesClockwise(state, state.FirstVertexIndices[physicsBodyIndex], rectangle);
         
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
@@ -606,8 +594,9 @@ public class Test_PhysicsSystem
         
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
 
-        
         Assert_Soa_Transform.EntryEqual(transform, 4, physicsBodyIndex, state.Transforms);
+
+        Assert_FsSoa_Vector2.EntryEqual(expectedLocalVertsX, expectedLocalVertsY, 2, state.LocalVertices);
     }
 
     /// <summary>
@@ -616,13 +605,15 @@ public class Test_PhysicsSystem
     [Fact]
     public void AllocateRectangleRigidBody_Test()
     {
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
 
         float posX;
         float posY;
+        float[] expectedLocalVertsX;
+        float[] expectedLocalVertsY;
         float width;
         float height;
-        Rectangle rectangle;
+        Rectangle shape;
         PhysicsMaterial physicsMaterial;
         Transform transform;
         
@@ -635,19 +626,18 @@ public class Test_PhysicsSystem
         posY = 123;
         height = 345;
         width = 56;
-        rectangle = new Rectangle(posX, posY, width, height);
+        shape = new Rectangle(posX, posY, width, height);
+        expectedLocalVertsX = [Rectangle.Left(shape), Rectangle.Right(shape), Rectangle.Right(shape), Rectangle.Left(shape)];
+        expectedLocalVertsY = [Rectangle.Top(shape), Rectangle.Top(shape), Rectangle.Bottom(shape), Rectangle.Bottom(shape)];
         physicsMaterial = new(0.2f, 0.1f, 0.25f, 0.5f);
         transform = new(1,2,3,4,5,6,7);
         
-        PhysicsBody.AllocateRectangleRigidBody(state, rectangle, physicsMaterial, transform, false, true, false, ref genId);        
+        PhysicsBody.AllocateRectangleRigidBody(state, shape, physicsMaterial, transform, false, true, false, ref genId);        
 
         int physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
         Assert.Equal(1, physicsBodyIndex);
         Assert.Equal(0, GenId.GetGeneration(genId));
-
-        Assert.Equal(1, state.FirstVertexIndices[physicsBodyIndex]);
-        AssertRectangleVerticesClockwise(state, state.FirstVertexIndices[physicsBodyIndex], rectangle);
         
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
@@ -671,6 +661,8 @@ public class Test_PhysicsSystem
         );
 
         Assert_Soa_Transform.EntryEqual(transform, 4, PhysicsBody.GetPhysicsBodyIndex(genId), state.Transforms);
+
+        Assert_FsSoa_Vector2.EntryEqual(expectedLocalVertsX, expectedLocalVertsY, 1, state.LocalVertices);
         
         // second data set test.
 
@@ -678,20 +670,19 @@ public class Test_PhysicsSystem
         posY = -56;
         height = 12;
         width = 43;
-        rectangle = new Rectangle(posX, posY, width, height);
+        shape = new Rectangle(posX, posY, width, height);
+        expectedLocalVertsX = [Rectangle.Left(shape), Rectangle.Right(shape), Rectangle.Right(shape), Rectangle.Left(shape)];
+        expectedLocalVertsY = [Rectangle.Top(shape), Rectangle.Top(shape), Rectangle.Bottom(shape), Rectangle.Bottom(shape)];
         physicsMaterial = new(0.64f, 0.12f, 12, 0.3f);
         transform = new(0,9,8,7,6,5,4);
         
-        PhysicsBody.AllocateRectangleRigidBody(state, rectangle, physicsMaterial, transform, true, false, true, ref genId);        
+        PhysicsBody.AllocateRectangleRigidBody(state, shape, physicsMaterial, transform, true, false, true, ref genId);        
 
         physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
         Assert.Equal(2, physicsBodyIndex);
         Assert.Equal(0, GenId.GetGeneration(genId));
-        
-        Assert.Equal(5, state.FirstVertexIndices[physicsBodyIndex]);
-        AssertRectangleVerticesClockwise(state, state.FirstVertexIndices[physicsBodyIndex], rectangle);
-        
+                
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
         
@@ -714,6 +705,8 @@ public class Test_PhysicsSystem
         );
 
         Assert_Soa_Transform.EntryEqual(transform, 4, PhysicsBody.GetPhysicsBodyIndex(genId), state.Transforms);
+
+        Assert_FsSoa_Vector2.EntryEqual(expectedLocalVertsX, expectedLocalVertsY, 2, state.LocalVertices);
     }
 
 
@@ -732,63 +725,51 @@ public class Test_PhysicsSystem
     public void TransformPhysicsBodyVertices_Test()
     {        
         
-        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         // define and insert circle.
 
-        float expectedXC         = 4;
-        float expectedYC         = 6;
+        Span<float> expectedCircVertsX = [4];
+        Span<float> expectedCircVertsY = [6];
         Circle circle = new Circle(1,1,3);
-        Transform transformC = new Transform(new Vector2(1,3), 3, 0);
+        Transform circTransform = new Transform(new Vector2(1,3), 3, 0);
 
-        GenId genIdC = default;
+        GenId circGenId = default;
 
-        PhysicsBody.AllocateCircleCollider(state, circle, transformC, false, false, ref genIdC);
+        PhysicsBody.AllocateCircleCollider(state, circle, circTransform, false, false, ref circGenId);
 
         // define and insert rect.
 
-        Span<float> rExpectedX = [5, 9, 9, 5];
-        Span<float> rExpectedY = [5, 5, 1, 1];
+        Span<float> expectedRectVertsX = [5, 9, 9, 5];
+        Span<float> expectedRectVertsY = [5, 5, 1, 1];
         Rectangle rectangle = new Rectangle(1,1,2,2);
-        Transform transformR = new Transform(new Vector2(3,3), 2, 0);
-        GenId genIdR = default;
+        Transform rectTransform = new Transform(new Vector2(3,3), 2, 0);
+        GenId rectGenId = default;
 
-        PhysicsBody.AllocateRectangleCollider(state, rectangle, transformR, false, false, ref genIdR);
+        PhysicsBody.AllocateRectangleCollider(state, rectangle, rectTransform, false, false, ref rectGenId);
 
         // transform the shapes.
 
-        PhysicsSystem.TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices,
-            state.LocalVertices, state.WorldVertices, state.Transforms, state.Flags, 
-            state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.FirstVertexIndices, 
-            state.NextVertexIndices, state.MaxPhysicsBodyVertexCount, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
+        PhysicsSystem.TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices, state.LocalVertices, state.WorldVertices, 
+            state.Transforms, state.Flags, state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.MaxPhysicsBodyCount, 
+            state.AlloctedPhysicsBodyCount
         );
 
         // assert circle.        
-        int physicsBodyIndexC = PhysicsBody.GetPhysicsBodyIndex(genIdC);
-        Assert.Equal(expectedXC, state.WorldVertices.X[physicsBodyIndexC], precision: 1);
-        Assert.Equal(expectedYC, state.WorldVertices.Y[physicsBodyIndexC], precision: 1);
-        Assert_Soa_Transform.EntryEqual(transformC, 4, physicsBodyIndexC, state.Transforms);
+        int circIndex = PhysicsBody.GetPhysicsBodyIndex(circGenId);
+        Assert_FsSoa_Vector2.EntryEqual(expectedCircVertsX, expectedCircVertsY, circIndex, state.WorldVertices);
+        Assert_Soa_Transform.EntryEqual(circTransform, 4, circIndex, state.Transforms);
 
         // assert rect.
-        int physicsBodyIndexR = PhysicsBody.GetPhysicsBodyIndex(genIdR);
-        int first = state.FirstVertexIndices[physicsBodyIndexR];
-        int v = first;
-        int count = 0;
-        while (true)
-        {
-            Assert.Equal(rExpectedX[count], state.WorldVertices.X[v], precision: 1);
-            Assert.Equal(rExpectedY[count], state.WorldVertices.Y[v], precision: 1);
-            count++;
-            if(v==first)
-                break;
-        }
-        Assert_Soa_Transform.EntryEqual(transformR, 4, physicsBodyIndexR, state.Transforms);
+        int rectIndex = PhysicsBody.GetPhysicsBodyIndex(rectGenId);
+        Assert_FsSoa_Vector2.EntryEqual(expectedRectVertsX, expectedRectVertsY, rectIndex, state.WorldVertices);
+        Assert_Soa_Transform.EntryEqual(rectTransform, 4, rectIndex, state.Transforms);
     }
 
     [Fact]
     public void SyncEntityTransformsToPhysicsBodies_Test()
     {
-        PhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new(maxBodies, maxBodyColliderVertices);
         
         EcsState ecs = new(8);
         PhysicsSystem.RegisterComponents(ecs.Components);
@@ -819,7 +800,7 @@ public class Test_PhysicsSystem
     [Fact]
     public void SyncPhysicsBodiesToEntityTransforms_Test()
     {
-        PhysicsSystemState state = new(maxBodies, maxBodyShapeVertices, maxBodyShapeVerticeCount);
+        PhysicsSystemState state = new(maxBodies,  maxBodyColliderVertices);
         EcsState ecs = new EcsState(12);
 
         PhysicsSystem.RegisterComponents(ecs.Components);

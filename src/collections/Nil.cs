@@ -16,4 +16,19 @@ public static class Nil
 #endif
         array[0] = default;
     }
+
+    public static void Enforce<T>(this T[] array, int stride)
+    {
+
+        for(int i = 0; i < stride; i++)
+        {            
+#if DEBUG
+            if (EqualityComparer<T>.Default.Equals(array[i], default) != true)
+            {
+                Debug.Log.MethodCall(Debug.LogType.Error, 2, "Nil value written to!");
+            }
+#endif
+            array[i] = default;
+        }
+    }
 }

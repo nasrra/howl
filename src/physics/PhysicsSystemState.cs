@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Howl.Collections;
 using Howl.DataStructures.Bvh;
@@ -37,7 +36,7 @@ public sealed class PhysicsSystemState
     /// <remarks>
     /// Use a <c>vertexIndex</c> integer to access elements.
     /// </remarks>
-    public Soa_Vector2 LocalVertices;
+    public FsSoa_Vector2 LocalVertices;
     
     /// <summary>
     /// The world-space vertices for all physics bodies.  
@@ -45,7 +44,7 @@ public sealed class PhysicsSystemState
     /// <remarks>
     /// Use a <c>vertexIndex</c> integer to access elements.
     /// </remarks>
-    public Soa_Vector2 WorldVertices;
+    public FsSoa_Vector2 WorldVertices;
 
     /// <summary>
     /// The local to world-space transforms for all physics bodies.
@@ -173,32 +172,16 @@ public sealed class PhysicsSystemState
     /// Inverse rotational intertia is relative to world-space. Use <c>physicsBodyIndex</c> integer to access elements.
     /// </remarks>
     public float[] InverseRotationalInertia;
-    
-    /// <summary>
-    /// The indices in the vertices collection that point to the first vertex of a given physics body.
-    /// </summary>
-    /// <remarks>
-    /// Use a <c>physicsBodyIndex</c> integer to access elements.
-    /// </remarks>
-    public int[] FirstVertexIndices;
 
-    /// <summary>
-    /// the indices in the vertices vertices collection that point to the next vertex of a given vertex index..
-    /// </summary>
-    /// <remarks>
-    /// Use a <c>vertexIndex</c> integer to access elements.
-    /// </remarks>
-    public int[] NextVertexIndices;
-    
     /// <summary>
     /// The generation of a physics body id.
     /// </summary>
     public int[] Generations;
 
     /// <summary>
-    /// Gets and sets the vertice indices available for reuse and allocation.
+    /// Gets and sets the vertex entry indices available for reuse and allocation in LocalRadii.
     /// </summary>
-    public Stack<int> FreeVertexIndex;
+    public StackArray<int> FreeVertexEntries;
 
     /// <summary>
     ///     The indices of all physics bodies in a bvh tree.
@@ -530,7 +513,7 @@ public sealed class PhysicsSystemState
 
 
 
-    public PhysicsSystemState(int physicsBodyCount, int physicsBodyVerticesCount, int maxPhysicsBodyVerticeCount)
+    public PhysicsSystemState(int physicsBodyCount, int maxPhysicsBodyVerticeCount)
     {
         MaxPhysicsBodyCount = physicsBodyCount;
 
@@ -542,8 +525,8 @@ public sealed class PhysicsSystemState
 
         // Physics body data.
         Flags                       = new PhysicsBodyFlags[physicsBodyCount];
-        LocalVertices               = new Soa_Vector2(physicsBodyVerticesCount);
-        WorldVertices               = new Soa_Vector2(physicsBodyVerticesCount);
+        LocalVertices               = new FsSoa_Vector2(maxPhysicsBodyVerticeCount, physicsBodyCount);
+        WorldVertices               = new FsSoa_Vector2(maxPhysicsBodyVerticeCount, physicsBodyCount);
         Transforms                  = new Soa_Transform(physicsBodyCount);
         Forces                      = new Soa_Vector2(physicsBodyCount);
         LinearVelocities            = new Soa_Vector2(physicsBodyCount);
@@ -560,10 +543,8 @@ public sealed class PhysicsSystemState
         WorldRadii                  = new float[physicsBodyCount];
         RotationalInertia           = new float[physicsBodyCount];
         InverseRotationalInertia    = new float[physicsBodyCount];
-        FirstVertexIndices          = new int[physicsBodyCount];
-        NextVertexIndices           = new int[physicsBodyVerticesCount];
         Generations                 = new int[physicsBodyCount];
-        FreeVertexIndex             = new();
+        FreeVertexEntries           = new(physicsBodyCount);
         BvhIndices                  = new int[physicsBodyCount];
 
         // Debug diagnostic stopwatches.
@@ -604,8 +585,8 @@ public sealed class PhysicsSystemState
         // Counters.
         MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;
 
-        for(int i = physicsBodyVerticesCount-1; i > 0; i--) // dont push zero as that is Nil
-            FreeVertexIndex.Push(i); // push all available indices to the stack.
+        for(int i = physicsBodyCount-1; i > 0; i--) // dont push zero as that is Nil
+            StackArray.Push(FreeVertexEntries, i); // push all available indices to the stack.
     }
 
     /// <summary>
@@ -615,8 +596,8 @@ public sealed class PhysicsSystemState
     public static void EnforceNil(PhysicsSystemState state)
     {
         Nil.Enforce(state.Flags);
-        Soa_Vector2.EnforceNil(state.LocalVertices);
-        Soa_Vector2.EnforceNil(state.WorldVertices);    
+        FsSoa_Vector2.EnforceNil(state.LocalVertices);
+        FsSoa_Vector2.EnforceNil(state.WorldVertices);    
         Soa_Transform.EnforceNil(state.Transforms);
         Soa_Vector2.EnforceNil(state.Forces);
         Soa_Vector2.EnforceNil(state.LinearVelocities);
@@ -633,8 +614,7 @@ public sealed class PhysicsSystemState
         Nil.Enforce(state.WorldRadii);
         Nil.Enforce(state.RotationalInertia);
         Nil.Enforce(state.InverseRotationalInertia); 
-        Nil.Enforce(state.FirstVertexIndices);
-        Nil.Enforce(state.NextVertexIndices);    
+        Nil.Enforce(state.FreeVertexEntries.Data);
         Nil.Enforce(state.Generations);
     }
 

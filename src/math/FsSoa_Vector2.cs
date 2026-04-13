@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Howl.Collections;
 
 namespace Howl.Math;
 
@@ -8,7 +9,7 @@ public class FsSoa_Vector2{
     ///     the x-coordinate values.
     /// </summary>
     /// <remarks>
-    ///     Use a <c>stridedEntryIndex</c> integer to access elements.
+    ///     Use a <c>entryElementIndex</c> integer to access elements.
     /// </remarks>
     public float[] X;
 
@@ -16,7 +17,7 @@ public class FsSoa_Vector2{
     ///     the y-coordinate values.
     /// </summary>
     /// <remarks>
-    ///     Use a <c>stridedEntryIndex</c> integer to access elements.
+    ///     Use a <c>entryElementIndex</c> integer to access elements.
     /// </remarks>
     public float[] Y;
 
@@ -90,9 +91,30 @@ public class FsSoa_Vector2{
     /// </summary>
     /// <param name="soa">the fixed stride soa instance that contains the entry to clear.</param>
     /// <param name="entryIndex">the index of the entry to clear.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void ClearEntryAppendCount(FsSoa_Vector2 soa, int entryIndex)
     {
         soa.AppendCounts[entryIndex] = 0;
+    }
+
+    /// <summary>
+    ///     Sets the append count to zero of all entries in a fixed stride soa instance.
+    /// </summary>
+    /// <param name="soa">the soa instance to clear </param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ClearAppendCounts(FsSoa_Vector2 soa)
+    {
+        for(int i = 0; i < soa.MaxEntries; i++)
+        {
+            soa.AppendCounts[i] = 0;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void EnforceNil(FsSoa_Vector2 soa)
+    {
+        Nil.Enforce(soa.X, soa.Stride);
+        Nil.Enforce(soa.Y, soa.Stride);
     }
 
     public static void Dispose(FsSoa_Vector2 soa)

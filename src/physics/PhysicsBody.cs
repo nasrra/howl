@@ -561,6 +561,42 @@ public static class PhysicsBody
         return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.Kinematic) != 0;        
     }
 
+    /// <summary>
+    ///     Gets the vertices of a circle physics body.
+    /// </summary>
+    /// <remarks>
+    ///    <c>StaleGenId</c> checks are not enforced; the retrieved data at the given gen id slot will always be returned. 
+    /// </remarks>
+    /// <param name="vertices">The source of the vertices; where the polygon's vertices are stored.</param>
+    /// <param name="physicsBodyIndex">the indexx of the physics body in the physics system state.</param>
+    /// <param name="x">output for the vertex x-component.</param>
+    /// <param name="y">output for the vertex y-component.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void GetCircleWorldVerticesUnsafe(FsSoa_Vector2 vertices, int physicsBodyIndex, ref float x, ref float y)
+    {
+        int vertexIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, vertices.Stride, 0);
+        x = vertices.X[vertexIndex];
+        y = vertices.Y[vertexIndex];
+    }
+
+    /// <summary>
+    ///     Gets the vertices of a polygon physics body.
+    /// </summary>
+    /// <remarks>
+    ///    <c>StaleGenId</c> checks are not enforced; the retrieved data at the given gen id slot will always be returned. 
+    /// </remarks>
+    /// <param name="vertices">The source of the vertices; where the polygon's vertices are stored.</param>
+    /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
+    /// <param name="x">output for the vertex x-components.</param>
+    /// <param name="y">output for the vertex y-components.</param>
+    public static void GetPolygonVerticesUnsafe(FsSoa_Vector2 vertices, int physicsBodyIndex, ref Span<float> x, ref Span<float> y)
+    {
+        int startIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, vertices.Stride, 0);
+        int appendCount = vertices.AppendCounts[physicsBodyIndex];
+        x = vertices.X.AsSpan().Slice(startIndex, appendCount);
+        y = vertices.Y.AsSpan().Slice(startIndex, appendCount);
+    }
+
 
 
 
@@ -1117,10 +1153,8 @@ public static class PhysicsBody
 
         // apply data.
         SetTransformUnsafe(state, physicsBodyIndex, transform);
-        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
-        state.FirstVertexIndices[physicsBodyIndex] = verticesFirstIndex;
+        AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
         state.LocalRadii[physicsBodyIndex] = shape.Radius;
-
         return GenIdResult.Ok;
     }
 
@@ -1158,8 +1192,7 @@ public static class PhysicsBody
         SetRotationalPhysicsUnsafe(state, physicsBodyIndex, rotationalPhysics);
 
         // apply data.
-        AddVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
-        state.FirstVertexIndices[physicsBodyIndex] = verticesFirstIndex;
+        AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
         SetTransformUnsafe(state, physicsBodyIndex, transform);
         Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, physicsMaterial, physicsBodyIndex);
         state.LocalRadii[physicsBodyIndex] = shape.Radius;
@@ -1262,8 +1295,7 @@ public static class PhysicsBody
 
         // apply data.
         PolygonRectangle polyRect = new(shape);
-        AddVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
-        state.FirstVertexIndices[physicsBodyIndex] = verticesFirstIndex;
+        AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
         SetTransformUnsafe(state, genId, transform);
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
@@ -1305,8 +1337,7 @@ public static class PhysicsBody
 
         // apply data.
         PolygonRectangle polyRect = new(shape);
-        AddVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
-        state.FirstVertexIndices[physicsBodyIndex] = verticesFirstIndex;
+        AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
         SetTransformUnsafe(state, physicsBodyIndex, transform);
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
