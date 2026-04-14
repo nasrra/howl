@@ -22,6 +22,9 @@ MONOGAME_MATH_NAMESPACE="${MONOGAME_NAMESPACE}Math."
 MONOGAME_SHAPES_NAMESPACE="${MONOGAME_MATH_NAMESPACE}Shapes."
 MONOGAME_GRAPHICS_NAMESPACE="${MONOGAME_NAMESPACE}Graphics."
 
+LEVEL_MANAGEMENT_NAMESPACE="${NAMESPACE}LevelManagement."
+LDTK_NAMESPACE="${LEVEL_MANAGEMENT_NAMESPACE}Ldtk."
+
 TEST_NAME=$1
 
 # Declare an associative array
@@ -43,7 +46,9 @@ TEST_MAP=(
     ["GenIndexArray"]="${ECS_NAMESPACE}Test_GenIndexArray"
     ["GuiText16"]="${GRAPHICS_NAMESPACE}Text.GuiText16Test"
     ["GuiText4096"]="${GRAPHICS_NAMESPACE}Text.GuiText4096Test"
+    ["LdtkParser"]="${LDTK_NAMESPACE}Test_LdtkParser"
     ["LeafBufferSlice"]="${DATA_STRUCTURES_NAMESPACE}Bvh.LeafBufferSliceTest"
+    ["LevelManager"]="${LDTK_NAMESPACE}Test_LevelManager"
     ["MathNamespace"]="${MATH_NAMESPACE}"
     ["Math"]="${MATH_NAMESPACE}MathTest"
     ["MonoGameColourExt"]="${MONOGAME_GRAPHICS_NAMESPACE}ColourExtensionsTest"

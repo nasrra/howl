@@ -404,8 +404,6 @@ public static class SAT
             float axisY = polygonVerticesXA[vBIndex] - polygonVerticesXA[i];
 
             // project using axis.
-            // ProjectPolygon_Simd(polygonVerticesXA, polygonVerticesYA, axisX, axisY, polygonVerticesXA.Length, ref minEdgeA, ref maxEdgeA);        
-            // ProjectPolygon_Simd(polygonVerticesXB, polygonVerticesYB, axisX, axisY, polygonVerticesXB.Length, ref minEdgeB, ref maxEdgeB);        
             ProjectPolygon_Sisd(polygonVerticesXA, polygonVerticesYA, axisX, axisY, polygonVerticesXA.Length, ref minEdgeA, ref maxEdgeA);        
             ProjectPolygon_Sisd(polygonVerticesXB, polygonVerticesYB, axisX, axisY, polygonVerticesXB.Length, ref minEdgeB, ref maxEdgeB);        
 
