@@ -6,7 +6,6 @@ using Howl.Graphics.Text;
 using Howl.Vendors.MonoGame.Math.Shapes;
 using Howl.Vendors.MonoGame.Math;
 using Microsoft.Xna.Framework.Graphics;
-using Howl.Vendors.MonoGame.Text;
 using Howl.Math;
 using Microsoft.Xna.Framework;
 
@@ -34,10 +33,8 @@ public static class RendererSystem
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public static void Draw(EcsState ecs, IRendererState rendererState)
+    public static void Draw(EcsState ecs, MonoGameApp monoGameApp)
     {
-        RendererState state = (RendererState)rendererState;
-
         GenIdResult result = default;
         ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
 
@@ -55,52 +52,52 @@ public static class RendererSystem
             return;
         }
 
-        state.MonoGameApp.GraphicsDevice.SetRenderTarget(state.FinalRenderTarget);                    
-        state.MonoGameApp.GraphicsDevice.Clear(mainCamera.ClearColour.ToMonoGame());
+        monoGameApp.GraphicsDevice.SetRenderTarget(monoGameApp.FinalRenderTarget);                    
+        monoGameApp.GraphicsDevice.Clear(mainCamera.ClearColour.ToMonoGame());
         
-        DrawSprites(ecs, state, ref mainCamera, WorldSpace.World);
-        DrawTexts(ecs, state, ref mainCamera, WorldSpace.World);
-        DrawPrimitives(state);
-        DrawSprites(ecs, state, ref guiCamera, WorldSpace.Gui);
-        DrawTexts(ecs, state, ref guiCamera, WorldSpace.Gui);
+        DrawSprites(ecs, monoGameApp, ref mainCamera, WorldSpace.World);
+        DrawTexts(ecs, monoGameApp, ref mainCamera, WorldSpace.World);
+        DrawPrimitives(monoGameApp);
+        DrawSprites(ecs, monoGameApp, ref guiCamera, WorldSpace.Gui);
+        DrawTexts(ecs, monoGameApp, ref guiCamera, WorldSpace.Gui);
         
-        state.MonoGameApp.GraphicsDevice.SetRenderTarget(null);
+        monoGameApp.GraphicsDevice.SetRenderTarget(null);
 
         // draw the infal render target to the back buffer.
-        state.MonoGameApp.GraphicsDevice.SetRenderTarget(null);            
-        state.MonoGameApp.GraphicsDevice.Clear(Color.Black);
-        state.SpriteBatch.Begin(
+        monoGameApp.GraphicsDevice.SetRenderTarget(null);            
+        monoGameApp.GraphicsDevice.Clear(Color.Black);
+        monoGameApp.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointClamp
         );
-        state.SpriteBatch.Draw(
-            state.FinalRenderTarget,
-            state.DestinationRectangle.ToMonoGame(), // this will probably need to be changed for calc dest rectangle.
+        monoGameApp.SpriteBatch.Draw(
+            monoGameApp.FinalRenderTarget,
+            monoGameApp.DestinationRectangle.ToMonoGame(), // this will probably need to be changed for calc dest rectangle.
             Color.White
         );
-        state.SpriteBatch.End();
+        monoGameApp.SpriteBatch.End();
     }
 
     /// <summary>
     /// Draws all sprites to the currently bound render target.
     /// </summary>
     /// <param name="ecs">The ecs state where the sprites are stored.</param>
-    /// <param name="state">The state of the renderer.</param>
+    /// <param name="monoGameApp">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
     /// <param name="worldSpace">filters sprites; drawing sprites that are within the specified world space.</param>
-    private static void DrawSprites(EcsState ecs, RendererState state, ref Camera camera, WorldSpace worldSpace)
+    private static void DrawSprites(EcsState ecs, MonoGameApp monoGameApp, ref Camera camera, WorldSpace worldSpace)
     {
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
         ComponentArray<Sprite> sprites = EcsState.GetComponents<Sprite>(ecs);
 
         // update effects to use the new projection matrix.        
-        state.EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
+        monoGameApp.EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
 
-        state.SpriteBatch.Begin(
+        monoGameApp.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointClamp, 
             rasterizerState: RasterizerState.CullNone,
-            effect: state.EffectManager.DefaultSpriteEffect
+            effect: monoGameApp.EffectManager.DefaultSpriteEffect
         );   
 
         // draw sprites in relation to it.
@@ -116,32 +113,26 @@ public static class RendererSystem
 
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
         
-            if(DrawSprite(state, ref camera, ref transform, ref sprite).Fail())
+            if(DrawSprite(monoGameApp, ref camera, ref transform, ref sprite).Fail())
             {
                 System.Diagnostics.Debug.Assert(false);
                 continue;
             }
         }
-        state.SpriteBatch.End();
+        monoGameApp.SpriteBatch.End();
     }
 
     /// <summary>
     /// Draws a sprite to the currently bound render target.
     /// </summary>
-    /// <param name="state">The renderer state containing drawing context.</param>
+    /// <param name="monoGameApp">The renderer state containing drawing context.</param>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">The transformation to apply to the sprite.</param>
     /// <param name="sprite">The sprite to draw.</param>
     /// <returns><see cref="GenIndexResult"/></returns>
-    public static GenIndexResult DrawSprite(
-        RendererState state, 
-        ref Camera camera, 
-        ref Transform transform, 
-        ref Sprite sprite
-    )
+    public static GenIndexResult DrawSprite(MonoGameApp monoGameApp, ref Camera camera, ref Transform transform, ref Sprite sprite)
     {   
-        TextureManager textureManager = (TextureManager)state.TextureManager;
-        GenIndexResult result = textureManager.GetTextureReadonlyRef(sprite.Texture, out ReadOnlyRef<Texture2D> texture);
+        GenIndexResult result = MonoGameApp.GetTextureReadonlyRef(monoGameApp, sprite.Texture, out ReadOnlyRef<Texture2D> texture);
         if (result != GenIndexResult.Ok || texture.Valid == false)
         {
             return result;
@@ -155,9 +146,9 @@ public static class RendererSystem
             Howl.Math.Vector2 position = transform.Position;
             position.Y *= -1;
             position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
-state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
+            monoGameApp.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
 
-            state.SpriteBatch.Draw(
+            monoGameApp.SpriteBatch.Draw(
                 texture.Value, 
                 new(position.X, position.Y), 
                 sprite.SourceRectangle.ToMonoGame(), 
@@ -175,22 +166,22 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
     /// <summary>
     /// Draws all stored primitive shapes to the next frame/screen, clearing the internal primitives cache when drawn for the frame/screen after. 
     /// </summary>
-    private static void DrawPrimitives(RendererState state)
+    private static void DrawPrimitives(MonoGameApp monoGameApp)
     {
         if(Debug.Draw.PrimitiveIndices.Count == 0 && Debug.Draw.PrimitiveVertices.Count == 0)
         {
             return;
         }
 
-        if(state.MonoGameApp.GraphicsDevice == null)
+        if(monoGameApp.GraphicsDevice == null)
         {
             return;
         }
 
-        foreach(EffectPass pass in state.EffectManager.PrimitivesEffect.CurrentTechnique.Passes)
+        foreach(EffectPass pass in monoGameApp.EffectManager.PrimitivesEffect.CurrentTechnique.Passes)
         {
             pass.Apply();            
-            state.MonoGameApp.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
+            monoGameApp.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
                 PrimitiveType.TriangleList,
                 Debug.Draw.PrimitiveVertices.ToMonoGameArray(),
                 0,
@@ -281,21 +272,21 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
     /// Draws all texts to the currently bound render target.
     /// </summary>
     /// <param name="ecs">The ecs state where the texts are stored.</param>
-    /// <param name="state">The state of the renderer.</param>
+    /// <param name="monoGameApp">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
     /// <param name="worldSpace">filters text; drawing texts that are within the specified world space.</param>
-    public static void DrawTexts(EcsState ecs, RendererState state, ref Camera camera, WorldSpace worldSpace)
+    public static void DrawTexts(EcsState ecs, MonoGameApp monoGameApp, ref Camera camera, WorldSpace worldSpace)
     {
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
         ComponentArray<Text16> text16 = EcsState.GetComponents<Text16>(ecs);
         ComponentArray<Text32> text32 = EcsState.GetComponents<Text32>(ecs);
         ComponentArray<Text4096> text4096 = EcsState.GetComponents<Text4096>(ecs);        
 
-        state.SpriteBatch.Begin(
+        monoGameApp.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointClamp, 
             rasterizerState: RasterizerState.CullNone, 
-            effect: state.EffectManager.DefaultSpriteEffect
+            effect: monoGameApp.EffectManager.DefaultSpriteEffect
         );
 
         // draw text 16.
@@ -311,7 +302,7 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
 
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
 
-            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
+            DrawText(monoGameApp, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
         }
 
         // draw text 32.
@@ -327,7 +318,7 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
 
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
 
-            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
+            DrawText(monoGameApp, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
         }
 
         // draw text 4096.
@@ -343,31 +334,26 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
 
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
 
-            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
+            DrawText(monoGameApp, ref camera, ref transform, text.AsSpanUsed(), ref text.TextParameters);
         }
 
-        state.SpriteBatch.End();
+        monoGameApp.SpriteBatch.End();
     }
 
     /// <summary>
     /// Draws text to the currently bound render target.
     /// </summary>
-    /// <param name="state">The renderer state containing drawing context.</param>
+    /// <param name="monoGameApp">The renderer state containing drawing context.</param>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">The transformation to apply to the text.</param>
     /// <param name="characters">The span of characters to draw.</param>
     /// <param name="textParameters">The text parameters.</param>
     /// <returns><see cref="GenIndexResult"/></returns>
-    public static GenIndexResult DrawText(
-        RendererState state, 
-        ref Camera camera, 
-        ref Transform transform,
-        ReadOnlySpan<char> characters,
+    public static GenIndexResult DrawText(MonoGameApp monoGameApp, ref Camera camera, ref Transform transform, ReadOnlySpan<char> characters,
         ref TextParameters textParameters 
     )
     {
-        FontManager fontManager = (FontManager)state.FontManager;
-        GenIndexResult result = fontManager.GetFontReadOnlyRef(textParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
+        GenIndexResult result = MonoGameApp.GetFontReadOnlyRef(monoGameApp, textParameters.FontGenIndex, out ReadOnlyRef<SpriteFont> font);
 
         if(result != GenIndexResult.Ok)
         {
@@ -376,12 +362,12 @@ state.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
 
         Howl.Math.Vector2 position = transform.Position.InvertY() - camera.Position.InvertY();
 
-        state.StringBuilder.Clear();
-        state.StringBuilder.Append(characters);
+        monoGameApp.StringBuilder.Clear();
+        monoGameApp.StringBuilder.Append(characters);
 
-        state.SpriteBatch.DrawString(
+        monoGameApp.SpriteBatch.DrawString(
             font.Value, 
-            state.StringBuilder, 
+            monoGameApp.StringBuilder, 
             position.ToMonogame(), 
             textParameters.Colour.ToMonoGame(), 
             -transform.Rotation, 

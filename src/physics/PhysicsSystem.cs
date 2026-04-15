@@ -150,12 +150,14 @@ public static class PhysicsSystem
 
         if (state.DrawCollisionInformation)
         {
-            for(int j = 0; j < 3; j++)
-            {
-                DrawCollisionInformation(camera, state.CollisionManifold.Collisions, state.CollisionOwnerColour, state.CollisionOtherColour, 
-                    state.ContactPointColour, state.NormalColour, state.CollisionManifold.Collisions.Count
-                );
-            }
+            DrawCollisionInformation(camera, state.CollisionManifold.Collisions, state.CollisionOwnerColour, state.CollisionOtherColour, 
+                state.ContactPointColour, state.NormalColour, state.CollisionManifold.Collisions.Count
+            );
+        }
+
+        if (state.DrawAABBWireframes)
+        {
+            DrawAabbs(camera, state.MinAABBVertices, state.MaxAABBVertices, state.Flags, state.AABBColour);            
         }
 
         if (state.DrawLinearVelocities)
@@ -1940,12 +1942,19 @@ public static class PhysicsSystem
         }
     }
 
-    public static void DrawAabbs(Camera camera, Soa_Aabb aabbs, Span<PhysicsBodyFlags> flags, Colour colour)
+    public static void DrawAabbs(Camera camera, Soa_Vector2 min, Soa_Vector2 max, Span<PhysicsBodyFlags> flags, Colour colour)
     {
         for(int i = 0; i < flags.Length; i++)
         {
             if((flags[i] & PhysicsBodyFlags.InUse) == 0)
                 continue;
+
+            float minX = min.X[i];
+            float minY = min.Y[i];
+            float maxX = max.X[i];
+            float maxY = max.Y[i];
+
+            Debug.Draw.WireframePolygon(colour, camera, [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], 4);
         }
     }
 }

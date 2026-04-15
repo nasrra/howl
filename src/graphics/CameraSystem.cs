@@ -53,9 +53,9 @@ public static class CameraSystem
     /// <param name="ecs">the ecs state containing the cameras to update.</param>
     /// <param name="state">the renderer state.</param>
     /// <returns>the new update system instance.</returns>
-    public static void Update(EcsState ecs, IRendererState state)
+    public static void Update(EcsState ecs, float outputResolutionAspectRatio)
     {
-        UpdateProjectionMatrices(ecs, state);  
+        UpdateProjectionMatrices(ecs, outputResolutionAspectRatio);  
         
         // order matters here:
         // updating the main camera's copies the data of the stored camera
@@ -113,13 +113,13 @@ public static class CameraSystem
     /// </summary>
     /// <param name="ecs">The ecs state with the camera data.</param>
     /// <param name="state">the renderer state to update in accordance with.</param>
-    private static void UpdateProjectionMatrices(EcsState ecs, IRendererState state)
+    private static void UpdateProjectionMatrices(EcsState ecs, float outputResolutionAspectRatio)
     {
         ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
         for(int i = 1; i < cameras.Active.Count; i++)
         {
             ref Camera camera = ref ComponentArray.GetDataUnsafe(cameras, cameras.Active[i]);
-            camera.UpdateProjectionMatrix(state.OutputResolutionAspectRatio);
+            camera.UpdateProjectionMatrix(outputResolutionAspectRatio);
         }
     }
 }

@@ -1,31 +1,77 @@
 using System;
+using Howl.Debug;
 using Howl.Ecs;
 using Howl.Graphics;
 using Howl.Input;
+using Howl.Vendors.MonoGame;
+using Howl.Vendors.MonoGame.Input;
 
 namespace Howl;
 
-public unsafe sealed class HowlApp : IDisposable
+public unsafe class HowlApp
 {
+
+
+
+
+    /*******************
+    
+        Constants.
+    
+    ********************/
+
+
+
+
+    public const float FixedDt = 1f / 60f;
+
+
+
+    /*******************
+    
+        Member Variables.
+    
+    ********************/
+
+
+
+
     /// <summary>
     /// Gets the InputManager used by this HowlApp.
     /// </summary>
     public IInputManager InputManager {get; private set;}
 
     /// <summary>
-    /// Gets the renderer state.
-    /// </summary>
-    public IRendererState RendererState {get; private set;}
-
-    /// <summary>
-    /// gets the GenIndexAllocator used by this HowlApp.
-    /// </summary>
-    public GenIndexAllocator GenIndexAllocator {get; private set;}
-
-    /// <summary>
     ///     Gets the EcsState.
     /// </summary>
     public EcsState EcsState;
+
+    /// <summary>
+    ///     The Monogame Application used as a pump for this HowlApp.
+    /// </summary>
+    public MonoGameApp MonoGameApp;
+
+    /// <summary>
+    ///     The current fixed update step time.
+    /// </summary>
+    public float FixedUpdateTime = 0;
+
+    /// <summary>
+    ///     Whether or not this instance has been dispose of.
+    /// </summary>
+    public bool IsDisposed;
+
+
+
+
+    /*******************
+    
+        Debug Diagnostics.
+    
+    ********************/
+
+
+
 
     /// <summary>
     /// Gets and sets the update-step stopwatch.
@@ -38,173 +84,171 @@ public unsafe sealed class HowlApp : IDisposable
     public System.Diagnostics.Stopwatch FixedUpdateStepStopwatch;
 
     /// <summary>
-    /// Gets and sets the draw-step stopwatch.
+    ///     The draw-step stopwatch.
     /// </summary>
     public System.Diagnostics.Stopwatch DrawStepStopwatch;
 
-    /// <summary>
-    /// Gets and sets the initialise procedures.
-    /// </summary>
-    public delegate*<void> Initialise;
+
+
+
+    /*******************
+    
+        Callbacks.
+    
+    ********************/
+
+
+
 
     /// <summary>
-    /// Gets and sets the update procedures.
+    ///     The initialise callback.
     /// </summary>
-    public delegate*<float, void> Update;
+    public Action Initialise;
 
     /// <summary>
-    /// Gets and sets the fixed update procedures.
+    ///     The update callback.
     /// </summary>
-    public delegate*<float, void> FixedUpdate;
+    public Action<float> UpdateCallback;
 
     /// <summary>
-    /// Gets and sets the draw procedures.
+    ///     The fixed update callback.
     /// </summary>
-    public delegate*<float, void> Draw;
+    public Action<float> FixedUpdateCallback;
 
     /// <summary>
-    /// Gets and sets the draw procedures for the renderering backend.
+    ///     The draw callback.
     /// </summary>
-    private delegate*<EcsState, IRendererState, void> RendererDraw;
+    public Action<float> DrawCallback;
+
+
+
+
+    /*******************
+    
+        Functions.
+    
+    ********************/
+
+
+
 
     /// <summary>
-    /// Gets and sets the monogame app.
+    ///     Creates a new HowlApp instance.
     /// </summary>
-    /// <remarks>
-    /// Note: the monogame app is only intialised if the howl app was created with the monogame backend.
-    /// </remarks>
-    private Howl.Vendors.MonoGame.MonoGameApp monoGameApp;
-
-    /// <summary>
-    /// Gets the monogame app.
-    /// </summary>
-    /// <remarks>
-    /// Note: the monogame app is only intialised if the howl app was created with the monogame backend.
-    /// </remarks>
-    public Howl.Vendors.MonoGame.MonoGameApp MonoGameApp => monoGameApp;
-
-    private const float FixedDt = 1f / 60f;
-    private float fixedUpdateTime = 0;
-
-    private bool disposed = false;
-    public bool IsDisposed => disposed;
-
-    public HowlApp(RendererBackend rendererBackend, Resolution resolution, int maxEntities)
+    /// <param name="maxEntities">the maximum number of entities.</param>
+    public HowlApp(int maxEntities)
     {
         // instantiate debug stop watches.
         UpdateStepStopwatch         = new();
         FixedUpdateStepStopwatch    = new();
         DrawStepStopwatch           = new();
-
         EcsState = new EcsState(maxEntities);
-
-        switch (rendererBackend)
-        {
-            case RendererBackend.MonoGame:
-                monoGameApp = new(this);
-                InputManager = new Vendors.MonoGame.Input.InputManager();
-                var rendererState = new Vendors.MonoGame.Graphics.RendererState(monoGameApp, resolution);
-                RendererState = rendererState;
-                RendererDraw = &Vendors.MonoGame.Graphics.RendererSystem.Draw;
-                Run = monoGameApp.Run;
-                Shutdown = monoGameApp.Exit;
-                break;
-            default:
-                throw new Exception();
-        }   
+        InputManager = new InputManager();
     }
 
     /// <summary>
-    /// Runs this application.
-    /// </summary>
-    public Action Run {get; private set;}
-    
-    /// <summary>
-    /// Shutsdown this application.
-    /// </summary>
-    public Action Shutdown {get; private set;}
-
-    /// <summary>
-    /// Ticks this application forward by a set amount of time.
+    ///     Updates/Ticks a HowlApp forward by a set amount of time.
     /// </summary>
     /// <param name="deltaTime">the specified amount of time to tick forwards by.</param>
-    public void Tick(float deltaTime)
+    public static void Update(HowlApp app, float deltaTime)
     {
-        UpdateStepStopwatch.Restart();
+        app.UpdateStepStopwatch.Restart();
         
-        InputManager.Update(deltaTime);
-        Update(deltaTime);
+        app.InputManager.Update(deltaTime);
+        app.UpdateCallback(deltaTime);
 
-        UpdateStepStopwatch.Stop();
+        app.UpdateStepStopwatch.Stop();
 
         // try fixed update.
-        fixedUpdateTime += deltaTime;
-        if(fixedUpdateTime >= FixedDt)
+        app.FixedUpdateTime += deltaTime;
+        if(app.FixedUpdateTime >= FixedDt)
         {            
-            FixedUpdateStepStopwatch.Restart();
+            app.FixedUpdateStepStopwatch.Restart();
             
             // iterate and do fixed update steps.
-            while (fixedUpdateTime >= FixedDt)
+            while (app.FixedUpdateTime >= FixedDt)
             {
-                FixedUpdate(FixedDt);
-                fixedUpdateTime -= FixedDt;
+                app.FixedUpdateCallback(FixedDt);
+                app.FixedUpdateTime -= FixedDt;
             }
 
-            FixedUpdateStepStopwatch.Stop();
+            app.FixedUpdateStepStopwatch.Stop();
         }
     }
 
     /// <summary>
-    /// Renders this applicaiton using the rendering backend.
+    ///     Initialises the MonoGame backend of the howl app.
     /// </summary>
-    /// <param name="deltaTime"></param>
-    public void Render(float deltaTime)
+    /// <param name="app"></param>
+    /// <param name="resolution"></param>
+    public static void InitialiseMonoGame(HowlApp app, Resolution resolution)
     {
-        Draw(deltaTime);
-        RendererDraw(EcsState, RendererState);
+        if (app.MonoGameApp == null)
+        {
+            app.MonoGameApp = new(resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.OutputWidth, resolution.OutputHeight);
+            
+            // THIS WILL NEED TO CHANGE.
+            
+            app.MonoGameApp.UpdateCallback += (float deltaTime) =>
+            {
+                Update(app, deltaTime);
+            };
+
+            app.MonoGameApp.RenderCallback += (float deltaTime) =>
+            {
+                Vendors.MonoGame.Graphics.RendererSystem.Draw(app.EcsState, app.MonoGameApp);  
+                app.DrawCallback?.Invoke(deltaTime);
+            };
+        }
+        else
+        {
+            Log.WriteLine(LogType.Warn, "Multiple Initialisations of MonoGame backend occured.");
+        }
     }
 
     /// <summary>
-    /// Disposes this instance.
+    ///     Shutsdown a howl application.
     /// </summary>
-    public void Dispose()
+    /// <param name="app"></param>
+    public static void Shutdown(HowlApp app)
     {
-        Dispose(true);        
+        app.MonoGameApp?.Exit();
     }
 
-    private void Dispose(bool disposing)
+    /// <summary>
+    ///     Runs a howl application.
+    /// </summary>
+    /// <param name="app"></param>
+    public static void Run(HowlApp app)
     {
-        if (disposed)
+        app.MonoGameApp?.Run();
+    }
+
+    /// <summary>
+    ///     Disposes of a howl app.
+    /// </summary>
+    /// <param name="app"></param>
+    public static void Dispose(HowlApp app)
+    {
+        if (app.IsDisposed)
         {
-            System.Diagnostics.Debug.Assert(false);
             return;
         }
-
-        if (disposing)
-        {
-            GenIndexAllocator.Dispose();
-            GenIndexAllocator = null;
-
-            RendererState.Dispose();
-            RendererState = null;
-
-            EcsState.Dispose();
-            EcsState = null;
-
-            monoGameApp?.Dispose();
-            monoGameApp = null;
-
-            UpdateStepStopwatch = null;
-            FixedUpdateStepStopwatch = null;
-            DrawStepStopwatch = null;
-        }
-
-        disposed = true;
-        GC.SuppressFinalize(this);
+        app.IsDisposed = true;
+        app.MonoGameApp?.Dispose();
+        app.EcsState.Dispose();
+        app.EcsState = null;
+        app.UpdateStepStopwatch = null;
+        app.FixedUpdateStepStopwatch = null;
+        app.DrawStepStopwatch = null;
+        app.UpdateCallback = null;
+        app.FixedUpdateCallback = null;
+        app.DrawCallback = null;
+        GC.SuppressFinalize(app);        
     }
 
     ~HowlApp()
     {
-        Dispose(false);
+        Dispose(this);
     }
 }
