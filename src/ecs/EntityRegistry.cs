@@ -143,6 +143,17 @@ public class EntityRegistry : IDisposable
         return GenIdResult.Ok;
     }
 
+    public static void DeallocateAll(EntityRegistry registry)
+    {
+        for(int i = 0; i < registry.GenIds.Length; i++)
+        {
+            if (registry.Allocated[i])
+            {
+                Deallocate(registry, registry.GenIds[i]);
+            }
+        }
+    }
+
     /// <summary>
     ///     Gets whether or not a gen id is stale within a entity registry instance.
     /// </summary>

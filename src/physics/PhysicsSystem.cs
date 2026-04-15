@@ -205,6 +205,19 @@ public static class PhysicsSystem
         }
     }
 
+    public static void DeallocateAllDynamicBodies(PhysicsSystemState state)
+    {
+        for(int i = 0; i < state.MaxPhysicsBodyCount; i++)
+        {            
+            if((state.Flags[i] & PhysicsBodyFlags.Allocated) != 0 && (state.Flags[i] & PhysicsBodyFlags.Kinematic) == 0)
+            {
+                state.Flags[i] = PhysicsBodyFlags.None;
+                state.AlloctedPhysicsBodyCount--;
+                EntityRegistry.Deallocate(state.Entities, state.Entities.GenIds[i]);
+            }
+        }
+    }
+
     /// <summary>
     /// Syncs a entities that contain both a transform and physics body id component to an soa transform collection.
     /// </summary>
