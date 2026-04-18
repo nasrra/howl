@@ -26,16 +26,13 @@
 	"__smartColor": "#ADADB5",
 	"__bgPos": null,
 	"externalRelPath": null,
-	"fieldInstances": [
-		{ "__identifier": "TexturesToLoad", "__type": "Array<FilePath>", "__value": [ "tilemap_packed_0.png", "tilemap_packed_1.png" ], "__tile": null, "defUid": 128, "realEditorValues": [ {
-			"id": "V_String",
-			"params": ["tilemap_packed_0.png"]
-		}, {
-			"id": "V_String",
-			"params": ["tilemap_packed_1.png"]
-		} ] },
-		{ "__identifier": "foo", "__type": "Int", "__value": 12, "__tile": null, "defUid": 129, "realEditorValues": [{ "id": "V_Int", "params": [12] }] }
-	],
+	"fieldInstances": [{ "__identifier": "TexturesToLoad", "__type": "Array<FilePath>", "__value": [ "tilemap_packed_0.png", "tilemap_packed_1.png" ], "__tile": null, "defUid": 128, "realEditorValues": [ {
+		"id": "V_String",
+		"params": ["tilemap_packed_0.png"]
+	}, {
+		"id": "V_String",
+		"params": ["tilemap_packed_1.png"]
+	} ] }],
 	"layerInstances": [
 		{
 			"__identifier": "Entities",

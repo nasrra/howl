@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Text;
 using Howl.Ecs;
 using Howl.Graphics;
@@ -9,29 +8,11 @@ using Howl.Vendors.MonoGame.Graphics;
 using Howl.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System.IO;
 
 namespace Howl.Vendors.MonoGame;
 
-public unsafe class MonoGameApp : Game
+public class MonoGameApp : Game
 {
-
-
-
-
-    /*******************
-    
-        Singleton.
-    
-    ********************/
-
-
-
-
-    /// <summary>
-    ///     Singleton.
-    /// </summary>
-    public static MonoGameApp Instance;
 
 
 
@@ -45,6 +26,9 @@ public unsafe class MonoGameApp : Game
 
 
 
+    /// <summary>
+    ///     The graphics device manager.
+    /// </summary>
     public GraphicsDeviceManager GraphicsDeviceManager {get; private set;}
 
     /// <summary>
@@ -85,8 +69,7 @@ public unsafe class MonoGameApp : Game
     public GenIndexAllocator SpriteFontIds;
     public GenIndexList<SpriteFont> SpriteFonts;
 
-    public GenIndexAllocator TextureIds;
-    public GenIndexList<Texture2D> Textures;
+    public TextureManagerState Textures;
 
     /// <summary>
     ///     Whether this instance has been disposed of.
@@ -134,18 +117,8 @@ public unsafe class MonoGameApp : Game
     /// <param name="outputResolutionHeight">the width of the render target output resolution.</param>
     /// <param name="outputResolutionWidth">the height of the render target output resolution.</param>
     /// <exception cref="Exception"></exception>
-    public MonoGameApp(int backBufferWidth, int backBufferHeight, int outputResolutionWidth, int outputResolutionHeight)
+    public MonoGameApp(int backBufferWidth, int backBufferHeight, int outputResolutionWidth, int outputResolutionHeight, int maxTextureCount)
     {
-        // singleton guard.
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else if(Instance != this)
-        {
-            throw new Exception("Only one MonoGameApp Instance can created at a time.");
-        }
-
         IsMouseVisible = true;
         GraphicsDeviceManager = new(this);
         IsFixedTimeStep = false;
@@ -162,8 +135,7 @@ public unsafe class MonoGameApp : Game
         StringBuilder = new(Text4096.MaxCharacters);
         SpriteFontIds = new();
         SpriteFonts = new();
-        TextureIds = new();
-        Textures = new();
+        Textures = new(maxTextureCount);
 
         // set this to the same directory as the csproj as loading is handled via full paths fomr AssetManager.
         Content.RootDirectory = "";
@@ -201,114 +173,6 @@ public unsafe class MonoGameApp : Game
     protected float GameTimeToDeltaTime(GameTime gameTime)
     {
         return (float)gameTime.ElapsedGameTime.TotalSeconds;
-    }
-
-
-
-
-    /*******************
-    
-        Texture Management.
-    
-    ********************/
-
-
-
-    /// <summary>
-    ///     Loads a texture from disc.
-    /// </summary>
-    /// <param name="app"></param>
-    /// <param name="texturePath"></param>
-    /// <param name="genIndex"></param>
-    /// <returns></returns>
-    /// <exception cref="FileNotFoundException"></exception>
-    /// <exception cref="DirectoryNotFoundException"></exception>
-    /// <exception cref="IOException"></exception>
-    public static GenIndexResult LoadTexture(MonoGameApp app, string texturePath, out GenIndex genIndex)
-    {
-        app.TextureIds.Allocate(out genIndex, out bool reusedFreeGenIndex);
-        if(reusedFreeGenIndex == false)
-        {
-            // resize the sparse entries to match the texture ids so every texture id has a possible entry point
-            // into the textures storage.
-            GenIndexListProc.ResizeSparseEntries(app.Textures, app.TextureIds.Entries.Count);
-        }
-
-        Texture2D texture = null;
-        string path = Path.Combine(AssetManagement.AssetManager.AssetsFolder, texturePath);
-        try
-        {
-            using(FileStream stream = new FileStream(path, FileMode.Open))
-            {
-                texture = Texture2D.FromStream(app.GraphicsDevice, stream);
-            }
-        }
-        catch (FileNotFoundException)
-        {
-            throw new FileNotFoundException($"Texture2D file not found: {path}");
-        }
-        catch (DirectoryNotFoundException)
-        {
-            throw new DirectoryNotFoundException($"Directory not found: {path}");
-        }
-        catch(IOException e)
-        {
-            throw new IOException($"Error reading file: {path}: {e.Message}");
-        }
-        
-        GenIndexListProc.Allocate(app.Textures, genIndex, texture).Ok(out GenIndexResult result);
-        return result;
-    }
-
-    /// <summary>
-    ///     Gets the dimensions of a loaded texture.
-    /// </summary>
-    /// <param name="app"></param>
-    /// <param name="genIndex"></param>
-    /// <param name="dimensions"></param>
-    /// <returns></returns>
-    public static GenIndexResult GetTextureDimensions(MonoGameApp app, in GenIndex genIndex, out Howl.Math.Vector2 dimensions)
-    {
-        GenIndexResult result = GenIndexListProc.GetDenseReadOnlyRef(app.Textures, genIndex, out ReadOnlyRef<Texture2D> textureRef);
-        
-        dimensions = result == GenIndexResult.Ok
-        ? new(textureRef.Value.Width, textureRef.Value.Height)
-        : default;
-
-        return result;
-    }
-
-    /// <summary>
-    ///     Unloads a loaded texture from memory.
-    /// </summary>
-    /// <param name="index"></param>
-    /// <returns></returns>
-    public static GenIndexResult UnloadTexture(MonoGameApp app, in GenIndex index)
-    {
-        // ensure to dispose of the monogame texture before deallocating it.
-        GenIndexResult result;
-
-        if(GenIndexListProc.GetDenseRef(app.Textures, index, out Ref<Texture2D> reference).Fail(out result))
-            goto Fail;
-
-        reference.Value.Dispose();
-        
-        if(GenIndexListProc.Deallocate(app.Textures.Dense, app.Textures.Sparse, index).Fail(out result))
-            goto Fail;
-
-        if(app.TextureIds.Deallocate(index).Fail(out result))
-            goto Fail;
-
-        return result;
-
-        Fail:
-            return result;
-    }
-
-
-    public static GenIndexResult GetTextureReadonlyRef(MonoGameApp app, in GenIndex index, out ReadOnlyRef<Texture2D> readOnlyRef)
-    {
-        return GenIndexListProc.GetDenseReadOnlyRef(app.Textures, index, out readOnlyRef);
     }
 
 
@@ -519,6 +383,56 @@ public unsafe class MonoGameApp : Game
         {
             throw new ArgumentException($"Output resolution cannot be set to ({width}, {height}), values must be above zero and lower than or equal to int.MaxValue");            
         }
+    }
+
+
+    /// <summary>
+    ///     Constructs a sprite from a loaded texture.
+    /// </summary>
+    /// <remarks>
+    ///     Note: if the texture is not loaded, the returned sprite will instead fallback to the Nil value texture.
+    /// </remarks>
+    /// <param name="state">the texture manager state containing the loaded texture.</param>
+    /// <param name="colourTint">the colour to tint the sprite.</param>
+    /// <param name="sourceRectangle">the source rectangle - in pixels - of the sprite on the texture image.</param>
+    /// <param name="scale">the scaling vector to apply to the sprite when drawing.</param>
+    /// <param name="textureIndex">the index of the loaded texture.</param>
+    /// <param name="layerDepth">the layer depth.</param>
+    /// <param name="spriteOrigin">where the origin of the sprite will be placed.</param>
+    /// <param name="worldSpace">whether or not the sprite is in world space.</param>
+    /// <returns>the newly constructed sprite.</returns>
+    public static Sprite ConstructSprite(TextureManagerState state, Colour colourTint, Howl.Math.Shapes.Rectangle sourceRectangle, Howl.Math.Vector2 scale, int textureIndex, 
+        float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+    )
+    {
+        if(state.Textures[textureIndex] == null)
+        {
+            // return the nil value if the texture is not loaded.
+            textureIndex = 0;
+        }
+
+        // return the requested sprite.
+        ref Texture2D texture = ref state.Textures[textureIndex];
+        float originX = 0;
+        float originY = 0;
+
+        switch (spriteOrigin)
+        {
+            case SpriteOrigin.Center:
+                int width = 0;
+                int height = 0;
+                TextureManager.GetTextureDimensionsUnsafe(state, textureIndex, ref width, ref height);
+                originX = width*0.5f;
+                originY = height*0.5f;
+                break;
+            case SpriteOrigin.TopLeft:
+                // do nothing as origin x and y are already zero.
+                break;
+            default:
+                goto case SpriteOrigin.TopLeft;
+        }
+
+        return new Sprite(sourceRectangle, colourTint, new Howl.Math.Vector2(originX, originY), scale, textureIndex, worldSpace, layerDepth);
     }
 
     /// <summary>

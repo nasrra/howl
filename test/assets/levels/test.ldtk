@@ -11,7 +11,7 @@
 	"iid": "0d366970-21a0-11f1-af8f-697dc3696da9",
 	"jsonVersion": "1.5.3",
 	"appBuildId": 473703,
-	"nextUid": 130,
+	"nextUid": 131,
 	"identifierStyle": "Capitalize",
 	"toc": [],
 	"worldLayout": "Free",
@@ -2301,43 +2301,6 @@
 			"allowedRefsEntityUid": null,
 			"allowedRefTags": [],
 			"tilesetUid": null
-		},
-		{
-			"identifier": "foo",
-			"doc": null,
-			"__type": "Int",
-			"uid": 129,
-			"type": "F_Int",
-			"isArray": false,
-			"canBeNull": false,
-			"arrayMinLength": null,
-			"arrayMaxLength": null,
-			"editorDisplayMode": "Hidden",
-			"editorDisplayScale": 1,
-			"editorDisplayPos": "Above",
-			"editorLinkStyle": "StraightArrow",
-			"editorDisplayColor": null,
-			"editorAlwaysShow": false,
-			"editorShowInWorld": true,
-			"editorCutLongValues": true,
-			"editorTextSuffix": null,
-			"editorTextPrefix": null,
-			"useForSmartColor": false,
-			"exportToToc": false,
-			"searchable": false,
-			"min": null,
-			"max": null,
-			"regex": null,
-			"acceptFileTypes": null,
-			"defaultOverride": null,
-			"textLanguageMode": null,
-			"symmetricalRef": false,
-			"autoChainRef": true,
-			"allowOutOfLevelRef": true,
-			"allowedRefs": "OnlySame",
-			"allowedRefsEntityUid": null,
-			"allowedRefTags": [],
-			"tilesetUid": null
 		}
 	] },
 	"levels": [
@@ -2360,13 +2323,10 @@
 			"__smartColor": "#ADADB5",
 			"__bgPos": null,
 			"externalRelPath": "test/Level1.ldtkl",
-			"fieldInstances": [
-				{ "__identifier": "TexturesToLoad", "__type": "Array<FilePath>", "__value": ["tilemap_packed_0.png"], "__tile": null, "defUid": 128, "realEditorValues": [{
-					"id": "V_String",
-					"params": ["tilemap_packed_0.png"]
-				}] },
-				{ "__identifier": "foo", "__type": "Int", "__value": 0, "__tile": null, "defUid": 129, "realEditorValues": [] }
-			],
+			"fieldInstances": [{ "__identifier": "TexturesToLoad", "__type": "Array<FilePath>", "__value": ["tilemap_packed_0.png"], "__tile": null, "defUid": 128, "realEditorValues": [{
+				"id": "V_String",
+				"params": ["tilemap_packed_0.png"]
+			}] }],
 			"layerInstances": null,
 			"__neighbours": [{ "levelIid": "5eab3590-21a0-11f1-bc6c-75cdf8b0f41e", "dir": "<" }]
 		},
@@ -2389,16 +2349,13 @@
 			"__smartColor": "#ADADB5",
 			"__bgPos": null,
 			"externalRelPath": "test/Level2.ldtkl",
-			"fieldInstances": [
-				{ "__identifier": "TexturesToLoad", "__type": "Array<FilePath>", "__value": [ "tilemap_packed_0.png", "tilemap_packed_1.png" ], "__tile": null, "defUid": 128, "realEditorValues": [ {
-					"id": "V_String",
-					"params": ["tilemap_packed_0.png"]
-				}, {
-					"id": "V_String",
-					"params": ["tilemap_packed_1.png"]
-				} ] },
-				{ "__identifier": "foo", "__type": "Int", "__value": 12, "__tile": null, "defUid": 129, "realEditorValues": [{ "id": "V_Int", "params": [12] }] }
-			],
+			"fieldInstances": [{ "__identifier": "TexturesToLoad", "__type": "Array<FilePath>", "__value": [ "tilemap_packed_0.png", "tilemap_packed_1.png" ], "__tile": null, "defUid": 128, "realEditorValues": [ {
+				"id": "V_String",
+				"params": ["tilemap_packed_0.png"]
+			}, {
+				"id": "V_String",
+				"params": ["tilemap_packed_1.png"]
+			} ] }],
 			"layerInstances": null,
 			"__neighbours": [{ "levelIid": "0d36b790-21a0-11f1-af8f-131b1fee4506", "dir": ">" }]
 		}

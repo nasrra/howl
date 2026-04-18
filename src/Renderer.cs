@@ -1,3 +1,4 @@
+using System.IO;
 using Howl.Ecs;
 using Howl.Graphics;
 using Howl.Input;
@@ -109,41 +110,93 @@ public static class Renderer
     {
         MonoGameApp.SetFinalRenderTargetResolution(app.MonoGameApp, width, height);
     }
-    
+
     /// <summary>
-    ///     Loads a texture from disc.
+    ///     Registers a texture into the renderer instance.
     /// </summary>
-    /// <param name="app"></param>
-    /// <param name="texturePath"></param>
-    /// <param name="genIndex"></param>
-    /// <returns></returns>
-    /// <exception cref="FileNotFoundException"></exception>
-    /// <exception cref="DirectoryNotFoundException"></exception>
-    /// <exception cref="IOException"></exception>
-    public static GenIndexResult LoadTexture(HowlApp app, string texturePath, out GenIndex genIndex)
+    /// <param name="app">the howl app containing the renderer instance.</param>
+    /// <param name="filePath">the file path of the texture.</param>
+    /// <param name="textureId">output for the assigned id of the texture in the renderer state.</param>
+    /// <returns>tre, if ther texture was successfully registered; otherwise false.</returns>
+    public static bool RegisterTexture(HowlApp app, string filePath, ref int textureId)
     {
-        return MonoGameApp.LoadTexture(app.MonoGameApp, texturePath, out genIndex);
+        return TextureManager.RegisterTexture(app.MonoGameApp.Textures, filePath, ref textureId);
     }
 
     /// <summary>
-    ///     Gets the dimensions of a loaded texture.
+    ///     Loads a texture from disc into video memory.
     /// </summary>
     /// <param name="app"></param>
-    /// <param name="genIndex"></param>
-    /// <param name="dimensions"></param>
-    /// <returns></returns>
-    public static GenIndexResult GetTextureDimensions(HowlApp app, in GenIndex genIndex, out Vector2 dimensions)
+    /// <param name="filePath">the file path of the texture.</param>
+    /// <returns>true, if the texture was successfully loaded; otherwise false.</returns>
+    public static bool LoadTexture(HowlApp app, string filePath)
     {
-        return MonoGameApp.GetTextureDimensions(app.MonoGameApp, genIndex, out dimensions);
+        return TextureManager.LoadTexture(app.MonoGameApp.Textures, app.MonoGameApp.GraphicsDevice, filePath);
     }
 
     /// <summary>
-    ///     Unloads a loaded texture from memory.
+    ///     Gets the dimensions of a loaded texture in pixels.
     /// </summary>
-    /// <param name="index"></param>
-    /// <returns></returns>
-    public static GenIndexResult UnloadTexture(HowlApp app, in GenIndex index)
+    /// <param name="app">the howl app instance containing the loaded texture.</param>
+    /// <param name="textureId">the texture id.</param>
+    /// <param name="dimensions">output for the texture dimensions.</param>
+    /// <returns>true, if the texture's dimensions were successfully retrieved otherwise false.</returns>
+    public static bool GetTextureDimensions(HowlApp app, int textureId, ref Vector2Int dimensions)
     {
-        return MonoGameApp.UnloadTexture(app.MonoGameApp, index);
+        return TextureManager.GetTextureDimensions(app.MonoGameApp.Textures, textureId, ref dimensions.X, ref dimensions.Y);
+    }
+
+    /// <summary>
+    ///     Unloads a loaded texture from video memory.
+    /// </summary>
+    /// <param name="app">the howl app instance containing the loaded texture.</param>
+    /// <param name="filePath">the file path of the registered texture to unload</param>
+    /// <returns>true, if the texture was successfully unloaded; otherwise false.</returns>
+    public static bool UnloadTexture(HowlApp app, string filePath)
+    {
+        return TextureManager.UnloadTexture(app.MonoGameApp.Textures, filePath);        
+    }
+
+    /// <summary>
+    ///     Gets whether a texture has been loaded.
+    /// </summary>
+    /// <param name="app">the howl app instance containing the loaded texture.</param>
+    /// <param name="textureId">the id of the texture.</param>
+    /// <returns>true, if the texture has been loaded; otherwise false.</returns>
+    public static bool IsTextureLoaded(HowlApp app, int textureId)
+    {
+        return app.MonoGameApp.Textures.Textures[textureId] != null;
+    }
+
+    /// <summary>
+    ///     Constructs a sprite from a loaded texture.
+    /// </summary>
+    /// <param name="app">the howl app instance containing the loaded texture.</param>
+    /// <param name="colourTint">the colour to tint the sprite.</param>
+    /// <param name="sourceRectangle">the source rectangle - in pixels - of the sprite on the texture image.</param>
+    /// <param name="scale">the scaling vector to apply to the sprite when drawing.</param>
+    /// <param name="textureId">the id of the loaded texture.</param>
+    /// <param name="layerDepth">the layer depth.</param>
+    /// <param name="spriteOrigin">where the origin of the sprite will be placed.</param>
+    /// <param name="worldSpace">whether or not the sprite is in world space.</param>
+    /// <returns>the newly constructed sprite.</returns>
+    public static Sprite ConstructSprite(HowlApp app, Colour colourTint, Math.Shapes.Rectangle sourceRectangle, Vector2 scale, int textureId, 
+        float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+    )
+    {
+        return MonoGameApp.ConstructSprite(app.MonoGameApp.Textures, colourTint, sourceRectangle, scale, textureId, 
+            layerDepth, spriteOrigin, worldSpace
+        );
+    }
+
+    /// <summary>
+    ///     Sets the Nil texture value in a texture manager state instance.
+    /// </summary>
+    /// <param name="app">the howl app renderer instance to set the Nil value to.</param>
+    /// <param name="filePath">the file path of the registered texture to load.</param>
+    /// <returns>true; if the texture was successfully loaded; otherwise false.</returns>
+    public static bool LoadNilTexture(HowlApp app, string filePath)
+    {
+        return TextureManager.LoadNilTexture(app.MonoGameApp.Textures, app.MonoGameApp, filePath);   
     }
 }

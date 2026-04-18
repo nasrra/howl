@@ -8,6 +8,7 @@ using Howl.Vendors.MonoGame.Math;
 using Microsoft.Xna.Framework.Graphics;
 using Howl.Math;
 using Microsoft.Xna.Framework;
+using Howl.Debug;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
@@ -113,11 +114,7 @@ public static class RendererSystem
 
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
         
-            if(DrawSprite(monoGameApp, ref camera, ref transform, ref sprite).Fail())
-            {
-                System.Diagnostics.Debug.Assert(false);
-                continue;
-            }
+            DrawSprite(monoGameApp, ref camera, ref transform, ref sprite);
         }
         monoGameApp.SpriteBatch.End();
     }
@@ -130,37 +127,25 @@ public static class RendererSystem
     /// <param name="transform">The transformation to apply to the sprite.</param>
     /// <param name="sprite">The sprite to draw.</param>
     /// <returns><see cref="GenIndexResult"/></returns>
-    public static GenIndexResult DrawSprite(MonoGameApp monoGameApp, ref Camera camera, ref Transform transform, ref Sprite sprite)
+    public static void DrawSprite(MonoGameApp monoGameApp, ref Camera camera, ref Transform transform, ref Sprite sprite)
     {   
-        GenIndexResult result = MonoGameApp.GetTextureReadonlyRef(monoGameApp, sprite.Texture, out ReadOnlyRef<Texture2D> texture);
-        if (result != GenIndexResult.Ok || texture.Valid == false)
-        {
-            return result;
-        }
-        else
-        {
-            // translate by the cameras position.
-            // (Note):
-            // reverse y-coordinates because monogame
-            // sprite batch is y+ = down, Howl is y+ = up.
-            Howl.Math.Vector2 position = transform.Position;
-            position.Y *= -1;
-            position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
-            monoGameApp.EffectManager.DefaultSpriteEffect.Texture = texture.Value;
+        // translate by the cameras position.
+        // (Note):
+        // reverse y-coordinates because monogame
+        // sprite batch is y+ = down, Howl is y+ = up.
+        Howl.Math.Vector2 position = transform.Position;
+        position.Y *= -1;
+        position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
+        
+        ref Texture2D texture = ref monoGameApp.Textures.Textures[sprite.TextureId];
+        if(texture == null)
 
-            monoGameApp.SpriteBatch.Draw(
-                texture.Value, 
-                new(position.X, position.Y), 
-                sprite.SourceRectangle.ToMonoGame(), 
-                sprite.ColourTint.ToMonoGame(), 
-                -transform.Rotation, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
-                sprite.Origin.ToMonogame(), 
-                (sprite.Scale * transform.Scale).ToMonogame(), 
-                SpriteEffects.None, 
-                sprite.LayerDepth
-            );
-            return result;
-        }
+        monoGameApp.EffectManager.DefaultSpriteEffect.Texture = texture;
+
+        monoGameApp.SpriteBatch.Draw(texture, new(position.X, position.Y), sprite.SourceRectangle.ToMonoGame(), sprite.ColourTint.ToMonoGame(), 
+            -transform.Rotation, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
+            sprite.Origin.ToMonogame(), (sprite.Scale * transform.Scale).ToMonogame(), SpriteEffects.None, sprite.LayerDepth
+        );
     }
 
     /// <summary>

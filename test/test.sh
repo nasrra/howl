@@ -82,6 +82,7 @@ TEST_MAP=(
     ["SwapBackArray"]="${COLLECTIONS_NAMESPACE}Test_SwapBackArray"
     ["Text16"]="${GRAPHICS_NAMESPACE}Text.Text16Test"
     ["Text4096"]="${GRAPHICS_NAMESPACE}Text.Text4096Test"
+    ["TextureManager"]="${MONOGAME_NAMESPACE}Test_TextureManager"
     ["Transform"]="${MATH_NAMESPACE}TransformTest"
     ["Vector2"]="${MATH_NAMESPACE}Vector2Test"
     ["Vector2Int"]="${MATH_NAMESPACE}Vector2IntTest"

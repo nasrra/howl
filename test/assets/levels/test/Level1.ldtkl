@@ -26,13 +26,10 @@
 	"__smartColor": "#ADADB5",
 	"__bgPos": null,
 	"externalRelPath": null,
-	"fieldInstances": [
-		{ "__identifier": "TexturesToLoad", "__type": "Array<FilePath>", "__value": ["tilemap_packed_0.png"], "__tile": null, "defUid": 128, "realEditorValues": [{
-			"id": "V_String",
-			"params": ["tilemap_packed_0.png"]
-		}] },
-		{ "__identifier": "foo", "__type": "Int", "__value": 0, "__tile": null, "defUid": 129, "realEditorValues": [] }
-	],
+	"fieldInstances": [{ "__identifier": "TexturesToLoad", "__type": "Array<FilePath>", "__value": ["tilemap_packed_0.png"], "__tile": null, "defUid": 128, "realEditorValues": [{
+		"id": "V_String",
+		"params": ["tilemap_packed_0.png"]
+	}] }],
 	"layerInstances": [
 		{
 			"__identifier": "Entities",
@@ -73,6 +70,22 @@
 					"fieldInstances": [{ "__identifier": "Radius", "__type": "Float", "__value": 1, "__tile": null, "defUid": 100, "realEditorValues": [{ "id": "V_Float", "params": [1] }] }],
 					"__worldX": 243,
 					"__worldY": 171
+				},
+				{
+					"__identifier": "PlayerStart",
+					"__grid": [10,10],
+					"__pivot": [0,0],
+					"__tags": [],
+					"__tile": null,
+					"__smartColor": "#BE4A2F",
+					"iid": "54387f60-21a0-11f1-a64c-b5765f3e72f9",
+					"width": 16,
+					"height": 16,
+					"defUid": 96,
+					"px": [180,180],
+					"fieldInstances": [],
+					"__worldX": 180,
+					"__worldY": 180
 				}
 			]
 		},
