@@ -1,6 +1,6 @@
 using System;
 
-namespace Howl.Physics;
+namespace Howl.Physics.Telo;
 
 /// <remarks>
 /// Note: 

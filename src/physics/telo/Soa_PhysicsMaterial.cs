@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
 
-namespace Howl.Physics;
+namespace Howl.Physics.Telo;
 
 public class Soa_PhysicsMaterial
 {
@@ -115,6 +115,14 @@ public class Soa_PhysicsMaterial
     {
         Insert(soa.StaticFriction, soa.KineticFriction, soa.Density, soa.Restitution,
             material.StaticFriction, material.KineticFriction, material.Density, material.Restitution, index
+        );  
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Insert(Soa_PhysicsMaterial soa, float staticFriction, float kineticFriction, float density, float restitution, int index)
+    {
+        Insert(soa.StaticFriction, soa.KineticFriction, soa.Density, soa.Restitution,
+            staticFriction, kineticFriction, density, restitution, index
         );  
     }
 

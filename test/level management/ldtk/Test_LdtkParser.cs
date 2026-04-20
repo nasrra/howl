@@ -10,16 +10,17 @@ public class Test_LdtkParser
     public static string projectPath = LevelManager.LevelsFolder + "test.ldtk";
     public static string Level1Path = LevelManager.LevelsFolder + "test/Level1.ldtkl";
     public static string Level2Path = LevelManager.LevelsFolder + "test/Level2.ldtkl";
+    public static byte[] scratchBuffer = new byte[1000000]; // 1 mb.
 
     [Fact]
-    public void LoadProject_Test()
+    public void LoadDtoProject_Test()
     {
         bool expectedExternalLevels = true;
         Dto_ProjectLevel expectedLevel1 = new(){Identifier="Level1", ExternalRelPath="test/Level1.ldtkl"};
         Dto_ProjectLevel expectedLevel2 = new(){Identifier="Level2", ExternalRelPath="test/Level2.ldtkl"};
         Dto_ProjectLevel[] expectedLevels = [expectedLevel1, expectedLevel2];
 
-        Dto_Project? project = LdtkParser.LoadProject(projectPath);
+        Dto_Project? project = LdtkParser.LoadDtoProject(scratchBuffer, projectPath);
         
         Assert.NotNull(project);
         
@@ -27,12 +28,12 @@ public class Test_LdtkParser
     }
 
     [Fact]
-    public void LoadLevel_Test()
+    public void LoadDtoLevel_Test()
     {
         Dto_Level? level;
         string[]? texturesToLoad;
 
-        level = LdtkParser.LoadLevel(Level1Path);
+        level = LdtkParser.LoadDtoLevel(scratchBuffer, Level1Path);
         Assert.NotNull(level);
         Assert.Equal("Level1", level.Identifier);
         texturesToLoad = JsonSerializer.Deserialize<string[]>(level.FieldInstances[0].Value);
@@ -40,7 +41,7 @@ public class Test_LdtkParser
         Assert.Single(texturesToLoad);
         Assert.Equal("tilemap_packed_0.png", texturesToLoad[0]);
 
-        level = LdtkParser.LoadLevel(Level2Path);
+        level = LdtkParser.LoadDtoLevel(scratchBuffer, Level2Path);
         Assert.NotNull(level);
         Assert.Equal("Level2", level.Identifier);
         texturesToLoad = JsonSerializer.Deserialize<string[]>(level.FieldInstances[0].Value);

@@ -3,6 +3,9 @@ using Howl.Debug;
 using Howl.Ecs;
 using Howl.Graphics;
 using Howl.Input;
+using Howl.LevelManagement;
+using Howl.LevelManagement.Ldtk;
+using Howl.Physics.Telo;
 using Howl.Vendors.MonoGame;
 using Howl.Vendors.MonoGame.Input;
 
@@ -50,6 +53,16 @@ public unsafe class HowlApp
     ///     The Monogame Application used as a pump for this HowlApp.
     /// </summary>
     public MonoGameApp MonoGameApp;
+
+    /// <summary>
+    ///     The LdtkParserState used for parsing ldtk level files.
+    /// </summary>
+    public LdtkParserState LdtkParserState;
+
+    /// <summary>
+    ///     The Physics system state used for physics.
+    /// </summary>
+    public TeloPhysicsState TeloPhysicsState;
 
     /// <summary>
     ///     The current fixed update step time.
@@ -207,6 +220,29 @@ public unsafe class HowlApp
     }
 
     /// <summary>
+    ///     Initialises the Ldtk backend of the howl app.
+    /// </summary>
+    /// <param name="app"></param>
+    /// <param name="parseLevelIntGrid"></param>
+    /// <param name="scratchBufferSizeInMb"></param>
+    /// <param name="pixelsPerUnit"></param>
+    public static void IntialiseLdtk(HowlApp app, delegate* <HowlApp, IntGridView, void> parseLevelIntGrid, float scratchBufferSizeInMb, int pixelsPerUnit)
+    {
+        app.LdtkParserState = new LdtkParserState(parseLevelIntGrid, scratchBufferSizeInMb, pixelsPerUnit);
+    }
+
+    /// <summary>
+    ///     Initialises the physics system state of a howl app.
+    /// </summary>
+    /// <param name="app"></param>
+    /// <param name="maxBodyCount"></param>
+    /// <param name="maxBodyVerticesCount"></param>
+    public static void InitialiseTeloPhysics(HowlApp app, int maxBodyCount, int maxBodyVerticesCount)
+    {
+        app.TeloPhysicsState = new(maxBodyCount, maxBodyVerticesCount);
+    }
+
+    /// <summary>
     ///     Shutsdown a howl application.
     /// </summary>
     /// <param name="app"></param>
@@ -244,6 +280,9 @@ public unsafe class HowlApp
         app.UpdateCallback = null;
         app.FixedUpdateCallback = null;
         app.DrawCallback = null;
+        TeloPhysicsState.Dispose(app.TeloPhysicsState);
+        LdtkParserState.Dispose(app.LdtkParserState);
+        app.MonoGameApp.Dispose();
         GC.SuppressFinalize(app);        
     }
 

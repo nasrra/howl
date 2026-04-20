@@ -175,7 +175,7 @@ public static class Renderer
     /// <param name="colourTint">the colour to tint the sprite.</param>
     /// <param name="sourceRectangle">the source rectangle - in pixels - of the sprite on the texture image.</param>
     /// <param name="scale">the scaling vector to apply to the sprite when drawing.</param>
-    /// <param name="textureId">the id of the loaded texture.</param>
+    /// <param name="textureFilePath">the file path of the loaded texture.</param>
     /// <param name="layerDepth">the layer depth.</param>
     /// <param name="spriteOrigin">where the origin of the sprite will be placed.</param>
     /// <param name="worldSpace">whether or not the sprite is in world space.</param>
@@ -187,6 +187,38 @@ public static class Renderer
         return MonoGameApp.ConstructSprite(app.MonoGameApp.Textures, colourTint, sourceRectangle, scale, textureId, 
             layerDepth, spriteOrigin, worldSpace
         );
+    }
+
+    /// <summary>
+    ///     Constructs a sprite from a loaded texture.
+    /// </summary>
+    /// <param name="app">the howl app instance containing the loaded texture.</param>
+    /// <param name="colourTint">the colour to tint the  </param>
+    /// <param name="sourceRectangle"></param>
+    /// <param name="scale"></param>
+    /// <param name="textureFilePath"></param>
+    /// <param name="layerDepth"></param>
+    /// <param name="spriteOrigin"></param>
+    /// <param name="worldSpace"></param>
+    /// <returns></returns>
+    public static Sprite ConstructSprite(HowlApp app, Colour colourTint, Math.Shapes.Rectangle sourceRectangle, Vector2 scale, 
+        string textureFilePath, float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+    )
+    {
+        return MonoGameApp.ConstructSprite(app.MonoGameApp.Textures, colourTint, sourceRectangle, scale, textureFilePath, 
+            layerDepth, spriteOrigin, worldSpace
+        );
+    }
+
+    /// <summary>
+    ///     Gets the texture 
+    /// </summary>
+    /// <param name="app"></param>
+    /// <param name="texturePath"></param>
+    /// <returns></returns>
+    public static int GetTextureId(HowlApp app, string texturePath)
+    {
+        return TextureManager.GetTextureIndex(app.MonoGameApp.Textures, texturePath);
     }
 
     /// <summary>

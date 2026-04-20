@@ -1,14 +1,13 @@
 using System.IO;
 using System.Runtime.CompilerServices;
-using Howl.Collections;
 using Howl.Debug;
+using Howl.Io;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Howl.Vendors.MonoGame;
 
 public static class TextureManager
 {
-
     /// <summary>
     ///     Registers a texture into a texture manager state instance.
     /// </summary>
@@ -173,5 +172,36 @@ public static class TextureManager
         ref Texture2D texture = ref state.Textures[textureIndex];
         width = texture.Width;
         height = texture.Height;
+    }
+
+    /// <summary>
+    ///     Gets the <c>textureIndex</c> of a texture via its filePath.
+    /// </summary>
+    /// <param name="state">the texture manager state </param>
+    /// <param name="filePath">the file path.</param>
+    /// <returns>the texture index if the texture was registered in the state instance; otherwise the Nil texture index.</returns>
+    public static int GetTextureIndex(TextureManagerState state, string filePath)
+    {
+        if (state.FilePathToIndex.ContainsKey(filePath))
+        {
+            return state.FilePathToIndex[filePath];
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the <c>textureIndex</c> of a texture via its filePath.
+    /// </summary>
+    /// <param name="state">the texture manager state instance.</param>
+    /// <param name="directoryPath">the path of the directory relative to the project directory.</param>
+    /// <param name="relativeFilePath">the path of the file relative to the directory path.</param>
+    /// <returns>the texture index if the texture was registered in the state instance; otherwise the Nil texture index.</returns>
+    public static int GetTextureIndex(TextureManagerState state, string directoryPath, string relativeFilePath)
+    {
+        string filePath = PathUtils.FlattenPath(directoryPath, relativeFilePath);
+        return GetTextureIndex(state, filePath);
     }
 }

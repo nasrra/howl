@@ -1,5 +1,7 @@
 using Howl.Ecs;
 
+namespace Howl.Physics.Telo;
+
 /// <summary>
 /// This is used as a component link between Howl ECS and the Howl physics simulation.
 /// </summary>

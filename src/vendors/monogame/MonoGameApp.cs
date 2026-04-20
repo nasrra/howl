@@ -8,6 +8,7 @@ using Howl.Vendors.MonoGame.Graphics;
 using Howl.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System.Runtime.CompilerServices;
 
 namespace Howl.Vendors.MonoGame;
 
@@ -385,6 +386,28 @@ public class MonoGameApp : Game
         }
     }
 
+    /// <summary>
+    ///     Constructs a sprite from a loaded texture.
+    /// </summary>
+    /// <remarks>
+    ///     Note: if the texture is not loaded, the returned sprite will instead fallback to the Nil value texture.
+    /// </remarks>
+    /// <param name="state">the texture manager state containing the loaded texture.</param>
+    /// <param name="colourTint">the colour to tint the sprite.</param>
+    /// <param name="sourceRectangle">the source rectangle - in pixels - of the sprite on the texture image.</param>
+    /// <param name="scale">the scaling vector to apply to the sprite when drawing.</param>
+    /// <param name="textureFilePath">the file path of the loaded texture.</param>
+    /// <param name="layerDepth">the layer depth.</param>
+    /// <param name="spriteOrigin">where the origin of the sprite will be placed.</param>
+    /// <param name="worldSpace">whether or not the sprite is in world space.</param>
+    /// <returns>the newly constructed sprite.</returns>
+    public static Sprite ConstructSprite(TextureManagerState state, Colour colourTint, Howl.Math.Shapes.Rectangle sourceRectangle, 
+        Howl.Math.Vector2 scale, string textureFilePath, float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+    )
+    {
+        int textureIndex = TextureManager.GetTextureIndex(state, textureFilePath);
+        return ConstructSprite(state, colourTint, sourceRectangle, scale, textureIndex, layerDepth, spriteOrigin, worldSpace);
+    }
 
     /// <summary>
     ///     Constructs a sprite from a loaded texture.
@@ -401,8 +424,9 @@ public class MonoGameApp : Game
     /// <param name="spriteOrigin">where the origin of the sprite will be placed.</param>
     /// <param name="worldSpace">whether or not the sprite is in world space.</param>
     /// <returns>the newly constructed sprite.</returns>
-    public static Sprite ConstructSprite(TextureManagerState state, Colour colourTint, Howl.Math.Shapes.Rectangle sourceRectangle, Howl.Math.Vector2 scale, int textureIndex, 
-        float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Sprite ConstructSprite(TextureManagerState state, Colour colourTint, Howl.Math.Shapes.Rectangle sourceRectangle, 
+        Howl.Math.Vector2 scale, int textureIndex, float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
     )
     {
         if(state.Textures[textureIndex] == null)

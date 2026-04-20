@@ -4,7 +4,7 @@ using Howl.Ecs;
 using Howl.Math;
 using Howl.Physics;
 
-namespace Howl.Physics;
+namespace Howl.Physics.Telo;
 
 public class Soa_Collision
 {

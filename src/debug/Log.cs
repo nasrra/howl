@@ -30,9 +30,25 @@ public static class Log
         }
 
 
-        msg = $"{GetLogTypeTag(logType)} {msg}";
+        switch (logType)
+        {
+            case LogType.Error:
+                Console.ForegroundColor = ConsoleColor.Red;
+                break;
+            case LogType.Warn:
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                break;
+            case LogType.Info:
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                break;
+            default:
+                goto case LogType.Info;
+        }
+
+        Console.Write(GetLogTypeTag(logType));
+        Console.ForegroundColor = ConsoleColor.Cyan;        
+        Console.WriteLine($" {msg}");
         
-        Console.WriteLine(msg);
         System.Diagnostics.Debug.WriteLine(msg);
     }
 

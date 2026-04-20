@@ -2,8 +2,8 @@ using System;
 using Howl.Collections;
 using Howl.DataStructures;
 using Howl.Ecs;
-using Howl.Physics;
-using static Howl.Physics.Soa_Collision;
+
+namespace Howl.Physics.Telo;
 
 public class CollisionManifold : IDisposable
 {

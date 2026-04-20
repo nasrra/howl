@@ -1,5 +1,7 @@
+using System;
 using System.IO;
 using Howl.AssetManagement;
+using Howl.DataStructures;
 using Howl.LevelManagement.Ldtk;
 
 namespace Howl.LevelManagement;
@@ -8,51 +10,25 @@ public static class LevelManager
 {
     public static string LevelsFolder = AssetManager.AssetsFolder + "levels/";
 
-    public static bool LoadProject(LevelManagerState state, string projectPath)
+    /// <summary>
+    ///     Loads an level management project file into a howl app.
+    /// </summary>
+    /// <param name="app">the howl app instance to load the project into.</param>
+    /// <param name="path">the file path relative to <c><see cref="LevelsFolder"/></c></param>
+    /// <returns>true, if the project was loaded successfully; otherwise false.</returns>
+    public static bool LoadProject(HowlApp app, string projectPath)
     {
-        string path = AssetManagement.AssetManager.AssetsFolder + projectPath;
-
-        Dto_Project project = LdtkParser.LoadProject(path);
-        
-        if(project == null)
-        {
-            return false;
-        }
-
-        state.LdtkProject = project;
-
-        // store the loaded level strings with their indices so that the user can
-        // use only the name of the level when loading; instead of having to know the
-        // unstable index undereath that ldtk changes depending on how the project is structured.
-        for(int i = 0; i < project.Levels.Length; i++)
-        {
-            state.LevelNameToIndex.Add(project.Levels[i].Identifier, i);
-        }
-
-        return true;
+        return LdtkParser.LoadProject(app.LdtkParserState, projectPath);
     }
 
-    public static bool LoadLevel(LevelManagerState state, string levelName)
+    /// <summary>
+    ///     Loads a level from disc and parses it into a Howl application.
+    /// </summary>
+    /// <param name="app">the howl application instance to parse into.</param>
+    /// <param name="levelIdentifier">the name of the level.</param>
+    /// <returns>true, if the level was successfully loaded; otherwise false.</returns>
+    public static bool LoadLevel(HowlApp app, string levelIdentifier)
     {
-        if (state.LevelNameToIndex.ContainsKey(levelName) == false)
-        {
-            return false;
-        }
-
-        int levelIndex = state.LevelNameToIndex[levelName];
-
-        string path = LevelsFolder+state.LdtkProject.Levels[levelIndex].ExternalRelPath;
-
-        Dto_Level level = LdtkParser.LoadLevel(path);
-
-        // do stuff with the level.
-
-        if(level == null)
-        {
-            return false;
-        }
-
-        // should return a gen id for the newly allocated level.
-        return true;
+        return LdtkParser.LoadLevel(app, app.LdtkParserState, levelIdentifier);
     }
 }
