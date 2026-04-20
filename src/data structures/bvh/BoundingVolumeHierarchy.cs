@@ -619,19 +619,18 @@ public class BoundingVolumeHierarchy : IDisposable
 
 
 
-    public static void DrawBranches(Howl.Graphics.Camera camera, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
+    public static void DrawBranches(HowlApp app, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
     {
-
         for(int i = 0; i < bvh.Branches.AppendCount; i++)
         {
-            Debug.Draw.Wireframe(
-                camera,
-                new Transform(Vector2.Zero, Vector2.One, 0),
+            Debug.Draw.WireRect(
+                app,
                 new Rectangle(
                     new Vector2(bvh.Branches.Aabbs.MinX[i], bvh.Branches.Aabbs.MinY[i]), 
                     new Vector2(bvh.Branches.Aabbs.MaxX[i], bvh.Branches.Aabbs.MaxY[i])
                 ), 
-                colour
+                colour,
+                Graphics.DrawSpace.World
             );
         }
 

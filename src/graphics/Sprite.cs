@@ -34,7 +34,7 @@ public struct Sprite
     /// <summary>
     ///     The coordinate space to draw in. 
     /// </summary>
-    public WorldSpace WorldSpace;
+    public DrawSpace DrawSpace;
 
     /// <summary>
     ///     The layer depth.
@@ -51,7 +51,7 @@ public struct Sprite
     /// <param name="textureId">The id of texture used when drawing.</param>
     /// <param name="worldSpace">The coordinate space this sprite will be drawn in.</param>
     /// <param name="layerDepth">The layer depth.</param>
-    public Sprite(Rectangle sourceRectangle, Colour colourTint, Vector2 origin, Vector2 scale, int textureId, WorldSpace worldSpace,
+    public Sprite(Rectangle sourceRectangle, Colour colourTint, Vector2 origin, Vector2 scale, int textureId, DrawSpace worldSpace,
         float layerDepth
     )
     {
@@ -60,7 +60,7 @@ public struct Sprite
         Origin = origin;
         Scale = scale;
         TextureId = textureId;
-        WorldSpace = worldSpace;
+        DrawSpace = worldSpace;
         LayerDepth = layerDepth;
     }
 }

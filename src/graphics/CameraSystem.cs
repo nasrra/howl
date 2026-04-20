@@ -1,4 +1,5 @@
 using System;
+using Howl.Debug;
 using Howl.Ecs;
 using Howl.Generic;
 using Howl.Math;
@@ -121,5 +122,35 @@ public static class CameraSystem
             ref Camera camera = ref ComponentArray.GetDataUnsafe(cameras, cameras.Active[i]);
             camera.UpdateProjectionMatrix(outputResolutionAspectRatio);
         }
+    }
+
+    /// <summary>
+    ///     Gets the camera assigned to the draw space.
+    /// </summary>
+    /// <param name="ecs">the ecs state containing the camera.</param>
+    /// <param name="drawSpace">the draw space of the camera to retrieve.</param>
+    /// <param name="camera">output for the found camera.</param>
+    /// <returns>true, if the camera was successfully found, otherwise false.</returns>
+    public static bool GetDrawSpaceCamera(EcsState ecs, DrawSpace drawSpace, ref Camera camera)
+    {
+        GenIdResult result = default;
+        GenId genid = drawSpace switch
+        {
+            DrawSpace.World => MainCameraId,
+            DrawSpace.Gui => GuiCameraId,
+            _ => default
+        };
+
+        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
+
+        ref Camera c = ref ComponentArray.GetData(cameras, ecs, genid, ref result);
+        if (result != GenIdResult.Ok)
+        {
+            Log.WriteLine(LogType.Warn, $"{drawSpace} camera is a stale gen id");
+            return false;
+        }
+
+        camera = c;
+        return true;
     }
 }

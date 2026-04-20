@@ -121,60 +121,51 @@ public static class TeloPhysics
         state.FixedUpdateStepStopwatch.Stop();
     }
 
-    public static void Draw(EcsState ecs, TeloPhysicsState state, float deltaTime)
+    public static void Draw(HowlApp app, TeloPhysicsState state, float deltaTime)
     {
-        GenIdResult result = default;
-        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
-        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, CameraSystem.MainCameraId, ref result);
-
-        if(result != GenIdResult.Ok)
-        {
-            return;
-        }
-
         if(state.DrawBvhBranches)
         {
-            BoundingVolumeHierarchy.DrawBranches(camera, state.Bvh, Colour.Yellow);
+            BoundingVolumeHierarchy.DrawBranches(app, state.Bvh, Colour.Yellow);
         }
 
         if (state.DrawColliderWireframes)
         {
-            DrawCirclePhysicsBodies(camera, state.Centroids, state.WorldRadii, state.Flags, state.DynamicPhysicsBodyColour, 
+            DrawCirclePhysicsBodies(app, state.Centroids, state.WorldRadii, state.Flags, state.DynamicPhysicsBodyColour, 
                 state.KinematicPhysicsBodyColour, state.TriggeredPhysicsBodyColour
             );
 
-            DrawPolygonPhysicsBodies(camera, state.WorldVertices, state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, 
+            DrawPolygonPhysicsBodies(app, state.WorldVertices, state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, 
                 state.TriggerPhysicsBodyColour 
             );
         }
 
         if (state.DrawCollisionInformation)
         {
-            DrawCollisionInformation(camera, state.CollisionManifold.Collisions, state.CollisionOwnerColour, state.CollisionOtherColour, 
+            DrawCollisionInformation(app, state.CollisionManifold.Collisions, state.CollisionOwnerColour, state.CollisionOtherColour, 
                 state.ContactPointColour, state.NormalColour, state.CollisionManifold.Collisions.Count
             );
         }
 
         if (state.DrawAABBWireframes)
         {
-            DrawAabbs(camera, state.MinAABBVertices, state.MaxAABBVertices, state.Flags, state.AABBColour);            
+            DrawAabbs(app, state.MinAABBVertices, state.MaxAABBVertices, state.Flags, state.AABBColour);            
         }
 
         if (state.DrawLinearVelocities)
         {
-            DrawLinearVelocities(camera, state.LinearVelocities, state.Centroids, state.Flags, state.LinearVelocityColour, 
+            DrawLinearVelocities(app, state.LinearVelocities, state.Centroids, state.Flags, state.LinearVelocityColour, 
                 state.MaxPhysicsBodyCount
             );
         }
 
         if (state.DrawPositions)
         {
-            DrawPositions(camera, state.Transforms.Positions, state.Flags, state.PositionColour, state.MaxPhysicsBodyCount);
+            DrawPositions(app, state.Transforms.Positions, state.Flags, state.PositionColour, state.MaxPhysicsBodyCount);
         }
 
         if (state.DrawCentroids)
         {
-            DrawCentroids(camera, state.Centroids, state.Flags, state.CentroidColour, state.MaxPhysicsBodyCount);
+            DrawCentroids(app, state.Centroids, state.Flags, state.CentroidColour, state.MaxPhysicsBodyCount);
         }
     }
 
@@ -1728,7 +1719,7 @@ public static class TeloPhysics
     /// <param name="dynamicColour">the colour to draw any 'dynamic' bodies with.</param>
     /// <param name="kinematicColour">the colour to draw any 'kinematic' bodies with.</param>
     /// <param name="triggerColour">the colour to draw any 'trigger' bodies with.</param>
-    public static void DrawCirclePhysicsBodies(Camera camera, Soa_Vector2 centroids, Span<float> radii, Span<PhysicsBodyFlags> flags, 
+    public static void DrawCirclePhysicsBodies(HowlApp app, Soa_Vector2 centroids, Span<float> radii, Span<PhysicsBodyFlags> flags, 
         Colour dynamicColour, Colour kinematicColour, Colour triggerColour
     )
     {
@@ -1760,9 +1751,9 @@ public static class TeloPhysics
                 drawColour = dynamicColour;
             }
 
-            Debug.Draw.WireframeCircle(drawColour, camera.Position.X, camera.Position.Y, camera.Zoom,
-                centroidX[i], centroidY[i], radii[i]
-            );
+            Circle shape = new(centroidX[i], centroidY[i], radii[i]);
+
+            Debug.Draw.WireCircle(app, shape, drawColour, DrawSpace.World);
         }    
     }
 
@@ -1775,7 +1766,7 @@ public static class TeloPhysics
     /// <param name="dynamicColour">the colour to draw 'dynamic' bodies with.</param>
     /// <param name="kinematicColour">the colour to draw 'kinematic' bodies with.</param>
     /// <param name="triggerColour">the colour to draw 'trigger' bodies with.</param>
-    public static void DrawPolygonPhysicsBodies(Camera camera, FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags, 
+    public static void DrawPolygonPhysicsBodies(HowlApp app, FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags, 
         Colour dynamicColour, Colour kinematicColour, Colour triggerColour
     )
     {
@@ -1808,12 +1799,11 @@ public static class TeloPhysics
             }
 
             PhysicsBody.GetPolygonVerticesUnsafe(vertices, i, ref polyVertsX, ref polyVertsY);
-
-            Debug.Draw.WireframePolygon(drawColour, camera, polyVertsX, polyVertsY, polyVertsX.Length);
+            Debug.Draw.WirePoly(app, polyVertsX, polyVertsY, drawColour, DrawSpace.World);
         }        
     }
 
-    public static void DrawCollisionInformation(Camera camera, Soa_Collision collisions, Colour ownerColour, Colour otherColour, Colour contactPointColour, 
+    public static void DrawCollisionInformation(HowlApp app, Soa_Collision collisions, Colour ownerColour, Colour otherColour, Colour contactPointColour, 
         Colour normalColour, int count
     )
     {
@@ -1837,9 +1827,11 @@ public static class TeloPhysics
         float normalY;
         float ownerCentroidX;
         float ownerCentroidY;
-
         float otherCentroidX;
         float otherCentroidY;
+        
+        Math.Vector2 normalStart = default;
+        Math.Vector2 normalEnd = default;
 
         for(int i = 0; i < count; i++)
         {
@@ -1858,16 +1850,16 @@ public static class TeloPhysics
             otherCentroidY = otherCentroidsY[i];
 
             // draw centroids.
-            Debug.Draw.WireframeCircle(camera, new Circle(ownerCentroidX, ownerCentroidY, 0.1f), ownerColour);
-            Debug.Draw.WireframeCircle(camera, new Circle(otherCentroidX, otherCentroidY, 0.1f), otherColour);
+            Debug.Draw.WireCircle(app, new Circle(ownerCentroidX, ownerCentroidY, 0.1f), ownerColour, DrawSpace.World);
+            Debug.Draw.WireCircle(app, new Circle(otherCentroidX, otherCentroidY, 0.1f), otherColour, DrawSpace.World);
 
             // draw contact point 1.
-            Debug.Draw.WireframeCircle(camera, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour);
-            
+            Debug.Draw.WireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
+
             // draw normal from contact point. 
-            Debug.Draw.Line(normalColour, camera.Zoom, camera.Position.X, camera.Position.Y, 
-                contactPointX, contactPointY, contactPointX + normalX, contactPointY + normalY
-            );
+            normalStart = new Math.Vector2(contactPointX, contactPointY);
+            normalEnd = normalStart + new Math.Vector2(normalX, normalY);
+            Debug.Draw.Line(app, normalColour, normalStart, normalEnd, DrawSpace.World);
 
             if (twoContactPoints[i])
             {
@@ -1876,18 +1868,18 @@ public static class TeloPhysics
                 contactPointY = secondContactPointsY[i];
 
                 // draw contact point 2.
-                Debug.Draw.WireframeCircle(camera, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour);
-                
-                // draw normal from contact point.
-                Debug.Draw.Line(normalColour, camera.Zoom, camera.Position.X, camera.Position.Y, 
-                    contactPointX, contactPointY, contactPointX + normalX, contactPointY + normalY
-                );
+                Debug.Draw.WireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
+
+                // draw normal from contact point. 
+                normalStart = new Math.Vector2(contactPointX, contactPointY);
+                normalEnd = normalStart + new Math.Vector2(normalX, normalY);
+                Debug.Draw.Line(app, normalColour, normalStart, normalEnd, DrawSpace.World);
             }
         }
     }
 
-    public static void DrawLinearVelocities(Camera camera, Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, Colour colour, 
-        int count
+    public static void DrawLinearVelocities(HowlApp app, Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, 
+        Colour colour, int count
     )
     {
         // hoisting invariance.
@@ -1909,13 +1901,11 @@ public static class TeloPhysics
             float endX = startX + linearVelocitiesX[i];
             float endY = startY + linearVelocitiesY[i];
 
-            Debug.Draw.Line(colour, camera.Zoom, camera.Position.X, camera.Position.Y,
-                startX, startY, endX, endY
-            );
+            Debug.Draw.Line(app, colour, new Math.Vector2(startX, startY), new Math.Vector2(endX, endY), DrawSpace.World);
         }
     }
 
-    public static void DrawPositions(Camera camera, Soa_Vector2 positions, Span<PhysicsBodyFlags> flags, Colour colour, int count)
+    public static void DrawPositions(HowlApp app, Soa_Vector2 positions, Span<PhysicsBodyFlags> flags, Colour colour, int count)
     {
         // hoisting invariance.
         Span<float> positionsX = positions.X;
@@ -1929,13 +1919,11 @@ public static class TeloPhysics
                 continue;
             }
 
-            Debug.Draw.WireframeCircle(colour, camera.Position.X, camera.Position.Y, camera.Zoom,
-                positionsX[i], positionsY[i], 0.1f
-            );
+            Debug.Draw.WireCircle(app, new Circle(positionsX[i], positionsY[i], 0.1f), colour, DrawSpace.World);
         }
     }
 
-    public static void DrawCentroids(Camera camera, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, Colour colour, int count)
+    public static void DrawCentroids(HowlApp app, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, Colour colour, int count)
     {
         // hoisting invariance.
         Span<float> centroidsX = centroids.X;
@@ -1949,13 +1937,11 @@ public static class TeloPhysics
                 continue;
             }
 
-            Debug.Draw.WireframeCircle(colour, camera.Position.X, camera.Position.Y, camera.Zoom,
-                centroidsX[i], centroidsY[i], 0.1f
-            );
+            Debug.Draw.WireCircle(app, new Circle(centroidsX[i], centroidsY[i], 0.1f), colour, DrawSpace.World);
         }
     }
 
-    public static void DrawAabbs(Camera camera, Soa_Vector2 min, Soa_Vector2 max, Span<PhysicsBodyFlags> flags, Colour colour)
+    public static void DrawAabbs(HowlApp app, Soa_Vector2 min, Soa_Vector2 max, Span<PhysicsBodyFlags> flags, Colour colour)
     {
         for(int i = 0; i < flags.Length; i++)
         {
@@ -1967,7 +1953,7 @@ public static class TeloPhysics
             float maxX = max.X[i];
             float maxY = max.Y[i];
 
-            Debug.Draw.WireframePolygon(colour, camera, [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], 4);
+            Debug.Draw.WirePoly(app, [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], colour, DrawSpace.World);
         }
     }
 }

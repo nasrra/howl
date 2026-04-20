@@ -18,7 +18,7 @@ public class Text4096Test
         GenIndex fontGenIndex = new(0,1);
 
         Text4096 text = new(
-            new TextParameters(colour, offset, fontGenIndex, WorldSpace.World), 
+            new TextParameters(colour, offset, fontGenIndex, DrawSpace.World), 
             Text
         );
 
@@ -26,7 +26,7 @@ public class Text4096Test
         Assert.Equal(colour, text.TextParameters.Colour);
         Assert.Equal(offset, text.TextParameters.Offset);
         Assert.Equal(fontGenIndex, text.TextParameters.FontGenIndex);
-        Assert.Equal(WorldSpace.World, text.TextParameters.WorldSpace);
+        Assert.Equal(DrawSpace.World, text.TextParameters.WorldSpace);
 
         // Verify characters.
         Assert.Equal(4096, text.Length);
@@ -39,7 +39,7 @@ public class Text4096Test
     public unsafe void SetCharacters_Test()
     {
         Text16 text = new Text16(
-            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), DrawSpace.World),
             ""
         );
         Span<char> characters = stackalloc char[Text16.MaxCharacters];
@@ -64,7 +64,7 @@ public class Text4096Test
     public unsafe void AppendCharacters_Test()
     {
         Text4096 text = new Text4096(
-            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), DrawSpace.World),
             ""
         );
 
@@ -90,7 +90,7 @@ public class Text4096Test
     public void AsSpanUsed_Test()
     {
         Text4096 text = new Text4096(
-            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), DrawSpace.World),
             ""
         );
         TextProc.AppendCharacters(ref text, "Tools");

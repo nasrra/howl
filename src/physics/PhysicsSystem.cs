@@ -34,7 +34,7 @@ public static class PhysicsSystem
     /// <param name="deltaTime">thet ime that has passed since the previous tick.</param>
     public static void Draw(HowlApp app, float deltaTime)
     {
-        TeloPhysics.Draw(app.EcsState, app.TeloPhysicsState, deltaTime);
+        TeloPhysics.Draw(app, app.TeloPhysicsState, deltaTime);
     }
 
     /// <summary>

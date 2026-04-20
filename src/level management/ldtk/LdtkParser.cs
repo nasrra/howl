@@ -172,7 +172,7 @@ public static class LdtkParser
                 float unitFactored = 1f/pixelsPerUnit;
 
                 Sprite sprite = Renderer.ConstructSprite(app, Colour.White, sourceRect, new Vector2(1,1), 
-                    tileMapFilePath, 0, SpriteOrigin.TopLeft, WorldSpace.World
+                    tileMapFilePath, 0, SpriteOrigin.TopLeft, DrawSpace.World
                 );
 
                 ComponentArray.Allocate(sprites, ecs.Entities, genId, sprite);

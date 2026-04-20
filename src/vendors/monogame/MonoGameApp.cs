@@ -67,6 +67,11 @@ public class MonoGameApp : Game
     /// </summary>
     public StringBuilder StringBuilder;
 
+    /// <summary>
+    ///     The Debug Draw state.
+    /// </summary>
+    public DebugDrawState DebugDrawState;
+
     public GenIndexAllocator SpriteFontIds;
     public GenIndexList<SpriteFont> SpriteFonts;
 
@@ -117,8 +122,20 @@ public class MonoGameApp : Game
     /// <param name="backBufferHeight">the height of the back buffer.</param>
     /// <param name="outputResolutionHeight">the width of the render target output resolution.</param>
     /// <param name="outputResolutionWidth">the height of the render target output resolution.</param>
-    /// <exception cref="Exception"></exception>
-    public MonoGameApp(int backBufferWidth, int backBufferHeight, int outputResolutionWidth, int outputResolutionHeight, int maxTextureCount)
+
+
+    /// <summary>
+    ///     Creates a new Moongame app instance.
+    /// </summary>
+    /// <param name="backBufferWidth">the width of the back buffer.</param>
+    /// <param name="backBufferHeight">the height of the back buffer.</param>
+    /// <param name="outputResolutionHeight">the width of the render target output resolution.</param>
+    /// <param name="outputResolutionWidth">the height of the render target output resolution.</param>
+    /// <param name="maxTextureCount">the maximum amount of textures that can be registered to the texture manager.</param>
+    /// <param name="debugDrawMaxPolygons">the maximum amount of debug polygons that can be drawn.</param>
+    public MonoGameApp(int backBufferWidth, int backBufferHeight, int outputResolutionWidth, int outputResolutionHeight, int maxTextureCount,
+        int debugDrawMaxPolygons
+    )
     {
         IsMouseVisible = true;
         GraphicsDeviceManager = new(this);
@@ -128,6 +145,7 @@ public class MonoGameApp : Game
         
         SpriteBatch = new SpriteBatch(GraphicsDevice);
         EffectManager = new(this);
+        DebugDrawState = new DebugDrawState(debugDrawMaxPolygons*3);
 
         RendererSystem.SetBackBufferResolution(this, backBufferWidth, backBufferHeight);
         SetFinalRenderTargetResolution(this, outputResolutionWidth, outputResolutionHeight);
@@ -402,7 +420,7 @@ public class MonoGameApp : Game
     /// <param name="worldSpace">whether or not the sprite is in world space.</param>
     /// <returns>the newly constructed sprite.</returns>
     public static Sprite ConstructSprite(TextureManagerState state, Colour colourTint, Howl.Math.Shapes.Rectangle sourceRectangle, 
-        Howl.Math.Vector2 scale, string textureFilePath, float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+        Howl.Math.Vector2 scale, string textureFilePath, float layerDepth, SpriteOrigin spriteOrigin, DrawSpace worldSpace
     )
     {
         int textureIndex = TextureManager.GetTextureIndex(state, textureFilePath);
@@ -426,7 +444,7 @@ public class MonoGameApp : Game
     /// <returns>the newly constructed sprite.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Sprite ConstructSprite(TextureManagerState state, Colour colourTint, Howl.Math.Shapes.Rectangle sourceRectangle, 
-        Howl.Math.Vector2 scale, int textureIndex, float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+        Howl.Math.Vector2 scale, int textureIndex, float layerDepth, SpriteOrigin spriteOrigin, DrawSpace worldSpace
     )
     {
         if(state.Textures[textureIndex] == null)
@@ -490,6 +508,12 @@ public class MonoGameApp : Game
         // this is fine as SpriteFont does not implement a Dispose method.
         SpriteFonts.Dispose();
         SpriteFonts = null;
+
+        DebugDraw.Dispose(DebugDrawState);
+        DebugDrawState = null;
+
+        TextureManagerState.Dispose(Textures);
+        Textures = null;
 
         UpdateCallback = null;
         RenderCallback = null;

@@ -16,7 +16,7 @@ public class Text16Test
         GenIndex fontGenIndex = new(0,1);
 
         Text16 text = new(
-            new TextParameters(colour, offset, fontGenIndex, WorldSpace.World), 
+            new TextParameters(colour, offset, fontGenIndex, DrawSpace.World), 
             ['H','e','l','l','o',' ','W','o','r','l','d','.']
         );
 
@@ -24,7 +24,7 @@ public class Text16Test
         Assert.Equal(colour, text.TextParameters.Colour);
         Assert.Equal(offset, text.TextParameters.Offset);
         Assert.Equal(fontGenIndex, text.TextParameters.FontGenIndex);
-        Assert.Equal(WorldSpace.World, text.TextParameters.WorldSpace);
+        Assert.Equal(DrawSpace.World, text.TextParameters.WorldSpace);
 
         // Verify characters.
         Assert.Equal(12, text.Length);
@@ -37,7 +37,7 @@ public class Text16Test
     public unsafe void SetCharacters_Test()
     {
         Text16 text = new Text16(
-            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), DrawSpace.World),
             ""
         );
         Span<char> characters = stackalloc char[Text16.MaxCharacters];
@@ -62,7 +62,7 @@ public class Text16Test
     public unsafe void AppendCharacters_Test()
     {
         Text16 text = new Text16(
-            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), DrawSpace.World),
             ""
         );
 
@@ -89,7 +89,7 @@ public class Text16Test
     public void AsSpanUsed_Test()
     {
         Text16 text = new Text16(
-            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), WorldSpace.World),
+            new TextParameters(Colour.White, Vector2.Zero, new GenIndex(0,0), DrawSpace.World),
             ""
         );
         TextProc.AppendCharacters(ref text, "Tools");

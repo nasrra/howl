@@ -194,11 +194,13 @@ public unsafe class HowlApp
     /// </summary>
     /// <param name="app"></param>
     /// <param name="resolution"></param>
-    public static void InitialiseMonoGame(HowlApp app, Resolution resolution, int maxTextures)
+    public static void InitialiseMonoGame(HowlApp app, Resolution resolution, int maxTextures, int debugDrawMaxPolygons)
     {
         if (app.MonoGameApp == null)
         {
-            app.MonoGameApp = new(resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.OutputWidth, resolution.OutputHeight, maxTextures);
+            app.MonoGameApp = new(resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.OutputWidth, 
+                resolution.OutputHeight, maxTextures, debugDrawMaxPolygons
+            );
             
             // THIS WILL NEED TO CHANGE.
             

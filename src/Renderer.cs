@@ -181,7 +181,7 @@ public static class Renderer
     /// <param name="worldSpace">whether or not the sprite is in world space.</param>
     /// <returns>the newly constructed sprite.</returns>
     public static Sprite ConstructSprite(HowlApp app, Colour colourTint, Math.Shapes.Rectangle sourceRectangle, Vector2 scale, int textureId, 
-        float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+        float layerDepth, SpriteOrigin spriteOrigin, DrawSpace worldSpace
     )
     {
         return MonoGameApp.ConstructSprite(app.MonoGameApp.Textures, colourTint, sourceRectangle, scale, textureId, 
@@ -202,7 +202,7 @@ public static class Renderer
     /// <param name="worldSpace"></param>
     /// <returns></returns>
     public static Sprite ConstructSprite(HowlApp app, Colour colourTint, Math.Shapes.Rectangle sourceRectangle, Vector2 scale, 
-        string textureFilePath, float layerDepth, SpriteOrigin spriteOrigin, WorldSpace worldSpace
+        string textureFilePath, float layerDepth, SpriteOrigin spriteOrigin, DrawSpace worldSpace
     )
     {
         return MonoGameApp.ConstructSprite(app.MonoGameApp.Textures, colourTint, sourceRectangle, scale, textureFilePath, 

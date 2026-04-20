@@ -16,9 +16,9 @@ public class GamePad : IGamePad
 
     public bool IsConnected => currentState.IsConnected;
 
-    public Vector2 ThumbstickLeft => currentState.ThumbSticks.Left.ToHowl();
+    public Vector2 ThumbstickLeft => Vector2Extensions.ToHowl(currentState.ThumbSticks.Left);
 
-    public Vector2 ThumbstickRight => currentState.ThumbSticks.Right.ToHowl();
+    public Vector2 ThumbstickRight => Vector2Extensions.ToHowl(currentState.ThumbSticks.Right);
 
     public float TriggerLeft => currentState.Triggers.Left;
 

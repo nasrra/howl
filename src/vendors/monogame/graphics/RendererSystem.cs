@@ -56,11 +56,11 @@ public static class RendererSystem
         monoGameApp.GraphicsDevice.SetRenderTarget(monoGameApp.FinalRenderTarget);                    
         monoGameApp.GraphicsDevice.Clear(mainCamera.ClearColour.ToMonoGame());
         
-        DrawSprites(ecs, monoGameApp, ref mainCamera, WorldSpace.World);
-        DrawTexts(ecs, monoGameApp, ref mainCamera, WorldSpace.World);
+        DrawSprites(ecs, monoGameApp, ref mainCamera, DrawSpace.World);
+        DrawTexts(ecs, monoGameApp, ref mainCamera, DrawSpace.World);
         DrawPrimitives(monoGameApp);
-        DrawSprites(ecs, monoGameApp, ref guiCamera, WorldSpace.Gui);
-        DrawTexts(ecs, monoGameApp, ref guiCamera, WorldSpace.Gui);
+        DrawSprites(ecs, monoGameApp, ref guiCamera, DrawSpace.Gui);
+        DrawTexts(ecs, monoGameApp, ref guiCamera, DrawSpace.Gui);
         
         monoGameApp.GraphicsDevice.SetRenderTarget(null);
 
@@ -73,7 +73,7 @@ public static class RendererSystem
         );
         monoGameApp.SpriteBatch.Draw(
             monoGameApp.FinalRenderTarget,
-            monoGameApp.DestinationRectangle.ToMonoGame(), // this will probably need to be changed for calc dest rectangle.
+            RectangleExtensions.ToMonoGame(monoGameApp.DestinationRectangle), // this will probably need to be changed for calc dest rectangle.
             Color.White
         );
         monoGameApp.SpriteBatch.End();
@@ -86,7 +86,7 @@ public static class RendererSystem
     /// <param name="monoGameApp">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
     /// <param name="worldSpace">filters sprites; drawing sprites that are within the specified world space.</param>
-    private static void DrawSprites(EcsState ecs, MonoGameApp monoGameApp, ref Camera camera, WorldSpace worldSpace)
+    private static void DrawSprites(EcsState ecs, MonoGameApp monoGameApp, ref Camera camera, DrawSpace worldSpace)
     {
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
         ComponentArray<Sprite> sprites = EcsState.GetComponents<Sprite>(ecs);
@@ -107,7 +107,7 @@ public static class RendererSystem
             GenId genId = sprites.Active[i];
             
             ref Sprite sprite = ref ComponentArray.GetDataUnsafe(sprites, genId);
-            if(sprite.WorldSpace != worldSpace)
+            if(sprite.DrawSpace != worldSpace)
             {
                 continue;
             }
@@ -142,43 +142,45 @@ public static class RendererSystem
 
         monoGameApp.EffectManager.DefaultSpriteEffect.Texture = texture;
 
-        monoGameApp.SpriteBatch.Draw(texture, new(position.X, position.Y), sprite.SourceRectangle.ToMonoGame(), sprite.ColourTint.ToMonoGame(), 
-            -transform.Rotation, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
-            sprite.Origin.ToMonogame(), (sprite.Scale * transform.Scale).ToMonogame(), SpriteEffects.None, sprite.LayerDepth
+        monoGameApp.SpriteBatch.Draw(texture, new(position.X, position.Y), RectangleExtensions.ToMonoGame(sprite.SourceRectangle),
+            sprite.ColourTint.ToMonoGame(), -transform.Rotation, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
+            Vector2Extensions.ToMonoGame(sprite.Origin), Vector2Extensions.ToMonoGame(sprite.Scale * transform.Scale), 
+            SpriteEffects.None, sprite.LayerDepth
         );
     }
 
     /// <summary>
     /// Draws all stored primitive shapes to the next frame/screen, clearing the internal primitives cache when drawn for the frame/screen after. 
     /// </summary>
-    private static void DrawPrimitives(MonoGameApp monoGameApp)
+    private static void DrawPrimitives(MonoGameApp app)
     {
-        if(Debug.Draw.PrimitiveIndices.Count == 0 && Debug.Draw.PrimitiveVertices.Count == 0)
+        DebugDrawState state = app.DebugDrawState;
+        if(state.PrimitiveIndices.Count == 0 || state.PrimitiveVertices.Count == 0)
         {
             return;
         }
 
-        if(monoGameApp.GraphicsDevice == null)
+        if(app.GraphicsDevice == null)
         {
             return;
         }
 
-        foreach(EffectPass pass in monoGameApp.EffectManager.PrimitivesEffect.CurrentTechnique.Passes)
+        foreach(EffectPass pass in app.EffectManager.PrimitivesEffect.CurrentTechnique.Passes)
         {
             pass.Apply();            
-            monoGameApp.GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
+            app.GraphicsDevice.DrawUserIndexedPrimitives(
                 PrimitiveType.TriangleList,
-                Debug.Draw.PrimitiveVertices.ToMonoGameArray(),
+                state.PrimitiveVertices.Data,
                 0,
-                Debug.Draw.PrimitiveVertices.Count,
-                Debug.Draw.PrimitiveIndices.ToArray(),
+                state.PrimitiveVertices.Count,
+                state.PrimitiveIndices.Data,
                 0,
-                Debug.Draw.PrimitiveIndices.Count / 3
+                state.PrimitiveIndices.Count / 3
             );
         }
 
         // clear cache so primitive data is not persistent between draw calls/frames.
-        Debug.Draw.Clear();
+        DebugDraw.Clear(state);
     }
 
     /// <summary>
@@ -260,7 +262,7 @@ public static class RendererSystem
     /// <param name="monoGameApp">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
     /// <param name="worldSpace">filters text; drawing texts that are within the specified world space.</param>
-    public static void DrawTexts(EcsState ecs, MonoGameApp monoGameApp, ref Camera camera, WorldSpace worldSpace)
+    public static void DrawTexts(EcsState ecs, MonoGameApp monoGameApp, ref Camera camera, DrawSpace worldSpace)
     {
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
         ComponentArray<Text16> text16 = EcsState.GetComponents<Text16>(ecs);
@@ -353,10 +355,10 @@ public static class RendererSystem
         monoGameApp.SpriteBatch.DrawString(
             font.Value, 
             monoGameApp.StringBuilder, 
-            position.ToMonogame(), 
+            Vector2Extensions.ToMonoGame(position), 
             textParameters.Colour.ToMonoGame(), 
             -transform.Rotation, 
-            textParameters.Offset.ToMonogame(), 
+            Vector2Extensions.ToMonoGame(textParameters.Offset), 
             MathF.Max(transform.Scale.X, transform.Scale.Y), 
             SpriteEffects.None, 
             0

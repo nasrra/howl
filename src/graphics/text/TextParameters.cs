@@ -23,7 +23,7 @@ public struct TextParameters
     /// <summary>
     /// Gets and sets the world space to draw in.
     /// </summary>
-    public WorldSpace WorldSpace;
+    public DrawSpace WorldSpace;
 
     /// <summary>
     /// Constructs a FontParamters.
@@ -32,7 +32,7 @@ public struct TextParameters
     /// <param name="offset">The offset - in pixels - when drawing.</param>
     /// <param name="fontGenIndex">The font to use when drawing.</param>
     /// <param name="worldSpace">The world space to draw in.</param>
-    public TextParameters(Colour colour, Vector2 offset, GenIndex fontGenIndex, WorldSpace worldSpace)
+    public TextParameters(Colour colour, Vector2 offset, GenIndex fontGenIndex, DrawSpace worldSpace)
     {
         Colour = colour;
         Offset = offset;

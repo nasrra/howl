@@ -12,7 +12,7 @@ public static class RectangleExtensions
     /// <param name="rectangle">The MonoGame rectangle to convert.</param>
     /// <returns>The resultant Howl rectangle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Howl.Math.Shapes.Rectangle ToHowl(this Microsoft.Xna.Framework.Rectangle rectangle)
+    public static Howl.Math.Shapes.Rectangle ToHowl(Microsoft.Xna.Framework.Rectangle rectangle)
     {   
         return new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
     }
@@ -25,7 +25,7 @@ public static class RectangleExtensions
     /// <param name="rectangle">The Howl rectangle to convert.</param>
     /// <returns>The resultant MonoGame rectangle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Microsoft.Xna.Framework.Rectangle ToMonoGame(this Howl.Math.Shapes.Rectangle rectangle)
+    public static Microsoft.Xna.Framework.Rectangle ToMonoGame(Howl.Math.Shapes.Rectangle rectangle)
     {
         return new((int)rectangle.X, (int)rectangle.Y, (int)rectangle.Width, (int)rectangle.Height);
     }   
