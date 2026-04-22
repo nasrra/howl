@@ -77,6 +77,8 @@ public class MonoGameApp : Game
 
     public TextureManagerState Textures;
 
+    public Mouse Mouse;
+
     /// <summary>
     ///     Whether this instance has been disposed of.
     /// </summary>
@@ -155,6 +157,8 @@ public class MonoGameApp : Game
         SpriteFontIds = new();
         SpriteFonts = new();
         Textures = new(maxTextureCount);
+
+        Mouse = new();
 
         // set this to the same directory as the csproj as loading is handled via full paths fomr AssetManager.
         Content.RootDirectory = "";
@@ -341,7 +345,9 @@ public class MonoGameApp : Game
     /// <returns>the position of the mouse in world-space.</returns>
     public static Howl.Math.Vector2 GetMouseWorldPosition(MonoGameApp app, IMouse mouse)
     {
-        ref readonly Camera camera = ref CameraSystem.MainCamera;
+        Camera camera = default;
+        CameraSystem.GetDrawSpaceCamera(app, DrawSpace.World, ref camera);
+
         Howl.Math.Vector2Int renderTargetPosition = mouse.GetPositionRelative(app.DestinationRectangle, app.OutputResolution);
         
         // offset by half the output resolution as the world camera (0,0) is at the center of the screen.

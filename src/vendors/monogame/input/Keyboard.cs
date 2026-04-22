@@ -2,56 +2,61 @@ using Howl.Input;
 
 namespace Howl.Vendors.MonoGame.Input;
 
-public class Keyboard : IKeyboard
+public class Keyboard
 {
 
     /// <summary>
-    /// The state of the keyboard input dureing the previous update cycle.
+    ///     Updates the state information for a keyboard.
     /// </summary>
-    public Microsoft.Xna.Framework.Input.KeyboardState previousState;
-
+    /// <param name="state">the keyboard state to update.</param>
+    public static void Update(KeyboardState state)
+    {
+        state.PreviousState = state.CurrentState;
+        state.CurrentState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
+    }
 
     /// <summary>
-    /// The state of the keyboard input durring the current update cycle.
+    ///     Checks whether a specified key is down.
     /// </summary>
-    private Microsoft.Xna.Framework.Input.KeyboardState currentState;
+    /// <param name="state">the keyboard state to check.</param>
+    /// <param name="key">the specified keycode.</param>
+    /// <returns>true, if the key is down; otherwise false.</returns>
+    public bool IsKeyDown(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
+    {
+        return state.CurrentState.IsKeyDown(key);
+    }
 
     /// <summary>
-    /// Creates a new Keyboard Info instance.
+    ///     Checks whether the specified key is up.
     /// </summary>
-    public Keyboard()
+    /// <param name="state">the keyboard state to check.</param>
+    /// <param name="key">the specified keycode.</param>
+    /// <returns>true, if the key is up; otherwise false. </returns>
+    public bool IsKeyUp(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
     {
-        currentState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
-        previousState = currentState;
+        return state.CurrentState.IsKeyDown(key);
     }
 
-    public void Update()
+    /// <summary>
+    ///     Checks whether the specified key has just been pressed.
+    /// </summary>
+    /// <param name="state">the keyboard state to check.</param>
+    /// <param name="key">the specified keycode.</param>
+    /// <returns>true, if the key has just been pressed; otherwise false.</returns>
+    public bool IsKeyJustPressed(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
     {
-        previousState = currentState;
-        currentState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
+        return state.PreviousState.IsKeyUp(key) && state.CurrentState.IsKeyDown(key);
     }
 
-
-    public bool IsKeyDown(Key key)
+    /// <summary>
+    ///     Checks whether the specified key has just been released.
+    /// </summary>
+    /// <param name="state">the keyboard state to check.</param>
+    /// <param name="key">the specified keycode.</param>
+    /// <returns>true, if the key has just been released; otherwise false.</returns>
+    public bool IsKeyJustReleased(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
     {
-        return currentState.IsKeyDown(key.ToMonoGame());
-    }
-
-    public bool IsKeyUp(Key key)
-    {
-        return currentState.IsKeyUp(key.ToMonoGame());
-    }
-
-    public bool IsKeyJustPressed(Key key)
-    {
-        Microsoft.Xna.Framework.Input.Keys keys = key.ToMonoGame();
-        return previousState.IsKeyUp(keys) && currentState.IsKeyDown(keys);
-    }
-
-    public bool IsKeyJustReleased(Key key)
-    {
-        Microsoft.Xna.Framework.Input.Keys keys = key.ToMonoGame();
-        return previousState.IsKeyDown(keys) && currentState.IsKeyUp(keys);
+        return state.PreviousState.IsKeyDown(key) && state.CurrentState.IsKeyUp(key);
     }
 
 }

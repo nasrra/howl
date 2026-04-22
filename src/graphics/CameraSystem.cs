@@ -8,27 +8,7 @@ using static Howl.Ecs.GenIndexListProc;
 namespace Howl.Graphics;
 
 public static class CameraSystem
-{
-    /// <summary>
-    /// Gets and sets the main camera.
-    /// </summary>
-    private static Camera mainCamera;
-
-    /// <summary>
-    /// Gets a copy of the main camera data.
-    /// </summary>
-    public static ref readonly Camera MainCamera => ref mainCamera;
-
-    /// <summary>
-    /// Gets and sets the gui camera.
-    /// </summary>
-    private static Camera guiCamera;
-
-    /// <summary>
-    /// Gets a copy of the gui camera data.
-    /// </summary>
-    public static ref readonly Camera GuiCamera => ref guiCamera;
-    
+{    
     /// <summary>
     /// Gets and sets the main camera id.
     /// </summary>
@@ -57,58 +37,8 @@ public static class CameraSystem
     public static void Update(EcsState ecs, float outputResolutionAspectRatio)
     {
         UpdateProjectionMatrices(ecs, outputResolutionAspectRatio);  
-        
-        // order matters here:
-        // updating the main camera's copies the data of the stored camera
-        // in the component registry; make sure to update the projection matrices 
-        // before  copying.
-        UpdateMainCamera(ecs);
-        UpdateGuiCamera(ecs);
     }
-
-    /// <summary>
-    /// Updates the cached main camera.
-    /// </summary>
-    /// <param name="ecs">The ecs state that stores the camera.</param>
-    private static void UpdateMainCamera(EcsState ecs)
-    {
-        GenIdResult result = default;
-        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
-        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, MainCameraId, ref result);
-        
-        if(result != GenIdResult.Ok)
-        {
-            // there must always be a main camera.
-            System.Diagnostics.Debug.Assert(false);
-            return;            
-        }
-
-        // copy camera data.
-        mainCamera = camera;
-    }
-
-    /// <summary>
-    /// Updates the cached gui camera.
-    /// </summary>
-    /// <param name="componentRegistry">The ecs state that stores the camera.</param>
-    private static void UpdateGuiCamera(EcsState ecs)
-    {
-        GenIdResult result = default;
-        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
-        ref Camera camera = ref ComponentArray.GetData(cameras, ecs, MainCameraId, ref result);
-        
-        if(result != GenIdResult.Ok)
-        {
-            // there must always be a main camera.
-            System.Diagnostics.Debug.Assert(false);
-            return;            
-        }
-        
-        // copy camera data.
-        mainCamera = camera;
-    }
-
-
+    
     /// <summary>
     /// Updates all camera's projection matrices with a renderer states output resolution aspect ratio.
     /// </summary>

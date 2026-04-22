@@ -1,184 +1,238 @@
-using Howl.Math;
 using Howl.Input;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System;
-using Howl.Math.Shapes;
 
 namespace Howl.Vendors.MonoGame.Input;
 
-public class Mouse : IMouse
+public static class Mouse
 {
-    
     /// <summary>
-    /// The state of the mouse input during the previous update cycle.
+    ///     The difference in the mouse cursor position between the previous and current frame; relative to the window back buffer.
     /// </summary>
-    private MouseState previousState;
-
-    /// <summary>
-    /// The state of the mouse input during the current update cycle.
-    /// </summary>
-    private MouseState currentState;
+    public static Vector2 GetBackBufferPosition(MouseState state)
+    {
+        return new (state.CurrentState.Position.X, state.CurrentState.Position.Y);
+    }
 
     /// <summary>
-    /// Creates a new Monogame Mouse instance.
+    ///     Gets the difference in the mouse position between the previous and current frame.
     /// </summary>
-    public Mouse()
+    /// <param name="state">the mouse instance get the difference from.</param>
+    /// <returns>the delta position of the mouse.</returns>
+    public static Vector2 GetBackBufferPositionDelta(MouseState state)
     {
-        currentState = Microsoft.Xna.Framework.Input.Mouse.GetState();
-        previousState = new MouseState();
+        Point point = state.CurrentState.Position - state.PreviousState.Position;
+        return new(point.X, point.Y);
     }
 
-    public Vector2Int BackBufferPosition
+    /// <summary>
+    ///     Gets whether or not the mouse has been moved.
+    /// </summary>
+    /// <param name="state">the mouse instance to check.</param>
+    /// <returns>true, if the mouse has moved; otherwise false.</returns>
+    public static bool WasMoved(MouseState state)
     {
-        get => new (currentState.Position.X, currentState.Position.Y);
-        set => SetBackBufferPosition(value);
-    } 
-
-    public int X
-    {
-        get => currentState.X;
-        set => SetBackBufferPosition(new(value, currentState.Y));
+        return GetBackBufferPositionDelta(state) != Vector2.Zero;
     }
 
-    public int Y
+    /// <summary>
+    ///     Gets te cumulative value of the mouse scroll wheel since the application started.
+    /// </summary>
+    /// <param name="state">the mouse instance to get the scroll wheel value from.</param>
+    /// <returns>the scroll wheel value.</returns>
+    public static int GetScrollWheelValue(MouseState state)
     {
-        get => currentState.Y;
-        set => SetBackBufferPosition(new(currentState.Y, value));
+        return state.CurrentState.ScrollWheelValue;
     }
 
-    public Vector2Int BackBufferPositionDelta
+    /// <summary>
+    ///     Gets the difference in the scroll wheel value between the previous and current frame.
+    /// </summary>
+    /// <param name="state">the mouse instance to ge the delta scroll wheel value from.</param>
+    /// <returns>the delta scroll wheel value.</returns>
+    public static int GetScrollWheelDelta(MouseState state)
     {
-        get{
-            Microsoft.Xna.Framework.Point point = currentState.Position - previousState.Position;
-            return new(point.X, point.Y);       
-        }
+        return state.CurrentState.ScrollWheelValue - state.PreviousState.ScrollWheelValue;
     }
 
-    public int XDelta => currentState.X - previousState.X;
-
-    public int YDelta => currentState.Y - previousState.Y;
-
-    public bool WasMoved => BackBufferPositionDelta != Vector2Int.Zero;
-
-    public int ScrollWheel => currentState.ScrollWheelValue;
-
-    public int ScrollWheelDelta => currentState.ScrollWheelValue - previousState.ScrollWheelValue;
-
-    public void Update()
+    /// <summary>
+    ///     Updates the state information for the mouse input.
+    /// </summary>
+    /// <param name="state">the mouse input to update.</param>
+    public static void Update(MouseState state)
     {
-        previousState = currentState;
-        currentState = Microsoft.Xna.Framework.Input.Mouse.GetState();
+        state.PreviousState = state.CurrentState;
+        state.CurrentState = Microsoft.Xna.Framework.Input.Mouse.GetState();
     }
 
-    public void SetBackBufferPosition(Vector2Int position)
+    /// <summary>
+    ///     Sets the mouse position within the back buffer.
+    /// </summary>
+    /// <param name="state">the mouse instance to set.</param>
+    /// <param name="position">the position on the back buffer to set the mouse to.</param>
+    public static void SetBackBufferPosition(MouseState state, Vector2 position)
     {
-        Microsoft.Xna.Framework.Input.Mouse.SetPosition(position.X,position.Y);
-        currentState = new MouseState(
-            position.X,
-            position.Y,
-            currentState.ScrollWheelValue,
-            currentState.LeftButton,
-            currentState.MiddleButton,
-            currentState.RightButton,
-            currentState.XButton1,
-            currentState.XButton2
+        int x = (int)position.X;
+        int y = (int)position.Y;
+        Microsoft.Xna.Framework.Input.Mouse.SetPosition(x,y);
+        state.CurrentState = new Microsoft.Xna.Framework.Input.MouseState(
+            x,
+            y,
+            state.CurrentState.ScrollWheelValue,
+            state.CurrentState.LeftButton,
+            state.CurrentState.MiddleButton,
+            state.CurrentState.RightButton,
+            state.CurrentState.XButton1,
+            state.CurrentState.XButton2
         );
     }
 
-    public bool IsButtonDown(MouseButton mouseButton)
+
+
+
+    /******************
+    
+        Is Button Down Checks.
+    
+    *******************/
+
+
+
+
+    public static bool IsLeftButtonDown(MouseState state)
     {
-        switch (mouseButton)
-        {
-            case MouseButton.Left:
-                return currentState.LeftButton == ButtonState.Pressed;
-            case MouseButton.Right:
-                return currentState.RightButton == ButtonState.Pressed;
-            case MouseButton.Middle:
-                return currentState.MiddleButton == ButtonState.Pressed;
-            case MouseButton.XButton1:
-                return currentState.XButton1 == ButtonState.Pressed;
-            case MouseButton.XButton2:
-                return currentState.XButton2 == ButtonState.Pressed;
-            default:
-                throw new InvalidOperationException($"{mouseButton} is not a valid mouse input for Monogame Mouse.");
-        }
+        return state.CurrentState.LeftButton == ButtonState.Pressed;
     }
 
-    public bool IsButtonUp(MouseButton mouseButton)
+    public static bool IsRightButtonDown(MouseState state)
     {
-        switch (mouseButton)
-        {
-            case MouseButton.Left:
-                return currentState.LeftButton == ButtonState.Released;
-            case MouseButton.Right:
-                return currentState.RightButton == ButtonState.Released;
-            case MouseButton.Middle:
-                return currentState.MiddleButton == ButtonState.Released;
-            case MouseButton.XButton1:
-                return currentState.XButton1 == ButtonState.Released;
-            case MouseButton.XButton2:
-                return currentState.XButton2 == ButtonState.Released;
-            default:
-                throw new InvalidOperationException($"{mouseButton} is not a valid mouse input for Monogame Mouse.");
-        }
+        return state.CurrentState.RightButton == ButtonState.Pressed;
     }
 
-    public bool IsButtonJustPressed(MouseButton mouseButton)
+    public static bool IsMiddleButtonDown(MouseState state)
     {
-        switch (mouseButton)
-        {
-            case MouseButton.Left:
-                return currentState.LeftButton == ButtonState.Pressed && previousState.LeftButton == ButtonState.Released;
-            case MouseButton.Right:
-                return currentState.RightButton == ButtonState.Pressed && previousState.RightButton == ButtonState.Released;
-            case MouseButton.Middle:
-                return currentState.MiddleButton == ButtonState.Pressed && previousState.MiddleButton == ButtonState.Released;
-            case MouseButton.XButton1:
-                return currentState.XButton1 == ButtonState.Pressed && previousState.XButton1 == ButtonState.Released;
-            case MouseButton.XButton2:
-                return currentState.XButton2 == ButtonState.Pressed && previousState.XButton2 == ButtonState.Released;
-            default:
-                throw new InvalidOperationException($"{mouseButton} is not a valid mouse input for Monogame Mouse.");
-        }
-
+        return state.CurrentState.MiddleButton == ButtonState.Pressed;
     }
 
-    public bool IsButtonJustReleased(MouseButton mouseButton)
+    public static bool IsXButton1Down(MouseState state)
     {
-        switch (mouseButton)
-        {
-            case MouseButton.Left:
-                return currentState.LeftButton == ButtonState.Released && previousState.LeftButton == ButtonState.Pressed;
-            case MouseButton.Right:
-                return currentState.RightButton == ButtonState.Released && previousState.RightButton == ButtonState.Pressed;
-            case MouseButton.Middle:
-                return currentState.MiddleButton == ButtonState.Released && previousState.MiddleButton == ButtonState.Pressed;
-            case MouseButton.XButton1:
-                return currentState.XButton1 == ButtonState.Released && previousState.XButton1 == ButtonState.Pressed;
-            case MouseButton.XButton2:
-                return currentState.XButton2 == ButtonState.Released && previousState.XButton2 == ButtonState.Pressed;
-            default:
-                throw new InvalidOperationException($"{mouseButton} is not a valid mouse input for Monogame Mouse.");
-        }
+        return state.CurrentState.XButton1 == ButtonState.Pressed;
     }
 
-    public Vector2Int GetPositionRelative(Rectangle destinationRectangle, Vector2Int destinationResolution)
+    public static bool IsXButton2Down(MouseState state)
     {
-        Vector2Int position = BackBufferPosition;
-        
-        // get the distance from the destination rect to the mouse position. 
-        float x = position.X - destinationRectangle.X;
-        float y = position.Y - destinationRectangle.Y;
+        return state.CurrentState.XButton2 == ButtonState.Pressed;
+    }
 
-        // normalise the value between zero and one, to find
-        // how far into the destination rect the mouse is. 
-        x /= destinationRectangle.Width;
-        y /= destinationRectangle.Height;
 
-        // bring into the destination resolution coordinate space.
-        x *= destinationResolution.X;
-        y *= destinationResolution.Y; // negative here as howl renders in y+ = up coordinate space; not y+ is down.
 
-        return new Vector2Int((int)x, (int)y);
+
+    /******************
+    
+        Is Button Up Checks.
+    
+    *******************/
+
+
+
+
+    public static bool IsLeftButtonUp(MouseState state)
+    {
+        return state.CurrentState.LeftButton == ButtonState.Released;
+    }
+
+    public static bool IsRightButtonUp(MouseState state)
+    {
+        return state.CurrentState.RightButton == ButtonState.Released;
+    }
+
+    public static bool IsMiddleButtonUp(MouseState state)
+    {
+        return state.CurrentState.MiddleButton == ButtonState.Released;
+    }
+
+    public static bool IsXButton1Up(MouseState state)
+    {
+        return state.CurrentState.XButton1 == ButtonState.Released;
+    }
+
+    public static bool IsXButton2Up(MouseState state)
+    {
+        return state.CurrentState.XButton2 == ButtonState.Released;
+    }
+
+
+
+
+    /******************
+    
+        Is Button Just Pressed Checks.
+    
+    *******************/
+
+
+
+
+    public static bool IsLeftButtonJustPressed(MouseState state)
+    {
+        return state.CurrentState.LeftButton == ButtonState.Pressed && state.PreviousState.LeftButton == ButtonState.Released;
+    }
+
+    public static bool IsRightButtonJustPressed(MouseState state)
+    {
+        return state.CurrentState.RightButton == ButtonState.Pressed && state.PreviousState.RightButton == ButtonState.Released;
+    }
+
+    public static bool IsMiddleButtonJustPressed(MouseState state)
+    {
+        return state.CurrentState.MiddleButton == ButtonState.Pressed && state.PreviousState.MiddleButton == ButtonState.Released;
+    }
+
+    public static bool IsXButton1JustPressed(MouseState state)
+    {
+        return state.CurrentState.XButton1 == ButtonState.Pressed && state.PreviousState.XButton1 == ButtonState.Released;
+    }
+
+    public static bool IsXButton2JustPressed(MouseState state)
+    {
+        return state.CurrentState.XButton2 == ButtonState.Pressed && state.PreviousState.XButton2 == ButtonState.Released;
+    }
+
+
+
+
+    /******************
+    
+        Is Button Just Released Checks.
+    
+    *******************/
+
+
+
+
+    public static bool IsLeftButtonJustReleased(MouseState state)
+    {
+        return state.CurrentState.LeftButton == ButtonState.Released && state.PreviousState.LeftButton == ButtonState.Pressed;
+    }
+
+    public static bool IsRightButtonJustReleased(MouseState state)
+    {
+        return state.CurrentState.RightButton == ButtonState.Released && state.PreviousState.RightButton == ButtonState.Pressed;
+    }
+
+    public static bool IsMiddleButtonJustReleased(MouseState state)
+    {
+        return state.CurrentState.MiddleButton == ButtonState.Released && state.PreviousState.MiddleButton == ButtonState.Pressed;
+    }
+
+    public static bool IsXButton1JustReleased(MouseState state)
+    {
+        return state.CurrentState.XButton1 == ButtonState.Released && state.PreviousState.XButton1 == ButtonState.Pressed;
+    }
+
+    public static bool IsXButton2JustReleased(MouseState state)
+    {
+        return state.CurrentState.XButton2 == ButtonState.Released && state.PreviousState.XButton2 == ButtonState.Pressed;
     }
 }
