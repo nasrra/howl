@@ -63,7 +63,7 @@ public struct Camera
     public readonly float Zoom => zoom;
 
     /// <summary>
-    ///     The amount of world units/screen pixels that this camera can see vertically.
+    ///     The amount of world units/screen pixels along the vertical axis that this camera can see at a zoom level of 1.
     /// </summary>
     /// <remarks>
     ///     The value stored here depends on what type of camera is being used.
@@ -76,7 +76,7 @@ public struct Camera
     ///         </item>
     ///     </list>
     /// </remarks>
-    public float VerticalFov;
+    public float BaseVerticalFov;
 
     /// <summary>
     /// Gets and sets the draw layer of the camera.
@@ -113,7 +113,7 @@ public struct Camera
     {
         ClearColour = clearColour;
         SetZoom(zoom);
-        VerticalFov = verticalFov; 
+        BaseVerticalFov = verticalFov; 
         Layer = layer;
         CoordinateSpace = coordinateSpace;
         IsActive = active;
@@ -143,7 +143,7 @@ public struct Camera
         // Centered orthographic projection
 
         // Compute half-width and half-height in world units based on virtual resolution
-        float halfHeight = VerticalFov / zoom * 0.5f;
+        float halfHeight = BaseVerticalFov / zoom * 0.5f;
         float halfWidth = halfHeight * outputResolutionAspectRatio; // keep aspect ratio correct
         float height = halfHeight * 2;
         float width = halfWidth * 2;

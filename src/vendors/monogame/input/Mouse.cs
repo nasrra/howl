@@ -354,9 +354,9 @@ public static class Mouse
     /// <param name="app">the monogame app instance.</param>
     /// <param name="cameraPosition">the world-space camera position.</param>
     /// <param name="cameraZoom">the world-space camera zoom factor.</param>
-    /// <param name="cameraVerticalFov">the world-space camera vertical fov.</param>
+    /// <param name="cameraBaseVerticalFov">the world-space camera vertical fov - in pixels/world units - at a zoom level of 1.</param>
     /// <returns>the position of the mouse in world-space.</returns>
-    public static Vector2 GetWorldPosition(MonoGameApp app, Vector2 cameraPosition, float cameraZoom, float cameraVerticalFov)
+    public static Vector2 GetWorldPosition(MonoGameApp app, Vector2 cameraPosition, float cameraZoom, float cameraBaseVerticalFov)
     {
         MouseState mouse = app.InputManagerState.MouseState;
         Vector2 renderTargetPosition = GetPositionRelative(
@@ -369,9 +369,12 @@ public static class Mouse
         // offset by half the output resolution as the world camera (0,0) is at the center of the screen.
         Howl.Math.Vector2 offset = new Howl.Math.Vector2(app.OutputResolution.X*0.5f, app.OutputResolution.Y*0.5f);
         
+        // factor in the difference of output resolution to camera resolution.
+        float factor = cameraBaseVerticalFov / app.OutputResolution.Y;
+
         Vector2 v = new Vector2( 
-            ((renderTargetPosition.X - offset.X)/cameraZoom) + cameraPosition.X,
-            ((renderTargetPosition.Y - offset.Y)/cameraZoom) - cameraPosition.Y
+            ((renderTargetPosition.X - offset.X)/cameraZoom * factor) + cameraPosition.X,
+            ((renderTargetPosition.Y - offset.Y)/cameraZoom * factor) - cameraPosition.Y
         );
 
         // invert y as world space in monogame is Y+ is down; where as howl engine is y+ is up.
@@ -384,9 +387,9 @@ public static class Mouse
     /// <param name="app">the monogame app instance.</param>
     /// <param name="cameraPosition">the screen-space camera position.</param>
     /// <param name="cameraZoom">the screen-space camera zoom factor.</param>
-    /// <param name="cameraVerticalFov">the screen-space camera vertical fov.</param>
+    /// <param name="cameraBaseVerticalFov">the world-space camera vertical fov - in pixels/world units - at a zoom level of 1.</param>
     /// <returns>the position of the mouse in screen-space.</returns>
-    public static Vector2 GetScreenPosition(MonoGameApp app, Vector2 cameraPosition, float cameraZoom, float cameraVerticalFov)
+    public static Vector2 GetScreenPosition(MonoGameApp app, Vector2 cameraPosition, float cameraZoom, float cameraBaseVerticalFov)
     {
         MouseState mouse = app.InputManagerState.MouseState;
         Vector2 renderTargetPosition = GetPositionRelative(
@@ -397,9 +400,12 @@ public static class Mouse
             (int)app.DestinationRectangle.Height
         );
 
+        // factor in the difference of output resolution to camera resolution.
+        float factor = cameraBaseVerticalFov / app.OutputResolution.Y;
+
         return new Vector2( 
-            (renderTargetPosition.X + cameraPosition.X)/cameraZoom,
-            (renderTargetPosition.Y + cameraPosition.Y)/cameraZoom
+            (renderTargetPosition.X + cameraPosition.X) / cameraZoom * factor,
+            (renderTargetPosition.Y + cameraPosition.Y) / cameraZoom * factor
         );
     }
 

@@ -69,7 +69,7 @@ public static class Draw
 
         // run monogame code.
 
-        Vendors.MonoGame.DebugDraw.Line(app.MonoGameApp.DebugDrawState, mColour, mStart, mEnd, mCameraPos, camera.Zoom, camera.VerticalFov, 
+        Vendors.MonoGame.DebugDraw.Line(app.MonoGameApp.DebugDrawState, mColour, mStart, mEnd, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }
@@ -110,7 +110,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
         
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.WireRect(app.MonoGameApp.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos, camera.Zoom, camera.VerticalFov, 
+        Vendors.MonoGame.DebugDraw.WireRect(app.MonoGameApp.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }
@@ -175,7 +175,7 @@ public static class Draw
     
         // execute monogame code.
         Vendors.MonoGame.DebugDraw.WireCircle(app.MonoGameApp.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, 
-            camera.Zoom, camera.VerticalFov, outputResolutionHeight, thickness, verticeCount, scaleThickness
+            camera.Zoom, camera.BaseVerticalFov, outputResolutionHeight, thickness, verticeCount, scaleThickness
         );
     }
 
@@ -241,7 +241,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
 
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.WirePoly(app.MonoGameApp.DebugDrawState, mColour, verticesX, verticesY, mCameraPos, camera.Zoom, camera.VerticalFov, 
+        Vendors.MonoGame.DebugDraw.WirePoly(app.MonoGameApp.DebugDrawState, mColour, verticesX, verticesY, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }

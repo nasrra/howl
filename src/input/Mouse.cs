@@ -145,7 +145,7 @@ public static class Mouse
         CameraSystem.GetDrawSpaceCamera(app.EcsState, DrawSpace.World, ref camera);
 
         Microsoft.Xna.Framework.Vector2 mCameraPosition = Vendors.MonoGame.Math.Vector2Extensions.ToMonoGame(camera.Position);
-        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetWorldPosition(app.MonoGameApp, mCameraPosition, camera.Zoom, camera.VerticalFov);
+        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetWorldPosition(app.MonoGameApp, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
 
         return Vendors.MonoGame.Math.Vector2Extensions.ToHowl(mPosition);
     }
@@ -161,7 +161,7 @@ public static class Mouse
         CameraSystem.GetDrawSpaceCamera(app.EcsState, DrawSpace.Gui, ref camera);
 
         Microsoft.Xna.Framework.Vector2 mCameraPosition = Vendors.MonoGame.Math.Vector2Extensions.ToMonoGame(camera.Position);
-        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetScreenPosition(app.MonoGameApp, mCameraPosition, camera.Zoom, camera.VerticalFov);
+        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetScreenPosition(app.MonoGameApp, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
 
         return Vendors.MonoGame.Math.Vector2Extensions.ToHowl(mPosition);
     }
