@@ -1,8 +1,9 @@
+using System;
 using Howl.Input;
 
 namespace Howl.Vendors.MonoGame.Input;
 
-public class Keyboard
+public static class Keyboard
 {
 
     /// <summary>
@@ -21,7 +22,7 @@ public class Keyboard
     /// <param name="state">the keyboard state to check.</param>
     /// <param name="key">the specified keycode.</param>
     /// <returns>true, if the key is down; otherwise false.</returns>
-    public bool IsKeyDown(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
+    public static bool IsKeyDown(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
     {
         return state.CurrentState.IsKeyDown(key);
     }
@@ -32,7 +33,7 @@ public class Keyboard
     /// <param name="state">the keyboard state to check.</param>
     /// <param name="key">the specified keycode.</param>
     /// <returns>true, if the key is up; otherwise false. </returns>
-    public bool IsKeyUp(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
+    public static bool IsKeyUp(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
     {
         return state.CurrentState.IsKeyDown(key);
     }
@@ -43,7 +44,7 @@ public class Keyboard
     /// <param name="state">the keyboard state to check.</param>
     /// <param name="key">the specified keycode.</param>
     /// <returns>true, if the key has just been pressed; otherwise false.</returns>
-    public bool IsKeyJustPressed(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
+    public static bool IsKeyJustPressed(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
     {
         return state.PreviousState.IsKeyUp(key) && state.CurrentState.IsKeyDown(key);
     }
@@ -54,9 +55,22 @@ public class Keyboard
     /// <param name="state">the keyboard state to check.</param>
     /// <param name="key">the specified keycode.</param>
     /// <returns>true, if the key has just been released; otherwise false.</returns>
-    public bool IsKeyJustReleased(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
+    public static bool IsKeyJustReleased(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
     {
         return state.PreviousState.IsKeyDown(key) && state.CurrentState.IsKeyUp(key);
     }
 
+    /// <summary>
+    ///     Disposes of a state instance.
+    /// </summary>
+    /// <param name="state">the state instance to dispose of.</param>
+    public static void Dispose(KeyboardState state)
+    {
+        if (state.Disposed)
+        {
+            return;
+        }   
+        state.Disposed = true;
+        GC.SuppressFinalize(state);
+    }
 }

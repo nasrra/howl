@@ -1,45 +1,42 @@
 using System;
-using Howl.Input;
 
 namespace Howl.Vendors.MonoGame.Input;
 
-public class InputManager : IInputManager
+public static class InputManager
 {
     /// <summary>
-    /// Gets the keyboard state information.
+    ///     Updates a state instance.
     /// </summary>
-    public IKeyboard Keyboard {get;}
-
-    /// <summary>
-    /// Gets the mouse state information.
-    /// </summary>
-    public IMouse Mouse {get;}
-
-    /// <summary>
-    /// Gets the gamepad state information.
-    /// </summary>
-    public IGamePad[] GamePads {get;}
-
-    public InputManager()
+    /// <param name="state">the state instance to update.</param>
+    public static void Update(InputManagerState state)
     {
-        Keyboard = new Keyboard();
-        Mouse = new Mouse();
-        GamePads = new IGamePad[(int)GamePadId.Count];
-        Span<IGamePad> gamepads = GamePads.AsSpan();
-        for(int i = 0; i < gamepads.Length; i++)
+        Keyboard.Update(state.KeyboardState);
+        Mouse.Update(state.MouseState);
+        for(int i = 0; i < state.GamePadStates.Length; i++)
         {
-            gamepads[i] = new GamePad((GamePadId)i);
+            GamePad.Update(state.GamePadStates[i]);
         }
     }
 
-    public void Update(float deltaTime)
+    /// <summary>
+    ///     Disposes of a state instance.
+    /// </summary>
+    /// <param name="state">the state instance to dispose of.</param>
+    public static void Dispose(InputManagerState state)
     {
-        Keyboard.Update();
-        Mouse.Update();
-        Span<IGamePad> gamepads = GamePads.AsSpan();
-        for(int i = 0; i < gamepads.Length; i++)
+        if (state.Disposed)
         {
-            gamepads[i].Update(deltaTime);
+            return;
         }
+        
+        state.Disposed = true;
+        
+        Keyboard.Dispose(state.KeyboardState);
+        for(int i = 0; i < state.GamePadStates.Length; i++)
+        {
+            GamePad.Dispose(state.GamePadStates[i]);
+        }
+
+        GC.SuppressFinalize(state);
     }
 }

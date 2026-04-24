@@ -11,7 +11,12 @@ public class KeyboardState
     ///     The state of the keyboard input durring the current update cycle.
     /// </summary>
     public Microsoft.Xna.Framework.Input.KeyboardState CurrentState;
-    
+
+    /// <summary>
+    ///     Whether this instance has been diposed of.
+    /// </summary>
+    public bool Disposed;
+
     /// <summary>
     ///     Creates a new KeyboardState instance.
     /// </summary>

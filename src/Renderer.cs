@@ -68,28 +68,6 @@ public static class Renderer
     }
 
     /// <summary>
-    ///     Gets the mouse position in world-space.
-    /// </summary>
-    /// <param name="app">the howl app instance.</param>
-    /// <param name="mouse">the mouse data.</param>
-    /// <returns>the position of the mouse in world-space.</returns>
-    public static Vector2 GetMouseWorldPosition(HowlApp app, IMouse mouse)
-    {
-        return MonoGameApp.GetMouseWorldPosition(app.MonoGameApp, mouse);
-    }
-
-    /// <summary>
-    ///     Gets the mouse position in screen-space.
-    /// </summary>
-    /// <param name="app">the howl app instance.</param>
-    /// <param name="mouse">the mouse data.</param>
-    /// <returns>the position of the mouse in world-space.</returns>
-    public static Vector2 GetScreenSpacePosition(HowlApp app, IMouse mouse)
-    {
-        return MonoGameApp.GetMouseGuiPosition(app.MonoGameApp, mouse);
-    }
-
-    /// <summary>
     ///     Sets the resolution of the final render target.
     /// </summary>
     /// <param name="app">the howl app instance.</param>

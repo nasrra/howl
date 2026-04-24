@@ -7,7 +7,6 @@ using Howl.LevelManagement;
 using Howl.LevelManagement.Ldtk;
 using Howl.Physics.Telo;
 using Howl.Vendors.MonoGame;
-using Howl.Vendors.MonoGame.Input;
 
 namespace Howl;
 
@@ -38,11 +37,6 @@ public unsafe class HowlApp
 
 
 
-
-    /// <summary>
-    /// Gets the InputManager used by this HowlApp.
-    /// </summary>
-    public IInputManager InputManager {get; private set;}
 
     /// <summary>
     ///     Gets the EcsState.
@@ -156,7 +150,6 @@ public unsafe class HowlApp
         FixedUpdateStepStopwatch    = new();
         DrawStepStopwatch           = new();
         EcsState = new EcsState(maxEntities);
-        InputManager = new InputManager();
     }
 
     /// <summary>
@@ -167,7 +160,7 @@ public unsafe class HowlApp
     {
         app.UpdateStepStopwatch.Restart();
         
-        app.InputManager.Update(deltaTime);
+        InputManager.Update(app);
         app.UpdateCallback(deltaTime);
 
         app.UpdateStepStopwatch.Stop();

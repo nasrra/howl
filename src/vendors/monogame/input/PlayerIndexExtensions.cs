@@ -4,9 +4,9 @@ using Microsoft.Xna.Framework;
 
 namespace Howl.Vendors.MonoGame.Input;
 
-public class PlayerIndexTranslator
+public class PlayerIndexExtensions
 {
-    public static PlayerIndex GetMonogamePlayerIndex(GamePadId gamepadId)
+    public static PlayerIndex ToMonoGame(GamePadId gamepadId)
     {
         return gamepadId switch
         {

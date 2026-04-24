@@ -9,6 +9,7 @@ using Howl.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Runtime.CompilerServices;
+using Howl.Vendors.MonoGame.Input;
 
 namespace Howl.Vendors.MonoGame;
 
@@ -45,12 +46,12 @@ public class MonoGameApp : Game
     /// <summary>
     ///     A copy of the output resolution for the final render target
     /// </summary>
-    public Howl.Math.Vector2Int OutputResolution;
+    public Vector2 OutputResolution;
 
     /// <summary>
     ///     Gets the output resolutions aspect ratio.
     /// </summary>
-    public float OutputResolutionAspectRatio => (float)OutputResolution.X / OutputResolution.Y;
+    public float OutputResolutionAspectRatio => OutputResolution.X / OutputResolution.Y;
 
     /// <summary>
     ///     The sprite batch for drawing monogame sprites.
@@ -77,7 +78,7 @@ public class MonoGameApp : Game
 
     public TextureManagerState Textures;
 
-    public Mouse Mouse;
+    public InputManagerState InputManagerState;
 
     /// <summary>
     ///     Whether this instance has been disposed of.
@@ -157,8 +158,7 @@ public class MonoGameApp : Game
         SpriteFontIds = new();
         SpriteFonts = new();
         Textures = new(maxTextureCount);
-
-        Mouse = new();
+        InputManagerState = new();
 
         // set this to the same directory as the csproj as loading is handled via full paths fomr AssetManager.
         Content.RootDirectory = "";
@@ -338,46 +338,6 @@ public class MonoGameApp : Game
     }
 
     /// <summary>
-    ///     Gets the mouse position in world-space.
-    /// </summary>
-    /// <param name="app">the monogame app instance.</param>
-    /// <param name="mouse">the mouse data.</param>
-    /// <returns>the position of the mouse in world-space.</returns>
-    public static Howl.Math.Vector2 GetMouseWorldPosition(MonoGameApp app, IMouse mouse)
-    {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app, DrawSpace.World, ref camera);
-
-        Howl.Math.Vector2Int renderTargetPosition = mouse.GetPositionRelative(app.DestinationRectangle, app.OutputResolution);
-        
-        // offset by half the output resolution as the world camera (0,0) is at the center of the screen.
-        Howl.Math.Vector2 offset = new Howl.Math.Vector2(app.OutputResolution.X*0.5f, app.OutputResolution.Y*0.5f);
-        
-        return new Howl.Math.Vector2( 
-            ((renderTargetPosition.X - offset.X)/camera.Zoom) + camera.Position.X,
-            ((renderTargetPosition.Y - offset.Y)/camera.Zoom) - camera.Position.Y
-        ).InvertY(); // invert y as world space in monogame is Y+ is down; where as howl engine is y+ is up.
-    }
-
-    /// <summary>
-    ///     Gets the mouse postion in screen-space.
-    /// </summary>
-    /// <param name="app">the monogame app instance.</param>
-    /// <param name="mouse">the mouse data.</param>
-    /// <returns>the position of the mouse in screen-space.</returns>
-    public static Howl.Math.Vector2 GetMouseGuiPosition(MonoGameApp app, IMouse mouse)
-    {
-        ref readonly Camera camera = ref CameraSystem.GuiCamera;
-        Howl.Math.Vector2Int renderTargetPosition = mouse.GetPositionRelative(app.DestinationRectangle, 
-            new Howl.Math.Vector2Int(app.FinalRenderTarget.Width, app.FinalRenderTarget.Height)
-        );        
-        return new Howl.Math.Vector2( 
-            (renderTargetPosition.X + camera.Position.X)/camera.Zoom,
-            (renderTargetPosition.Y + camera.Position.Y)/camera.Zoom
-        );
-    }
-
-    /// <summary>
     ///     Sets the resolution of the final render target.
     /// </summary>
     /// <param name="app">the monogame app instance.</param>
@@ -402,7 +362,7 @@ public class MonoGameApp : Game
         {            
             app.FinalRenderTarget?.Dispose();
             app.FinalRenderTarget = new RenderTarget2D(app.GraphicsDevice, width, height);
-            app.OutputResolution = new Howl.Math.Vector2Int(width, height);
+            app.OutputResolution = new Vector2(width, height);
         }
         else
         {
