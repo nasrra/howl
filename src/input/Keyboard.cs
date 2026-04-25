@@ -11,7 +11,7 @@ public static class Keyboard
     public static bool IsKeyDown(HowlApp app, Key key)
     {
         Microsoft.Xna.Framework.Input.Keys keys = Vendors.MonoGame.Input.KeyExtensions.ToMonoGame(key);
-        return Vendors.MonoGame.Input.Keyboard.IsKeyDown(app.MonoGameApp.InputManagerState.KeyboardState, keys);
+        return Vendors.MonoGame.Input.Keyboard.IsKeyDown(app.MonoGameAppState.InputManagerState.KeyboardState, keys);
     }
 
     /// <summary>
@@ -23,7 +23,7 @@ public static class Keyboard
     public static bool IsKeyUp(HowlApp app, Key key)
     {
         Microsoft.Xna.Framework.Input.Keys keys = Vendors.MonoGame.Input.KeyExtensions.ToMonoGame(key);
-        return Vendors.MonoGame.Input.Keyboard.IsKeyUp(app.MonoGameApp.InputManagerState.KeyboardState, keys);
+        return Vendors.MonoGame.Input.Keyboard.IsKeyUp(app.MonoGameAppState.InputManagerState.KeyboardState, keys);
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ public static class Keyboard
     public static bool IsKeyJustPressed(HowlApp app, Key key)
     {
         Microsoft.Xna.Framework.Input.Keys keys = Vendors.MonoGame.Input.KeyExtensions.ToMonoGame(key);
-        return Vendors.MonoGame.Input.Keyboard.IsKeyJustPressed(app.MonoGameApp.InputManagerState.KeyboardState, keys);
+        return Vendors.MonoGame.Input.Keyboard.IsKeyJustPressed(app.MonoGameAppState.InputManagerState.KeyboardState, keys);
     }
 
     /// <summary>
@@ -47,6 +47,6 @@ public static class Keyboard
     public static bool IsKeyJustReleased(HowlApp app, Key key)
     {
         Microsoft.Xna.Framework.Input.Keys keys = Vendors.MonoGame.Input.KeyExtensions.ToMonoGame(key);
-        return Vendors.MonoGame.Input.Keyboard.IsKeyJustReleased(app.MonoGameApp.InputManagerState.KeyboardState, keys);
+        return Vendors.MonoGame.Input.Keyboard.IsKeyJustReleased(app.MonoGameAppState.InputManagerState.KeyboardState, keys);
     }
 }

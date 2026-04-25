@@ -58,7 +58,7 @@ public static class Draw
     {
         Camera camera = default;
         CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
-        float outputResolutionHeight = app.MonoGameApp.OutputResolution.Y;
+        float outputResolutionHeight = app.MonoGameAppState.OutputResolution.Y;
 
         // convert to monogame.
 
@@ -69,7 +69,7 @@ public static class Draw
 
         // run monogame code.
 
-        Vendors.MonoGame.DebugDraw.Line(app.MonoGameApp.DebugDrawState, mColour, mStart, mEnd, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
+        Vendors.MonoGame.DebugDraw.Line(app.MonoGameAppState.DebugDrawState, mColour, mStart, mEnd, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }
@@ -101,7 +101,7 @@ public static class Draw
     {
         Camera camera = default;
         CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
-        float outputResolutionHeight = app.MonoGameApp.OutputResolution.Y;
+        float outputResolutionHeight = app.MonoGameAppState.OutputResolution.Y;
 
         // convert to monogame.        
         Microsoft.Xna.Framework.Vector2 mRectMin = new Microsoft.Xna.Framework.Vector2(shape.X, shape.Y - shape.Height);
@@ -110,7 +110,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
         
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.WireRect(app.MonoGameApp.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
+        Vendors.MonoGame.DebugDraw.WireRect(app.MonoGameAppState.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }
@@ -134,7 +134,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
 
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.FillRect(app.MonoGameApp.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos);
+        Vendors.MonoGame.DebugDraw.FillRect(app.MonoGameAppState.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos);
     }
 
 
@@ -165,7 +165,7 @@ public static class Draw
     {
         Camera camera = default;
         CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
-        float outputResolutionHeight = app.MonoGameApp.OutputResolution.Y;
+        float outputResolutionHeight = app.MonoGameAppState.OutputResolution.Y;
 
         // convert to monogame.        
 
@@ -174,7 +174,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
     
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.WireCircle(app.MonoGameApp.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, 
+        Vendors.MonoGame.DebugDraw.WireCircle(app.MonoGameAppState.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, 
             camera.Zoom, camera.BaseVerticalFov, outputResolutionHeight, thickness, verticeCount, scaleThickness
         );
     }
@@ -200,7 +200,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
 
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.FillCircle(app.MonoGameApp.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, verticeCount);
+        Vendors.MonoGame.DebugDraw.FillCircle(app.MonoGameAppState.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, verticeCount);
     }
 
 
@@ -234,14 +234,14 @@ public static class Draw
     {
         Camera camera = default;
         CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
-        float outputResolutionHeight = app.MonoGameApp.OutputResolution.Y;
+        float outputResolutionHeight = app.MonoGameAppState.OutputResolution.Y;
 
         // convert to monogame.
         Microsoft.Xna.Framework.Vector2 mCameraPos = Vendors.MonoGame.Math.Vector2Extensions.ToMonoGame(camera.Position);
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
 
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.WirePoly(app.MonoGameApp.DebugDrawState, mColour, verticesX, verticesY, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
+        Vendors.MonoGame.DebugDraw.WirePoly(app.MonoGameAppState.DebugDrawState, mColour, verticesX, verticesY, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }

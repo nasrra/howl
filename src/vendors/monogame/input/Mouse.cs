@@ -356,7 +356,7 @@ public static class Mouse
     /// <param name="cameraZoom">the world-space camera zoom factor.</param>
     /// <param name="cameraBaseVerticalFov">the world-space camera vertical fov - in pixels/world units - at a zoom level of 1.</param>
     /// <returns>the position of the mouse in world-space.</returns>
-    public static Vector2 GetWorldPosition(MonoGameApp app, Vector2 cameraPosition, float cameraZoom, float cameraBaseVerticalFov)
+    public static Vector2 GetWorldPosition(MonoGameAppState app, Vector2 cameraPosition, float cameraZoom, float cameraBaseVerticalFov)
     {
         MouseState mouse = app.InputManagerState.MouseState;
         Vector2 renderTargetPosition = GetPositionRelative(
@@ -389,7 +389,7 @@ public static class Mouse
     /// <param name="cameraZoom">the screen-space camera zoom factor.</param>
     /// <param name="cameraBaseVerticalFov">the world-space camera vertical fov - in pixels/world units - at a zoom level of 1.</param>
     /// <returns>the position of the mouse in screen-space.</returns>
-    public static Vector2 GetScreenPosition(MonoGameApp app, Vector2 cameraPosition, float cameraZoom, float cameraBaseVerticalFov)
+    public static Vector2 GetScreenPosition(MonoGameAppState app, Vector2 cameraPosition, float cameraZoom, float cameraBaseVerticalFov)
     {
         MouseState mouse = app.InputManagerState.MouseState;
         Vector2 renderTargetPosition = GetPositionRelative(

@@ -4,6 +4,9 @@ using Howl.Collections;
 
 namespace Howl.Math;
 
+/// <summary>
+///     Fixed-Stride Structure-of-Arrays Vector2.
+/// </summary>
 public class FsSoa_Vector2{
     /// <summary>
     ///     the x-coordinate values.

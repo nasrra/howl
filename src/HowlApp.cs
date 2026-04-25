@@ -44,9 +44,9 @@ public unsafe class HowlApp
     public EcsState EcsState;
 
     /// <summary>
-    ///     The Monogame Application used as a pump for this HowlApp.
+    ///     The Monogame Application state used as a pump for this HowlApp.
     /// </summary>
-    public MonoGameApp MonoGameApp;
+    public MonoGameAppState MonoGameAppState;
 
     /// <summary>
     ///     The LdtkParserState used for parsing ldtk level files.
@@ -187,24 +187,25 @@ public unsafe class HowlApp
     /// </summary>
     /// <param name="app"></param>
     /// <param name="resolution"></param>
-    public static void InitialiseMonoGame(HowlApp app, Resolution resolution, int maxTextures, int debugDrawMaxPolygons)
+    public static void InitialiseMonoGame(HowlApp app, Resolution resolution, int maxTextures, int maxFonts, int debugDrawMaxPolygons)
     {
-        if (app.MonoGameApp == null)
+        if (app.MonoGameAppState == null)
         {
-            app.MonoGameApp = new(resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.OutputWidth, 
-                resolution.OutputHeight, maxTextures, debugDrawMaxPolygons
+            app.MonoGameAppState = new(resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.OutputWidth, 
+                resolution.OutputHeight, maxTextures, maxFonts, debugDrawMaxPolygons
             );
+            MonoGameAppState state = app.MonoGameAppState; 
             
             // THIS WILL NEED TO CHANGE.
             
-            app.MonoGameApp.UpdateCallback += (float deltaTime) =>
+            state.UpdateCallback += (float deltaTime) =>
             {
                 Update(app, deltaTime);
             };
 
-            app.MonoGameApp.RenderCallback += (float deltaTime) =>
+            state.RenderCallback += (float deltaTime) =>
             {
-                Vendors.MonoGame.Graphics.RendererSystem.Draw(app.EcsState, app.MonoGameApp);  
+                Vendors.MonoGame.Graphics.RendererSystem.Draw(app.EcsState, app.MonoGameAppState);  
                 app.DrawCallback?.Invoke(deltaTime);
             };
         }
@@ -243,7 +244,7 @@ public unsafe class HowlApp
     /// <param name="app"></param>
     public static void Shutdown(HowlApp app)
     {
-        app.MonoGameApp?.Exit();
+        app.MonoGameAppState?.Exit();
     }
 
     /// <summary>
@@ -252,7 +253,7 @@ public unsafe class HowlApp
     /// <param name="app"></param>
     public static void Run(HowlApp app)
     {
-        app.MonoGameApp?.Run();
+        app.MonoGameAppState?.Run();
     }
 
     /// <summary>
@@ -265,8 +266,9 @@ public unsafe class HowlApp
         {
             return;
         }
+        
         app.IsDisposed = true;
-        app.MonoGameApp?.Dispose();
+        app.MonoGameAppState?.Dispose();
         app.EcsState.Dispose();
         app.EcsState = null;
         app.UpdateStepStopwatch = null;
@@ -275,9 +277,25 @@ public unsafe class HowlApp
         app.UpdateCallback = null;
         app.FixedUpdateCallback = null;
         app.DrawCallback = null;
-        TeloPhysicsState.Dispose(app.TeloPhysicsState);
-        LdtkParserState.Dispose(app.LdtkParserState);
-        app.MonoGameApp.Dispose();
+        
+        if(app.TeloPhysicsState != null)
+        {
+            TeloPhysicsState.Dispose(app.TeloPhysicsState);
+            app.TeloPhysicsState = null;
+        }
+        
+        if(app.LdtkParserState != null)
+        {
+            LdtkParserState.Dispose(app.LdtkParserState);
+            app.LdtkParserState = null;
+        }
+        
+        if(app.MonoGameAppState != null)
+        {
+            MonoGameApp.Dispose(app.MonoGameAppState);
+            app.MonoGameAppState = null;
+        }
+
         GC.SuppressFinalize(app);        
     }
 

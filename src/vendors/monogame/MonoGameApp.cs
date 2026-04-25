@@ -1,256 +1,21 @@
 using System;
-using System.Text;
-using Howl.Ecs;
 using Howl.Graphics;
-using Howl.Graphics.Text;
-using Howl.Input;
 using Howl.Vendors.MonoGame.Graphics;
-using Howl.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Runtime.CompilerServices;
-using Howl.Vendors.MonoGame.Input;
+using Howl.Vendors.MonoGame.FontStashSharp;
 
 namespace Howl.Vendors.MonoGame;
 
-public class MonoGameApp : Game
+public static class MonoGameApp
 {
-
-
-
-
-    /*******************
-    
-        Member Variables.
-    
-    ********************/
-
-
-
-
-    /// <summary>
-    ///     The graphics device manager.
-    /// </summary>
-    public GraphicsDeviceManager GraphicsDeviceManager {get; private set;}
-
-    /// <summary>
-    ///     The destination rectangle for stretching or shrinking the output render target into the backbuffer.
-    /// </summary>
-    public Howl.Math.Shapes.Rectangle DestinationRectangle;
-
-    /// <summary>
-    ///     The final render target to draw all sprites, text, shaders, etc. to.
-    /// </summary>
-    public RenderTarget2D FinalRenderTarget;
-    
-    /// <summary>
-    ///     A copy of the output resolution for the final render target
-    /// </summary>
-    public Vector2 OutputResolution;
-
-    /// <summary>
-    ///     Gets the output resolutions aspect ratio.
-    /// </summary>
-    public float OutputResolutionAspectRatio => OutputResolution.X / OutputResolution.Y;
-
-    /// <summary>
-    ///     The sprite batch for drawing monogame sprites.
-    /// </summary>
-    public SpriteBatch SpriteBatch;
-
-    /// <summary>
-    ///     The effects manager for monogame shaders.
-    /// </summary>
-    public EffectManager EffectManager;
-
-    /// <summary>
-    ///     The string builder used to render text.
-    /// </summary>
-    public StringBuilder StringBuilder;
-
-    /// <summary>
-    ///     The Debug Draw state.
-    /// </summary>
-    public DebugDrawState DebugDrawState;
-
-    public GenIndexAllocator SpriteFontIds;
-    public GenIndexList<SpriteFont> SpriteFonts;
-
-    public TextureManagerState Textures;
-
-    public InputManagerState InputManagerState;
-
-    /// <summary>
-    ///     Whether this instance has been disposed of.
-    /// </summary>
-    public bool IsDisposed;
-
-
-
-
-    /*******************
-    
-        Function Pointers.
-    
-    ********************/
-
-
-
-
-    /// <summary>
-    ///     The update callback for external classes.
-    /// </summary>
-    public Action<float> UpdateCallback;
-
-    /// <summary>
-    ///     The render callback for external classes.
-    /// </summary>
-    public Action<float> RenderCallback;
-
-
-
-
-    /*******************
-    
-        Constructor.
-    
-    ********************/
-
-
-
-    /// <summary>
-    ///     Creates a new Moongame app instance.
-    /// </summary>
-    /// <param name="backBufferWidth">the width of the back buffer.</param>
-    /// <param name="backBufferHeight">the height of the back buffer.</param>
-    /// <param name="outputResolutionHeight">the width of the render target output resolution.</param>
-    /// <param name="outputResolutionWidth">the height of the render target output resolution.</param>
-
-
-    /// <summary>
-    ///     Creates a new Moongame app instance.
-    /// </summary>
-    /// <param name="backBufferWidth">the width of the back buffer.</param>
-    /// <param name="backBufferHeight">the height of the back buffer.</param>
-    /// <param name="outputResolutionHeight">the width of the render target output resolution.</param>
-    /// <param name="outputResolutionWidth">the height of the render target output resolution.</param>
-    /// <param name="maxTextureCount">the maximum amount of textures that can be registered to the texture manager.</param>
-    /// <param name="debugDrawMaxPolygons">the maximum amount of debug polygons that can be drawn.</param>
-    public MonoGameApp(int backBufferWidth, int backBufferHeight, int outputResolutionWidth, int outputResolutionHeight, int maxTextureCount,
-        int debugDrawMaxPolygons
-    )
-    {
-        IsMouseVisible = true;
-        GraphicsDeviceManager = new(this);
-        IsFixedTimeStep = false;
-        GraphicsDeviceManager.SynchronizeWithVerticalRetrace = true;
-        GraphicsDeviceManager.ApplyChanges();
-        
-        SpriteBatch = new SpriteBatch(GraphicsDevice);
-        EffectManager = new(this);
-        DebugDrawState = new DebugDrawState(debugDrawMaxPolygons*3);
-
-        RendererSystem.SetBackBufferResolution(this, backBufferWidth, backBufferHeight);
-        SetFinalRenderTargetResolution(this, outputResolutionWidth, outputResolutionHeight);
-        DestinationRectangle = RendererSystem.CalculateRenderDestinationRectangle(this, FinalRenderTarget);
-
-        StringBuilder = new(Text4096.MaxCharacters);
-        SpriteFontIds = new();
-        SpriteFonts = new();
-        Textures = new(maxTextureCount);
-        InputManagerState = new();
-
-        // set this to the same directory as the csproj as loading is handled via full paths fomr AssetManager.
-        Content.RootDirectory = "";
-
-        LinkEvents(this);
-    }
-
-
-
-
-    /*******************
-    
-        Loop.
-    
-    ********************/
-
-
-
-
-    protected override void Update(GameTime gameTime)
-    {
-        UpdateCallback?.Invoke(GameTimeToDeltaTime(gameTime));
-        base.Update(gameTime);
-    }
-
-    protected override void Draw(GameTime gameTime)
-    {
-        // this submits to the gpu.
-        // and should stay at the bottom.
-
-        base.Draw(gameTime);
-        RenderCallback?.Invoke(GameTimeToDeltaTime(gameTime));
-    }
-
-    protected float GameTimeToDeltaTime(GameTime gameTime)
-    {
-        return (float)gameTime.ElapsedGameTime.TotalSeconds;
-    }
-
-
-
-
-    /*******************
-    
-        Font Management.
-    
-    ********************/
-
-
-
-
-    /// <summary>
-    ///     Loads a font into a monogame app instance.
-    /// </summary>
-    /// <param name="app">the monogame app instance to contain the font instance.</param>
-    /// <param name="fontFilePath">the file path of the font.</param>
-    /// <param name="genIndex">output for the gen id of the newly allocated font.</param>
-    public static void LoadFont(MonoGameApp app, string fontFilePath, out GenIndex genIndex)
-    {
-        app.SpriteFontIds.Allocate(out genIndex, out bool reusedFreeIndex);
-
-        if (reusedFreeIndex == false)
-        {
-            GenIndexListProc.ResizeSparseEntries(app.SpriteFonts, app.SpriteFontIds.Entries.Count);
-        }
-
-        SpriteFont spriteFont = app.Content.Load<SpriteFont>(AssetManagement.AssetManager.FontFolder+fontFilePath);
-
-        GenIndexListProc.Allocate(app.SpriteFonts, genIndex, spriteFont);
-    }
-
-    public static GenIndexResult GetFontReadOnlyRef(MonoGameApp app, in GenIndex genIndex, out ReadOnlyRef<SpriteFont> readOnlyRef)
-    {
-        return GenIndexListProc.GetDenseReadOnlyRef(app.SpriteFonts, genIndex, out readOnlyRef);
-    }
-
-    /// <summary>
-    ///     Gets whether or not a font has been loaded.
-    /// </summary>
-    /// <param name="app">the monogame app instance that contains the font.</param>
-    /// <param name="genIndex">the gen id of the font.</param>
-    /// <returns>true, if the font is loaded; otherwise false.</returns>
-    public static GenIndexResult IsFontLoaded(MonoGameApp app, GenIndex genIndex)
-    {
-        return GetFontReadOnlyRef(app, in genIndex, out ReadOnlyRef<SpriteFont> readOnlyRef);
-    }
 
     /// <summary>
     ///     Sets the application window to be windowed.
     /// </summary>
     /// <param name="app">the monogame app instance.</param>
-    public static void SetWindowed(MonoGameApp app)
+    public static void SetWindowed(MonoGameAppState app)
     {
         if(app.GraphicsDeviceManager.IsFullScreen == false)
         {
@@ -268,7 +33,7 @@ public class MonoGameApp : Game
     ///     Sets the application window to be fullscreen.
     /// </summary>
     /// <param name="app">the monogame app instance.</param>
-    public static void SetFullscreen(MonoGameApp app)
+    public static void SetFullscreen(MonoGameAppState app)
     {
         if(app.GraphicsDeviceManager.IsFullScreen == true
         && app.GraphicsDeviceManager.HardwareModeSwitch == true)
@@ -292,7 +57,7 @@ public class MonoGameApp : Game
     ///     Sets the application window to be borderless fullscreen.
     /// </summary>
     /// <param name="app">the monogame app instance.</param>
-    public static void SetBorderlessFullscreen(MonoGameApp app)
+    public static void SetBorderlessFullscreen(MonoGameAppState app)
     {
         if(app.GraphicsDeviceManager.IsFullScreen == true
         && app.GraphicsDeviceManager.HardwareModeSwitch == false)
@@ -309,7 +74,7 @@ public class MonoGameApp : Game
     /// </summary>
     /// <param name="app">the monogame app instance.</param>
     /// <param name="targetFrameRate"the new target frame rate.></param>
-    public static void SetTargetFrameRate(MonoGameApp app, TargetFrameRate targetFrameRate)
+    public static void SetTargetFrameRate(MonoGameAppState app, TargetFrameRate targetFrameRate)
     {
         switch (targetFrameRate)
         {
@@ -342,7 +107,7 @@ public class MonoGameApp : Game
     /// </summary>
     /// <param name="app">the monogame app instance.</param>
     /// <param name="resolution">the resolution to set.</param>
-    public static void SetFinalRenderTargetResolution(MonoGameApp app, Howl.Math.Vector2Int resolution)
+    public static void SetFinalRenderTargetResolution(MonoGameAppState app, Howl.Math.Vector2Int resolution)
     {
         SetFinalRenderTargetResolution(app, resolution.X, resolution.Y);
     }
@@ -354,7 +119,7 @@ public class MonoGameApp : Game
     /// <param name="width">the new width of the final render target.</param>
     /// <param name="height">the new height of the final render target.</param>
     /// <exception cref="ArgumentException"></exception>
-    public static void SetFinalRenderTargetResolution(MonoGameApp app, int width, int height)
+    public static void SetFinalRenderTargetResolution(MonoGameAppState app, int width, int height)
     {
         int clampedWidth = System.Math.Clamp(width, 1, int.MaxValue);  
         int clampedHeight = System.Math.Clamp(height, 1, int.MaxValue);  
@@ -447,9 +212,8 @@ public class MonoGameApp : Game
     ///     Links a monogame app to its internal events.
     /// </summary>
     /// <param name="app">the monogame app instance to link.</param>
-    public static void LinkEvents(MonoGameApp app)
+    public static void LinkEvents(MonoGameAppState app)
     {
-        app.Disposed += app.OnDisposed;
         app.GraphicsDevice.DeviceReset += app.OnGraphicsDeviceReset;
     }
 
@@ -457,40 +221,38 @@ public class MonoGameApp : Game
     ///     Unlinks a monogame app from its internal events.
     /// </summary>
     /// <param name="app">the monogame ap instance to unlink.</param>
-    public static void UnlinkEvents(MonoGameApp app)
+    public static void UnlinkEvents(MonoGameAppState app)
     {
-        app.Disposed -= app.OnDisposed;
         app.GraphicsDevice.DeviceReset -= app.OnGraphicsDeviceReset;        
     }
 
-    private void OnDisposed(object caller, EventArgs e)
+    /// <summary>
+    ///     Disposes of a state instance.
+    /// </summary>
+    /// <param name="app">the state instance to dispose of.</param>
+    public static void Dispose(MonoGameAppState app)
     {
-        UnlinkEvents(this);
-        IsDisposed = true;
+        if (app.IsDisposed)
+        {
+            return;
+        }
 
-        SpriteFontIds.Dispose();
-        SpriteFontIds = null;
+        app.IsDisposed = true;
+        UnlinkEvents(app);
 
-        // this is fine as SpriteFont does not implement a Dispose method.
-        SpriteFonts.Dispose();
-        SpriteFonts = null;
+        FontManager.Dispose(app.FontManagerState);
+        app.FontManagerState = null;
 
-        DebugDraw.Dispose(DebugDrawState);
-        DebugDrawState = null;
+        DebugDraw.Dispose(app.DebugDrawState);
+        app.DebugDrawState = null;
 
-        TextureManagerState.Dispose(Textures);
-        Textures = null;
+        TextureManagerState.Dispose(app.TextureManagerState);
+        app.TextureManagerState = null;
 
-        UpdateCallback = null;
-        RenderCallback = null;
+        app.UpdateCallback = null;
+        app.RenderCallback = null;
+        
+        // call the MonoGame 'Game' class dispose.
+        app.Dispose();
     }
-
-    private void OnGraphicsDeviceReset(object caller, EventArgs e)
-    {
-        // This ensures that the main render destination rectangle
-        // will always be the correct size when the window's back buffer resizes;
-        // including when toggling fullscreen and manually setting the back buffer.
-        DestinationRectangle = RendererSystem.CalculateRenderDestinationRectangle(this, FinalRenderTarget);
-    }
-
 }

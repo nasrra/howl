@@ -4,7 +4,7 @@ using Howl.Debug;
 using Howl.Io;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace Howl.Vendors.MonoGame;
+namespace Howl.Vendors.MonoGame.Graphics;
 
 public static class TextureManager
 {
@@ -12,17 +12,17 @@ public static class TextureManager
     ///     Registers a texture into a texture manager state instance.
     /// </summary>
     /// <param name="state">the state instance.</param>
-    /// <param name="filePath">the file path of the texture.</param>
+    /// <param name="filePath">the file path of the texture - relative to the working directory..</param>
     /// <param name="textureIndex">output for the index in the textures array assigned to the texture.</param>
     /// <returns>true, if the texture was successfully registered; otherwise false.</returns>
     public static bool RegisterTexture(TextureManagerState state, string filePath, ref int textureIndex)
     {        
-        int nextTextureIndex = state.RegisteredTexturesCount+1;
+        int nextIndex = state.RegisteredCount+1;
 
         // dont register at all if the texture has already been registered.
-        if (nextTextureIndex >= state.MaxTextureCount)
+        if (nextIndex >= state.MaxRegisteredCount)
         {
-            System.Diagnostics.Debug.Assert(false, $"Texture '{filePath}' cannot be registered as max texture count '{state.MaxTextureCount}' was exceeded.");
+            System.Diagnostics.Debug.Assert(false, $"Texture '{filePath}' cannot be registered as max register count '{state.MaxRegisteredCount}' was exceeded.");
             return false;
         }
 
@@ -32,10 +32,10 @@ public static class TextureManager
             return false;
         }
 
-        textureIndex = nextTextureIndex;
         // register an index for the texture.
-        state.FilePathToIndex.Add(filePath, nextTextureIndex);
-        state.RegisteredTexturesCount++;
+        textureIndex = nextIndex;
+        state.FilePathToIndex.Add(filePath, nextIndex);
+        state.RegisteredCount++;
         return true;            
     }
 
@@ -44,7 +44,7 @@ public static class TextureManager
     /// </summary>
     /// <param name="state">the texture manager state instance that contains the registered texture.</param>
     /// <param name="graphicsDevice">the graphics device used to create the texture instance.</param>
-    /// <param name="filePath">the file path of the registered texture to load.</param>
+    /// <param name="filePath">the file path of the registered texture to load. - relative to the working directory.</param>
     /// <returns>true; if the texture was successfully loaded; otherwise false.</returns>
     public static bool LoadTexture(TextureManagerState state, GraphicsDevice graphicsDevice, string filePath)
     {        
@@ -54,9 +54,9 @@ public static class TextureManager
             return false;
         }
 
-        int textureIndex = state.FilePathToIndex[filePath];
+        int index = state.FilePathToIndex[filePath];
 
-        if (state.Textures[textureIndex] != null)
+        if (state.Textures[index] != null)
         {
             Log.WriteLine(LogType.Error, $"Texture '{filePath}' has already been loaded.");
             return false;
@@ -66,7 +66,7 @@ public static class TextureManager
         {
             using(FileStream stream = new FileStream(filePath, FileMode.Open))
             {
-                state.Textures[textureIndex] = Texture2D.FromStream(graphicsDevice, stream);                 
+                state.Textures[index] = Texture2D.FromStream(graphicsDevice, stream);                 
             }
         }
         catch(IOException e)
@@ -100,20 +100,22 @@ public static class TextureManager
             return false;
         }
 
+        // free the unmanaged resource from memory.
         state.Textures[textureIndex].Dispose();
-        state.Textures[textureIndex] = null;
 
+        // set to null so the system knows this font had been unloaded.
+        state.Textures[textureIndex] = null;
         return true;
     }
 
     /// <summary>
-    ///     Sets the Nil texture value in a texture manager state instance.
+    ///     Loads and sets the Nil (fallback) texture to use when failing to retrieve a valid texture. 
     /// </summary>
     /// <param name="state">the state instance to set the Nil texture in.</param>
     /// <param name="graphicsDevice">the graphics device used to create the texture instance.</param>
     /// <param name="filePath">the file path of the registered texture to load.</param>
     /// <returns>true; if the texture was successfully loaded; otherwise false.</returns>
-    public static bool LoadNilTexture(TextureManagerState state, MonoGameApp monoGame, string filePath)
+    public static bool LoadNilTexture(TextureManagerState state, GraphicsDevice graphicsDevice, string filePath)
     {
         // dispose the previous Nil texture if there was any.
         state.Textures[0]?.Dispose();
@@ -122,7 +124,7 @@ public static class TextureManager
         {
             using(FileStream stream = new FileStream(filePath, FileMode.Open))
             {
-                state.Textures[0] = Texture2D.FromStream(monoGame.GraphicsDevice, stream);                 
+                state.Textures[0] = Texture2D.FromStream(graphicsDevice, stream);
             }
         }
         catch(IOException e)

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Howl.Test.Vendors.MonoGame.Math;
 
-public class Vector3ExtensionsTest{
+public class Test_Vector3Extensions{
     
     [Fact]
     public void ToHowl_Test()

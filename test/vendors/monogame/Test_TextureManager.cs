@@ -1,6 +1,5 @@
-using Howl.Math;
 using Howl.Vendors.MonoGame;
-using Microsoft.Xna.Framework.Graphics;
+using Howl.Vendors.MonoGame.Graphics;
 
 namespace Howl.Test.Vendors.MonoGame;
 
@@ -24,7 +23,8 @@ public class Test_TextureManager
     // A monogame app is only created here to use the Graphics device associated with it
     // in order to load textures, nothing else of it should be used.
     const int MaxTextureCount = 5;
-    public static MonoGameApp MonoGameApp = new(1,1,1,1,MaxTextureCount);
+    const int MaxFontCount = 12;
+    public static MonoGameAppState AppState = new(1, 1, 1, 1, MaxTextureCount, MaxFontCount, 1);
 
     public Test_TextureManager()
     {
@@ -65,7 +65,7 @@ public class Test_TextureManager
                 Assert.True(TextureManager.RegisterTexture(state, filePath, ref index));
                 Assert.Equal(registeredCount, index); // <-- add one because there is a Nil value.
                 Assert.True(state.FilePathToIndex.ContainsKey(filePath));
-                Assert.Equal(registeredCount, state.RegisteredTexturesCount);
+                Assert.Equal(registeredCount, state.RegisteredCount);
             }
 
             // fail after capacity was hit.
@@ -78,7 +78,7 @@ public class Test_TextureManager
             // no data should have changed after a fail case.
             Assert.Equal(-1, index);
             Assert.False(state.FilePathToIndex.ContainsKey(filePath));
-            Assert.Equal(registeredCount, state.RegisteredTexturesCount);                
+            Assert.Equal(registeredCount, state.RegisteredCount);                
         }
     }
 
@@ -91,27 +91,27 @@ public class Test_TextureManager
 
         id = -1;
         TextureManager.RegisterTexture(state, FilePath0, ref id);
-        Assert.True(TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath0));
+        Assert.True(TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath0));
         Assert.NotNull(state.Textures[id]);
 
         id = -1;
         TextureManager.RegisterTexture(state, FilePath1, ref id);
-        TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath1);
+        TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath1);
         Assert.NotNull(state.Textures[id]);
         
         id = -1;
         TextureManager.RegisterTexture(state, FilePath2, ref id);
-        TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath2);
+        TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath2);
         Assert.NotNull(state.Textures[id]);
 
         Debug.Log.Suppress = true;
         
         // should return false if the file is already loaded.
-        Assert.False(TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath2));
+        Assert.False(TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath2));
 
         // should return false if the file has not been registered..
         id = -1;
-        Assert.False(TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, "fail case"));
+        Assert.False(TextureManager.LoadTexture(state, AppState.GraphicsDevice, "fail case"));
         Assert.Equal(-1, id);
         
         Debug.Log.Suppress = false;
@@ -130,9 +130,9 @@ public class Test_TextureManager
         TextureManager.RegisterTexture(state, FilePath1, ref t1);
         TextureManager.RegisterTexture(state, FilePath2, ref t2);
 
-        TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath0);
-        TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath1);
-        TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath2);
+        TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath0);
+        TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath1);
+        TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath2);
 
         TextureManager.UnloadTexture(state, FilePath1);
 
@@ -178,9 +178,9 @@ public class Test_TextureManager
         TextureManager.RegisterTexture(state, FilePath0, ref t0);
         TextureManager.RegisterTexture(state, FilePath1, ref t1);
         TextureManager.RegisterTexture(state, FilePath2, ref t2);
-        TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath0);
-        TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath1);
-        TextureManager.LoadTexture(state, MonoGameApp.GraphicsDevice, FilePath2);
+        TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath0);
+        TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath1);
+        TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath2);
 
         Assert.True(TextureManager.GetTextureDimensions(state, t0, ref width, ref height));
         Assert.Equal(TextureWidth0, width);
@@ -205,7 +205,7 @@ public class Test_TextureManager
         TextureManagerState state = new(MaxTextureCount);
         
         Assert.Null(state.Textures[0]);
-        TextureManager.LoadNilTexture(state, MonoGameApp, NilTextureFilePath);
+        TextureManager.LoadNilTexture(state, AppState.GraphicsDevice, NilTextureFilePath);
         Assert.False(state.FilePathToIndex.ContainsKey(NilTextureFilePath));
         Assert.NotNull(state.Textures[0]);
     }

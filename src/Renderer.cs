@@ -1,4 +1,3 @@
-using System.IO;
 using Howl.Ecs;
 using Howl.Graphics;
 using Howl.Input;
@@ -10,33 +9,11 @@ namespace Howl;
 public static class Renderer
 {
     /// <summary>
-    ///     Loads a font file.
-    /// </summary>
-    /// <param name="app">the howl app instance to load a font into.</param>
-    /// <param name="fontName"></param>
-    /// <param name="genIndex"></param>
-    public static void LoadFont(HowlApp app, string fontName, out GenIndex genIndex)
-    {
-        MonoGameApp.LoadFont(app.MonoGameApp, fontName, out genIndex);
-    }
-
-    /// <summary>
-    ///     Gets whether or not a font has been loaded.
-    /// </summary>
-    /// <param name="app"></param>
-    /// <param name="genIndex"></param>
-    /// <returns>true, if the font is loaded; otherwise false.</returns>
-    public static GenIndexResult IsFontLoaded(HowlApp app, GenIndex genIndex)
-    {
-        return MonoGameApp.IsFontLoaded(app.MonoGameApp, genIndex);
-    }
-
-    /// <summary>
     ///     Sets the application to windowed mode.
     /// </summary>
     public static void SetWindowed(HowlApp app)
     {
-        MonoGameApp.SetWindowed(app.MonoGameApp);
+        MonoGameApp.SetWindowed(app.MonoGameAppState);
     }
 
     /// <summary>
@@ -45,7 +22,7 @@ public static class Renderer
     /// <param name="app"></param>
     public static void SetFullscreen(HowlApp app)
     {
-        MonoGameApp.SetFullscreen(app.MonoGameApp);
+        MonoGameApp.SetFullscreen(app.MonoGameAppState);
     }
 
     /// <summary>
@@ -54,7 +31,7 @@ public static class Renderer
     /// <param name="app"></param>
     public static void SetBorderlessFullscreen(HowlApp app)
     {
-        MonoGameApp.SetBorderlessFullscreen(app.MonoGameApp);
+        MonoGameApp.SetBorderlessFullscreen(app.MonoGameAppState);
     }
 
     /// <summary>
@@ -64,7 +41,7 @@ public static class Renderer
     /// <param name="targetFrameRate"></param>
     public static void SetTargetFrameRate(HowlApp app, TargetFrameRate targetFrameRate)
     {
-        MonoGameApp.SetTargetFrameRate(app.MonoGameApp, targetFrameRate);
+        MonoGameApp.SetTargetFrameRate(app.MonoGameAppState, targetFrameRate);
     }
 
     /// <summary>
@@ -74,7 +51,7 @@ public static class Renderer
     /// <param name="resolution">the resolution to set.</param>
     public static void SetFinalRenderTargetResolution(HowlApp app, Vector2Int resolution)
     {
-        MonoGameApp.SetFinalRenderTargetResolution(app.MonoGameApp, resolution.X, resolution.Y);
+        MonoGameApp.SetFinalRenderTargetResolution(app.MonoGameAppState, resolution.X, resolution.Y);
     }
 
     /// <summary>
@@ -86,7 +63,7 @@ public static class Renderer
     /// <exception cref="ArgumentException"></exception>
     public static void SetFinalRenderTargetResolution(HowlApp app, int width, int height)
     {
-        MonoGameApp.SetFinalRenderTargetResolution(app.MonoGameApp, width, height);
+        MonoGameApp.SetFinalRenderTargetResolution(app.MonoGameAppState, width, height);
     }
 
     /// <summary>
@@ -98,7 +75,7 @@ public static class Renderer
     /// <returns>tre, if ther texture was successfully registered; otherwise false.</returns>
     public static bool RegisterTexture(HowlApp app, string filePath, ref int textureId)
     {
-        return TextureManager.RegisterTexture(app.MonoGameApp.Textures, filePath, ref textureId);
+        return Vendors.MonoGame.Graphics.TextureManager.RegisterTexture(app.MonoGameAppState.TextureManagerState, filePath, ref textureId);
     }
 
     /// <summary>
@@ -109,7 +86,7 @@ public static class Renderer
     /// <returns>true, if the texture was successfully loaded; otherwise false.</returns>
     public static bool LoadTexture(HowlApp app, string filePath)
     {
-        return TextureManager.LoadTexture(app.MonoGameApp.Textures, app.MonoGameApp.GraphicsDevice, filePath);
+        return Vendors.MonoGame.Graphics.TextureManager.LoadTexture(app.MonoGameAppState.TextureManagerState, app.MonoGameAppState.GraphicsDevice, filePath);
     }
 
     /// <summary>
@@ -121,7 +98,7 @@ public static class Renderer
     /// <returns>true, if the texture's dimensions were successfully retrieved otherwise false.</returns>
     public static bool GetTextureDimensions(HowlApp app, int textureId, ref Vector2Int dimensions)
     {
-        return TextureManager.GetTextureDimensions(app.MonoGameApp.Textures, textureId, ref dimensions.X, ref dimensions.Y);
+        return Vendors.MonoGame.Graphics.TextureManager.GetTextureDimensions(app.MonoGameAppState.TextureManagerState, textureId, ref dimensions.X, ref dimensions.Y);
     }
 
     /// <summary>
@@ -132,7 +109,7 @@ public static class Renderer
     /// <returns>true, if the texture was successfully unloaded; otherwise false.</returns>
     public static bool UnloadTexture(HowlApp app, string filePath)
     {
-        return TextureManager.UnloadTexture(app.MonoGameApp.Textures, filePath);        
+        return Vendors.MonoGame.Graphics.TextureManager.UnloadTexture(app.MonoGameAppState.TextureManagerState, filePath);        
     }
 
     /// <summary>
@@ -143,7 +120,7 @@ public static class Renderer
     /// <returns>true, if the texture has been loaded; otherwise false.</returns>
     public static bool IsTextureLoaded(HowlApp app, int textureId)
     {
-        return app.MonoGameApp.Textures.Textures[textureId] != null;
+        return app.MonoGameAppState.TextureManagerState.Textures[textureId] != null;
     }
 
     /// <summary>
@@ -162,7 +139,7 @@ public static class Renderer
         float layerDepth, SpriteOrigin spriteOrigin, DrawSpace worldSpace
     )
     {
-        return MonoGameApp.ConstructSprite(app.MonoGameApp.Textures, colourTint, sourceRectangle, scale, textureId, 
+        return MonoGameApp.ConstructSprite(app.MonoGameAppState.TextureManagerState, colourTint, sourceRectangle, scale, textureId, 
             layerDepth, spriteOrigin, worldSpace
         );
     }
@@ -183,7 +160,7 @@ public static class Renderer
         string textureFilePath, float layerDepth, SpriteOrigin spriteOrigin, DrawSpace worldSpace
     )
     {
-        return MonoGameApp.ConstructSprite(app.MonoGameApp.Textures, colourTint, sourceRectangle, scale, textureFilePath, 
+        return MonoGameApp.ConstructSprite(app.MonoGameAppState.TextureManagerState, colourTint, sourceRectangle, scale, textureFilePath, 
             layerDepth, spriteOrigin, worldSpace
         );
     }
@@ -196,7 +173,7 @@ public static class Renderer
     /// <returns></returns>
     public static int GetTextureId(HowlApp app, string texturePath)
     {
-        return TextureManager.GetTextureIndex(app.MonoGameApp.Textures, texturePath);
+        return Vendors.MonoGame.Graphics.TextureManager.GetTextureIndex(app.MonoGameAppState.TextureManagerState, texturePath);
     }
 
     /// <summary>
@@ -207,6 +184,8 @@ public static class Renderer
     /// <returns>true; if the texture was successfully loaded; otherwise false.</returns>
     public static bool LoadNilTexture(HowlApp app, string filePath)
     {
-        return TextureManager.LoadNilTexture(app.MonoGameApp.Textures, app.MonoGameApp, filePath);   
+        return Vendors.MonoGame.Graphics.TextureManager.LoadNilTexture(app.MonoGameAppState.TextureManagerState, 
+            app.MonoGameAppState.GraphicsDevice, filePath
+        );   
     }
 }

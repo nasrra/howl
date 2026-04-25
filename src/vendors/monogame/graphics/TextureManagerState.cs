@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace Howl.Vendors.MonoGame;
+namespace Howl.Vendors.MonoGame.Graphics;
 
 public class TextureManagerState
 {
@@ -22,12 +22,12 @@ public class TextureManagerState
     /// <summary>
     ///     The count of textures that have been registered; starting from index 0.
     /// </summary>
-    public int RegisteredTexturesCount;
+    public int RegisteredCount;
 
     /// <summary>
-    ///     The maximum amount of registered textures this state instance can store.
+    ///     The maximum amount of textures this state instance can store.
     /// </summary>
-    public int MaxTextureCount;
+    public int MaxRegisteredCount;
 
     /// <summary>
     ///     Whether or not this instance has been disposed.
@@ -42,7 +42,7 @@ public class TextureManagerState
     {
         Textures = new Texture2D[maxTextureCount];
         FilePathToIndex = new();
-        MaxTextureCount = maxTextureCount;
+        MaxRegisteredCount = maxTextureCount;
     }
 
     public static void Dispose(TextureManagerState state)
@@ -55,15 +55,15 @@ public class TextureManagerState
         state.Disposed = true;
 
         // free all textures from video memory.
-        for(int i = 0; i < state.RegisteredTexturesCount; i++)
+        for(int i = 0; i < state.Textures.Length; i++)
         {
             state.Textures[i]?.Dispose();
         }
         state.Textures = null;
 
         state.FilePathToIndex = null;
-        state.RegisteredTexturesCount = 0;
-        state.MaxTextureCount = 0;
+        state.RegisteredCount = 0;
+        state.MaxRegisteredCount = 0;
         
         GC.SuppressFinalize(state);
     }

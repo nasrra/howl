@@ -23,15 +23,18 @@ public unsafe struct Text32
     /// </summary>
     public fixed char Characters[MaxCharacters];
 
+    public int FontId;
+
     /// <summary>
     /// 
     /// </summary>
     /// <param name="textParameters">The text parameters used when drawing.</param>
     /// <param name="characters">the chracters to draw.</param>
-    public Text32(TextParameters textParameters, ReadOnlySpan<char> characters)
+    public Text32(TextParameters textParameters, ReadOnlySpan<char> characters, int fontId)
     {
         TextParameters = textParameters;
         TextProc.SetCharacters(ref this, characters);
+        FontId = fontId;
     }
 
     /// <summary>

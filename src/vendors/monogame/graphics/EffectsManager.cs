@@ -7,7 +7,7 @@ namespace Howl.Vendors.MonoGame.Graphics;
 
 public class EffectManager : IDisposable
 {
-    private MonoGameApp monoGameApp;
+    private MonoGameAppState app;
 
     private Effect[] effects;
     
@@ -26,9 +26,9 @@ public class EffectManager : IDisposable
     private bool disposed = false;
     public bool IsDisposed => disposed;
 
-    public EffectManager(MonoGameApp monoGameApp, int effectsAmount = 0)
+    public EffectManager(MonoGameAppState app, int effectsAmount = 0)
     {        
-        this.monoGameApp = monoGameApp;
+        this.app = app;
         effects = new Effect[effectsAmount];
         CreateDefaultSpriteEffect();
         CreateDefaultGuiSpriteEffect();
@@ -37,7 +37,7 @@ public class EffectManager : IDisposable
 
     private void ValidateDependencies()
     {
-        if (monoGameApp.IsDisposed)
+        if (app.IsDisposed)
         {
             throw new ObjectDisposedException("EffectManager cannot operate on/with a disposed MonoGameApp.");
         }
@@ -50,7 +50,7 @@ public class EffectManager : IDisposable
     {
         ValidateDependencies();
 
-        DefaultSpriteEffect = new BasicEffect(monoGameApp.GraphicsDevice);
+        DefaultSpriteEffect = new BasicEffect(app.GraphicsDevice);
         DefaultSpriteEffect.FogEnabled = false;
         DefaultSpriteEffect.TextureEnabled = true;
         DefaultSpriteEffect.LightingEnabled = false;
@@ -65,7 +65,7 @@ public class EffectManager : IDisposable
     /// </summary>
     private void CreateDefaultGuiSpriteEffect()
     {
-        DefaultGuiSpriteEffect = new BasicEffect(monoGameApp.GraphicsDevice);
+        DefaultGuiSpriteEffect = new BasicEffect(app.GraphicsDevice);
         DefaultGuiSpriteEffect.FogEnabled = false;
         DefaultGuiSpriteEffect.TextureEnabled = true;
         DefaultGuiSpriteEffect.LightingEnabled = false;
@@ -82,7 +82,7 @@ public class EffectManager : IDisposable
     {
         ValidateDependencies();
 
-        PrimitivesEffect = new BasicEffect(monoGameApp.GraphicsDevice);
+        PrimitivesEffect = new BasicEffect(app.GraphicsDevice);
         
         PrimitivesEffect.FogEnabled = false;
         

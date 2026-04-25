@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Howl.Test.Vendors.MonoGame.Math.Shapes;
 
-public class RectangleExtensionsTest
+public class Test_RectangleExtensions
 {
     [Fact]
     public void ToHowl_Test()
@@ -14,7 +14,7 @@ public class RectangleExtensionsTest
         int width = 3;
         int height = 4;
         Microsoft.Xna.Framework.Rectangle rectangle = new(x,y,width,height);
-        Howl.Math.Shapes.Rectangle result = rectangle.ToHowl();
+        Howl.Math.Shapes.Rectangle result = RectangleExtensions.ToHowl(rectangle);
 
         Assert.Equal(x, result.X);
         Assert.Equal(y, result.Y);
@@ -30,7 +30,7 @@ public class RectangleExtensionsTest
         float width = 3;
         float height = 4;
         Howl.Math.Shapes.Rectangle rectangle = new(x,y,width,height);
-        Microsoft.Xna.Framework.Rectangle result = rectangle.ToMonoGame();
+        Microsoft.Xna.Framework.Rectangle result = RectangleExtensions.ToMonoGame(rectangle);
 
         Assert.Equal(x, result.X);
         Assert.Equal(y, result.Y);

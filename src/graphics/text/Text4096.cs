@@ -24,16 +24,19 @@ public unsafe struct Text4096
     /// </summary>
     public fixed char Characters[MaxCharacters];
 
+    public int FontId;
+
     /// <summary>
     /// Constructs a Text.
     /// </summary>
     /// <param name="colour">The draw colour.</param>
     /// <param name="offset">The offset - in pixels - when drawing.</param>
     /// <param name="characters">The span of characters that will render when drawing (max length of 16.)</param>
-    public Text4096(TextParameters textParameters, ReadOnlySpan<char> characters)
+    public Text4096(TextParameters textParameters, ReadOnlySpan<char> characters, int fontId)
     {
         TextParameters = textParameters;
         TextProc.SetCharacters(ref this, characters);
+        FontId = fontId;
     }
 
     /// <summary>

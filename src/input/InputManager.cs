@@ -10,6 +10,6 @@ public static class InputManager
     /// <param name="app">the howl app instance to update.</param>
     public static void Update(HowlApp app)
     {
-        Vendors.MonoGame.Input.InputManager.Update(app.MonoGameApp.InputManagerState);
+        Vendors.MonoGame.Input.InputManager.Update(app.MonoGameAppState.InputManagerState);
     }
 }

@@ -26,7 +26,7 @@ public static class Mouse
     /// <returns>true, if the mouse button is down; otherwise false.</returns>
     public static bool IsButtonDown(HowlApp app, MouseButton button)
     {
-        Vendors.MonoGame.Input.InputManagerState input = app.MonoGameApp.InputManagerState;
+        Vendors.MonoGame.Input.InputManagerState input = app.MonoGameAppState.InputManagerState;
 
         switch (button)
         {
@@ -52,7 +52,7 @@ public static class Mouse
     /// <returns>true, if the mouse button is up; otherwise false.</returns>
     public static bool IsButtonUp(HowlApp app, MouseButton button)
     {
-        Vendors.MonoGame.Input.InputManagerState input = app.MonoGameApp.InputManagerState;
+        Vendors.MonoGame.Input.InputManagerState input = app.MonoGameAppState.InputManagerState;
 
         switch (button)
         {
@@ -78,7 +78,7 @@ public static class Mouse
     /// <returns>true, if the mouse button has just been pressed; otherwise false.</returns>
     public static bool IsButtonJustPressed(HowlApp app, MouseButton button)
     {
-        Vendors.MonoGame.Input.InputManagerState input = app.MonoGameApp.InputManagerState;
+        Vendors.MonoGame.Input.InputManagerState input = app.MonoGameAppState.InputManagerState;
 
         switch (button)
         {
@@ -104,7 +104,7 @@ public static class Mouse
     /// <returns>true, if the mouse button has just been released; otherwise false.</returns>
     public static bool IsButtonJustReleased(HowlApp app, MouseButton button)
     {
-        Vendors.MonoGame.Input.InputManagerState input = app.MonoGameApp.InputManagerState;
+        Vendors.MonoGame.Input.InputManagerState input = app.MonoGameAppState.InputManagerState;
 
         switch (button)
         {
@@ -145,7 +145,7 @@ public static class Mouse
         CameraSystem.GetDrawSpaceCamera(app.EcsState, DrawSpace.World, ref camera);
 
         Microsoft.Xna.Framework.Vector2 mCameraPosition = Vendors.MonoGame.Math.Vector2Extensions.ToMonoGame(camera.Position);
-        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetWorldPosition(app.MonoGameApp, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
+        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetWorldPosition(app.MonoGameAppState, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
 
         return Vendors.MonoGame.Math.Vector2Extensions.ToHowl(mPosition);
     }
@@ -161,7 +161,7 @@ public static class Mouse
         CameraSystem.GetDrawSpaceCamera(app.EcsState, DrawSpace.Gui, ref camera);
 
         Microsoft.Xna.Framework.Vector2 mCameraPosition = Vendors.MonoGame.Math.Vector2Extensions.ToMonoGame(camera.Position);
-        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetScreenPosition(app.MonoGameApp, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
+        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetScreenPosition(app.MonoGameAppState, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
 
         return Vendors.MonoGame.Math.Vector2Extensions.ToHowl(mPosition);
     }
