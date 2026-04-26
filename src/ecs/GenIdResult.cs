@@ -16,6 +16,11 @@ public enum GenIdResult : byte
     NotAllocated,
 
     /// <summary>
+    ///     Returned when a GenId accesses an entry that is currently inactive.
+    /// </summary>
+    NotActive,
+
+    /// <summary>
     ///     Returned when the amount of allocated memory of a given GenIndexArray has been reached; meaning that all slots in the backing arrays are allocated.
     /// </summary>
     MemoryLimitHit

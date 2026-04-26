@@ -176,7 +176,7 @@ public class Test_StringRegistry
 
         Span<char> c3 = StringRegistry.GetString(state, stringId3, ref isValid);
         Assert.False(isValid);
-        Assert.Equal(registryNilString, c3);
+        Assert.Equal(allocatorNilString, c3);
 
         // == attemp to set the strings.
 
@@ -193,7 +193,7 @@ public class Test_StringRegistry
         Assert.False(StringRegistry.SetString(state, modifiedString3, stringId3));
         Span<char> c6 = StringRegistry.GetString(state, stringId3, ref isValid);
         Assert.False(isValid);
-        Assert.Equal(registryNilString, c6);
+        Assert.Equal(allocatorNilString, c6);
 
         // == deallocate the strings. ==.
 
@@ -210,7 +210,7 @@ public class Test_StringRegistry
         Assert.False(StringRegistry.DeallocateString(state, stringId3));
         Span<char> c9 = StringRegistry.GetString(state, stringId3, ref isValid);
         Assert.False(isValid);
-        Assert.Equal(registryNilString, c9);
+        Assert.Equal(allocatorNilString, c9);
 
 
         Debug.Log.Suppress = false;

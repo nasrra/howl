@@ -25,7 +25,7 @@ public static class TeloPhysics
     public static void RegisterComponents(ComponentRegistry registry)
     {
         ComponentRegistry.RegisterComponent<Transform>(registry);
-        ComponentRegistry.RegisterComponent<PhysicsBodyId>(registry);
+        ComponentRegistry.RegisterComponent<PhysicsBodyComponent>(registry);
     }
 
     public static void FixedUpdate(EcsState ecs, TeloPhysicsState state, float deltaTime, int subSteps)
@@ -177,13 +177,13 @@ public static class TeloPhysics
     /// <param name="generation">the generations for each entry in the SOA transform's.</param>
     public static void SyncTransformsToEntityTransforms(EcsState ecs, Soa_Transform soaTransform, Span<int> generation)
     {
-        ComponentArray<PhysicsBodyId> tagged = EcsState.GetComponents<PhysicsBodyId>(ecs);
+        ComponentArray<PhysicsBodyComponent> tagged = EcsState.GetComponents<PhysicsBodyComponent>(ecs);
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
         
         for(int i = 1; i < tagged.Active.Count; i++)
         {
             GenId genId = tagged.Active[i];
-            ref PhysicsBodyId tag = ref ComponentArray.GetDataUnsafe(tagged, genId);            
+            ref PhysicsBodyComponent tag = ref ComponentArray.GetDataUnsafe(tagged, genId);            
 
             // skip if the physics body id isn't valid.
             if(generation[GenId.GetIndex(tag.GenId)] != GenId.GetGeneration(tag.GenId))
@@ -218,13 +218,13 @@ public static class TeloPhysics
     /// <param name="generation">the generation of each soa transform entry.</param>
     public static void SyncEntityTransformsToPhysicsBodies(EcsState ecs, Soa_Transform soaTransform, Span<int> generation)
     {
-        ComponentArray<PhysicsBodyId> tags = EcsState.GetComponents<PhysicsBodyId>(ecs);
+        ComponentArray<PhysicsBodyComponent> tags = EcsState.GetComponents<PhysicsBodyComponent>(ecs);
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
 
         for(int i = 1; i < tags.Active.Count; i++)
         {
             GenId genId = tags.Active[i];
-            ref PhysicsBodyId tag = ref ComponentArray.GetDataUnsafe(tags, genId);
+            ref PhysicsBodyComponent tag = ref ComponentArray.GetDataUnsafe(tags, genId);
 
             // skip the tag if it is stale.
             if(generation[GenId.GetIndex(tag.GenId)] != GenId.GetGeneration(tag.GenId))

@@ -9,6 +9,9 @@ public static class StringAllocator{
     /// <summary>
     ///     Allocates a string into a state instance.
     /// </summary>
+    /// <remarks>
+    ///     Remarks: the stringId will be written to with the Nil string id of the allocator if this allocation fails.
+    /// </remarks>
     /// <param name="state">the state instance to allocate into.</param>
     /// <param name="characters">the characters of the string.</param>
     /// <param name="stringIndex">output for the index of the newly allocated string.</param>

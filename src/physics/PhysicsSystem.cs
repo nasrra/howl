@@ -108,4 +108,23 @@ public static class PhysicsSystem
             ref genId
         );
     }
+
+    /// <summary>
+    ///     Applies an impulse force to a rigidbody.
+    /// </summary>
+    /// <param name="app">the howl app containing the rigidbody.</param>
+    /// <param name="force">the force to apply to the rigidbody.</param>
+    /// <param name="genId">the gen id of the rigidbody in the physics system state.</param>
+    /// <returns>
+    ///     <list type = "bullet">
+    ///         <item><see cref="GenIdResult.Ok"/></item>
+    ///         <item><see cref="GenIdResult.NotAllocated"/></item>
+    ///         <item><see cref="GenIdResult.NotActive"/></item>
+    ///         <item><see cref="GenIdResult.StaleGenId"/></item>
+    ///     </list>
+    /// </returns>
+    public static GenIdResult ImpulseForce(HowlApp app, Vector2 force, GenId genId)
+    {
+        return PhysicsBody.ImpulseForce(app.TeloPhysicsState, force, genId);
+    }
 }

@@ -107,6 +107,9 @@ public static class StringRegistry
     /// <summary>
     ///     Allocates a string into a state instance.
     /// </summary>
+    /// <remarks>
+    ///     Remarks: the stringId will be written to with the Nil string id of the allocator if this allocation fails.
+    /// </remarks>
     /// <param name="state">the state instance to allocate into.</param>
     /// <param name="characters">the characters of the string.</param>
     /// <param name="allocatorLength">the amount of characters to allocate for the string.</param>
@@ -125,11 +128,7 @@ public static class StringRegistry
         int stringIndex = 0;
         bool valid = StringAllocator.Allocate(allocator, characters, ref stringIndex);
         
-        // mutate the string id only if the string was allocated.
-        if (valid)
-        {
-            stringId = new(stringIndex, allocatorLength);
-        }
+        stringId = new(stringIndex, allocatorLength);
 
         return valid;
     }

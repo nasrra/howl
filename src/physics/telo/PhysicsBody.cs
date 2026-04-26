@@ -1453,6 +1453,45 @@ public static class PhysicsBody
         return TeloPhysics.VectorRectangleRotationalInertia * mass * ((width * width) + (height * height));
     }
 
+    /// <summary>
+    ///     Applies an impulse force to a rigidbody.
+    /// </summary>
+    /// <param name="state">the physics state containing the rigidbody.</param>
+    /// <param name="force">the force to apply to the rigidbody.</param>
+    /// <param name="genId">the gen id of the rigidbody.</param>
+    /// <returns>
+    ///     <list type = "bullet">
+    ///         <item><see cref="GenIdResult.Ok"/></item>
+    ///         <item><see cref="GenIdResult.NotAllocated"/></item>
+    ///         <item><see cref="GenIdResult.NotActive"/></item>
+    ///         <item><see cref="GenIdResult.StaleGenId"/></item>
+    ///     </list>
+    /// </returns>
+    public static GenIdResult ImpulseForce(TeloPhysicsState state, Math.Vector2 force, GenId genId)
+    {
+        if(EntityRegistry.IsGenIdStale(state.Entities, genId))
+        {
+            return GenIdResult.StaleGenId;
+        }
+
+        int index = GenId.GetIndex(genId);
+        ref PhysicsBodyFlags flag = ref state.Flags[index];
+        
+        if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.RigidBody) == 0)
+        {
+            return GenIdResult.NotAllocated;   
+        }
+
+        if((flag & PhysicsBodyFlags.Active) == 0)
+        {
+            return GenIdResult.NotActive;
+        }
+
+        state.LinearVelocities.X[index] += force.X;
+        state.LinearVelocities.Y[index] += force.Y;
+
+        return GenIdResult.Ok;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static int GetPhysicsBodyIndex(GenId genId)

@@ -1,5 +1,6 @@
 using Howl.Ecs;
 using Howl.Math.Shapes;
+using Howl.Physics;
 using Howl.Physics.Telo;
 using Howl.Math;
 using Howl.Test.Math;
@@ -797,7 +798,7 @@ public class Test_TeloPhysics
         TeloPhysics.RegisterComponents(ecs.Components);
 
         // pull components into scope.
-        ComponentArray<PhysicsBodyId> tags = EcsState.GetComponents<PhysicsBodyId>(ecs);
+        ComponentArray<PhysicsBodyComponent> tags = EcsState.GetComponents<PhysicsBodyComponent>(ecs);
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
 
         Transform expected = new Transform(0,9,8,7,6,5,4);
@@ -830,7 +831,7 @@ public class Test_TeloPhysics
         GenId circleBody = default;
         GenId circleEntity = default;
 
-        ComponentArray<PhysicsBodyId> tags = EcsState.GetComponents<PhysicsBodyId>(ecs);
+        ComponentArray<PhysicsBodyComponent> tags = EcsState.GetComponents<PhysicsBodyComponent>(ecs);
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
 
         // allocate circle entity and rigidbody.
@@ -869,6 +870,73 @@ public class Test_TeloPhysics
         // ensure the data was properly set inside the state.
         Assert_Soa_Transform.EntryEqual(circleTransform, 4, PhysicsBody.GetPhysicsBodyIndex(circleBody), state.Transforms);
         Assert_Soa_Transform.EntryEqual(rectTransform, 4, PhysicsBody.GetPhysicsBodyIndex(rectBody), state.Transforms);
+    }
+
+    [Fact]
+    public void ImpulseForce_Test()
+    {
+        TeloPhysicsState state = new(maxBodies, maxBodyColliderVertices);
+
+        int index = 0;
+        GenId genId = default;
+        Circle shape = new Circle(0,0,2);
+        Transform transform = new Transform(1,2,3,4,5,6,7);
+        PhysicsMaterial material = new(0.2f, 0.1f, 2, 0.5f);
+
+        Vector2 force = new Vector2(2,3);
+
+        bool isKinematic = false;
+        bool isTrigger = false;
+        bool rotationalPhysics = false;
+
+        // == allocate rigidbody. ==
+        
+        PhysicsBody.AllocateCircleRigidBody(state, shape, transform, material.StaticFriction, material.KineticFriction, material.Density, 
+            material.Restitution, isKinematic, isTrigger, rotationalPhysics, ref genId
+        );
+        index = GenId.GetIndex(genId);
+        
+        // set body to inactive.
+        PhysicsBody.SetActive(state, genId, false);
+
+        // fail case.
+        Assert.Equal(GenIdResult.NotActive, PhysicsBody.ImpulseForce(state, force, genId));
+        // ensure the value didnt change.
+        Assert.Equal(0, state.LinearVelocities.X[index]);
+        Assert.Equal(0, state.LinearVelocities.Y[index]);
+
+        // set body to active.
+        PhysicsBody.SetActive(state, genId, true);
+        
+        // success case.
+        Assert.Equal(GenIdResult.Ok, PhysicsBody.ImpulseForce(state, force, genId));
+        Assert.Equal(GenIdResult.Ok, PhysicsBody.ImpulseForce(state, force, genId));
+        // ensure data was written.
+        Assert.Equal(force.X * 2, state.LinearVelocities.X[index]);
+        Assert.Equal(force.Y * 2, state.LinearVelocities.Y[index]);
+    
+        // == allocate collider. ==
+    
+        PhysicsBody.AllocateCircleCollider(state, shape, transform, isKinematic, isTrigger, ref genId);
+        index = GenId.GetIndex(genId);
+        
+        // set body to inactive.
+        PhysicsBody.SetActive(state, genId, false);
+
+        // fail case.
+        Assert.Equal(GenIdResult.NotAllocated, PhysicsBody.ImpulseForce(state, force, genId));
+        // ensure the value didnt change.
+        Assert.Equal(0, state.LinearVelocities.X[index]);
+        Assert.Equal(0, state.LinearVelocities.Y[index]);
+
+        // set rigid body to active.
+        PhysicsBody.SetActive(state, genId, true);
+        
+        // fail case.
+        Assert.Equal(GenIdResult.NotAllocated, PhysicsBody.ImpulseForce(state, force, genId));
+        // ensure the value didnt change.
+        Assert.Equal(0, state.LinearVelocities.X[index]);
+        Assert.Equal(0, state.LinearVelocities.Y[index]);
     }
 
     // [Fact]

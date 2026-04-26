@@ -5,6 +5,19 @@ namespace Howl.DataStructures;
 
 public class HString
 {
+
+
+
+
+    /******************
+    
+        Member Variables.
+    
+    *******************/
+
+
+
+
     /// <summary>
     ///     The character array containing the characters of this string.
     /// </summary>
@@ -32,6 +45,18 @@ public class HString
         Count = value.Length;
     }
 
+
+
+
+    /******************
+    
+        Constructors.
+    
+    *******************/
+
+
+
+
     /// <summary>
     ///     Creates a new HString instance.
     /// </summary>
@@ -52,6 +77,18 @@ public class HString
         Buffer = new char[length];
         Count = 0;
     }
+
+
+
+
+    /******************
+    
+        Appending.
+    
+    *******************/
+
+
+
 
     /// <summary>
     ///     Sets the <c>Count</c> of an HString instance to zero.
@@ -82,9 +119,107 @@ public class HString
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void Append(HString destination, Span<char> source)
     {        
-        Span<char> destinationChars = destination.Buffer.AsSpan(destination.Count, destination.Buffer.Length-destination.Count);
+        Span<char> destinationChars = GetInvalidChars(destination);
         source.CopyTo(destinationChars);
         destination.Count += source.Length;
+    }
+
+    /// <summary>
+    ///     Appends a double value to a HString instance.
+    /// </summary>
+    /// <param name="destination">the instance to append to.</param>
+    /// <param name="source">the double value to append.</param>
+    public static void Append(HString destination, double source)
+    {
+        Span<char> dest = GetInvalidChars(destination);
+        source.TryFormat(dest, out int written);        
+        destination.Count+=written;
+    }
+
+    /// <summary>
+    ///     Appends a double value to a HString instance.
+    /// </summary>
+    /// <param name="destination">the instance to append to.</param>
+    /// <param name="source">the double value to append.</param>
+    /// <param name="format">the format of the double's character representation.</param>
+    public static void Append(HString destination, double source, string format)
+    {
+        Span<char> dest = GetInvalidChars(destination);
+        source.TryFormat(dest, out int written, format);        
+        destination.Count+=written;        
+    }
+
+    /// <summary>
+    ///     Appends a float value to a HString instance.
+    /// </summary>
+    /// <param name="destination">the instance to append to.</param>
+    /// <param name="source">the float value to append.</param>
+    public static void Append(HString destination, float source)
+    {
+        Span<char> dest = GetInvalidChars(destination);
+        source.TryFormat(dest, out int written);        
+        destination.Count+=written;        
+    }
+
+    /// <summary>
+    ///     Appends a int value to HString instance.
+    /// </summary>
+    /// <param name="destination">the instance to append to.</param>
+    /// <param name="source">the float value to append.</param>
+    /// <param name="format">the format of the float's character representation.</param>
+    public static void Append(HString destination, float source, string format)
+    {
+        Span<char> dest = GetInvalidChars(destination);
+        source.TryFormat(dest, out int written, format);        
+        destination.Count+=written;                
+    }
+
+    /// <summary>
+    ///     Appends a int value to a HString instance.
+    /// </summary>
+    /// <param name="destination">the instance to append to.</param>
+    /// <param name="source">the int value to append.</param>
+    public static void Append(HString destination, int source)
+    {
+        Span<char> dest = GetInvalidChars(destination);
+        source.TryFormat(dest, out int written);
+        destination.Count+=written;
+    }
+
+    /// <summary>
+    ///     Appends an int value to a HString instance.
+    /// </summary>
+    /// <param name="destination">the instance to append to.</param>
+    /// <param name="source">the int value to append.</param>
+    /// <param name="format">the format of the integer's character representation.</param>
+    public static void Append(HString destination, int source, string format)
+    {
+        Span<char> dest = GetInvalidChars(destination);
+        source.TryFormat(dest, out int written, format);
+        destination.Count+=written;        
+    }
+
+
+
+
+    /******************
+    
+        Utility.
+    
+    *******************/
+
+
+
+
+    /// <summary>
+    ///     Gets a reference to the characters after the <c>Count</c> index of a HString's <c>Buffer</c>.
+    /// </summary>
+    /// <param name="hString">the instance to get the invalid characters from.</param>
+    /// <returns>a span reference to the invalid characters.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Span<char> GetInvalidChars(HString hString)
+    {
+        return hString.Buffer.AsSpan(hString.Count, hString.Buffer.Length - hString.Count);
     }
 
     /// <summary>
@@ -108,6 +243,18 @@ public class HString
     {
         return new string(AsSpan(hString));
     }
+
+
+
+
+    /******************
+    
+        Disposal.
+    
+    *******************/
+
+
+
 
     /// <summary>
     ///     Disposes of a HString instance.
