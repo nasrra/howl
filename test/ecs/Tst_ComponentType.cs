@@ -2,7 +2,7 @@ using Howl.Ecs;
 
 namespace Howl.Test.Ecs;
 
-public class ComponentTypeTest
+public class Test_ComponentType
 {
     private struct Position
     {

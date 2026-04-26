@@ -2,7 +2,6 @@ using System;
 using Howl.Ecs;
 using Howl.Generic;
 using Howl.Graphics;
-using Howl.Graphics.Text;
 using Howl.Vendors.MonoGame.Math.Shapes;
 using Howl.Vendors.MonoGame.Math;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,6 +10,7 @@ using Microsoft.Xna.Framework;
 using Howl.Debug;
 using Howl.Vendors.MonoGame.FontStashSharp;
 using FontStashSharp;
+using Howl.Text;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
@@ -21,13 +21,10 @@ public static class RendererSystem
     /// Registers all necessary components for this system into a .
     /// </summary>
     /// <param name="ecs">the specified component registry.</param>
-    public static void RegisterComponents(ComponentRegistryNew registry)
+    public static void RegisterComponents(ComponentRegistry registry)
     {
-        ComponentRegistryNew.RegisterComponent<Sprite>(registry);
-        ComponentRegistryNew.RegisterComponent<Text16>(registry);
-        ComponentRegistryNew.RegisterComponent<Text32>(registry);
-        ComponentRegistryNew.RegisterComponent<Text4096>(registry);
-        ComponentRegistryNew.RegisterComponent<Transform>(registry);
+        ComponentRegistry.RegisterComponent<Sprite>(registry);
+        ComponentRegistry.RegisterComponent<Label>(registry);
     }
 
     /// <summary>
@@ -36,8 +33,13 @@ public static class RendererSystem
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public static void Draw(EcsState ecs, MonoGameAppState app)
+    public static void Draw(HowlApp app)
     {
+        // hoisting invariance.
+        MonoGameAppState monoGame = app.MonoGameAppState;
+        EcsState ecs = app.EcsState;
+        StringRegistryState strings = app.StringRegistryState;
+
         GenIdResult result = default;
         ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
 
@@ -55,30 +57,32 @@ public static class RendererSystem
             return;
         }
 
-        app.GraphicsDevice.SetRenderTarget(app.FinalRenderTarget);                    
-        app.GraphicsDevice.Clear(mainCamera.ClearColour.ToMonoGame());
+        monoGame.GraphicsDevice.SetRenderTarget(monoGame.FinalRenderTarget);                    
+        monoGame.GraphicsDevice.Clear(mainCamera.ClearColour.ToMonoGame());
         
-        DrawSprites(ecs, app, ref mainCamera, DrawSpace.World);
-        DrawTexts(ecs, app, ref mainCamera, DrawSpace.World);
-        DrawPrimitives(app);
-        DrawSprites(ecs, app, ref guiCamera, DrawSpace.Gui);
-        DrawTexts(ecs, app, ref guiCamera, DrawSpace.Gui);
+        DrawSprites(ecs, monoGame, ref mainCamera, DrawSpace.World);
+        DrawLabels(ecs, strings, monoGame, ref mainCamera, DrawSpace.World);
+
+        DrawPrimitives(monoGame);
+
+        DrawSprites(ecs, monoGame, ref guiCamera, DrawSpace.Gui);
+        DrawLabels(ecs, strings, monoGame, ref guiCamera, DrawSpace.Gui);
         
-        app.GraphicsDevice.SetRenderTarget(null);
+        monoGame.GraphicsDevice.SetRenderTarget(null);
 
         // draw the infal render target to the back buffer.
-        app.GraphicsDevice.SetRenderTarget(null);            
-        app.GraphicsDevice.Clear(Color.Black);
-        app.SpriteBatch.Begin(
+        monoGame.GraphicsDevice.SetRenderTarget(null);            
+        monoGame.GraphicsDevice.Clear(Color.Black);
+        monoGame.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointClamp
         );
-        app.SpriteBatch.Draw(
-            app.FinalRenderTarget,
-            RectangleExtensions.ToMonoGame(app.DestinationRectangle), // this will probably need to be changed for calc dest rectangle.
+        monoGame.SpriteBatch.Draw(
+            monoGame.FinalRenderTarget,
+            RectangleExtensions.ToMonoGame(monoGame.DestinationRectangle), // this will probably need to be changed for calc dest rectangle.
             Color.White
         );
-        app.SpriteBatch.End();
+        monoGame.SpriteBatch.End();
     }
 
     /// <summary>
@@ -263,13 +267,11 @@ public static class RendererSystem
     /// <param name="ecs">The ecs state where the texts are stored.</param>
     /// <param name="state">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
-    /// <param name="worldSpace">filters text; drawing texts that are within the specified world space.</param>
-    public static void DrawTexts(EcsState ecs, MonoGameAppState state, ref Camera camera, DrawSpace worldSpace)
+    /// <param name="drawSpace">filters text; drawing texts that are within the specified world space.</param>
+    public static void DrawLabels(EcsState ecs, StringRegistryState strings, MonoGameAppState state, ref Camera camera, DrawSpace drawSpace)
     {
         ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
-        ComponentArray<Text16> text16 = EcsState.GetComponents<Text16>(ecs);
-        ComponentArray<Text32> text32 = EcsState.GetComponents<Text32>(ecs);
-        ComponentArray<Text4096> text4096 = EcsState.GetComponents<Text4096>(ecs);        
+        ComponentArray<Label> labels = EcsState.GetComponents<Label>(ecs);
 
         state.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
@@ -278,52 +280,23 @@ public static class RendererSystem
             effect: state.EffectManager.DefaultSpriteEffect
         );
 
-        // draw text 16.
-        for(int i = 1; i < text16.Active.Count; i++)
-        {
-            GenId genId = text16.Active[i];
-            ref Text16 text = ref ComponentArray.GetDataUnsafe(text16, genId);
+        bool isValid = false;
 
-            if(text.TextParameters.WorldSpace != worldSpace)
+        // draw labels.
+        for(int i = 1; i < labels.Active.Count; i++)
+        {
+            GenId genId = labels.Active[i];
+            ref Label label = ref ComponentArray.GetDataUnsafe(labels, genId);
+            if(label.DrawSpace != drawSpace)
             {
                 continue;
             }
 
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
 
-            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), text.FontId, ref text.TextParameters);            
-        }
 
-        // draw text 32.
-        for(int i = 1; i < text32.Active.Count; i++)
-        {
-            GenId genId = text32.Active[i];
-            ref Text32 text = ref ComponentArray.GetDataUnsafe(text32, genId);
-
-            if(text.TextParameters.WorldSpace != worldSpace)
-            {
-                continue;
-            }
-
-            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-
-            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), text.FontId, ref text.TextParameters);            
-        }
-
-        // draw text 4096.
-        for(int i = 1; i < text4096.Active.Count; i++)
-        {
-            GenId genId = text4096.Active[i];
-            ref Text4096 text = ref ComponentArray.GetDataUnsafe(text4096, genId);
-
-            if(text.TextParameters.WorldSpace != worldSpace)
-            {
-                continue;
-            }
-
-            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-
-            DrawText(state, ref camera, ref transform, text.AsSpanUsed(), text.FontId, ref text.TextParameters);            
+            Span<char> chars = StringRegistry.GetString(strings, label.StringId, ref isValid);
+            DrawLabel(state, ref camera, ref transform, ref label, chars);            
         }
 
         state.SpriteBatch.End();
@@ -335,14 +308,12 @@ public static class RendererSystem
     /// <param name="state">The renderer state containing drawing context.</param>
     /// <param name="camera">The camera to use for transforming coordinates.</param>
     /// <param name="transform">The transformation to apply to the text.</param>
-    /// <param name="characters">The span of characters to draw.</param>
+    /// <param name="chars">The span of characters to draw.</param>
     /// <param name="textParameters">The text parameters.</param>
     /// <returns><see cref="GenIndexResult"/></returns>
-    public static void DrawText(MonoGameAppState state, ref Camera camera, ref Transform transform, ReadOnlySpan<char> characters,
-        int fontId, ref TextParameters textParameters 
-    )
+    public static void DrawLabel(MonoGameAppState state, ref Camera camera, ref Transform transform, ref Label label, Span<char> chars)
     {
-        Font font = state.FontManagerState.Fonts[fontId];
+        Font font = state.FontManagerState.Fonts[label.FontId];
 
         // fallback to nill if there is not font.
         if (font == null)
@@ -352,11 +323,9 @@ public static class RendererSystem
 
         Howl.Math.Vector2 position = transform.Position.InvertY() - camera.Position.InvertY();
 
-        state.StringBuilder.Clear();
-        state.StringBuilder.Append(characters);
-
-        font.SpriteFontBase.DrawText(state.SpriteBatch, characters.ToString(), Vector2Extensions.ToMonoGame(position), textParameters.Colour.ToMonoGame(), 
-            -transform.Rotation, Vector2Extensions.ToMonoGame(textParameters.Offset), Vector2Extensions.ToMonoGame(transform.Scale)
+        font.SpriteFontBase.DrawText(state.SpriteBatch, chars.ToString(), Vector2Extensions.ToMonoGame(position), 
+            label.Colour.ToMonoGame(), -transform.Rotation, Vector2Extensions.ToMonoGame(label.Offset), 
+            Vector2Extensions.ToMonoGame(transform.Scale)
         );
     }
 }

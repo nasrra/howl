@@ -3,7 +3,6 @@ using Howl.Debug;
 using Howl.Ecs;
 using Howl.Generic;
 using Howl.Math;
-using static Howl.Ecs.GenIndexListProc;
 
 namespace Howl.Graphics;
 
@@ -23,9 +22,9 @@ public static class CameraSystem
     /// Registers all necessary components for this system into the specified component registry. 
     /// </summary>
     /// <param name="componentRegistry">the component registry.</param>
-    public static void RegisterComponents(ComponentRegistryNew registry)
+    public static void RegisterComponents(ComponentRegistry registry)
     {
-        ComponentRegistryNew.RegisterComponent<Camera>(registry);
+        ComponentRegistry.RegisterComponent<Camera>(registry);
     }
 
     /// <summary>

@@ -7,7 +7,7 @@ namespace Howl.Ecs;
 
 public class EcsState : IDisposable
 {
-    public ComponentRegistryNew Components;
+    public ComponentRegistry Components;
     
     public EntityRegistry Entities;
 
@@ -21,7 +21,7 @@ public class EcsState : IDisposable
 
     public static ComponentArray<T> GetComponents<T>(EcsState state)
     {
-        return ComponentRegistryNew.GetComponents<T>(state.Components);
+        return ComponentRegistry.GetComponents<T>(state.Components);
     }
 
 
@@ -50,7 +50,7 @@ public class EcsState : IDisposable
 
         state.Disposed = true;
 
-        ComponentRegistryNew.Dispose(state.Components);
+        ComponentRegistry.Dispose(state.Components);
         state.Components = null;
 
         EntityRegistry.Dispose(state.Entities);

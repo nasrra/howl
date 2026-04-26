@@ -6,6 +6,7 @@ using Howl.Input;
 using Howl.LevelManagement;
 using Howl.LevelManagement.Ldtk;
 using Howl.Physics.Telo;
+using Howl.Text;
 using Howl.Vendors.MonoGame;
 
 namespace Howl;
@@ -57,6 +58,11 @@ public unsafe class HowlApp
     ///     The Physics system state used for physics.
     /// </summary>
     public TeloPhysicsState TeloPhysicsState;
+
+    /// <summary>
+    ///     The registry state storing all strings.
+    /// </summary>
+    public StringRegistryState StringRegistryState;
 
     /// <summary>
     ///     The current fixed update step time.
@@ -205,7 +211,7 @@ public unsafe class HowlApp
 
             state.RenderCallback += (float deltaTime) =>
             {
-                Vendors.MonoGame.Graphics.RendererSystem.Draw(app.EcsState, app.MonoGameAppState);  
+                Vendors.MonoGame.Graphics.RendererSystem.Draw(app);  
                 app.DrawCallback?.Invoke(deltaTime);
             };
         }
@@ -236,6 +242,16 @@ public unsafe class HowlApp
     public static void InitialiseTeloPhysics(HowlApp app, int maxBodyCount, int maxBodyVerticesCount)
     {
         app.TeloPhysicsState = new(maxBodyCount, maxBodyVerticesCount);
+    }
+
+    /// <summary>
+    ///     Initialises a string registry to manage memory for strings.
+    /// </summary>
+    /// <param name="app">The howl app instance to intialise.</param>
+    /// <param name="maxStringCharacters">the maximum amount of characters a string can have.</param>
+    public static void IntialiseStringRegistry(HowlApp app, int maxStringCharacters)
+    {
+        app.StringRegistryState = new(maxStringCharacters);
     }
 
     /// <summary>

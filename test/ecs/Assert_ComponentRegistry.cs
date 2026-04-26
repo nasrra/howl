@@ -9,7 +9,7 @@ public static class Assert_ComponentRegistry
     /// </summary>
     /// <param name="length">the expected length of the backing arrays.</param>
     /// <param name="registry">the component registry instance to assert.</param>
-    public static void LengthEqual(int length, ComponentRegistryNew registry)
+    public static void LengthEqual(int length, ComponentRegistry registry)
     {
         Assert.Equal(length, registry.TotalComponentArrayLength);
     }
@@ -19,7 +19,7 @@ public static class Assert_ComponentRegistry
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="registry">the component registry instance to assert.</param>
-    public static void Disposed(ComponentRegistryNew registry)
+    public static void Disposed(ComponentRegistry registry)
     {
         Assert.Null(registry.Components);
         Assert.True(registry.Disposed);

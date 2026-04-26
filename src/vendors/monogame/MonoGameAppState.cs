@@ -1,6 +1,5 @@
 using System;
 using System.Text;
-using Howl.Graphics.Text;
 using Howl.Vendors.MonoGame.FontStashSharp;
 using Howl.Vendors.MonoGame.Graphics;
 using Howl.Vendors.MonoGame.Input;
@@ -58,11 +57,6 @@ public class MonoGameAppState : Game
     ///     The effects manager for monogame shaders.
     /// </summary>
     public EffectManager EffectManager;
-
-    /// <summary>
-    ///     The string builder used to render text.
-    /// </summary>
-    public StringBuilder StringBuilder;
 
     /// <summary>
     ///     The Debug Draw state.
@@ -149,7 +143,6 @@ public class MonoGameAppState : Game
         MonoGameApp.SetFinalRenderTargetResolution(this, outputResolutionWidth, outputResolutionHeight);
         DestinationRectangle = RendererSystem.CalculateRenderDestinationRectangle(this, FinalRenderTarget);
 
-        StringBuilder = new(Text4096.MaxCharacters);
         TextureManagerState = new(maxTextureCount);
         InputManagerState = new();
         FontManagerState = new(maxFontCount);

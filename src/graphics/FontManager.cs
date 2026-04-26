@@ -1,4 +1,4 @@
-namespace Howl.Graphics.Text;
+namespace Howl.Graphics;
 
 public static class FontManager
 {

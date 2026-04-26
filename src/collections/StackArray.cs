@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-public class StackArray<T> : IDisposable
+public class StackArray<T>
 {
     /// <summary>
     ///     The data of type stored by this 
@@ -45,13 +45,21 @@ public class StackArray<T> : IDisposable
         }
     }
 
+    ~StackArray()
+    {
+        StackArray.Dispose(this);
+    }
+}
+
+public static class StackArray
+{
     /// <summary>
     ///     Pushes a value to the top of a stack array.
     /// </summary>
     /// <param name="array">the stack array instance to push to.</param>
     /// <param name="value">the value to push.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Push(StackArray<T> array, T value)
+    public static void Push<T>(this StackArray<T> array, T value)
     {
         array.Data[array.Count] = value;
         array.Count++;
@@ -63,7 +71,7 @@ public class StackArray<T> : IDisposable
     /// <param name="array">The stack array instance to pop from.</param>
     /// <returns>The element removed from the top of the stack.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static T Pop(StackArray<T> array)
+    public static T Pop<T>(this StackArray<T> array)
     {
         // decrement the count.
         array.Count--;
@@ -75,29 +83,28 @@ public class StackArray<T> : IDisposable
     ///     Sets the <c>Count</c> of a stack array to zero.
     /// </summary>
     /// <param name="array">the stack array instance to clear.</param>
-    public static void ClearCount(StackArray<T> array)
+    public static void ClearCount<T>(this StackArray<T> array)
     {
         array.Count = 0;
     }
 
-
-
-
-    /*******************
-    
-        Disposal.
-    
-    ********************/
-
-
-
-
-    public void Dispose()
+    /// <summary>
+    ///     Gets the last value added to a stack.
+    /// </summary>
+    /// <typeparam name="T">the data type</typeparam>
+    /// <param name="array">the stack array to peek into.</param>
+    /// <returns>the last value added to the stack.</returns>
+    public static T Peek<T>(this StackArray<T> array)
     {
-        Dispose(this);        
+        return array.Data[array.Count-1];
     }
 
-    public static void Dispose(StackArray<T> array)
+    /// <summary>
+    ///     Disposes of a stack array.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="array">the stack array instance to dispose of.</param>
+    public static void Dispose<T>(this StackArray<T> array)
     {
         if (array.Disposed)
         {
@@ -113,49 +120,5 @@ public class StackArray<T> : IDisposable
         array.Length = 0;
 
         GC.SuppressFinalize(array);
-    }
-
-    ~StackArray()
-    {
-        Dispose(this);
-    }
-}
-
-public static class StackArray
-{
-    /// <summary>
-    ///     Pushes a value to the top of a stack array.
-    /// </summary>
-    /// <param name="array">the stack array instance to push to.</param>
-    /// <param name="value">the value to push.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Push<T>(this StackArray<T> array, T value)
-    {
-        StackArray<T>.Push(array, value);
-    }
-
-    /// <summary>
-    ///     Removes and returns the item at the top of the stack.
-    /// </summary>
-    /// <param name="array">The stack array instance to pop from.</param>
-    /// <returns>The element removed from the top of the stack.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static T Pop<T>(this StackArray<T> array)
-    {
-        return StackArray<T>.Pop(array);
-    }
-
-    /// <summary>
-    ///     Sets the <c>Count</c> of a stack array to zero.
-    /// </summary>
-    /// <param name="array">the stack array instance to clear.</param>
-    public static void ClearCount<T>(this StackArray<T> array)
-    {
-        StackArray<T>.ClearCount(array);
-    }
-
-    public static void Dispose<T>(this StackArray<T> array)
-    {
-        StackArray<T>.Dispose(array);
     }
 }

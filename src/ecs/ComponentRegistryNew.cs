@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Howl.Ecs;
 
-public class ComponentRegistryNew : IDisposable
+public class ComponentRegistry : IDisposable
 {
     /// <summary>
     ///     The max amounnt of entries that a component array can store in a component registry.
@@ -41,7 +41,7 @@ public class ComponentRegistryNew : IDisposable
     ///     <c><paramref name="totalComponentArrayLength"/></c> will be clamped between the <c><see cref="MinComponentArrayLength"/></c> and <c><see cref="MaxComponentArrayLength"/></c>.
     /// </remarks>
     /// <param name="totalComponentArrayLength">the length that all for all component arrays stored and initialised by this registry.</param>
-    public ComponentRegistryNew(int totalComponentArrayLength)
+    public ComponentRegistry(int totalComponentArrayLength)
     {
         System.Diagnostics.Debug.Assert(totalComponentArrayLength >= MinComponentArrayLength && totalComponentArrayLength <= MaxComponentArrayLength, 
             "componentCount '{componentCount}' is not between minimum '{MinComponentCount}' and maximum value '{MaxComponentCount}'"
@@ -64,7 +64,7 @@ public class ComponentRegistryNew : IDisposable
     /// <typeparam name="T"></typeparam>
     /// <param name="registry">the component registry instance to register the component in.</param>
     /// <returns>the id of the newly registered component.</returns>
-    public static int RegisterComponent<T>(ComponentRegistryNew registry)
+    public static int RegisterComponent<T>(ComponentRegistry registry)
     {
         if(ComponentType<T>.IsInitialised == false)
         {
@@ -92,7 +92,7 @@ public class ComponentRegistryNew : IDisposable
     /// <typeparam name="T">the type of component to retrieve.</typeparam>
     /// <param name="registry">the component registry instance to get the component array from.</param>
     /// <returns>the component array of the specified type stored by the component registry.</returns>
-    public static ComponentArray<T> GetComponents<T>(ComponentRegistryNew registry)
+    public static ComponentArray<T> GetComponents<T>(ComponentRegistry registry)
     {
         Span<IComponentArray> span = CollectionsMarshal.AsSpan(registry.Components);
 
@@ -112,7 +112,7 @@ public class ComponentRegistryNew : IDisposable
     ///     Enforces a nil value on all component arrays in a component registry.
     /// </summary>
     /// <param name="registry"></param>
-    public static void EnforceNil(ComponentRegistryNew registry)
+    public static void EnforceNil(ComponentRegistry registry)
     {
         Span<IComponentArray> span = CollectionsMarshal.AsSpan(registry.Components);
         for(int i = 0; i < span.Length; i++)
@@ -139,7 +139,7 @@ public class ComponentRegistryNew : IDisposable
         Dispose(this);
     }
 
-    public static void Dispose(ComponentRegistryNew registry)
+    public static void Dispose(ComponentRegistry registry)
     {
         if(registry.Disposed)
         {
@@ -160,7 +160,7 @@ public class ComponentRegistryNew : IDisposable
         GC.SuppressFinalize(registry);
     }
 
-    ~ComponentRegistryNew()
+    ~ComponentRegistry()
     {
         Dispose(this);
     }

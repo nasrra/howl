@@ -22,10 +22,10 @@ public static class TeloPhysics
     public static readonly Vector<float> VectorRectangleRotationalInertia = new(RectangleRotationalInertia);
     public static readonly Vector<float> VectorCircleRotationalInertia = new(CircleRotationalInertia);
 
-    public static void RegisterComponents(ComponentRegistryNew registry)
+    public static void RegisterComponents(ComponentRegistry registry)
     {
-        ComponentRegistryNew.RegisterComponent<Transform>(registry);
-        ComponentRegistryNew.RegisterComponent<PhysicsBodyId>(registry);
+        ComponentRegistry.RegisterComponent<Transform>(registry);
+        ComponentRegistry.RegisterComponent<PhysicsBodyId>(registry);
     }
 
     public static void FixedUpdate(EcsState ecs, TeloPhysicsState state, float deltaTime, int subSteps)

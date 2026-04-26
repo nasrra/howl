@@ -66,14 +66,25 @@ public class HString
     /// <summary>
     ///     Appends an HString to another HString instance.
     /// </summary>
-    /// <param name="source">the string to append.</param>
     /// <param name="destination">the string that will be appended to.</param>
+    /// <param name="source">the string to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append(HString source, HString destination)
+    public static void Append(HString destination, HString source)
     {
-        Span<char> sourceChars = source.Buffer.AsSpan(0, source.Count);
-        Span<char> destinationChars = destination.Buffer.AsSpan(destination.Count, destination.Buffer.Length);
-        sourceChars.CopyTo(destinationChars);
+        Append(destination, source.Buffer.AsSpan(0, source.Count));
+    }
+
+    /// <summary>
+    ///     Appends a span of characters onto a HString instance.
+    /// </summary>
+    /// <param name="destination"></param>
+    /// <param name="source"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Append(HString destination, Span<char> source)
+    {        
+        Span<char> destinationChars = destination.Buffer.AsSpan(destination.Count, destination.Buffer.Length-destination.Count);
+        source.CopyTo(destinationChars);
+        destination.Count += source.Length;
     }
 
     /// <summary>

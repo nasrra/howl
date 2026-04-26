@@ -71,9 +71,9 @@ public class Test_ComponentRegistry
     [Fact]
     public void Constructor_Test()
     {
-        for(int length = ComponentRegistryNew.MinComponentArrayLength; length < ComponentRegistryNew.MinComponentArrayLength + 9; length++)
+        for(int length = ComponentRegistry.MinComponentArrayLength; length < ComponentRegistry.MinComponentArrayLength + 9; length++)
         {
-            ComponentRegistryNew registry = new(length);
+            ComponentRegistry registry = new(length);
             Assert_ComponentRegistry.LengthEqual(length, registry);
         }
     }   
@@ -81,32 +81,32 @@ public class Test_ComponentRegistry
     [Fact]
     public void RegisterAndGet_Test()
     {
-        ComponentRegistryNew registry = new ComponentRegistryNew(ComponentRegistryNew.MinComponentArrayLength + 13);
+        ComponentRegistry registry = new ComponentRegistry(ComponentRegistry.MinComponentArrayLength + 13);
 
         // check that registering a component returns the correct component Id.
-        Assert.Equal(0, ComponentRegistryNew.RegisterComponent<Foo>(registry));
-        Assert.Equal(1, ComponentRegistryNew.RegisterComponent<Loo>(registry));
+        Assert.Equal(0, ComponentRegistry.RegisterComponent<Foo>(registry));
+        Assert.Equal(1, ComponentRegistry.RegisterComponent<Loo>(registry));
 
         // get the component arrays.
-        Assert.IsType<ComponentArray<Loo>>(ComponentRegistryNew.GetComponents<Loo>(registry));
-        Assert.IsType<ComponentArray<Foo>>(ComponentRegistryNew.GetComponents<Foo>(registry));
+        Assert.IsType<ComponentArray<Loo>>(ComponentRegistry.GetComponents<Loo>(registry));
+        Assert.IsType<ComponentArray<Foo>>(ComponentRegistry.GetComponents<Foo>(registry));
     } 
 
     [Fact]
     public void EnforceNils_Test()
     {
-        ComponentRegistryNew registry = new ComponentRegistryNew(ComponentRegistryNew.MinComponentArrayLength + 13);
+        ComponentRegistry registry = new ComponentRegistry(ComponentRegistry.MinComponentArrayLength + 13);
 
-        ComponentRegistryNew.RegisterComponent<Foo>(registry);
-        ComponentRegistryNew.RegisterComponent<Loo>(registry);
+        ComponentRegistry.RegisterComponent<Foo>(registry);
+        ComponentRegistry.RegisterComponent<Loo>(registry);
 
-        ComponentArray<Loo> loos = ComponentRegistryNew.GetComponents<Loo>(registry);
-        ComponentArray<Foo> foos = ComponentRegistryNew.GetComponents<Foo>(registry);
+        ComponentArray<Loo> loos = ComponentRegistry.GetComponents<Loo>(registry);
+        ComponentArray<Foo> foos = ComponentRegistry.GetComponents<Foo>(registry);
 
         loos.Sparse[0] = new(13, 24);
         foos.Sparse[0] = new(98, 78);
 
-        ComponentRegistryNew.EnforceNil(registry);
+        ComponentRegistry.EnforceNil(registry);
     
         Assert.True(loos.Sparse[0] == default);
         Assert.True(foos.Sparse[0] == default);
@@ -115,10 +115,10 @@ public class Test_ComponentRegistry
     [Fact]
     public void Disposal_Test()
     {
-        for(int length = ComponentRegistryNew.MinComponentArrayLength; length < ComponentRegistryNew.MinComponentArrayLength + 9; length++)
+        for(int length = ComponentRegistry.MinComponentArrayLength; length < ComponentRegistry.MinComponentArrayLength + 9; length++)
         {
-            ComponentRegistryNew registry = new(length);
-            ComponentRegistryNew.Dispose(registry);
+            ComponentRegistry registry = new(length);
+            ComponentRegistry.Dispose(registry);
             Assert_ComponentRegistry.Disposed(registry);
         }
     }

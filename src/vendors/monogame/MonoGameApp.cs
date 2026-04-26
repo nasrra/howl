@@ -240,7 +240,7 @@ public static class MonoGameApp
         app.IsDisposed = true;
         UnlinkEvents(app);
 
-        FontManager.Dispose(app.FontManagerState);
+        FontStashSharp.FontManager.Dispose(app.FontManagerState);
         app.FontManagerState = null;
 
         DebugDraw.Dispose(app.DebugDrawState);
