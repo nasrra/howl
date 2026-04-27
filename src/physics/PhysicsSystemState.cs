@@ -5,9 +5,9 @@ using Howl.DataStructures.Bvh;
 using Howl.Graphics;
 using Howl.Math;
 
-namespace Howl.Physics.Telo;
+namespace Howl.Physics;
 
-public sealed class TeloPhysicsState
+public sealed class PhysicsSystemState
 {
 
 
@@ -513,7 +513,7 @@ public sealed class TeloPhysicsState
 
 
 
-    public TeloPhysicsState(int physicsBodyCount, int maxPhysicsBodyVerticeCount)
+    public PhysicsSystemState(int physicsBodyCount, int maxPhysicsBodyVerticeCount)
     {
         MaxPhysicsBodyCount = physicsBodyCount;
 
@@ -593,7 +593,7 @@ public sealed class TeloPhysicsState
     ///     Enforces a <c>Nil</c> entry for all underling arrays of a physics system state instance.
     /// </summary>
     /// <param name="state">the physics system state instance.</param>
-    public static void EnforceNil(TeloPhysicsState state)
+    public static void EnforceNil(PhysicsSystemState state)
     {
         Nil.Enforce(state.Flags);
         FsSoa_Vector2.EnforceNil(state.LocalVertices);
@@ -634,7 +634,7 @@ public sealed class TeloPhysicsState
     /// Disposes an physics system instance. instance.
     /// </summary>
     /// <param name="state">the physics system state to dispose.</param>
-    public static void Dispose(TeloPhysicsState state)
+    public static void Dispose(PhysicsSystemState state)
     {
         if (state.IsDisposed)
             return;
@@ -643,7 +643,7 @@ public sealed class TeloPhysicsState
         GC.SuppressFinalize(state);        
     }
 
-    ~TeloPhysicsState()
+    ~PhysicsSystemState()
     {
         Dispose(this);
     }

@@ -1,13 +1,12 @@
 using Howl.Ecs;
 using Howl.Math.Shapes;
 using Howl.Physics;
-using Howl.Physics.Telo;
 using Howl.Math;
 using Howl.Test.Math;
 
-namespace Howl.Test.Physics.Telo;
+namespace Howl.Test.Physics;
 
-public class Test_TeloPhysics
+public class Test_PhysicsSystem
 {
     int maxBodies = 10;
     int maxBodyColliderVertices = 5;
@@ -32,7 +31,7 @@ public class Test_TeloPhysics
         {
             for(int maxVerts = 2; maxVerts < 7; maxVerts++)
             {
-                TeloPhysicsState state = new TeloPhysicsState(bodyCount, maxVerts);
+                PhysicsSystemState state = new PhysicsSystemState(bodyCount, maxVerts);
                 float j = 0;
                 float[] x = new float[maxVerts];
                 float[] y = new float[maxVerts];
@@ -44,7 +43,7 @@ public class Test_TeloPhysics
                         x[element] = j++;
                         y[element] = j++;                        
                     }
-                    TeloPhysics.AddLocalVertices(state, x, y, out int firstIndex, out int vertexCount);
+                    PhysicsSystem.AddLocalVertices(state, x, y, out int firstIndex, out int vertexCount);
                     Assert_FsSoa_Vector2.EntryEqual(x, y, entry, state.LocalVertices);
                 }
             }
@@ -54,7 +53,7 @@ public class Test_TeloPhysics
     [Fact]
     public void SetTransform_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
 
         GenId genId = default;
         EntityRegistry.Allocate(state.Entities, ref genId);
@@ -80,7 +79,7 @@ public class Test_TeloPhysics
     [Fact]
     public void GetAndSetActive_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -114,7 +113,7 @@ public class Test_TeloPhysics
     [Fact]
     public void GetAndSetAllocated_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -148,7 +147,7 @@ public class Test_TeloPhysics
     [Fact]
     public void GetAndSetTrigger_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -182,7 +181,7 @@ public class Test_TeloPhysics
     [Fact]
     public void GetAndSetKinematic_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -216,7 +215,7 @@ public class Test_TeloPhysics
     [Fact]
     public void GetAndSetRigidBody_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -250,7 +249,7 @@ public class Test_TeloPhysics
     [Fact]
     public void SetAndGetRotationalPhysics()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         GenIdResult result = default;
         GenId validId = default;
@@ -296,7 +295,7 @@ public class Test_TeloPhysics
     [Fact]
     public void AllocateCircleCollider_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         float posX;
         float posY;
@@ -381,7 +380,7 @@ public class Test_TeloPhysics
     [Fact]
     public void AllocateCircleRigidBody_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
                 
         float posX;
         float posY;
@@ -394,6 +393,7 @@ public class Test_TeloPhysics
         float kineticFriction;
         float density;
         float restitution;
+        PhysicsMaterial material;
 
         GenId genId = default;
         GenIdResult result = default;
@@ -410,11 +410,10 @@ public class Test_TeloPhysics
         kineticFriction = 0.2f;
         density = 15;
         restitution = 0.12f;
+        material = new(staticFriction, kineticFriction, density, restitution);
         transform = new(1,2,3,4,5,6,7);
 
-        PhysicsBody.AllocateCircleRigidBody(state, circle, transform, staticFriction, kineticFriction, density, restitution, 
-            true, false, true, ref genId
-        );
+        PhysicsBody.AllocateCircleRigidBody(state, circle, transform, material, true, false, true, ref genId);
         
         Assert.Equal(1, PhysicsBody.GetPhysicsBodyIndex(genId));
         Assert.Equal(0, GenId.GetGeneration(genId));
@@ -461,10 +460,9 @@ public class Test_TeloPhysics
         density = 18;
         restitution = 0.1f;
         transform = new(0,9,8,7,6,5,4);
+        material = new(staticFriction, kineticFriction, density, restitution);
 
-        PhysicsBody.AllocateCircleRigidBody(state, circle, transform, staticFriction, kineticFriction, density, restitution, 
-            false, true, false, ref genId
-        );
+        PhysicsBody.AllocateCircleRigidBody(state, circle, transform, material, false, true, false, ref genId);
         
         Assert.Equal(2, GenId.GetIndex(genId));
         Assert.Equal(0, GenId.GetGeneration(genId));
@@ -516,7 +514,7 @@ public class Test_TeloPhysics
     [Fact]
     public void AllocateRectangleCollider_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
 
         float posX;
         float posY;
@@ -615,7 +613,7 @@ public class Test_TeloPhysics
     [Fact]
     public void AllocateRectangleRigidBody_Test()
     {
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
 
         float posX;
         float posY;
@@ -629,6 +627,7 @@ public class Test_TeloPhysics
         float restitution;
         Rectangle shape;
         Transform transform;
+        PhysicsMaterial material;
         
         GenId genId = default;
         GenIdResult result = default;
@@ -646,11 +645,10 @@ public class Test_TeloPhysics
         kineticFriction = 0.1f;
         density = 0.25f;
         restitution = 0.5f;
+        material = new(staticFriction, kineticFriction, density, restitution);
         transform = new(1,2,3,4,5,6,7);
         
-        PhysicsBody.AllocateRectangleRigidBody(state, shape, transform, staticFriction, kineticFriction, density, restitution, 
-            false, true, false, ref genId
-        );        
+        PhysicsBody.AllocateRectangleRigidBody(state, shape, transform, material, false, true, false, ref genId);        
 
         int physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
@@ -695,11 +693,10 @@ public class Test_TeloPhysics
         kineticFriction = 0.12f;
         density = 12f;
         restitution = 0.3f;
+        material = new(staticFriction, kineticFriction, density, restitution);
         transform = new(0,9,8,7,6,5,4);
-        
-        PhysicsBody.AllocateRectangleRigidBody(state, shape, transform, staticFriction, kineticFriction, density, restitution, 
-            true, false, true, ref genId
-        );        
+
+        PhysicsBody.AllocateRectangleRigidBody(state, shape, transform, material, true, false, true, ref genId);        
 
         physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
@@ -748,7 +745,7 @@ public class Test_TeloPhysics
     public void TransformPhysicsBodyVertices_Test()
     {        
         
-        TeloPhysicsState state = new TeloPhysicsState(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new PhysicsSystemState(maxBodies, maxBodyColliderVertices);
         
         // define and insert circle.
 
@@ -773,7 +770,7 @@ public class Test_TeloPhysics
 
         // transform the shapes.
 
-        TeloPhysics.TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices, state.LocalVertices, state.WorldVertices, 
+        PhysicsSystem.TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices, state.LocalVertices, state.WorldVertices, 
             state.Transforms, state.Flags, state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.MaxPhysicsBodyCount, 
             state.AlloctedPhysicsBodyCount
         );
@@ -792,10 +789,10 @@ public class Test_TeloPhysics
     [Fact]
     public void SyncEntityTransformsToPhysicsBodies_Test()
     {
-        TeloPhysicsState state = new(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new(maxBodies, maxBodyColliderVertices);
         
         EcsState ecs = new(8);
-        TeloPhysics.RegisterComponents(ecs.Components);
+        PhysicsSystem.RegisterComponents(ecs.Components);
 
         // pull components into scope.
         ComponentArray<PhysicsBodyComponent> tags = EcsState.GetComponents<PhysicsBodyComponent>(ecs);
@@ -812,7 +809,7 @@ public class Test_TeloPhysics
         ComponentArray.Allocate(tags, ecs.Entities, genId, new(bodyGenId));
         ComponentArray.Allocate(transforms, ecs.Entities, genId, new Transform(1,2,3,4,5,6,7));
     
-        TeloPhysics.SyncEntityTransformsToPhysicsBodies(ecs, state.Transforms, state.Generations);
+        PhysicsSystem.SyncEntityTransformsToPhysicsBodies(ecs, state.Transforms, state.Generations);
 
         GenIdResult result = default;
         ref Transform transform = ref ComponentArray.GetData(transforms, ecs ,genId, ref result);
@@ -823,10 +820,10 @@ public class Test_TeloPhysics
     [Fact]
     public void SyncPhysicsBodiesToEntityTransforms_Test()
     {
-        TeloPhysicsState state = new(maxBodies,  maxBodyColliderVertices);
+        PhysicsSystemState state = new(maxBodies,  maxBodyColliderVertices);
         EcsState ecs = new EcsState(12);
 
-        TeloPhysics.RegisterComponents(ecs.Components);
+        PhysicsSystem.RegisterComponents(ecs.Components);
 
         GenId circleBody = default;
         GenId circleEntity = default;
@@ -865,7 +862,7 @@ public class Test_TeloPhysics
         ComponentArray.Allocate(transforms, ecs.Entities, rectEntity, rectTransform);
     
         // sync the physics engine with the transforms.
-        TeloPhysics.SyncTransformsToEntityTransforms(ecs, state.Transforms, state.Generations);
+        PhysicsSystem.SyncTransformsToEntityTransforms(ecs, state.Transforms, state.Generations);
 
         // ensure the data was properly set inside the state.
         Assert_Soa_Transform.EntryEqual(circleTransform, 4, PhysicsBody.GetPhysicsBodyIndex(circleBody), state.Transforms);
@@ -875,7 +872,7 @@ public class Test_TeloPhysics
     [Fact]
     public void ImpulseForce_Test()
     {
-        TeloPhysicsState state = new(maxBodies, maxBodyColliderVertices);
+        PhysicsSystemState state = new(maxBodies, maxBodyColliderVertices);
 
         int index = 0;
         GenId genId = default;
@@ -891,9 +888,7 @@ public class Test_TeloPhysics
 
         // == allocate rigidbody. ==
         
-        PhysicsBody.AllocateCircleRigidBody(state, shape, transform, material.StaticFriction, material.KineticFriction, material.Density, 
-            material.Restitution, isKinematic, isTrigger, rotationalPhysics, ref genId
-        );
+        PhysicsBody.AllocateCircleRigidBody(state, shape, transform, material, isKinematic, isTrigger, rotationalPhysics, ref genId);
         index = GenId.GetIndex(genId);
         
         // set body to inactive.

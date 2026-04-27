@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Howl.Physics.Telo;
+namespace Howl.Physics;
 
 public unsafe struct Collision
 {

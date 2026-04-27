@@ -1,6 +1,6 @@
-using Howl.Physics.Telo;
+using Howl.Physics;
 
-namespace Howl.Test.Physics.Telo;
+namespace Howl.Test.Physics;
 
 public static class Assert_Soa_PhysicsMaterial
 {

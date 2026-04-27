@@ -1,8 +1,8 @@
 using Howl.Math;
-using Howl.Physics.Telo;
+using Howl.Physics;
 using Howl.Test.Math;
 
-namespace Howl.Test.Physics.Telo;
+namespace Howl.Test.Physics;
 
 public class Test_TeloPhysicsState
 {
@@ -11,7 +11,7 @@ public class Test_TeloPhysicsState
     {
         Debug.Log.Suppress = true;
 
-        TeloPhysicsState state = new(12, 12);
+        PhysicsSystemState state = new(12, 12);
         
         int insertIndex = 0;
         
@@ -40,7 +40,7 @@ public class Test_TeloPhysicsState
         state.InverseRotationalInertia[insertIndex] = 99;
         state.Generations[insertIndex] = 3;
 
-        TeloPhysicsState.EnforceNil(state);
+        PhysicsSystemState.EnforceNil(state);
 
         Assert.Equal(PhysicsBodyFlags.None, state.Flags[insertIndex]);
         state.LocalVertices.X[insertIndex] = 0;

@@ -1,12 +1,10 @@
 using System;
-using System.Formats.Tar;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Howl.Ecs;
 using Howl.Math;
 using Howl.Math.Shapes;
 
-namespace Howl.Physics.Telo;
+namespace Howl.Physics;
 
 public static class PhysicsBody
 {
@@ -31,7 +29,7 @@ public static class PhysicsBody
     /// <param name="isActive">whether or not to set the physics body to <c>Active</c></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetActive(TeloPhysicsState state, GenId genId, bool isActive)
+    public static GenIdResult SetActive(PhysicsSystemState state, GenId genId, bool isActive)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -51,7 +49,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <param name="isActive">whether or not to set the physics body to <c>Active</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetActiveUnsafe(TeloPhysicsState state, GenId genId, bool isActive)
+    public static void SetActiveUnsafe(PhysicsSystemState state, GenId genId, bool isActive)
     {
         SetActiveUnsafe(state, GetPhysicsBodyIndex(genId), isActive);
     }
@@ -66,7 +64,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <param name="isActive">whether or not to set the physics body to <c>Active</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetActiveUnsafe(TeloPhysicsState state, int physicsBodyIndex, bool isActive)
+    public static void SetActiveUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool isActive)
     {
         if (isActive)
         {
@@ -89,7 +87,7 @@ public static class PhysicsBody
     ///     on the returned value; as <c>false</c> will be returned when <c><paramref name="result"/></c> is not <c><see cref="GenIdResult.Ok"/></c>.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsActive(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static bool IsActive(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if (EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -110,7 +108,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>true, if the physics body is active; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsActiveUnsafe(TeloPhysicsState state, GenId genId)
+    public static bool IsActiveUnsafe(PhysicsSystemState state, GenId genId)
     {
         return IsActiveUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -125,7 +123,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <returns>true, if the physics body is active; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsActiveUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static bool IsActiveUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.Active) != 0;
     }
@@ -147,7 +145,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetAllocated(TeloPhysicsState state, GenId genId, bool isAllocated)
+    public static GenIdResult SetAllocated(PhysicsSystemState state, GenId genId, bool isAllocated)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -168,7 +166,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <param name="isAllocated">whether or not the slot has been allocated to.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetAllocatedUnsafe(TeloPhysicsState state, GenId genId, bool isAllocated)
+    public static void SetAllocatedUnsafe(PhysicsSystemState state, GenId genId, bool isAllocated)
     {
         SetAllocatedUnsafe(state, GetPhysicsBodyIndex(genId), isAllocated);
     }
@@ -183,7 +181,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state..</param>
     /// <param name="isAllocated">whether or not the slot has been allocated to.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public  static void SetAllocatedUnsafe(TeloPhysicsState state, int physicsBodyIndex, bool isAllocated)
+    public  static void SetAllocatedUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool isAllocated)
     {
         if (isAllocated)
         {
@@ -206,7 +204,7 @@ public static class PhysicsBody
     ///     on the returned value; as <c>false</c> will be returned when <c><paramref name="result"/></c> is not <c><see cref="GenIdResult.Ok"/></c>.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsAllocated(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static bool IsAllocated(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -228,7 +226,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>true, if the phsyics body has been allocated; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsAllocatedUnsafe(TeloPhysicsState state, GenId genId)
+    public static bool IsAllocatedUnsafe(PhysicsSystemState state, GenId genId)
     {
         return IsAllocatedUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -243,7 +241,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body within the physics system state.</param>
     /// <returns>true, if the phsyics body has been allocated; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsAllocatedUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static bool IsAllocatedUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.Allocated) != 0;        
     }
@@ -265,7 +263,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetTransform(TeloPhysicsState state, GenId genId, Transform transform)
+    public static GenIdResult SetTransform(PhysicsSystemState state, GenId genId, Transform transform)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -287,7 +285,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <param name="transform">the new transform data for the physics body.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetTransformUnsafe(TeloPhysicsState state, GenId genId, Transform transform)
+    public static void SetTransformUnsafe(PhysicsSystemState state, GenId genId, Transform transform)
     {
         SetTransformUnsafe(state, GetPhysicsBodyIndex(genId), transform);    
     }
@@ -302,7 +300,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <param name="transform">the new transform data for the physics body.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetTransformUnsafe(TeloPhysicsState state, int physicsBodyIndex, Transform transform)
+    public static void SetTransformUnsafe(PhysicsSystemState state, int physicsBodyIndex, Transform transform)
     {
         state.Transforms.Positions.X[physicsBodyIndex] = transform.Position.X;
         state.Transforms.Positions.Y[physicsBodyIndex] = transform.Position.Y;
@@ -341,7 +339,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetTrigger(TeloPhysicsState state, GenId genId, bool isTrigger)
+    public static GenIdResult SetTrigger(PhysicsSystemState state, GenId genId, bool isTrigger)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -362,7 +360,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <param name="isTrigger">whether or not to set the body to <c>Trigger</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetTriggerUnsafe(TeloPhysicsState state, GenId genId, bool isTrigger)
+    public static void SetTriggerUnsafe(PhysicsSystemState state, GenId genId, bool isTrigger)
     {
         SetTriggerUnsafe(state, GetPhysicsBodyIndex(genId), isTrigger);
     }
@@ -377,7 +375,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <param name="isTrigger">whether or not to set the body to <c>Trigger</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetTriggerUnsafe(TeloPhysicsState state, int physicsBodyIndex, bool isTrigger)
+    public static void SetTriggerUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool isTrigger)
     {        
         if (isTrigger)
         {
@@ -400,7 +398,7 @@ public static class PhysicsBody
     ///     on the returned value; as <c>false</c> will be returned when <c><paramref name="result"/></c> is not <c><see cref="GenIdResult.Ok"/></c>.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsTrigger(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static bool IsTrigger(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -422,7 +420,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>true, if the body is <c>Trigger</c> otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsTriggerUnsafe(TeloPhysicsState state, GenId genId)
+    public static bool IsTriggerUnsafe(PhysicsSystemState state, GenId genId)
     {
         return IsTriggerUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -437,7 +435,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <returns>true, if the body is <c>Trigger</c> otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsTriggerUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static bool IsTriggerUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.Trigger) != 0;        
     }
@@ -459,7 +457,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetKinematic(TeloPhysicsState state, GenId genId, bool isKinematic)
+    public static GenIdResult SetKinematic(PhysicsSystemState state, GenId genId, bool isKinematic)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -481,7 +479,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <param name="isKinematic">true, if <c>Kinematic</c>; otherwise false.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetKinematicUnsafe(TeloPhysicsState state, GenId genId, bool isKinematic)
+    public static void SetKinematicUnsafe(PhysicsSystemState state, GenId genId, bool isKinematic)
     {
         SetKinematicUnsafe(state, GetPhysicsBodyIndex(genId), isKinematic);
     }
@@ -496,7 +494,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <param name="isKinematic">true, if <c>Kinematic</c>; otherwise false.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetKinematicUnsafe(TeloPhysicsState state, int physicsBodyIndex, bool isKinematic)
+    public static void SetKinematicUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool isKinematic)
     {        
         if (isKinematic)
         {
@@ -519,7 +517,7 @@ public static class PhysicsBody
     ///     on the returned value; as <c>false</c> will be returned when <c><paramref name="result"/></c> is not <c><see cref="GenIdResult.Ok"/></c>.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsKinematic(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static bool IsKinematic(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -540,7 +538,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>true, if the body is <c>Kinematic</c> otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsKinematicUnsafe(TeloPhysicsState state, GenId genId)
+    public static bool IsKinematicUnsafe(PhysicsSystemState state, GenId genId)
     {
         return IsKinematicUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -555,7 +553,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <returns>true, if the body is <c>Kinematic</c> otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsKinematicUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static bool IsKinematicUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.Kinematic) != 0;        
     }
@@ -620,7 +618,7 @@ public static class PhysicsBody
     ///     on the returned reference.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetStaticFriction(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static ref float GetStaticFriction(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if (EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -653,7 +651,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>A reference to the static friction value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetStaticFrictionUnsafe(TeloPhysicsState state, GenId genId)
+    public static ref float GetStaticFrictionUnsafe(PhysicsSystemState state, GenId genId)
     {
         return ref GetStaticFrictionUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -668,7 +666,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <returns>A reference to the static friction value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetStaticFrictionUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static ref float GetStaticFrictionUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return ref state.PhysicsMaterials.StaticFriction[physicsBodyIndex];
     }
@@ -685,7 +683,7 @@ public static class PhysicsBody
     ///     on the returned reference.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetKineticFriction(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static ref float GetKineticFriction(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -718,7 +716,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>A reference to the static friction value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetKineticFrictionUnsafe(TeloPhysicsState state, GenId genId)
+    public static ref float GetKineticFrictionUnsafe(PhysicsSystemState state, GenId genId)
     {
         return ref GetKineticFrictionUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -733,7 +731,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <returns>A reference to the static friction value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetKineticFrictionUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static ref float GetKineticFrictionUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return ref state.PhysicsMaterials.KineticFriction[physicsBodyIndex];
     }
@@ -750,7 +748,7 @@ public static class PhysicsBody
     ///     on the returned reference.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetDensity(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static ref float GetDensity(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -783,7 +781,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>A reference to the density value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetDensityUnsafe(TeloPhysicsState state, GenId genId)
+    public static ref float GetDensityUnsafe(PhysicsSystemState state, GenId genId)
     {
         return ref GetDensityUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -799,7 +797,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <returns>A reference to the density value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetDensityUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static ref float GetDensityUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return ref state.PhysicsMaterials.Density[physicsBodyIndex];
     }
@@ -816,7 +814,7 @@ public static class PhysicsBody
     ///     on the returned reference.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetRestitution(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static ref float GetRestitution(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -849,7 +847,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>A reference to the restitution value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetRestitutionUnsafe(TeloPhysicsState state, GenId genId)
+    public static ref float GetRestitutionUnsafe(PhysicsSystemState state, GenId genId)
     {
         return ref GetRestitutionUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -864,7 +862,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <returns>A reference to the restitution value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static ref float GetRestitutionUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static ref float GetRestitutionUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return ref state.PhysicsMaterials.Restitution[physicsBodyIndex];
     }
@@ -886,7 +884,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetRotationalPhysics(TeloPhysicsState state, GenId genId, bool hasRotationalPhysics)
+    public static GenIdResult SetRotationalPhysics(PhysicsSystemState state, GenId genId, bool hasRotationalPhysics)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -907,7 +905,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <param name="hasRotationalPhysics">whether or not to set the body to have <c>RotationalPhysics</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetRotationalPhysicsUnsafe(TeloPhysicsState state, GenId genId, bool hasRotationalPhysics)
+    public static void SetRotationalPhysicsUnsafe(PhysicsSystemState state, GenId genId, bool hasRotationalPhysics)
     {
         SetRotationalPhysicsUnsafe(state, GetPhysicsBodyIndex(genId), hasRotationalPhysics);
     }
@@ -922,7 +920,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <param name="hasRotationalPhysics">whether or not to set the body to have <c>RotationalPhysics</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetRotationalPhysicsUnsafe(TeloPhysicsState state, int physicsBodyIndex, bool hasRotationalPhysics)
+    public static void SetRotationalPhysicsUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool hasRotationalPhysics)
     {        
         if (hasRotationalPhysics)
         {
@@ -945,7 +943,7 @@ public static class PhysicsBody
     ///     on the returned value; as <c>false</c> will be returned when <c><paramref name="result"/></c> is not <c><see cref="GenIdResult.Ok"/></c>.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool UsesRotationalPhysics(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static bool UsesRotationalPhysics(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if (EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -967,7 +965,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>true, if the body has <c>RigidBodyPhysics</c>; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool UsesRotationalPhysicsUnsafe(TeloPhysicsState state, GenId genId)
+    public static bool UsesRotationalPhysicsUnsafe(PhysicsSystemState state, GenId genId)
     {
         return UsesRotationalPhysicsUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -982,7 +980,7 @@ public static class PhysicsBody
     /// <param name="genId">the index of the physics body in the physics system.</param>
     /// <returns>true, if the body has <c>RigidBodyPhysics</c>; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool UsesRotationalPhysicsUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static bool UsesRotationalPhysicsUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.RotationalPhysics) != 0;
     }
@@ -1004,7 +1002,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>    
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetRigidBody(TeloPhysicsState state, GenId genId, bool isRigidBody)
+    public static GenIdResult SetRigidBody(PhysicsSystemState state, GenId genId, bool isRigidBody)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -1025,7 +1023,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <param name="isRigidBody">true, if it is a <c>RigidBody</c>; otherwise false.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetRigidBodyUnsafe(TeloPhysicsState state, GenId genId, bool hasRigidBody)
+    public static void SetRigidBodyUnsafe(PhysicsSystemState state, GenId genId, bool hasRigidBody)
     {
         SetRigidBodyUnsafe(state, GetPhysicsBodyIndex(genId), hasRigidBody);
     }
@@ -1040,7 +1038,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <param name="isRigidBody">true, if it is a <c>RigidBody</c>; otherwise false.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetRigidBodyUnsafe(TeloPhysicsState state, int physicsBodyIndex, bool hasRigidBody)
+    public static void SetRigidBodyUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool hasRigidBody)
     {
         if (hasRigidBody)
         {
@@ -1064,7 +1062,7 @@ public static class PhysicsBody
     /// </returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsRigidBody(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static bool IsRigidBody(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -1086,7 +1084,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>true, if the body is a <c>RigidBody</c>; otherwise false</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsRigidBodyUnsafe(TeloPhysicsState state, GenId genId)
+    public static bool IsRigidBodyUnsafe(PhysicsSystemState state, GenId genId)
     {
         return IsRigidBodyUnsafe(state, GetPhysicsBodyIndex(genId));
     }
@@ -1101,7 +1099,7 @@ public static class PhysicsBody
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
     /// <returns>true, if the body is a <c>RigidBody</c>; otherwise false</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsRigidBodyUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static bool IsRigidBodyUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {        
         return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.RigidBody) != 0;
     }
@@ -1113,7 +1111,7 @@ public static class PhysicsBody
     /// <param name="genId">the gen id of the physics body.</param>
     /// <param name="result">output for the gen id result when retrieving the data.</param>
     /// <returns>a copy of the physics body's linear velocity if successfull; otherwise the default value.</returns>
-    public static Math.Vector2 GetLinearVelocity(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    public static Math.Vector2 GetLinearVelocity(PhysicsSystemState state, GenId genId, ref GenIdResult result)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
@@ -1149,7 +1147,7 @@ public static class PhysicsBody
     /// <param name="state">the state instance that contains the physics body.</param>
     /// <param name="genId">the gen id of the physics body.</param>
     /// <returns>a copy of the physics body's linear velocity.</returns>
-    public static Math.Vector2 GetLinearVelocityUnsafe(TeloPhysicsState state, GenId genId)
+    public static Math.Vector2 GetLinearVelocityUnsafe(PhysicsSystemState state, GenId genId)
     {
         return GetLinearVelocityUnsafe(state, GenId.GetIndex(genId));
     }
@@ -1163,7 +1161,7 @@ public static class PhysicsBody
     /// <param name="state">the state instance that contains the physics body.</param>
     /// <param name="physicsBodyIndex">the index of the physics body in the state instnce.</param>
     /// <returns>a copy of the physics body's linear velocity.</returns>
-    public static Math.Vector2 GetLinearVelocityUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    public static Math.Vector2 GetLinearVelocityUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
         Soa_Vector2 linearVelocities = state.LinearVelocities;
         return new(linearVelocities.X[physicsBodyIndex], linearVelocities.Y[physicsBodyIndex]);
@@ -1201,7 +1199,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult AllocateCircleCollider(TeloPhysicsState state, Circle shape, Transform transform, bool isKinematic, bool isTrigger, 
+    public static GenIdResult AllocateCircleCollider(PhysicsSystemState state, Circle shape, Transform transform, bool isKinematic, bool isTrigger, 
         ref GenId genId
     )
     {
@@ -1225,7 +1223,7 @@ public static class PhysicsBody
 
         // apply data.
         SetTransformUnsafe(state, physicsBodyIndex, transform);
-        TeloPhysics.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+        PhysicsSystem.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
         state.LocalRadii[physicsBodyIndex] = shape.Radius;
         return GenIdResult.Ok;
     }
@@ -1236,10 +1234,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to allocate into.</param>
     /// <param name="shape">the local-space shape data.</param>
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
-    /// <param name="staticFriction">the static friction of the body surface.</param>
-    /// <param name="kineticFriction">the kinetic friction of the body surface.</param>
-    /// <param name="density">the density of the body.</param>
-    /// <param name="restitution">the restitution of the body.</param>
+    /// <param name="material">the physics material to apply to the body.</param>
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="rotationalPhysics">whether to enable rotational physics for the physics body.</param>
@@ -1255,8 +1250,8 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult AllocateCircleRigidBody(TeloPhysicsState state, Circle shape, Transform transform, float staticFriction, 
-        float kineticFriction, float density, float restitution, bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenId genId
+    public static GenIdResult AllocateCircleRigidBody(PhysicsSystemState state, Circle shape, Transform transform, PhysicsMaterial material, 
+        bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenId genId
     )
     {
         GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1279,13 +1274,15 @@ public static class PhysicsBody
         SetRotationalPhysicsUnsafe(state, physicsBodyIndex, rotationalPhysics);
 
         // apply data.
-        TeloPhysics.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+        PhysicsSystem.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
         SetTransformUnsafe(state, physicsBodyIndex, transform);
-        Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, staticFriction, kineticFriction, density, restitution, physicsBodyIndex);
+        Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, material.Density, 
+            material.Restitution, physicsBodyIndex
+        );
         state.LocalRadii[physicsBodyIndex] = shape.Radius;
 
         // reset forces
-        TeloPhysics.ClearForcesAndVelocities(state, physicsBodyIndex);
+        PhysicsSystem.ClearForcesAndVelocities(state, physicsBodyIndex);
 
         return GenIdResult.Ok;
     }
@@ -1299,7 +1296,7 @@ public static class PhysicsBody
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float CalculateCircleRotationalInertia(float radius, float mass)
     {
-        return TeloPhysics.CircleRotationalInertia * mass * (radius * radius);
+        return PhysicsSystem.CircleRotationalInertia * mass * (radius * radius);
     }
 
     /// <summary>
@@ -1311,7 +1308,7 @@ public static class PhysicsBody
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector<float> CalculateCircleRotationalInertia(Vector<float> radius, Vector<float> mass)
     {
-        return TeloPhysics.VectorCircleRotationalInertia * mass * (radius * radius);
+        return PhysicsSystem.VectorCircleRotationalInertia * mass * (radius * radius);
     }
 
     /// <summary>
@@ -1370,7 +1367,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult AllocateRectangleCollider(TeloPhysicsState state, Rectangle shape, Transform transform, 
+    public static GenIdResult AllocateRectangleCollider(PhysicsSystemState state, Rectangle shape, Transform transform, 
         bool isKinematic, bool isTrigger, ref GenId genId
     )
     {
@@ -1393,7 +1390,7 @@ public static class PhysicsBody
 
         // apply data.
         PolygonRectangle polyRect = new(shape);
-        TeloPhysics.AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
+        PhysicsSystem.AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
         SetTransformUnsafe(state, genId, transform);
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
@@ -1407,10 +1404,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to allocate into.</param>
     /// <param name="shape">the local-space shape data.</param>
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
-    /// <param name="staticFriction">the static friction of the body surface.</param>
-    /// <param name="kineticFriction">the kinetic friction of the body surface.</param>
-    /// <param name="density">the density of the body.</param>
-    /// <param name="restitution">the restitution of the body.</param>
+    /// <param name="material">the physics material to apply to the body.</param>
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="rotationalPhysics">whether to enable rotational physics for the physics body.</param>
@@ -1426,8 +1420,8 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult AllocateRectangleRigidBody(TeloPhysicsState state, Rectangle shape, Transform transform,
-        float staticFriction, float kineticFriction, float density, float restitution, bool isKinematic, bool isTrigger, 
+    public static GenIdResult AllocateRectangleRigidBody(PhysicsSystemState state, Rectangle shape, Transform transform,
+        PhysicsMaterial material, bool isKinematic, bool isTrigger, 
         bool rotationalPhysics, ref GenId genId
     )
     {
@@ -1451,14 +1445,16 @@ public static class PhysicsBody
 
         // apply data.
         PolygonRectangle polyRect = new(shape);
-        TeloPhysics.AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
+        PhysicsSystem.AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
         SetTransformUnsafe(state, physicsBodyIndex, transform);
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
-        Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, staticFriction, kineticFriction, density, restitution, physicsBodyIndex);
+        Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, material.Density, 
+            material.Restitution, physicsBodyIndex
+        );
 
         // reset forces.
-        TeloPhysics.ClearForcesAndVelocities(state, physicsBodyIndex);
+        PhysicsSystem.ClearForcesAndVelocities(state, physicsBodyIndex);
 
         return GenIdResult.Ok;
     }
@@ -1499,7 +1495,7 @@ public static class PhysicsBody
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float CalculateRectangleRotationalInertia(float width, float height, float mass)
     {
-        return TeloPhysics.RectangleRotationalInertia * mass * ((width * width) + (height * height));
+        return PhysicsSystem.RectangleRotationalInertia * mass * ((width * width) + (height * height));
     }
 
     /// <summary>
@@ -1512,7 +1508,7 @@ public static class PhysicsBody
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Vector<float> CalculateRectangleRotationalInertia(Vector<float> width, Vector<float> height, Vector<float> mass)
     {
-        return TeloPhysics.VectorRectangleRotationalInertia * mass * ((width * width) + (height * height));
+        return PhysicsSystem.VectorRectangleRotationalInertia * mass * ((width * width) + (height * height));
     }
 
     /// <summary>
@@ -1529,7 +1525,7 @@ public static class PhysicsBody
     ///         <item><see cref="GenIdResult.StaleGenId"/></item>
     ///     </list>
     /// </returns>
-    public static GenIdResult ImpulseForce(TeloPhysicsState state, Math.Vector2 force, GenId genId)
+    public static GenIdResult ImpulseForce(PhysicsSystemState state, Math.Vector2 force, GenId genId)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {

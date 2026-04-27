@@ -1,7 +1,6 @@
 using Howl.Physics;
-using Howl.Physics.Telo;
 
-namespace Howl.Test.Physics.Telo;
+namespace Howl.Test.Physics;
 
 public class Test_Soa_PhysicsMaterial
 {

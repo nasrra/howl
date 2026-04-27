@@ -5,7 +5,6 @@ using Howl.Graphics;
 using Howl.Input;
 using Howl.LevelManagement;
 using Howl.LevelManagement.Ldtk;
-using Howl.Physics.Telo;
 using Howl.Text;
 using Howl.Vendors.MonoGame;
 
@@ -53,11 +52,6 @@ public unsafe class HowlApp
     ///     The LdtkParserState used for parsing ldtk level files.
     /// </summary>
     public LdtkParserState LdtkParserState;
-
-    /// <summary>
-    ///     The Physics system state used for physics.
-    /// </summary>
-    public TeloPhysicsState TeloPhysicsState;
 
     /// <summary>
     ///     The registry state storing all strings.
@@ -234,17 +228,6 @@ public unsafe class HowlApp
     }
 
     /// <summary>
-    ///     Initialises the physics system state of a howl app.
-    /// </summary>
-    /// <param name="app"></param>
-    /// <param name="maxBodyCount"></param>
-    /// <param name="maxBodyVerticesCount"></param>
-    public static void InitialiseTeloPhysics(HowlApp app, int maxBodyCount, int maxBodyVerticesCount)
-    {
-        app.TeloPhysicsState = new(maxBodyCount, maxBodyVerticesCount);
-    }
-
-    /// <summary>
     ///     Initialises a string registry to manage memory for strings.
     /// </summary>
     /// <param name="app">The howl app instance to intialise.</param>
@@ -293,13 +276,7 @@ public unsafe class HowlApp
         app.UpdateCallback = null;
         app.FixedUpdateCallback = null;
         app.DrawCallback = null;
-        
-        if(app.TeloPhysicsState != null)
-        {
-            TeloPhysicsState.Dispose(app.TeloPhysicsState);
-            app.TeloPhysicsState = null;
-        }
-        
+                
         if(app.LdtkParserState != null)
         {
             LdtkParserState.Dispose(app.LdtkParserState);

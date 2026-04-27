@@ -1,12 +1,20 @@
 using System;
-using Howl.Collections;
-using Howl.DataStructures;
-using Howl.Ecs;
 
-namespace Howl.Physics.Telo;
+namespace Howl.Physics;
 
 public class CollisionManifold : IDisposable
 {
+
+
+
+
+    /// <summary>
+    ///     The maximum amount of colliders 
+    /// </summary>
+    /// <remarks>
+    ///     Remarks: This is because collisions are stored in a one dimensional array, meaning anything higher than 46340 * 46340 will cause an integer overflow.
+    /// </remarks>
+    public const int MaxColliderCount = 46340;
 
 
 
@@ -33,7 +41,7 @@ public class CollisionManifold : IDisposable
     /// <summary>
     /// Creates a new Collision Manifold instance.
     /// </summary>
-    /// <param name="maxCollisions"></param>
+    /// <param name="totalColliderCount">the total amount of colliders in the simulation.</param>
     public CollisionManifold(int totalColliderCount)
     {
         // mapping each collider (within a matrix structure) onto one another gives a squared length/count.

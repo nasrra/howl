@@ -1,4 +1,4 @@
-namespace Howl.Physics.Telo;
+namespace Howl.Physics;
 
 /// <remarks>
 ///     Note:

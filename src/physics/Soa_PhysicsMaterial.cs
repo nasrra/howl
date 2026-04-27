@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
 
-namespace Howl.Physics.Telo;
+namespace Howl.Physics;
 
 public class Soa_PhysicsMaterial
 {
