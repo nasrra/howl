@@ -1080,7 +1080,7 @@ public static class PhysicsBody
     ///     Gets whether or not a physics body is a <c>RigidBody</c>.
     /// </summary>
     /// <remarks>
-    ///    <c>StaleGenId</c> checks are not enforced; the retrieved data at the given gen id slot will always be returned. 
+    ///     GenId checks are not enforced; the retrieved data at the given gen id slot will always be returned.
     /// </remarks>
     /// <param name="state">the physics system state that contains the physics body.</param>
     /// <param name="genId">the gen id of the physics body.</param>
@@ -1095,7 +1095,7 @@ public static class PhysicsBody
     ///     Gets whether or not a physics body is a <c>RigidBody</c>.
     /// </summary>
     /// <remarks>
-    ///    <c>StaleGenId</c> checks are not enforced; the retrieved data at the given gen id slot will always be returned. 
+    ///     GenId checks are not enforced; the retrieved data at the given gen id slot will always be returned.
     /// </remarks>
     /// <param name="state">the physics system state that contains the physics body.</param>
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
@@ -1106,6 +1106,68 @@ public static class PhysicsBody
         return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.RigidBody) != 0;
     }
 
+    /// <summary>
+    ///     Gets the linear velocity of a physics body.
+    /// </summary>
+    /// <param name="state">the state instance that contains the physics body.</param>
+    /// <param name="genId">the gen id of the physics body.</param>
+    /// <param name="result">output for the gen id result when retrieving the data.</param>
+    /// <returns>a copy of the physics body's linear velocity if successfull; otherwise the default value.</returns>
+    public static Math.Vector2 GetLinearVelocity(TeloPhysicsState state, GenId genId, ref GenIdResult result)
+    {
+        if(EntityRegistry.IsGenIdStale(state.Entities, genId))
+        {
+            result = GenIdResult.StaleGenId;
+            return default;
+        }
+
+        int index = GenId.GetIndex(genId);
+        
+        ref PhysicsBodyFlags flag = ref state.Flags[index];
+        
+        if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.RigidBody) == 0)
+        {
+            result = GenIdResult.NotAllocated;
+            return default;
+        }
+
+        if((flag & PhysicsBodyFlags.Active) == 0)
+        {
+            result = GenIdResult.NotActive;
+            return default;
+        }
+
+        return GetLinearVelocityUnsafe(state, index);
+    }
+
+    /// <summary>
+    ///     Gets the linear velocity of a physics body.
+    /// </summary>
+    /// <remarks>
+    ///     GenId checks are not enforced; the retrieved data at the given gen id slot will always be returned.
+    /// </remarks>
+    /// <param name="state">the state instance that contains the physics body.</param>
+    /// <param name="genId">the gen id of the physics body.</param>
+    /// <returns>a copy of the physics body's linear velocity.</returns>
+    public static Math.Vector2 GetLinearVelocityUnsafe(TeloPhysicsState state, GenId genId)
+    {
+        return GetLinearVelocityUnsafe(state, GenId.GetIndex(genId));
+    }
+
+    /// <summary>
+    ///     Gets the linear velocity of a physics body.
+    /// </summary>
+    /// <remarks>
+    ///     GenId checks are not enforced; the retrieved data at the given gen id slot will always be returned.
+    /// </remarks>
+    /// <param name="state">the state instance that contains the physics body.</param>
+    /// <param name="physicsBodyIndex">the index of the physics body in the state instnce.</param>
+    /// <returns>a copy of the physics body's linear velocity.</returns>
+    public static Math.Vector2 GetLinearVelocityUnsafe(TeloPhysicsState state, int physicsBodyIndex)
+    {
+        Soa_Vector2 linearVelocities = state.LinearVelocities;
+        return new(linearVelocities.X[physicsBodyIndex], linearVelocities.Y[physicsBodyIndex]);
+    }
 
 
 

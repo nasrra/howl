@@ -127,4 +127,16 @@ public static class PhysicsSystem
     {
         return PhysicsBody.ImpulseForce(app.TeloPhysicsState, force, genId);
     }
+
+    /// <summary>
+    ///     Gets the linear velocity of a rigidbody.
+    /// </summary>
+    /// <param name="app">the app instance containing the rigidbody</param>
+    /// <param name="genId">the gen id of the rigid body.</param>
+    /// <param name="result">output for the gen id result when retrieving the data.</param>
+    /// <returns>a copy of the physics body's linear velocity if successfull; otherwise the default value.</returns>
+    public static Vector2 GetLinearVelocity(HowlApp app, GenId genId, ref GenIdResult result)
+    {
+        return PhysicsBody.GetLinearVelocity(app.TeloPhysicsState, genId, ref result);
+    }
 }
