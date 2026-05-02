@@ -19,8 +19,13 @@ public sealed class PhysicsSystemState
     
     ********************/
 
-
-
+    /// <summary>
+    ///     The entity id's for all physics bodies.
+    /// </summary>
+    /// <remarks>
+    ///     Remarks: Use a <c>physicsBodyIndex</c> to access elements.
+    /// </remarks>
+    public GenId[] EntityIds;
 
     /// <summary>
     /// The type flags for all physics bodies.
@@ -216,7 +221,12 @@ public sealed class PhysicsSystemState
     /// <summary>
     ///     The collision manifold.
     /// </summary>
-    public CollisionManifoldStateNew CollisionManifoldState;
+    public CollisionManifoldState CollisionManifoldState;
+
+    /// <summary>
+    ///     The indices in the <c>CollisionManifoldState</c> to resolve this substep.
+    /// </summary>
+    public StackArray<int> SubStepCollisionsToResolve;
 
 
 
@@ -521,6 +531,7 @@ public sealed class PhysicsSystemState
         int maxCollisions = physicsBodyCount*physicsBodyCount;
         Bvh = new(physicsBodyCount, maxCollisions);
         CollisionManifoldState = new(physicsBodyCount);
+        SubStepCollisionsToResolve  = new(CollisionManifoldState.MaxEntries * CollisionManifoldState.Stride);
         Entities = new(physicsBodyCount);
 
         // Physics body data.
@@ -546,6 +557,7 @@ public sealed class PhysicsSystemState
         Generations                 = new int[physicsBodyCount];
         FreeVertexEntries           = new(physicsBodyCount);
         BvhIndices                  = new int[physicsBodyCount];
+        EntityIds                   = new GenId[physicsBodyCount];
 
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();

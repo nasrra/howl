@@ -21,7 +21,7 @@ public class Fsa_GenId
         AppendCounts = new int[maxEntries];
     }
 
-    public static void Append(Fsa_GenId state, CollisionType collisionType)
+    public static void Append(Fsa_GenId state, ContactState collisionType)
     {
         
     }

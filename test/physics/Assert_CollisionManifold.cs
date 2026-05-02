@@ -19,12 +19,11 @@ public static class Assert_CollisionManifoldState
     /// <param name="twoContactPoints">the expected two contact points bool.</param>
     /// <param name="elementIndex">the index of the element to assert against.</param>
     /// <param name="state">the state instance that contains the element.</param>
-    public static void ElementEqual(int colliderIndex, float normalX, float normalY, float colliderCentroidX, float colliderCentroidY, 
+    public static void ElementEqual(float normalX, float normalY, float colliderCentroidX, float colliderCentroidY, 
         float contactPointX, float contactPointY, float depth, PhysicsBodyFlags colliderFlag, bool twoContactPoints,
-        int elementIndex, CollisionManifoldStateNew state
+        int elementIndex, CollisionManifoldState state
     )
     {
-        Assert.Equal(colliderIndex, state.ColliderIndices[elementIndex]);
         Assert.Equal(normalX, state.Normals.X[elementIndex]);
         Assert.Equal(normalY, state.Normals.Y[elementIndex]);
         Assert.Equal(colliderCentroidX, state.ColliderCentroids.X[elementIndex]);
@@ -39,7 +38,6 @@ public static class Assert_CollisionManifoldState
     /// <summary>
     ///     Asserts the equality of a state instance's collision data element.
     /// </summary>
-    /// <param name="colliderIndex">the expected collider index.</param>
     /// <param name="normalX">the expected x-component of the normal.</param>
     /// <param name="normalY">the expected y-component of the normal.</param>
     /// <param name="colliderCentroidX">the expected x-component of the collider centroid.</param>
@@ -53,12 +51,11 @@ public static class Assert_CollisionManifoldState
     /// <param name="twoContactPoints">the expected two contact points bool.</param>
     /// <param name="elementIndex">the index of the element to assert against.</param>
     /// <param name="state">the state instance that contains the element.</param>
-    public static void ElementEqual(int colliderIndex, float normalX, float normalY, float colliderCentroidX, float colliderCentroidY, 
+    public static void ElementEqual(float normalX, float normalY, float colliderCentroidX, float colliderCentroidY, 
         float firstContactPointX, float firstContactPointY, float secondContactPointX, float secondContactPointY,
-        float depth, PhysicsBodyFlags colliderFlag, bool twoContactPoints, int elementIndex, CollisionManifoldStateNew state
+        float depth, PhysicsBodyFlags colliderFlag, bool twoContactPoints, int elementIndex, CollisionManifoldState state
     )
     {
-        Assert.Equal(colliderIndex, state.ColliderIndices[elementIndex]);
         Assert.Equal(normalX, state.Normals.X[elementIndex]);
         Assert.Equal(normalY, state.Normals.Y[elementIndex]);
         Assert.Equal(colliderCentroidX, state.ColliderCentroids.X[elementIndex]);
@@ -72,12 +69,12 @@ public static class Assert_CollisionManifoldState
         Assert.Equal(twoContactPoints, state.TwoContactPoints[elementIndex]);
     }
 
-    public static void Equal(int[] colliderIndices, float[] normalsX, float[] normalsY, float[] colliderCentroidsX, float[] colliderCentroidsY, 
+    public static void Equal(float[] normalsX, float[] normalsY, float[] colliderCentroidsX, float[] colliderCentroidsY, 
         float[] firstContactPointsX, float[] firstContactPointsY, float[] secondContactPointsX, float[] secondContactPointsY,
-        float[] depths, int[] appendCounts, PhysicsBodyFlags[] colliderFlags, bool[] twoContactPoints, CollisionManifoldStateNew state
+        float[] depths, PhysicsBodyFlags[] colliderFlags, bool[] twoContactPoints, int[] activeCollisions, int[] activeIndices, 
+        int[] activeIndicesCount, CollisionManifoldState state
     )
     {
-        Assert.Equal(colliderIndices, state.ColliderIndices);
         Assert.Equal(normalsX, state.Normals.X);
         Assert.Equal(normalsY, state.Normals.Y);
         Assert.Equal(colliderCentroidsX, state.ColliderCentroids.X);
@@ -89,6 +86,27 @@ public static class Assert_CollisionManifoldState
         Assert.Equal(depths, state.Depths);
         Assert.Equal(colliderFlags, state.ColliderFlags);
         Assert.Equal(twoContactPoints, state.TwoContactPoints);
-        Assert.Equal(appendCounts, state.AppendCounts);
+        Assert.Equal(activeCollisions, state.ActivePhase);
+        Assert.Equal(activeIndices, state.ActiveIndices);
+        Assert.Equal(activeIndicesCount, state.ActiveIndicesCount);
+    }
+
+    public static void Disposed(CollisionManifoldState state)
+    {
+        Assert.True(state.Disposed);
+        Assert.Null(state.Normals);
+        Assert.Null(state.ColliderCentroids);
+        Assert.Null(state.FirstContactPoints);
+        Assert.Null(state.SecondContactPoints); 
+        Assert.Null(state.Depths);
+        Assert.Null(state.ColliderFlags);
+        Assert.Null(state.TwoContactPoints);
+        Assert.Null(state.ActiveIndices);
+        Assert.Null(state.ActiveIndicesCount);
+        Assert.Null(state.ActivePhase);
+        Assert.Null(state.ContactStates);
+        Assert.Null(state.PreviousContactStates);
+        Assert.Equal(0, state.Stride);
+        Assert.Equal(0, state.MaxEntries);
     }
 }

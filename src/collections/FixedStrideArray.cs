@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 
+namespace Howl.Collections;
+
 public static class FixedStrideArray
 {
     /// <summary>

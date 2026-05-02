@@ -47,68 +47,6 @@ public class SwapBackArray<T> : IDisposable
         }
     }
 
-    /// <summary>
-    ///     Appends a value to a swapback array.
-    /// </summary>
-    /// <param name="array">the swapback array instance to append to.</param>
-    /// <param name="value">the value to append.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append(SwapBackArray<T> array, T value)
-    {
-        array.Data[array.Count] = value;
-        array.Count++;
-    }
-
-    /// <summary>
-    ///     Removes an entry at a given index from a swapback array.
-    /// </summary>
-    /// <param name="array">the swapback array instance.</param>
-    /// <param name="index">the index to remove at.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void RemoveAt(SwapBackArray<T> array, int index)
-    {
-        if(index >= array.Count)
-        {
-            throw new IndexOutOfRangeException();
-        }
-
-        // set the data to remove with the last entry.
-        array.Data[index] = array.Data[array.Count-1];
-        // decrement the count.
-        array.Count--;
-    }
-
-    /// <summary>
-    ///     Sets the <c>Count</c> of a swap back array to zero.
-    /// </summary>
-    /// <param name="array">the swap back array instance to clear.</param>
-    public static void ClearCount(SwapBackArray<T> array)
-    {
-        array.Count = 0;
-    }
-
-    /// <summary>
-    ///     Gets the underlying array of a swapback array as a span.
-    /// </summary>
-    /// <param name="array">the swapback array instance to get as a span.</param>
-    /// <returns>The span of the underlying array.</returns>
-    public static Span<T> AsSpan(SwapBackArray<T> array)
-    {
-        return array.Data;
-    }
-
-    /// <summary>
-    ///     Gets a span slice of a swapback array's underlying array.
-    /// </summary>
-    /// <param name="array">the swapback array to get a slice of.</param>
-    /// <param name="start">The zero-based index at which to begin this slice.</param>
-    /// <param name="length">The desired length for the slice (exclusive).</param>
-    /// <returns></returns>
-    public static Span<T> Slice(SwapBackArray<T> array, int start, int length)
-    {
-        return AsSpan(array).Slice(start, length);
-    }
-
 
 
 
@@ -158,10 +96,12 @@ public static class SwapBackArray
     /// </summary>
     /// <param name="array">the swapback array instance to append to.</param>
     /// <param name="value">the value to append.</param>
+    /// <returns>the index the value was written to in the array.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append<T>(this SwapBackArray<T> array, T value)
+    public static int Append<T>(this SwapBackArray<T> array, T value)
     {
-        SwapBackArray<T>.Append(array, value);
+        array.Data[array.Count] = value;
+        return array.Count++;
     }
 
     /// <summary>
@@ -169,20 +109,32 @@ public static class SwapBackArray
     /// </summary>
     /// <param name="array">the swapback array instance.</param>
     /// <param name="index">the index to remove at.</param>
+    /// <returns>the index of the value that was swapped with the value that was removed.</returns>
+    /// <exception cref="IndexOutOfRangeException"></exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void RemoveAt<T>(this SwapBackArray<T> array, int index)
+    public static int RemoveAt<T>(this SwapBackArray<T> array, int index)
     {
-        SwapBackArray<T>.RemoveAt(array, index);
+        if(index >= array.Count)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        // decrement the count.
+        array.Count--;
+        
+        // set the data to remove with the last entry.
+        array.Data[index] = array.Data[array.Count];
+    
+        return array.Count;
     }
 
     /// <summary>
     ///     Sets the <c>Count</c> of a swap back array to zero.
     /// </summary>
     /// <param name="array">the swap back array instance to clear.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void ClearCount<T>(this SwapBackArray<T> array)
     {
-        SwapBackArray<T>.ClearCount(array);
+        array.Count = 0;
     }
 
     /// <summary>
@@ -192,7 +144,7 @@ public static class SwapBackArray
     /// <returns>The span of the underlying array.</returns>
     public static Span<T> AsSpan<T>(this SwapBackArray<T> array)
     {
-        return SwapBackArray<T>.AsSpan(array);
+        return array.Data;
     }
 
     /// <summary>
@@ -204,7 +156,7 @@ public static class SwapBackArray
     /// <returns></returns>
     public static Span<T> Slice<T>(this SwapBackArray<T> array, int start, int length)
     {
-        return SwapBackArray<T>.Slice(array, start, length);
+        return AsSpan(array).Slice(start, length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

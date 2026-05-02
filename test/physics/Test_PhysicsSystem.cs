@@ -304,6 +304,7 @@ public class Test_PhysicsSystem
         float radius;
         Circle circle;
         GenId genId = default;
+        GenId entityId = default;
         GenIdResult result = default;
         Transform transform;
 
@@ -316,7 +317,8 @@ public class Test_PhysicsSystem
         expectedLocalVertsY = [posY];
         circle = new(posX, posY, radius);
         transform = new(1,2,3,4,5,6,7);
-        PhysicsBody.AllocateCircleCollider(state, circle, transform, true, false, ref genId);
+        entityId = new(12,32);
+        PhysicsBody.AllocateCircleCollider(state, circle, transform, entityId, true, false, ref genId);
         
         Assert.Equal(1, GenId.GetIndex(genId));
         Assert.Equal(0, GenId.GetGeneration(genId));
@@ -336,6 +338,8 @@ public class Test_PhysicsSystem
         Assert.False(PhysicsBody.IsTrigger(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
 
+        Assert.Equal(entityId, state.EntityIds[1]);
+
         Assert.Equal(1, state.AlloctedPhysicsBodyCount);
         Assert_Soa_Transform.EntryEqual(transform, 4, PhysicsBody.GetPhysicsBodyIndex(genId), state.Transforms);
 
@@ -350,8 +354,9 @@ public class Test_PhysicsSystem
         expectedLocalVertsX = [posX];
         expectedLocalVertsY = [posY];
         transform = new(9,8,7,6,5,4,3);
+        entityId = new(45,90);
 
-        PhysicsBody.AllocateCircleCollider(state, circle, transform, false, true, ref genId);
+        PhysicsBody.AllocateCircleCollider(state, circle, transform, entityId, false, true, ref genId);
 
         Assert.Equal(2, GenId.GetIndex(genId));
         Assert.Equal(0, GenId.GetGeneration(genId));
@@ -370,6 +375,8 @@ public class Test_PhysicsSystem
 
         Assert.True(PhysicsBody.IsTrigger(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
+
+        Assert.Equal(entityId, state.EntityIds[2]);
 
         Assert.Equal(2, state.AlloctedPhysicsBodyCount);
         Assert_Soa_Transform.EntryEqual(transform, 4, PhysicsBody.GetPhysicsBodyIndex(genId), state.Transforms);
@@ -394,6 +401,7 @@ public class Test_PhysicsSystem
         float density;
         float restitution;
         PhysicsMaterial material;
+        GenId entityId = default;
 
         GenId genId = default;
         GenIdResult result = default;
@@ -412,11 +420,14 @@ public class Test_PhysicsSystem
         restitution = 0.12f;
         material = new(staticFriction, kineticFriction, density, restitution);
         transform = new(1,2,3,4,5,6,7);
+        entityId = new(123,32);
 
-        PhysicsBody.AllocateCircleRigidBody(state, circle, transform, material, true, false, true, ref genId);
+        PhysicsBody.AllocateCircleRigidBody(state, circle, transform, material, entityId, true, false, true, ref genId);
         
         Assert.Equal(1, PhysicsBody.GetPhysicsBodyIndex(genId));
         Assert.Equal(0, GenId.GetGeneration(genId));
+
+        Assert.Equal(entityId, state.EntityIds[1]);
 
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
@@ -461,11 +472,14 @@ public class Test_PhysicsSystem
         restitution = 0.1f;
         transform = new(0,9,8,7,6,5,4);
         material = new(staticFriction, kineticFriction, density, restitution);
+        entityId = new(32,67);
 
-        PhysicsBody.AllocateCircleRigidBody(state, circle, transform, material, false, true, false, ref genId);
+        PhysicsBody.AllocateCircleRigidBody(state, circle, transform, material, entityId, false, true, false, ref genId);
         
         Assert.Equal(2, GenId.GetIndex(genId));
         Assert.Equal(0, GenId.GetGeneration(genId));
+
+        Assert.Equal(entityId, state.EntityIds[2]);
         
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
@@ -527,6 +541,7 @@ public class Test_PhysicsSystem
 
         GenId genId = default;
         GenIdResult result = default;
+        GenId entityId = default;
 
         // first data set test.
         
@@ -538,12 +553,15 @@ public class Test_PhysicsSystem
         expectedLocalVertsX = [Rectangle.Left(shape), Rectangle.Right(shape), Rectangle.Right(shape), Rectangle.Left(shape)];
         expectedLocalVertsY = [Rectangle.Top(shape), Rectangle.Top(shape), Rectangle.Bottom(shape), Rectangle.Bottom(shape)];
         transform = new(1,2,3,4,5,6,7);
-        PhysicsBody.AllocateRectangleCollider(state, shape, transform, false, true, ref genId);
+        entityId = new GenId(54,90);
+        PhysicsBody.AllocateRectangleCollider(state, shape, transform, entityId, false, true, ref genId);
         
         int physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
         Assert.Equal(1, physicsBodyIndex);
         Assert.Equal(0, GenId.GetGeneration(genId));
+        
+        Assert.Equal(entityId, state.EntityIds[1]);
                 
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
@@ -576,15 +594,18 @@ public class Test_PhysicsSystem
         shape = new Rectangle(posX, posY, width, height);
         expectedLocalVertsX = [Rectangle.Left(shape), Rectangle.Right(shape), Rectangle.Right(shape), Rectangle.Left(shape)];
         expectedLocalVertsY = [Rectangle.Top(shape), Rectangle.Top(shape), Rectangle.Bottom(shape), Rectangle.Bottom(shape)];
-        transform = new(0,9,8,7,6,5,4);  
+        transform = new(0,9,8,7,6,5,4);
+        entityId = new GenId(99,55);
 
-        PhysicsBody.AllocateRectangleCollider(state, shape, transform, false, true, ref genId);
+        PhysicsBody.AllocateRectangleCollider(state, shape, transform, entityId, false, true, ref genId);
         
         physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
         Assert.Equal(2, physicsBodyIndex);
         Assert.Equal(0, GenId.GetGeneration(genId));
-        
+
+        Assert.Equal(entityId, state.EntityIds[2]);
+
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
 
@@ -628,7 +649,7 @@ public class Test_PhysicsSystem
         Rectangle shape;
         Transform transform;
         PhysicsMaterial material;
-        
+        GenId entityId = default;
         GenId genId = default;
         GenIdResult result = default;
 
@@ -647,13 +668,16 @@ public class Test_PhysicsSystem
         restitution = 0.5f;
         material = new(staticFriction, kineticFriction, density, restitution);
         transform = new(1,2,3,4,5,6,7);
-        
-        PhysicsBody.AllocateRectangleRigidBody(state, shape, transform, material, false, true, false, ref genId);        
+        entityId = new GenId(12,32);
+
+        PhysicsBody.AllocateRectangleRigidBody(state, shape, transform, material, entityId, false, true, false, ref genId);        
 
         int physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
         Assert.Equal(1, physicsBodyIndex);
         Assert.Equal(0, GenId.GetGeneration(genId));
+
+        Assert.Equal(entityId, state.EntityIds[1]);
         
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
@@ -695,13 +719,16 @@ public class Test_PhysicsSystem
         restitution = 0.3f;
         material = new(staticFriction, kineticFriction, density, restitution);
         transform = new(0,9,8,7,6,5,4);
+        entityId = new(12,12);
 
-        PhysicsBody.AllocateRectangleRigidBody(state, shape, transform, material, true, false, true, ref genId);        
+        PhysicsBody.AllocateRectangleRigidBody(state, shape, transform, material, entityId, true, false, true, ref genId);        
 
         physicsBodyIndex = PhysicsBody.GetPhysicsBodyIndex(genId);
 
         Assert.Equal(2, physicsBodyIndex);
         Assert.Equal(0, GenId.GetGeneration(genId));
+
+        Assert.Equal(entityId, state.EntityIds[2]);
                 
         Assert.True(PhysicsBody.IsActive(state, genId, ref result));
         Assert.Equal(GenIdResult.Ok, result);
@@ -756,7 +783,7 @@ public class Test_PhysicsSystem
 
         GenId circGenId = default;
 
-        PhysicsBody.AllocateCircleCollider(state, circle, circTransform, false, false, ref circGenId);
+        PhysicsBody.AllocateCircleCollider(state, circle, circTransform, default, false, false, ref circGenId);
 
         // define and insert rect.
 
@@ -766,7 +793,7 @@ public class Test_PhysicsSystem
         Transform rectTransform = new Transform(new Vector2(3,3), 2, 0);
         GenId rectGenId = default;
 
-        PhysicsBody.AllocateRectangleCollider(state, rectangle, rectTransform, false, false, ref rectGenId);
+        PhysicsBody.AllocateRectangleCollider(state, rectangle, rectTransform, default, false, false, ref rectGenId);
 
         // transform the shapes.
 
@@ -805,7 +832,7 @@ public class Test_PhysicsSystem
 
         // allocate entity.
         GenId bodyGenId = default;
-        PhysicsBody.AllocateRectangleCollider(state, new Rectangle(0,0,2,2), expected, true, false, ref bodyGenId);
+        PhysicsBody.AllocateRectangleCollider(state, new Rectangle(0,0,2,2), expected, default, true, false, ref bodyGenId);
         ComponentArray.Allocate(tags, ecs.Entities, genId, new(bodyGenId));
         ComponentArray.Allocate(transforms, ecs.Entities, genId, new Transform(1,2,3,4,5,6,7));
     
@@ -835,7 +862,7 @@ public class Test_PhysicsSystem
         EntityRegistry.Allocate(ecs.Entities, ref circleEntity);
 
         // allocate circle rigidbody.
-        PhysicsBody.AllocateCircleCollider(state, new Circle(1,-1,1), default, false, true, ref circleBody);
+        PhysicsBody.AllocateCircleCollider(state, new Circle(1,-1,1), default, default, false, true, ref circleBody);
         ComponentArray.Allocate(tags, ecs.Entities, circleEntity, new(circleBody));
 
         // set transform of circle.
@@ -851,7 +878,7 @@ public class Test_PhysicsSystem
         EntityRegistry.Allocate(ecs.Entities, ref rectEntity);
         
         // allocate rectangle rigidbody.
-        PhysicsBody.AllocateRectangleCollider(state, new Rectangle(-2,2, 2,2), default, true, false, ref rectBody);
+        PhysicsBody.AllocateRectangleCollider(state, new Rectangle(-2,2, 2,2), default, default, true, false, ref rectBody);
         ComponentArray.Allocate(tags, ecs.Entities, rectEntity, new(rectBody));
     
         // allocate rectangle transform.
@@ -888,7 +915,7 @@ public class Test_PhysicsSystem
 
         // == allocate rigidbody. ==
         
-        PhysicsBody.AllocateCircleRigidBody(state, shape, transform, material, isKinematic, isTrigger, rotationalPhysics, ref genId);
+        PhysicsBody.AllocateCircleRigidBody(state, shape, transform, material, default, isKinematic, isTrigger, rotationalPhysics, ref genId);
         index = GenId.GetIndex(genId);
         
         // set body to inactive.
@@ -912,7 +939,7 @@ public class Test_PhysicsSystem
     
         // == allocate collider. ==
     
-        PhysicsBody.AllocateCircleCollider(state, shape, transform, isKinematic, isTrigger, ref genId);
+        PhysicsBody.AllocateCircleCollider(state, shape, transform, default, isKinematic, isTrigger, ref genId);
         index = GenId.GetIndex(genId);
         
         // set body to inactive.

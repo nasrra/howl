@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Howl.Collections;
 using Howl.Math;
 using Howl.Math.Shapes;
 
@@ -1185,6 +1186,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to allocate into.</param>
     /// <param name="shape">the local-space shape data.</param>
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
+    /// <param name="entityId">the id of the entity associated with this physics body.</param>
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genId">the associated gen id to the newly allocated body.</param>
@@ -1199,7 +1201,7 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult AllocateCircleCollider(PhysicsSystemState state, Circle shape, Transform transform, bool isKinematic, bool isTrigger, 
+    public static GenIdResult AllocateCircleCollider(PhysicsSystemState state, Circle shape, Transform transform, GenId entityId, bool isKinematic, bool isTrigger, 
         ref GenId genId
     )
     {
@@ -1225,6 +1227,7 @@ public static class PhysicsBody
         SetTransformUnsafe(state, physicsBodyIndex, transform);
         PhysicsSystem.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
         state.LocalRadii[physicsBodyIndex] = shape.Radius;
+        state.EntityIds[physicsBodyIndex] = entityId;
         return GenIdResult.Ok;
     }
 
@@ -1235,6 +1238,7 @@ public static class PhysicsBody
     /// <param name="shape">the local-space shape data.</param>
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
     /// <param name="material">the physics material to apply to the body.</param>
+    /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="rotationalPhysics">whether to enable rotational physics for the physics body.</param>
@@ -1251,7 +1255,7 @@ public static class PhysicsBody
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static GenIdResult AllocateCircleRigidBody(PhysicsSystemState state, Circle shape, Transform transform, PhysicsMaterial material, 
-        bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenId genId
+        GenId entityId, bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenId genId
     )
     {
         GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1280,6 +1284,7 @@ public static class PhysicsBody
             material.Restitution, physicsBodyIndex
         );
         state.LocalRadii[physicsBodyIndex] = shape.Radius;
+        state.EntityIds[physicsBodyIndex] = entityId;
 
         // reset forces
         PhysicsSystem.ClearForcesAndVelocities(state, physicsBodyIndex);
@@ -1353,6 +1358,7 @@ public static class PhysicsBody
     /// <param name="state">the physics system state to allocate into.</param>
     /// <param name="shape">the local-space shape data.</param>
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
+    /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="genId">the associated gen id to the newly allocated body.</param>
@@ -1368,7 +1374,7 @@ public static class PhysicsBody
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static GenIdResult AllocateRectangleCollider(PhysicsSystemState state, Rectangle shape, Transform transform, 
-        bool isKinematic, bool isTrigger, ref GenId genId
+        GenId entityId, bool isKinematic, bool isTrigger, ref GenId genId
     )
     {
         GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1394,6 +1400,7 @@ public static class PhysicsBody
         SetTransformUnsafe(state, genId, transform);
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
+        state.EntityIds[physicsBodyIndex] = entityId;
 
         return GenIdResult.Ok;
     }
@@ -1405,6 +1412,7 @@ public static class PhysicsBody
     /// <param name="shape">the local-space shape data.</param>
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
     /// <param name="material">the physics material to apply to the body.</param>
+    /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
     /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
     /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
     /// <param name="rotationalPhysics">whether to enable rotational physics for the physics body.</param>
@@ -1421,8 +1429,7 @@ public static class PhysicsBody
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static GenIdResult AllocateRectangleRigidBody(PhysicsSystemState state, Rectangle shape, Transform transform,
-        PhysicsMaterial material, bool isKinematic, bool isTrigger, 
-        bool rotationalPhysics, ref GenId genId
+        PhysicsMaterial material, GenId entityId, bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenId genId
     )
     {
         GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1449,6 +1456,7 @@ public static class PhysicsBody
         SetTransformUnsafe(state, physicsBodyIndex, transform);
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
+        state.EntityIds[physicsBodyIndex] = entityId;
         Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, material.Density, 
             material.Restitution, physicsBodyIndex
         );
