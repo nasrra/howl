@@ -51,7 +51,7 @@ public static class PhysicsSystem
         {
             state.FixedUpdateSubStepStopwatch.Restart();
 
-            Soa_Collision.Clear(state.CollisionManifold.Collisions);
+            CollisionManifoldNew.Clear(state.CollisionManifoldState);
 
             // RigidBody Movement Step.
             state.RigidBodyMovementStepStopwatch.Restart();
@@ -75,8 +75,8 @@ public static class PhysicsSystem
 
             // Find collisions.
             state.FindCollisionsStopwatch.Restart();
-            FindCollisions(state.Bvh, state.Entities.GenIds, state.CollisionManifold.Collisions, state.Centroids, state.WorldVertices, 
-                state.WorldRadii, state.Flags, state.MaxPhysicsBodyVertexCount
+            FindCollisions(state.Bvh, state.CollisionManifoldState, state.Centroids, state.WorldVertices, 
+                state.WorldRadii, state.Flags
             );
             state.FindCollisionsStopwatch.Stop();
 
@@ -86,7 +86,7 @@ public static class PhysicsSystem
             // Also make sure that this is above rigidbody collision resolution.
             // this function also moves the transforms of the colliders.
             state.ColliderCollisionResolutionStopwatch.Restart();
-            ResolveColliderCollisions(state.CollisionManifold.Collisions, state.Transforms);
+            ResolveColliderCollisions(state.CollisionManifoldState, state.Transforms, state.Flags);
             state.ColliderCollisionResolutionStopwatch.Stop();
 
             // Resolve RigidBody Collisions.
@@ -95,9 +95,9 @@ public static class PhysicsSystem
             // Also make sure that this is below collision resolution.
             // this function also moves the transforms of the colliders.
             state.RigidBodyCollisionResolutionStepStopwatch.Restart();
-            ResolveRigidBodyCollisions(state.CollisionManifold.Collisions, state.LinearVelocities, state.PhysicsMaterials.Restitution, state.AngularVelocities, 
-                state.InverseMasses, state.InverseRotationalInertia, state.PhysicsMaterials.KineticFriction, state.PhysicsMaterials.StaticFriction, 
-                state.Masses
+            ResolveRigidBodyCollisions(state.CollisionManifoldState, state.LinearVelocities, state.Centroids, 
+                state.PhysicsMaterials.Restitution, state.AngularVelocities, state.InverseMasses, state.InverseRotationalInertia, 
+                state.PhysicsMaterials.KineticFriction, state.PhysicsMaterials.StaticFriction, state.Masses, state.Flags
             );
             state.RigidBodyCollisionResolutionStepStopwatch.Stop();
 
@@ -141,9 +141,9 @@ public static class PhysicsSystem
 
         if (state.DrawCollisionInformation)
         {
-            DrawCollisionInformation(app, state.CollisionManifold.Collisions, state.CollisionOwnerColour, state.CollisionOtherColour, 
-                state.ContactPointColour, state.NormalColour, state.CollisionManifold.Collisions.Count
-            );
+            // DrawCollisionInformation(app, state.CollisionManifoldState.Collisions, state.CollisionOwnerColour, state.CollisionOtherColour, 
+            //     state.ContactPointColour, state.NormalColour, state.CollisionManifoldState.Collisions.Count
+            // );
         }
 
         if (state.DrawAABBWireframes)
@@ -986,8 +986,8 @@ public static class PhysicsSystem
         BoundingVolumeHierarchy.ConstructTree(bvh);
     }
 
-    public static void FindCollisions(BoundingVolumeHierarchy bvh, GenId[] genIds, Soa_Collision collisions,  Soa_Vector2 centroids, 
-        FsSoa_Vector2 vertices, Span<float> radii, Span<PhysicsBodyFlags> flags, int maxPolygonVerticeCount
+    public static void FindCollisions(BoundingVolumeHierarchy bvh, CollisionManifoldStateNew collisions,  Soa_Vector2 centroids, 
+        FsSoa_Vector2 vertices, Span<float> radii, Span<PhysicsBodyFlags> flags
     )
     {
         // hoisting invariance.
@@ -998,7 +998,7 @@ public static class PhysicsSystem
         for(int i = 0; i < overlaps.AppendCount; i++)
         {
             // get the physics bodies that may be colliding.
-            // Note: add one to leaf indices as the bvh doesnt have a Nil value; unlike this physics system.
+            // Note: add one to leaf indices as the bvh doesnt have a Nil value; unlike this physiscs system.
             int ownerIndex = overlaps.OwnerLeafIndices[i]+1;
             int otherIndex = overlaps.OtherLeafIndices[i]+1;
 
@@ -1012,29 +1012,29 @@ public static class PhysicsSystem
             {
                 if((otherFlags & PhysicsBodyFlags.RectangleShape) != 0)
                 {
-                    PolygonBodiesAreColliding(collisions, centroids, vertices, genIds, ownerIndex, otherIndex, ownerFlags, otherFlags);
+                    PolygonBodiesAreColliding(collisions, centroids, vertices, ownerIndex, otherIndex, ownerFlags, otherFlags);
                 }
                 else
                 {                    
-                    PolygonToCircleBodiesAreColliding(collisions, vertices, centroids, radii, genIds, ownerIndex, otherIndex, ownerFlags, otherFlags);
+                    PolygonToCircleBodiesAreColliding(collisions, vertices, centroids, radii, ownerIndex, otherIndex, ownerFlags, otherFlags);
                 }
             }
             else
             {
                 if((otherFlags & PhysicsBodyFlags.RectangleShape) != 0)
                 {                    
-                    PolygonToCircleBodiesAreColliding(collisions, vertices, centroids, radii, genIds, otherIndex, ownerIndex, otherFlags, ownerFlags);
+                    PolygonToCircleBodiesAreColliding(collisions, vertices, centroids, radii, otherIndex, ownerIndex, otherFlags, ownerFlags);
                 }
                 else
                 {
-                    CircleBodiesAreColliding(collisions, centroids, radii, ownerIndex, otherIndex, genIds, ownerFlags, otherFlags);
+                    CircleBodiesAreColliding(collisions, centroids, radii, ownerIndex, otherIndex, ownerFlags, otherFlags);
                 }         
             }
         }
     }
 
-    public static void PolygonToCircleBodiesAreColliding(Soa_Collision collisions, FsSoa_Vector2 vertices, Soa_Vector2 centroids, Span<float> radii, 
-        Span<GenId> genIds, int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
+    public static void PolygonToCircleBodiesAreColliding(CollisionManifoldStateNew collisions, FsSoa_Vector2 vertices, Soa_Vector2 centroids, 
+        Span<float> radii, int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
         float polyPosX = centroids.X[ownerIndex];
@@ -1053,21 +1053,18 @@ public static class PhysicsSystem
         );
         // narrow phase intersect check.
         if(intersect)
-        {
-            // get the gen ids.
-            GenId ownerGenId = genIds[ownerIndex]; 
-            GenId otherGenId = genIds[otherIndex]; 
-            
+        {            
             SAT.FindContactPoints(polyVertsX, polyVertsY, circPosX, circPosY, out float contactPointX, out float contactPointY);
-            Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, polyPosX, polyPosY, circPosX, circPosY,
-                contactPointX, contactPointY, depth, ownerFlags, otherFlags
+            
+            CollisionManifoldNew.AppendTwoWay(collisions, ownerIndex, otherIndex, polyPosX, polyPosY, circPosX, circPosY, 
+                normalX, normalY, contactPointX, contactPointY, depth, ownerFlags, otherFlags
             );
         }        
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void CircleBodiesAreColliding(Soa_Collision collisions, Soa_Vector2 centroids, Span<float> radii, int ownerIndex, int otherIndex, 
-        Span<GenId> genIds, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
+    public static void CircleBodiesAreColliding(CollisionManifoldStateNew collisions, Soa_Vector2 centroids, Span<float> radii, 
+        int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
         float ownerPosX = centroids.X[ownerIndex];
@@ -1086,17 +1083,13 @@ public static class PhysicsSystem
             // submit the collision with contact points if one of the colliders needs them.
             SAT.FindContactPoints(ownerPosX, ownerPosY, ownerPosR, otherPosX, otherPosY, out float contactPointX, out float contactPointY);
             
-            // get the gen ids.
-            GenId ownerGenId = genIds[ownerIndex]; 
-            GenId otherGenId = genIds[otherIndex]; 
-
-            Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerPosX, ownerPosY, otherPosX, otherPosY,
-                contactPointX, contactPointY, depth, ownerFlags, otherFlags
+            CollisionManifoldNew.AppendTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                normalX, normalY, contactPointX, contactPointY, depth, ownerFlags, otherFlags
             );
         }   
     }
 
-    public static void PolygonBodiesAreColliding(Soa_Collision collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<GenId> genIds, 
+    public static void PolygonBodiesAreColliding(CollisionManifoldStateNew collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
         int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
@@ -1122,21 +1115,18 @@ public static class PhysicsSystem
                 out float firstContactPointX, out float firstContactPointY, out float secondContactPointX, out float secondContactPointY, 
                 out int contactCount
             );
-    
-            // get the gen ids.
-            GenId ownerGenId = genIds[ownerIndex]; 
-            GenId otherGenId = genIds[otherIndex]; 
 
             switch (contactCount)
             {
                 case 1:
-                    Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerPosX, ownerPosY, otherPosX, otherPosY,
-                        firstContactPointX, firstContactPointY, depth, ownerFlags, otherFlags
+                    CollisionManifoldNew.AppendTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                        normalX, normalY, firstContactPointX, firstContactPointY, depth, ownerFlags, otherFlags
                     );
                     break;
                 case 2:
-                    Soa_Collision.AppendCollision(collisions, ownerGenId, otherGenId, normalX, normalY, ownerPosX, ownerPosY, otherPosX, otherPosY,
-                        firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, ownerFlags, otherFlags
+                    CollisionManifoldNew.AppendTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                        normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, 
+                        ownerFlags, otherFlags
                     );
                     break;
             }                
@@ -1186,7 +1176,7 @@ public static class PhysicsSystem
         }
     }
 
-    public static void ResolveColliderCollisions(Soa_Collision collisions, Soa_Transform transforms)
+    public static void ResolveColliderCollisions(CollisionManifoldStateNew collisions, Soa_Transform transforms, PhysicsBodyFlags[] flags)
     {
         // hoisting invariance.
         float depth;
@@ -1197,17 +1187,26 @@ public static class PhysicsSystem
         Span<float> normalX = collisions.Normals.X;
         Span<float> normalY = collisions.Normals.Y;
         Span<float> depths = collisions.Depths;
-        Span<GenId> ownerIndices = collisions.OwnerGenIds;
-        Span<GenId> otherIndices = collisions.OtherGenIds;
-        Span<PhysicsBodyFlags> ownerFlags = collisions.OwnerFlags;
-        Span<PhysicsBodyFlags> otherFlags = collisions.OtherFlags;
+        Span<int> otherIndices = collisions.ColliderIndices;
+        Span<PhysicsBodyFlags> otherFlags = collisions.ColliderFlags;
+        Span<PhysicsBodyFlags> ownerFlags = flags;
 
-        for(int i = 0; i < collisions.Count; i++)
+        StackArray<int> active = collisions.Active;
+
+        for(int i = 0; i < active.Count; i++)
         {
-            int ownerIndex = GenId.GetIndex(ownerIndices[i]);
-            int otherIndex = GenId.GetIndex(otherIndices[i]);
-            ref PhysicsBodyFlags ownerFlag = ref ownerFlags[i];
-            ref PhysicsBodyFlags otherFlag = ref otherFlags[i];
+            int collisionIndex = active[i];
+            int ownerIndex = collisionIndex / collisions.Stride; // int div truncates the remainder, always giving the owner index.
+            int otherIndex = otherIndices[collisionIndex];
+
+            // avoid duplicate collisions.
+            if(ownerIndex > otherIndex)
+            {
+                continue;
+            }
+
+            ref PhysicsBodyFlags ownerFlag = ref ownerFlags[ownerIndex];
+            ref PhysicsBodyFlags otherFlag = ref otherFlags[collisionIndex];
 
             if((ownerFlag & PhysicsBodyFlags.Kinematic) != 0 && (otherFlag & PhysicsBodyFlags.Kinematic) != 0)
             {
@@ -1216,9 +1215,9 @@ public static class PhysicsSystem
             }
             else
             {
-                depth = depths[i];
-                displacementX = normalX[i] * depth;
-                displacementY = normalY[i] * depth;
+                depth = depths[collisionIndex];
+                displacementX = normalX[collisionIndex] * depth;
+                displacementY = normalY[collisionIndex] * depth;
 
                 if((ownerFlag & PhysicsBodyFlags.Kinematic) != 0)
                 {
@@ -1242,17 +1241,14 @@ public static class PhysicsSystem
                     positionX[ownerIndex] -= displacementX;
                     positionY[ownerIndex] -= displacementY;
                 }
-
-                // // add the resolved collisions to the collisions list.
-                // state.CollisionManifold.Collisions.AddRange(state.CollisionManifold.CollisionsToResolve);
-                // state.CollisionManifold.CollisionsToResolve.Clear();
             }
         }
     }
 
-    public static void ResolveRigidBodyCollisions(Soa_Collision collisions, Soa_Vector2 linearVelocities, Span<float> restitutions, 
-        Span<float> angularVelocities, Span<float> inverseMasses, Span<float> inverseRotationalInertia, Span<float> kineticFriction, 
-        Span<float> staticFriction, Span<float> mass
+    public static void ResolveRigidBodyCollisions(CollisionManifoldStateNew collisions, Soa_Vector2 linearVelocities, 
+        Soa_Vector2 centroids, Span<float> restitutions, Span<float> angularVelocities, Span<float> inverseMasses, 
+        Span<float> inverseRotationalInertia, Span<float> kineticFriction, Span<float> staticFriction, Span<float> mass,
+        PhysicsBodyFlags[] flags
     )
     {
         // hoisting invariance.
@@ -1263,37 +1259,46 @@ public static class PhysicsSystem
         Span<float> firstContactPointsY = collisions.FirstContactPoints.Y;
         Span<float> secondContactPointsX = collisions.SecondContactPoints.X;
         Span<float> secondContactPointsY = collisions.SecondContactPoints.Y;
-        Span<float> ownerCentroidsX = collisions.OwnerCentroids.X;
-        Span<float> ownerCentroidsY = collisions.OwnerCentroids.Y;
-        Span<float> otherCentroidsX = collisions.OtherCentroids.X;
-        Span<float> otherCentroidsY = collisions.OtherCentroids.Y;
+        Span<float> ownerCentroidsX = centroids.X;
+        Span<float> ownerCentroidsY = centroids.Y;
+        Span<float> otherCentroidsX = collisions.ColliderCentroids.X;
+        Span<float> otherCentroidsY = collisions.ColliderCentroids.Y;
         Span<float> linearVelocitiesX = linearVelocities.X;
         Span<float> linearVelocitiesY = linearVelocities.Y;
-        Span<GenId> ownerIndices = collisions.OwnerGenIds;
-        Span<GenId> otherIndices = collisions.OtherGenIds;
         Span<bool> twoContactPoints = collisions.TwoContactPoints;
-        Span<PhysicsBodyFlags> ownerFlags = collisions.OwnerFlags;
-        Span<PhysicsBodyFlags> otherFlags = collisions.OtherFlags;
+        Span<int> otherIndices = collisions.ColliderIndices;
+        Span<PhysicsBodyFlags> ownerFlags = flags;
+        Span<PhysicsBodyFlags> otherFlags = collisions.ColliderFlags;
 
         Span<float> impulseMagnitudes = stackalloc float[MaxCollisionContactPoints]; 
         Span<float> contactPointsX = stackalloc float[MaxCollisionContactPoints];
         Span<float> contactPointsY = stackalloc float[MaxCollisionContactPoints];
 
-        for(int i = 0; i < collisions.Count; i++)
+        StackArray<int> active = collisions.Active;
+
+        for(int i = 0; i < active.Count; i++)
         {
-            ref PhysicsBodyFlags ownerFlag = ref ownerFlags[i];
-            ref PhysicsBodyFlags otherFlag = ref otherFlags[i];
+            int collisionIndex = active[i];
+            int ownerIndex = collisionIndex / collisions.Stride; // int div truncates the remainder, always giving the owner index.
+            int otherIndex = otherIndices[collisionIndex];
+
+            // avoid duplicate collisions.
+            if(ownerIndex > otherIndex)
+            {
+                continue;
+            }
+
+            ref PhysicsBodyFlags ownerFlag = ref ownerFlags[ownerIndex];
+            ref PhysicsBodyFlags otherFlag = ref otherFlags[collisionIndex];
 
             if((ownerFlag & PhysicsBodyFlags.RigidBody) == 0 && (otherFlag & PhysicsBodyFlags.RigidBody) == 0)
                 continue;
 
-            int ownerIndex = GenId.GetIndex(ownerIndices[i]);
-            int otherIndex = GenId.GetIndex(otherIndices[i]);
-            ref float normalX = ref normalsX[i];
-            ref float normalY = ref normalsY[i];
+            ref float normalX = ref normalsX[collisionIndex];
+            ref float normalY = ref normalsY[collisionIndex];
             
-            ref float ownerCentroidX = ref ownerCentroidsX[i];
-            ref float ownerCentroidY = ref ownerCentroidsY[i];
+            ref float ownerCentroidX = ref ownerCentroidsX[ownerIndex];
+            ref float ownerCentroidY = ref ownerCentroidsY[ownerIndex];
             ref float ownerRestitution = ref restitutions[ownerIndex];
             ref float ownerAngularVelocity = ref angularVelocities[ownerIndex];
             ref float ownerLinearVelocityX = ref linearVelocitiesX[ownerIndex];
@@ -1304,8 +1309,8 @@ public static class PhysicsSystem
             ref float ownerKineticFriction = ref kineticFriction[ownerIndex];
             ref float ownerMass = ref mass[ownerIndex];
 
-            ref float otherCentroidX = ref otherCentroidsX[i];
-            ref float otherCentroidY = ref otherCentroidsY[i];
+            ref float otherCentroidX = ref otherCentroidsX[collisionIndex];
+            ref float otherCentroidY = ref otherCentroidsY[collisionIndex];
             ref float otherRestitution = ref restitutions[otherIndex];
             ref float otherAngularVelocity = ref angularVelocities[otherIndex];
             ref float otherLinearVelocityX = ref linearVelocitiesX[otherIndex];
@@ -1317,19 +1322,19 @@ public static class PhysicsSystem
             ref float otherMass = ref mass[otherIndex];
 
             int contactPointsCount;
-            if (twoContactPoints[i])
+            if (twoContactPoints[collisionIndex])
             {
                 contactPointsCount = 2;
-                contactPointsX[0] = firstContactPointsX[i];
-                contactPointsX[1] = secondContactPointsX[i];
-                contactPointsY[0] = firstContactPointsY[i];
-                contactPointsY[1] = secondContactPointsY[i];
+                contactPointsX[0] = firstContactPointsX[collisionIndex];
+                contactPointsX[1] = secondContactPointsX[collisionIndex];
+                contactPointsY[0] = firstContactPointsY[collisionIndex];
+                contactPointsY[1] = secondContactPointsY[collisionIndex];
             }
             else
             {
                 contactPointsCount = 1;  
-                contactPointsX[0] = firstContactPointsX[i];
-                contactPointsY[0] = firstContactPointsY[i];
+                contactPointsX[0] = firstContactPointsX[collisionIndex];
+                contactPointsY[0] = firstContactPointsY[collisionIndex];
             }
 
             // friction and rotational resolution are tightly coupled with eachother.

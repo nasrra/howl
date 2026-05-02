@@ -214,9 +214,9 @@ public sealed class PhysicsSystemState
     public BoundingVolumeHierarchy Bvh;
 
     /// <summary>
-    ///     Gets the collision manifold.
+    ///     The collision manifold.
     /// </summary>
-    public CollisionManifold CollisionManifold;
+    public CollisionManifoldStateNew CollisionManifoldState;
 
 
 
@@ -520,7 +520,7 @@ public sealed class PhysicsSystemState
         // Utility.
         int maxCollisions = physicsBodyCount*physicsBodyCount;
         Bvh = new(physicsBodyCount, maxCollisions);
-        CollisionManifold = new(physicsBodyCount);
+        CollisionManifoldState = new(physicsBodyCount);
         Entities = new(physicsBodyCount);
 
         // Physics body data.

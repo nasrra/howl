@@ -935,83 +935,11 @@ public class Test_PhysicsSystem
     }
 
     // [Fact]
-    // public void FilterBvhIntoCollisionManifold_Test()
-    // {
-    //     SoaPhysicsSystemState state = new SoaPhysicsSystemState(10, 1024, 4, 1024);
-        
-
-    //     // spatial data.
-    //     PhysicsBodyFlags polygonFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated | PhysicsBodyFlags.RectangleShape;
-    //     PhysicsBodyFlags circleFlag = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;  
-    //     GenIndex polygonA   = new GenIndex(0,0);
-    //     GenIndex polygonB   = new GenIndex(1,0);
-    //     GenIndex circleA    = new GenIndex(2,0);
-    //     GenIndex circleB    = new GenIndex(3,0);
-
-    //     // polygon to polygon.
-    //     spatialPairs.Add(
-    //         new SpatialPair(
-    //             new QueryResult(polygonA,(byte)polygonFlag),
-    //             new QueryResult(polygonB,(byte)polygonFlag)
-    //         )
-    //     );
-
-    //     // circle to circle.
-    //     spatialPairs.Add(
-    //         new SpatialPair(
-    //             new QueryResult(circleA, (byte)circleFlag),
-    //             new QueryResult(circleB, (byte)circleFlag)
-    //         )
-    //     );
-
-    //     // polygon to circle.
-    //     spatialPairs.Add(
-    //         new SpatialPair(
-    //             new QueryResult(polygonA, (byte)polygonFlag),
-    //             new QueryResult(circleB, (byte)circleFlag)
-    //         )
-    //     );
-    //     spatialPairs.Add(
-    //         new SpatialPair(
-    //             new QueryResult(polygonB, (byte)polygonFlag),
-    //             new QueryResult(circleA, (byte)circleFlag)
-    //         )
-    //     );
-
-
-    //     FilterBvhIntoCollisionManifold(circleSpatialPairs, polygonSpatialPairs, polygonToCircleSpatialPairs, AsSpan(spatialPairs));
-
-    //     // assert circle spatial pairs.
-    //     Assert.Equal(1, circleSpatialPairs.Count);
-    //     AssertEntry(circleSpatialPairs, 0, circleA.Index, circleA.Generation, circleB.Index, circleA.Generation, 
-    //         (byte)circleFlag, (byte)circleFlag
-    //     );
-
-    //     // assert polygon spatial pairs.
-    //     Assert.Equal(1, polygonSpatialPairs.Count);        
-    //     AssertEntry(polygonSpatialPairs, 0, polygonA.Index, polygonA.Generation, polygonB.Index, polygonB.Generation, 
-    //         (byte)polygonFlag, (byte)polygonFlag
-    //     );
-        
-    //     // assert polygon to circle spatial pairs.
-    //     Assert.Equal(2, polygonToCircleSpatialPairs.Count);        
-    //     // entry 0.
-    //     AssertEntry(polygonToCircleSpatialPairs, 0, polygonA.Index, polygonA.Generation, circleB.Index, circleB.Generation, 
-    //         (byte)polygonFlag, (byte)circleFlag
-    //     );
-    //     // entry 1.
-    //     AssertEntry(polygonToCircleSpatialPairs, 1, polygonB.Index, polygonB.Generation, circleA.Index, circleA.Generation, 
-    //         (byte)polygonFlag, (byte)circleFlag
-    //     );
-    // }
-
-    // [Fact]
     // public void FindCircleCollisions_Test()
     // {
     //     int soaCapacity = 10;
     //     int verticesCapacity = 40;
     //     Soa_Collision collisionsToResolve = new(soaCapacity);
-    //     Soa_SpatialPair spatialPairs = new(soaCapacity);
     //     Soa_Vector2 vertices = new(verticesCapacity);
     //     Span<float> radii = stackalloc float[soaCapacity];
     //     Span<int> firstVertices = stackalloc int[soaCapacity];
@@ -1019,26 +947,26 @@ public class Test_PhysicsSystem
     //     PhysicsBodyFlags flags = PhysicsBodyFlags.Active | PhysicsBodyFlags.Allocated;
 
     //     // set gen indices.        
-    //     GenIndex circleA = new GenIndex(1, 0);
-    //     GenIndex circleB = new GenIndex(2, 0);
-    //     GenIndex circleC = new GenIndex(3, 0);
+    //     GenId circleA = new GenId(1, 0);
+    //     GenId circleB = new GenId(2, 0);
+    //     GenId circleC = new GenId(3, 0);
 
     //     // set radii.
     //     radii[0] = 0; // Nil Value.
-    //     radii[circleA.Index] = 2;
-    //     radii[circleB.Index] = 3;
-    //     radii[circleC.Index] = 4;
+    //     radii[GenId.GetIndex(circleA)] = 2;
+    //     radii[GenId.GetIndex(circleB)] = 3;
+    //     radii[GenId.GetIndex(circleC)] = 4;
 
     //     // set vertices.
-    //     AppendVector2(vertices, 0f, 0f); // Nil value.
-    //     AppendVector2(vertices, 0.5f, -0.5f);
-    //     AppendVector2(vertices, 0f, 0.5f);
-    //     AppendVector2(vertices, 100, -230);
+    //     Soa_Vector2.Append(vertices, 0f, 0f); // Nil value.
+    //     Soa_Vector2.Append(vertices, 0.5f, -0.5f);
+    //     Soa_Vector2.Append(vertices, 0f, 0.5f);
+    //     Soa_Vector2.Append(vertices, 100, -230);
         
     //     // set first vertices.
-    //     firstVertices[circleA.Index] = 1;
-    //     firstVertices[circleB.Index] = 2;
-    //     firstVertices[circleC.Index] = 3;
+    //     firstVertices[GenId.GetIndex(circleA)] = 1;
+    //     firstVertices[GenId.GetIndex(circleB)] = 2;
+    //     firstVertices[GenId.GetIndex(circleC)] = 3;
 
     //     // set spatial pairs.
     //     AppendSpatialPair(spatialPairs, circleA, circleB, (byte)flags, (byte)flags);

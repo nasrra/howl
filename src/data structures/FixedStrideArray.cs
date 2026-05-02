@@ -30,7 +30,7 @@ public static class FixedStrideArray
     {
         // check if a value can be appended to the entry..
         int appendCount = appendCounts[entryIndex];
-        if(appendCount > stride)
+        if(appendCount >= stride)
         {
             // the entry is full.
             isValid = false;

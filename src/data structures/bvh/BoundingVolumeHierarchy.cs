@@ -20,6 +20,12 @@ public class BoundingVolumeHierarchy : IDisposable
     /// <summary>
     ///     The found overlapping leaves after the bvh has been constructed.
     /// </summary>
+    /// <remarks>
+    ///     Remarks: there are no duplicate entries.
+    /// <examples>
+    ///     Examples: there would only be one of either {ownerIndex: 1, otherIndex: 2} or {ownerIndex: 2, otherIndex: 1}; never both.
+    /// </examples>
+    /// </remarks>
     public Soa_Overlap Overlaps;
 
     /// <summary>
