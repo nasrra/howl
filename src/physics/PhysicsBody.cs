@@ -1170,6 +1170,109 @@ public static class PhysicsBody
 
 
 
+    /******************
+    
+        Collision Getters.
+    
+    *******************/
+
+
+
+    /// <summary>
+    ///     Gets whether a physics body has collided with other bodies.
+    /// </summary>
+    /// <param name="state">the state that contacinsthe physics body.</param>
+    /// <param name="physicsBodyId">the id of the physics body.</param>
+    /// <param name="result">output for the genid result.</param>
+    /// <returns>true, if the physics body has collided with another; otherwise false.</returns>
+    public static bool HasCollisions(PhysicsSystemState state, GenId physicsBodyId, ref GenIdResult result)
+    {
+        if (EntityRegistry.IsGenIdStale(state.Entities, physicsBodyId))
+        {
+            result = GenIdResult.StaleGenId;
+            return false;
+        }
+
+        result = GenIdResult.Ok;
+        return state.CollisionManifoldState.ActiveIndicesCount[GenId.GetIndex(physicsBodyId)] > 0;
+    }
+
+    /// <summary>
+    ///     Executes a collision callback for a given physics body.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="callbackPacket">the data packet to route to the callback function.</param>
+    /// <param name="callbacks">the callbacks for all physics bodies in the physics state.</param>
+    /// <param name="state">the physics state that contains the physics bodies.</param>
+    /// <param name="physicsBodyId">the id of the physics body to execute callbacks for.</param>
+    public static unsafe void ExecuteCollisionCallbacks<T>(this T callbackPacket, CollisionCallbacks<T> callbacks, PhysicsSystemState state, GenId physicsBodyId)
+    {        
+        if (EntityRegistry.IsGenIdStale(state.Entities, physicsBodyId))
+        {
+            return;
+        }
+        
+        // hoisting invariance.
+        CollisionManifoldState manifold = state.CollisionManifoldState;
+        Span<float> normalsX = manifold.Normals.X;
+        Span<float> normalsY = manifold.Normals.Y;
+        Span<float> firstContactPointsX = manifold.FirstContactPoints.X;
+        Span<float> firstContactPointsY = manifold.FirstContactPoints.Y;
+        Span<float> secondContactPointsX = manifold.SecondContactPoints.X;
+        Span<float> secondContactPointsY = manifold.SecondContactPoints.Y;
+        Span<float> depths = manifold.Depths;
+        Span<bool> twoContactPoints = manifold.TwoContactPoints;
+        Span<ContactState> contactStates = manifold.ContactStates;
+
+        // get the collision indices of the physics body.
+        int bodyIndex = GenId.GetIndex(physicsBodyId);
+        int start = FixedStrideArray.GetElementIndex(bodyIndex, manifold.Stride, 0);
+        int collisionCount = manifold.ActiveIndicesCount[bodyIndex];
+        Span<int> collisionIndices = manifold.ActiveIndices.AsSpan(start, collisionCount);
+
+        // get the callbacks of the physics body.
+        StackArray<CollisionCallback<T>> callbackStack;
+
+        // process each collision in each callback.
+        for(int i = 0; i < collisionCount; i++)
+        {
+            // get the next collision to process.
+            int collisionIndex = collisionIndices[i];
+            
+            // get the callbacks to iterate over.
+            switch (contactStates[collisionIndex])
+            {
+                case ContactState.Enter:
+                    callbackStack = callbacks.OnEnterCallbacks[bodyIndex];;
+                break;
+                case ContactState.Exit:
+                    callbackStack = callbacks.OnExitCallbacks[bodyIndex];;
+                break;
+                case ContactState.Sustain:
+                    callbackStack = callbacks.OnSustainCallbacks[bodyIndex];;
+                break;
+                case ContactState.None:
+                    continue;
+                default:
+                    continue;
+            }
+
+            // read the data.
+            CollisionInfo info = new(ref normalsX[collisionIndex], ref normalsY[collisionIndex], ref firstContactPointsX[collisionIndex], 
+                ref firstContactPointsY[collisionIndex], ref secondContactPointsX[collisionIndex], ref secondContactPointsY[collisionIndex], 
+                ref depths[collisionIndex], ref twoContactPoints[collisionIndex], default, default
+            );
+
+            // callback/process data.
+            for(int j = 0; j < callbackStack.Count; j++)
+            {
+                callbackStack.Data[j].Pointer(callbackPacket, info);
+            }
+        }
+    }
+
+
+
 
     /*******************
     

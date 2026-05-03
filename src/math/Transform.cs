@@ -97,6 +97,11 @@ public struct Transform
         Rotation = rotation;
         Sin = sin;
         Cos = cos;
+
+        if(float.IsNaN(Cos) || float.IsNaN(Sin))
+        {
+            System.Diagnostics.Debug.Assert(false);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

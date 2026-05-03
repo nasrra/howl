@@ -469,6 +469,7 @@ public static class PhysicsSystem
             // apply linear velocity.
             positionsX[i] += linearVelocityX * deltaTime;
             positionsY[i] += linearVelocityY * deltaTime;
+    
             RotorMultiply(sin[i], cos[i], angularVelocities[i] * deltaTime ,ref sin[i], ref cos[i]);
         }
     }
@@ -1068,21 +1069,23 @@ public static class PhysicsSystem
         float otherPosX = centroids.X[otherIndex];
         float ownerPosY = centroids.Y[ownerIndex];
         float otherPosY = centroids.Y[otherIndex];
-        float ownerPosR = radii[ownerIndex];
-        float otherPosR = radii[otherIndex];
+        float ownerR = radii[ownerIndex];
+        float otherR = radii[otherIndex];
         
-        bool satIntersects = SAT.CirclesIntersect(ownerPosX, ownerPosY, ownerPosR, otherPosX, otherPosY, otherPosR, out float normalX, 
+        bool satIntersects = SAT.CirclesIntersect(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, otherR, out float normalX, 
             out float normalY, out float depth
         );
-        
+    
+
         if(satIntersects)
         {
             // submit the collision with contact points if one of the colliders needs them.
-            SAT.FindContactPoints(ownerPosX, ownerPosY, ownerPosR, otherPosX, otherPosY, out float contactPointX, out float contactPointY);
+            SAT.FindContactPoints(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, out float contactPointX, out float contactPointY);
             
             (int a, int b) collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
                 normalX, normalY, contactPointX, contactPointY, depth, ownerFlags, otherFlags
             );
+
             StackArray.Push(subStepCollisionsToResolve, collisionIndices.a);
             StackArray.Push(subStepCollisionsToResolve, collisionIndices.b);
         }   
@@ -1818,82 +1821,92 @@ public static class PhysicsSystem
         Colour contactPointColour, Colour normalColour
     )
     {
-        // // hoisitng invariance.
-        // Span<float> firstContactPointsX = collisions.FirstContactPoints.X;
-        // Span<float> firstContactPointsY = collisions.FirstContactPoints.Y;
-        // Span<float> secondContactPointsX = collisions.SecondContactPoints.X;
-        // Span<float> secondContactPointsY = collisions.SecondContactPoints.Y;
-        // Span<float> normalsX = collisions.Normals.X;
-        // Span<float> normalsY = collisions.Normals.Y;
-        // Span<float> otherCentroidsX = collisions.ColliderCentroids.X;
-        // Span<float> otherCentroidsY = collisions.ColliderCentroids.Y;
-        // Span<bool> twoContactPoints = collisions.TwoContactPoints;
-        // Span<int> otherIndices = collisions.ColliderIndices;
+        // hoisitng invariance.
+        Span<float> firstContactPointsX = collisions.FirstContactPoints.X;
+        Span<float> firstContactPointsY = collisions.FirstContactPoints.Y;
+        Span<float> secondContactPointsX = collisions.SecondContactPoints.X;
+        Span<float> secondContactPointsY = collisions.SecondContactPoints.Y;
+        Span<float> normalsX = collisions.Normals.X;
+        Span<float> normalsY = collisions.Normals.Y;
+        Span<float> otherCentroidsX = collisions.ColliderCentroids.X;
+        Span<float> otherCentroidsY = collisions.ColliderCentroids.Y;
+        Span<bool> twoContactPoints = collisions.TwoContactPoints;
 
 
-        // float contactPointX;
-        // float contactPointY;
-        // float normalX;
-        // float normalY;
-        // float otherCentroidX;
-        // float otherCentroidY;
+        float contactPointX;
+        float contactPointY;
+        float normalX;
+        float normalY;
+        float otherCentroidX;
+        float otherCentroidY;
         
-        // Math.Vector2 normalStart = default;
-        // Math.Vector2 normalEnd = default;
+        Math.Vector2 normalStart = default;
+        Math.Vector2 normalEnd = default;
 
-        // StackArray<int> active = collisions.ActiveIndices;
+        int[] active = collisions.ActiveIndices;
+        int[] activeCounts = collisions.ActiveIndicesCount;
 
-        // for(int i = 0; i < active.Count; i++)
-        // {
-        //     int collisionIndex = active[i];
-        //     int ownerIndex = collisionIndex / collisions.Stride; // int div truncates the remainder, always giving the owner index.
-        //     int otherIndex = otherIndices[collisionIndex];
+        for(int i = 0; i < activeCounts.Length; i++)
+        {
+            int count = activeCounts[i];
+            if(count<= 0)
+            {
+                continue;
+            }
+            int entryElementIndex = FixedStrideArray.GetElementIndex(i, collisions.Stride, 0);
+            for(int j = 0; j < count; j++)
+            {
+                int elementIndex = entryElementIndex+j;
+                int collisionIndex = active[elementIndex];
 
-        //     // avoid duplicate collisions.
-        //     if(ownerIndex > otherIndex)
-        //     {
-        //         continue;
-        //     }
+                int ownerIndex = collisionIndex / collisions.Stride; // int div truncates the remainder, always giving the owner index.
+                // int otherIndex = otherIndices[collisionIndex];
 
+                // // avoid duplicate collisions.
+                // if(ownerIndex > otherIndex)
+                // {
+                //     continue;
+                // }
 
-        //     // get normal data.
-        //     normalX = normalsX[collisionIndex];
-        //     normalY = normalsY[collisionIndex];
-            
-        //     // get contact point 1 data.
-        //     contactPointX = firstContactPointsX[collisionIndex];
-        //     contactPointY = firstContactPointsY[collisionIndex];
-            
-        //     // get centroid data.
-        //     otherCentroidX = otherCentroidsX[collisionIndex];
-        //     otherCentroidY = otherCentroidsY[collisionIndex];
+                // get normal data.
+                normalX = normalsX[collisionIndex];
+                normalY = normalsY[collisionIndex];
+                
+                // get contact point 1 data.
+                contactPointX = firstContactPointsX[collisionIndex];
+                contactPointY = firstContactPointsY[collisionIndex];
+                
+                // get centroid data.
+                otherCentroidX = otherCentroidsX[collisionIndex];
+                otherCentroidY = otherCentroidsY[collisionIndex];
 
-        //     // draw centroids.
-        //     Debug.Draw.WireCircle(app, new Circle(otherCentroidX, otherCentroidY, 0.1f), otherColour, DrawSpace.World);
+                // draw centroids.
+                Debug.Draw.WireCircle(app, new Circle(otherCentroidX, otherCentroidY, 0.1f), otherColour, DrawSpace.World);
 
-        //     // draw contact point 1.
-        //     Debug.Draw.WireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
+                // draw contact point 1.
+                Debug.Draw.WireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
 
-        //     // draw normal from contact point. 
-        //     normalStart = new Math.Vector2(contactPointX, contactPointY);
-        //     normalEnd = normalStart + new Math.Vector2(normalX, normalY);
-        //     Debug.Draw.Line(app, normalColour, normalStart, normalEnd, DrawSpace.World);
+                // draw normal from contact point. 
+                normalStart = new Math.Vector2(contactPointX, contactPointY);
+                normalEnd = normalStart + new Math.Vector2(normalX, normalY);
+                Debug.Draw.Line(app, normalColour, normalStart, normalEnd, DrawSpace.World);
 
-        //     if (twoContactPoints[collisionIndex])
-        //     {
-        //         // get contact point 2.
-        //         contactPointX = secondContactPointsX[collisionIndex];
-        //         contactPointY = secondContactPointsY[collisionIndex];
+                if (twoContactPoints[collisionIndex])
+                {
+                    // get contact point 2.
+                    contactPointX = secondContactPointsX[collisionIndex];
+                    contactPointY = secondContactPointsY[collisionIndex];
 
-        //         // draw contact point 2.
-        //         Debug.Draw.WireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
+                    // draw contact point 2.
+                    Debug.Draw.WireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
 
-        //         // draw normal from contact point. 
-        //         normalStart = new Math.Vector2(contactPointX, contactPointY);
-        //         normalEnd = normalStart + new Math.Vector2(normalX, normalY);
-        //         Debug.Draw.Line(app, normalColour, normalStart, normalEnd, DrawSpace.World);
-        //     }
-        // }
+                    // draw normal from contact point. 
+                    normalStart = new Math.Vector2(contactPointX, contactPointY);
+                    normalEnd = normalStart + new Math.Vector2(normalX, normalY);
+                    Debug.Draw.Line(app, normalColour, normalStart, normalEnd, DrawSpace.World);
+                }
+            }
+        }
     }
 
     public static void DrawLinearVelocities(HowlAppState app, Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, 

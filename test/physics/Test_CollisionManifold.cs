@@ -199,9 +199,9 @@ public class Test_CollisionManifold
         CollisionManifold.PrepareForNextStep(state);
 
         // == third step ==.
-        state.ActivePhase           = [0,1,0,3,0,2,0,2,0];
+        state.ActivePhase           = [0,1,0,3,0,2,0,1,0];
 
-        expectedActivePhases        = [0,2,0,0,0,3,0,3,0];  
+        expectedActivePhases        = [0,2,0,0,0,3,0,2,0];  
         expectedActiveIndices       = [1,0,0,5,5,0,7,0,0];// note index 3 performs swapback with index 4.
         expectedActiveCounts        = [1,1,1];
         expectedStates = [
@@ -212,7 +212,7 @@ public class Test_CollisionManifold
             ContactState.None,
             ContactState.Exit,
             ContactState.None,
-            ContactState.Exit,
+            ContactState.Sustain,
             ContactState.None,
         ];
 

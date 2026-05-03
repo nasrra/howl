@@ -503,6 +503,14 @@ public static class Math
         float dot = (nextSin * nextSin) + (nextCos * nextCos);
         float invLen = 1 / MathF.Sqrt(dot);
 
+        // --- NAN PROTECTION ---
+        // Define a tiny epsilon to avoid division by zero.        
+        float epsilon = 1e-10f;
+        if (epsilon > invLen)
+        {
+            return;
+        }
+
         newSin = nextSin * invLen;
         newCos = nextCos * invLen;
     }

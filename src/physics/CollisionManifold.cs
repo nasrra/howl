@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
 using Howl.Math;
@@ -8,6 +7,7 @@ namespace Howl.Physics;
 
 public static class CollisionManifold
 {
+
 
 
 
@@ -206,6 +206,7 @@ public static class CollisionManifold
 
 
 
+
     /// <summary>
     ///     Swaps the previous and current contact state context pointers.
     /// </summary>
@@ -275,6 +276,9 @@ public static class CollisionManifold
                             break;
                             case ContactState.None:
                                 currentState = ContactState.Enter;
+                            break;
+                            case ContactState.Sustain:
+                                currentState = ContactState.Sustain;
                             break;
                             default:
                             break;
