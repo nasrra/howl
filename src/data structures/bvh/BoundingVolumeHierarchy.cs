@@ -625,7 +625,7 @@ public class BoundingVolumeHierarchy : IDisposable
 
 
 
-    public static void DrawBranches(HowlApp app, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
+    public static void DrawBranches(HowlAppState app, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
     {
         for(int i = 0; i < bvh.Branches.AppendCount; i++)
         {

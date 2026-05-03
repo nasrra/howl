@@ -10,7 +10,7 @@ public static class GamePad
     /// <param name="app">the howl app instance with the input state.</param>
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <returns>true, if the gamepad is connected; otherwise false.</returns>
-    public static bool IsConnected(HowlApp app, int gamePadId)
+    public static bool IsConnected(HowlAppState app, int gamePadId)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         return Vendors.MonoGame.Input.GamePad.IsConnected(state);
@@ -22,7 +22,7 @@ public static class GamePad
     /// <param name="app">the howl app instance with the input state.</param>
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <returns>the directional vector of the thumbstick input.</returns>
-    public static Vector2 GetLeftThumbstickInput(HowlApp app, int gamePadId)
+    public static Vector2 GetLeftThumbstickInput(HowlAppState app, int gamePadId)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         Microsoft.Xna.Framework.Vector2 v = Vendors.MonoGame.Input.GamePad.GetLeftThumbstickInput(state);
@@ -35,7 +35,7 @@ public static class GamePad
     /// <param name="app">the howl app instance with the input state.</param>
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <returns>the directional vector of the thumbstick input.</returns>
-    public static Vector2 GetRightThumbstickInput(HowlApp app, int gamePadId)
+    public static Vector2 GetRightThumbstickInput(HowlAppState app, int gamePadId)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         Microsoft.Xna.Framework.Vector2 v = Vendors.MonoGame.Input.GamePad.GetRightThumbstickInput(state);
@@ -48,7 +48,7 @@ public static class GamePad
     /// <param name="app">the howl app instance with the input state.</param>
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <returns>a normalised value (0-1) indicating how far down the trigger is pressed.</returns>
-    public static float GetLeftTriggerInput(HowlApp app, int gamePadId)
+    public static float GetLeftTriggerInput(HowlAppState app, int gamePadId)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         return Vendors.MonoGame.Input.GamePad.GetLeftTriggerInput(state);        
@@ -60,7 +60,7 @@ public static class GamePad
     /// <param name="app">the howl app instance with the input state.</param>
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <returns>a normalised value (0-1) indicating how far down the trigger is pressed.</returns>
-    public static float GetRightTriggerInput(HowlApp app, int gamePadId)
+    public static float GetRightTriggerInput(HowlAppState app, int gamePadId)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         return Vendors.MonoGame.Input.GamePad.GetRightTriggerInput(state);        
@@ -73,7 +73,7 @@ public static class GamePad
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <param name="button">the button to check.</param>
     /// <returns>true, if the button is down; otherwise false.</returns>
-    public static bool IsButtonDown(HowlApp app, int gamePadId, GamePadButton button)
+    public static bool IsButtonDown(HowlAppState app, int gamePadId, GamePadButton button)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         Microsoft.Xna.Framework.Input.Buttons mButton = Vendors.MonoGame.Input.ButtonsExtensions.ToMonoGame(button);
@@ -87,7 +87,7 @@ public static class GamePad
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <param name="button">the button to check.</param>
     /// <returns>true, if the button is down; otherwise false.</returns>
-    public static bool IsButtonUp(HowlApp app, int gamePadId, GamePadButton button)
+    public static bool IsButtonUp(HowlAppState app, int gamePadId, GamePadButton button)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         Microsoft.Xna.Framework.Input.Buttons mButton = Vendors.MonoGame.Input.ButtonsExtensions.ToMonoGame(button);
@@ -101,7 +101,7 @@ public static class GamePad
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <param name="button">the button to check.</param>
     /// <returns>true, if the button has just been pressed; otherwise false.</returns>
-    public static bool IsButtonJustPressed(HowlApp app, int gamePadId, GamePadButton button)
+    public static bool IsButtonJustPressed(HowlAppState app, int gamePadId, GamePadButton button)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         Microsoft.Xna.Framework.Input.Buttons mButton = Vendors.MonoGame.Input.ButtonsExtensions.ToMonoGame(button);
@@ -115,7 +115,7 @@ public static class GamePad
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <param name="button">the button to check.</param>
     /// <returns>true, if the button hs just been released; otherwise false.</returns>
-    public static bool IsButtonJustReleased(HowlApp app, int gamePadId, GamePadButton button)
+    public static bool IsButtonJustReleased(HowlAppState app, int gamePadId, GamePadButton button)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         Microsoft.Xna.Framework.Input.Buttons mButton = Vendors.MonoGame.Input.ButtonsExtensions.ToMonoGame(button);
@@ -131,7 +131,7 @@ public static class GamePad
     /// <param name="app">the howl app instance with the input state.</param>
     /// <param name="gamePadId">the id of the gamepad.</param>
     /// <param name="strength">the amount of vibration.</param>
-    public static void SetVibration(HowlApp app, int gamePadId, float strength)
+    public static void SetVibration(HowlAppState app, int gamePadId, float strength)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         Vendors.MonoGame.Input.GamePad.SetVibration(state, strength);
@@ -142,7 +142,7 @@ public static class GamePad
     /// </summary>
     /// <param name="app">the howl app instance with the input state.</param>
     /// <param name="gamePadId">the id of the gamepad.</param>
-    public static void StopVibration(HowlApp app, int gamePadId)
+    public static void StopVibration(HowlAppState app, int gamePadId)
     {
         Vendors.MonoGame.Input.GamePadState state = app.MonoGameAppState.InputManagerState.GamePadStates[gamePadId];
         Vendors.MonoGame.Input.GamePad.StopVibration(state);

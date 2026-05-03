@@ -1,26 +1,24 @@
 using System;
 using Howl.Debug;
-using Howl.Ecs;
 using Howl.Graphics;
 using Howl.Input;
 using Howl.LevelManagement;
 using Howl.LevelManagement.Ldtk;
-using Howl.Text;
 using Howl.Vendors.MonoGame;
 
 namespace Howl;
 
-public unsafe class HowlApp
+public unsafe static class HowlApp
 {
 
 
 
 
-    /*******************
+    /******************
     
         Constants.
     
-    ********************/
+    *******************/
 
 
 
@@ -29,184 +27,71 @@ public unsafe class HowlApp
 
 
 
-    /*******************
-    
-        Member Variables.
-    
-    ********************/
 
-
-
-
-    /// <summary>
-    ///     Gets the EcsState.
-    /// </summary>
-    public EcsState EcsState;
-
-    /// <summary>
-    ///     The Monogame Application state used as a pump for this HowlApp.
-    /// </summary>
-    public MonoGameAppState MonoGameAppState;
-
-    /// <summary>
-    ///     The LdtkParserState used for parsing ldtk level files.
-    /// </summary>
-    public LdtkParserState LdtkParserState;
-
-    /// <summary>
-    ///     The registry state storing all strings.
-    /// </summary>
-    public StringRegistryState StringRegistryState;
-
-    /// <summary>
-    ///     The current fixed update step time.
-    /// </summary>
-    public float FixedUpdateTime = 0;
-
-    /// <summary>
-    ///     Whether or not this instance has been dispose of.
-    /// </summary>
-    public bool IsDisposed;
-
-
-
-
-    /*******************
-    
-        Debug Diagnostics.
-    
-    ********************/
-
-
-
-
-    /// <summary>
-    /// Gets and sets the update-step stopwatch.
-    /// </summary>
-    public System.Diagnostics.Stopwatch UpdateStepStopwatch;    
-
-    /// <summary>
-    /// Gets and sets the fixed-update-step stopwatch.
-    /// </summary>
-    public System.Diagnostics.Stopwatch FixedUpdateStepStopwatch;
-
-    /// <summary>
-    ///     The draw-step stopwatch.
-    /// </summary>
-    public System.Diagnostics.Stopwatch DrawStepStopwatch;
-
-
-
-
-    /*******************
-    
-        Callbacks.
-    
-    ********************/
-
-
-
-
-    /// <summary>
-    ///     The initialise callback.
-    /// </summary>
-    public Action Initialise;
-
-    /// <summary>
-    ///     The update callback.
-    /// </summary>
-    public Action<float> UpdateCallback;
-
-    /// <summary>
-    ///     The fixed update callback.
-    /// </summary>
-    public Action<float> FixedUpdateCallback;
-
-    /// <summary>
-    ///     The draw callback.
-    /// </summary>
-    public Action<float> DrawCallback;
-
-
-
-
-    /*******************
+    /******************
     
         Functions.
     
-    ********************/
+    *******************/
 
 
 
-
-    /// <summary>
-    ///     Creates a new HowlApp instance.
-    /// </summary>
-    /// <param name="maxEntities">the maximum number of entities.</param>
-    public HowlApp(int maxEntities)
-    {
-        // instantiate debug stop watches.
-        UpdateStepStopwatch         = new();
-        FixedUpdateStepStopwatch    = new();
-        DrawStepStopwatch           = new();
-        EcsState = new EcsState(maxEntities);
-    }
 
     /// <summary>
     ///     Updates/Ticks a HowlApp forward by a set amount of time.
     /// </summary>
     /// <param name="deltaTime">the specified amount of time to tick forwards by.</param>
-    public static void Update(HowlApp app, float deltaTime)
+    public static void Update(HowlAppState state, float deltaTime)
     {
-        app.UpdateStepStopwatch.Restart();
+        state.UpdateStepStopwatch.Restart();
         
-        InputManager.Update(app);
-        app.UpdateCallback(deltaTime);
+        UpdateInputContext(state);
+        state.UpdateCallback(deltaTime);
 
-        app.UpdateStepStopwatch.Stop();
+        state.UpdateStepStopwatch.Stop();
 
         // try fixed update.
-        app.FixedUpdateTime += deltaTime;
-        if(app.FixedUpdateTime >= FixedDt)
+        state.FixedUpdateTime += deltaTime;
+        if(state.FixedUpdateTime >= FixedDt)
         {            
-            app.FixedUpdateStepStopwatch.Restart();
+            state.FixedUpdateStepStopwatch.Restart();
             
             // iterate and do fixed update steps.
-            while (app.FixedUpdateTime >= FixedDt)
+            while (state.FixedUpdateTime >= FixedDt)
             {
-                app.FixedUpdateCallback(FixedDt);
-                app.FixedUpdateTime -= FixedDt;
+                state.FixedUpdateCallback(FixedDt);
+                state.FixedUpdateTime -= FixedDt;
             }
 
-            app.FixedUpdateStepStopwatch.Stop();
+            state.FixedUpdateStepStopwatch.Stop();
         }
     }
 
     /// <summary>
     ///     Initialises the MonoGame backend of the howl app.
     /// </summary>
-    /// <param name="app"></param>
+    /// <param name="state"></param>
     /// <param name="resolution"></param>
-    public static void InitialiseMonoGame(HowlApp app, Resolution resolution, int maxTextures, int maxFonts, int debugDrawMaxPolygons)
+    public static void InitialiseMonoGame(HowlAppState state, Resolution resolution, int maxTextures, int maxFonts, int debugDrawMaxPolygons)
     {
-        if (app.MonoGameAppState == null)
+        if (state.MonoGameAppState == null)
         {
-            app.MonoGameAppState = new(resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.OutputWidth, 
+            state.MonoGameAppState = new(resolution.BackBufferWidth, resolution.BackBufferHeight, resolution.OutputWidth, 
                 resolution.OutputHeight, maxTextures, maxFonts, debugDrawMaxPolygons
             );
-            MonoGameAppState state = app.MonoGameAppState; 
+            MonoGameAppState monoGame = state.MonoGameAppState; 
             
             // THIS WILL NEED TO CHANGE.
             
-            state.UpdateCallback += (float deltaTime) =>
+            monoGame.UpdateCallback += (float deltaTime) =>
             {
-                Update(app, deltaTime);
+                Update(state, deltaTime);
             };
 
-            state.RenderCallback += (float deltaTime) =>
+            monoGame.RenderCallback += (float deltaTime) =>
             {
-                Vendors.MonoGame.Graphics.RendererSystem.Draw(app);  
-                app.DrawCallback?.Invoke(deltaTime);
+                Vendors.MonoGame.Graphics.RendererSystem.Draw(state);  
+                state.DrawCallback?.Invoke(deltaTime);
             };
         }
         else
@@ -222,7 +107,7 @@ public unsafe class HowlApp
     /// <param name="parseLevelIntGrid"></param>
     /// <param name="scratchBufferSizeInMb"></param>
     /// <param name="pixelsPerUnit"></param>
-    public static void IntialiseLdtk(HowlApp app, delegate* <HowlApp, IntGridView, void> parseLevelIntGrid, float scratchBufferSizeInMb, int pixelsPerUnit)
+    public static void IntialiseLdtk(HowlAppState app, delegate* <HowlAppState, IntGridView, void> parseLevelIntGrid, float scratchBufferSizeInMb, int pixelsPerUnit)
     {
         app.LdtkParserState = new LdtkParserState(parseLevelIntGrid, scratchBufferSizeInMb, pixelsPerUnit);
     }
@@ -230,70 +115,74 @@ public unsafe class HowlApp
     /// <summary>
     ///     Initialises a string registry to manage memory for strings.
     /// </summary>
-    /// <param name="app">The howl app instance to intialise.</param>
+    /// <param name="state">The howl app instance to intialise.</param>
     /// <param name="maxStringCharacters">the maximum amount of characters a string can have.</param>
-    public static void IntialiseStringRegistry(HowlApp app, int maxStringCharacters)
+    public static void IntialiseStringRegistry(HowlAppState state, int maxStringCharacters)
     {
-        app.StringRegistryState = new(maxStringCharacters);
+        state.StringRegistryState = new(maxStringCharacters);
     }
 
     /// <summary>
-    ///     Shutsdown a howl application.
+    ///     Shutsdown a state instance.
     /// </summary>
-    /// <param name="app"></param>
-    public static void Shutdown(HowlApp app)
+    /// <param name="state"></param>
+    public static void Shutdown(HowlAppState state)
     {
-        app.MonoGameAppState?.Exit();
+        state.MonoGameAppState?.Exit();
     }
 
     /// <summary>
-    ///     Runs a howl application.
+    ///     Runs a state instance.
     /// </summary>
-    /// <param name="app"></param>
-    public static void Run(HowlApp app)
+    /// <param name="state"></param>
+    public static void Run(HowlAppState state)
     {
-        app.MonoGameAppState?.Run();
+        state.MonoGameAppState?.Run();
     }
 
     /// <summary>
-    ///     Disposes of a howl app.
+    ///     Updates a state instance's input context.
     /// </summary>
-    /// <param name="app"></param>
-    public static void Dispose(HowlApp app)
+    /// <param name="app">the state instance to update.</param>
+    public static void UpdateInputContext(HowlAppState state)
     {
-        if (app.IsDisposed)
+        Vendors.MonoGame.Input.InputManager.Update(state.MonoGameAppState.InputManagerState);
+    }
+
+    /// <summary>
+    ///     Disposes of a state instance.
+    /// </summary>
+    /// <param name="state">the state instance to dispose of.</param>
+    public static void Dispose(HowlAppState state)
+    {
+        if (state.IsDisposed)
         {
             return;
         }
         
-        app.IsDisposed = true;
-        app.MonoGameAppState?.Dispose();
-        app.EcsState.Dispose();
-        app.EcsState = null;
-        app.UpdateStepStopwatch = null;
-        app.FixedUpdateStepStopwatch = null;
-        app.DrawStepStopwatch = null;
-        app.UpdateCallback = null;
-        app.FixedUpdateCallback = null;
-        app.DrawCallback = null;
+        state.IsDisposed = true;
+        state.MonoGameAppState?.Dispose();
+        state.EcsState.Dispose();
+        state.EcsState = null;
+        state.UpdateStepStopwatch = null;
+        state.FixedUpdateStepStopwatch = null;
+        state.DrawStepStopwatch = null;
+        state.UpdateCallback = null;
+        state.FixedUpdateCallback = null;
+        state.DrawCallback = null;
                 
-        if(app.LdtkParserState != null)
+        if(state.LdtkParserState != null)
         {
-            LdtkParserState.Dispose(app.LdtkParserState);
-            app.LdtkParserState = null;
+            LdtkParserState.Dispose(state.LdtkParserState);
+            state.LdtkParserState = null;
         }
         
-        if(app.MonoGameAppState != null)
+        if(state.MonoGameAppState != null)
         {
-            MonoGameApp.Dispose(app.MonoGameAppState);
-            app.MonoGameAppState = null;
+            MonoGameApp.Dispose(state.MonoGameAppState);
+            state.MonoGameAppState = null;
         }
 
-        GC.SuppressFinalize(app);        
-    }
-
-    ~HowlApp()
-    {
-        Dispose(this);
+        GC.SuppressFinalize(state);        
     }
 }

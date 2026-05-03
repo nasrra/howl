@@ -24,7 +24,7 @@ public static class Mouse
     /// <param name="app">the howl app with the input state.</param>
     /// <param name="button">the mouse button to check.</param>
     /// <returns>true, if the mouse button is down; otherwise false.</returns>
-    public static bool IsButtonDown(HowlApp app, MouseButton button)
+    public static bool IsButtonDown(HowlAppState app, MouseButton button)
     {
         Vendors.MonoGame.Input.InputManagerState input = app.MonoGameAppState.InputManagerState;
 
@@ -50,7 +50,7 @@ public static class Mouse
     /// <param name="app">the howl app with the input state.</param>
     /// <param name="button">the mouse button to check.</param>
     /// <returns>true, if the mouse button is up; otherwise false.</returns>
-    public static bool IsButtonUp(HowlApp app, MouseButton button)
+    public static bool IsButtonUp(HowlAppState app, MouseButton button)
     {
         Vendors.MonoGame.Input.InputManagerState input = app.MonoGameAppState.InputManagerState;
 
@@ -76,7 +76,7 @@ public static class Mouse
     /// <param name="app">the howl app with the input state.</param>
     /// <param name="button">the mouse button to check.</param>
     /// <returns>true, if the mouse button has just been pressed; otherwise false.</returns>
-    public static bool IsButtonJustPressed(HowlApp app, MouseButton button)
+    public static bool IsButtonJustPressed(HowlAppState app, MouseButton button)
     {
         Vendors.MonoGame.Input.InputManagerState input = app.MonoGameAppState.InputManagerState;
 
@@ -102,7 +102,7 @@ public static class Mouse
     /// <param name="app">the howl app with the input state.</param>
     /// <param name="button">the mouse button to check.</param>
     /// <returns>true, if the mouse button has just been released; otherwise false.</returns>
-    public static bool IsButtonJustReleased(HowlApp app, MouseButton button)
+    public static bool IsButtonJustReleased(HowlAppState app, MouseButton button)
     {
         Vendors.MonoGame.Input.InputManagerState input = app.MonoGameAppState.InputManagerState;
 
@@ -139,7 +139,7 @@ public static class Mouse
     /// </summary>
     /// <param name="app">the howl app instance containg the mouse and camera states.</param>
     /// <returns>the mouse world-space position.</returns>
-    public static Vector2 GetWorldPosition(HowlApp app)
+    public static Vector2 GetWorldPosition(HowlAppState app)
     {
         Camera camera = default;
         CameraSystem.GetDrawSpaceCamera(app.EcsState, DrawSpace.World, ref camera);
@@ -155,7 +155,7 @@ public static class Mouse
     /// </summary>
     /// <param name="app">the howl app instance containing the mouse and camera states.</param>
     /// <returns>the mouse screen-space position.</returns>
-    public static Vector2 GetScreenPosition(HowlApp app)
+    public static Vector2 GetScreenPosition(HowlAppState app)
     {
         Camera camera = default;
         CameraSystem.GetDrawSpaceCamera(app.EcsState, DrawSpace.Gui, ref camera);

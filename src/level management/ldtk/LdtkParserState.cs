@@ -35,7 +35,7 @@ public unsafe class LdtkParserState
     /// <summary>
     ///     The function pointer to user-defined code for parsing Level IntGrid data.
     /// </summary>
-    public delegate* <HowlApp, IntGridView, void> ParseLevelIntGrid;
+    public delegate* <HowlAppState, IntGridView, void> ParseLevelIntGrid;
 
     /// <summary>
     ///     Whether this instance has been disposed.
@@ -48,7 +48,7 @@ public unsafe class LdtkParserState
     /// <param name="parseLevelIntGrid">The function pointer to user-defined code for parsing Level IntGrid data</param>
     /// <param name="scratchBufferSizeInMb">the size of the scratch buffer used when read from disc.</param>
     /// <param name="pixelsPerUnit">The pixels per unit of measurement (one meter).</param>
-    public LdtkParserState(delegate* <HowlApp, IntGridView, void> parseLevelIntGrid, float scratchBufferSizeInMb, int pixelsPerUnit)
+    public LdtkParserState(delegate* <HowlAppState, IntGridView, void> parseLevelIntGrid, float scratchBufferSizeInMb, int pixelsPerUnit)
     {
         LevelIdentifierToIndex = new();
         PixelsPerUnit = pixelsPerUnit;

@@ -128,7 +128,7 @@ public static class PhysicsSystem
         state.FixedUpdateStepStopwatch.Stop();
     }
 
-    public static void Draw(HowlApp app, PhysicsSystemState state, float deltaTime)
+    public static void Draw(HowlAppState app, PhysicsSystemState state, float deltaTime)
     {
         if(state.DrawBvhBranches)
         {
@@ -1741,7 +1741,7 @@ public static class PhysicsSystem
     /// <param name="dynamicColour">the colour to draw any 'dynamic' bodies with.</param>
     /// <param name="kinematicColour">the colour to draw any 'kinematic' bodies with.</param>
     /// <param name="triggerColour">the colour to draw any 'trigger' bodies with.</param>
-    public static void DrawCirclePhysicsBodies(HowlApp app, Soa_Vector2 centroids, Span<float> radii, Span<PhysicsBodyFlags> flags, 
+    public static void DrawCirclePhysicsBodies(HowlAppState app, Soa_Vector2 centroids, Span<float> radii, Span<PhysicsBodyFlags> flags, 
         Colour dynamicColour, Colour kinematicColour, Colour triggerColour
     )
     {
@@ -1788,7 +1788,7 @@ public static class PhysicsSystem
     /// <param name="dynamicColour">the colour to draw 'dynamic' bodies with.</param>
     /// <param name="kinematicColour">the colour to draw 'kinematic' bodies with.</param>
     /// <param name="triggerColour">the colour to draw 'trigger' bodies with.</param>
-    public static void DrawPolygonPhysicsBodies(HowlApp app, FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags, 
+    public static void DrawPolygonPhysicsBodies(HowlAppState app, FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags, 
         Colour dynamicColour, Colour kinematicColour, Colour triggerColour
     )
     {
@@ -1825,7 +1825,7 @@ public static class PhysicsSystem
         }        
     }
 
-    public static void DrawCollisionInformation(HowlApp app, CollisionManifoldState collisions, Colour ownerColour, Colour otherColour, 
+    public static void DrawCollisionInformation(HowlAppState app, CollisionManifoldState collisions, Colour ownerColour, Colour otherColour, 
         Colour contactPointColour, Colour normalColour
     )
     {
@@ -1907,7 +1907,7 @@ public static class PhysicsSystem
         // }
     }
 
-    public static void DrawLinearVelocities(HowlApp app, Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, 
+    public static void DrawLinearVelocities(HowlAppState app, Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, 
         Colour colour, int count
     )
     {
@@ -1934,7 +1934,7 @@ public static class PhysicsSystem
         }
     }
 
-    public static void DrawPositions(HowlApp app, Soa_Vector2 positions, Span<PhysicsBodyFlags> flags, Colour colour, int count)
+    public static void DrawPositions(HowlAppState app, Soa_Vector2 positions, Span<PhysicsBodyFlags> flags, Colour colour, int count)
     {
         // hoisting invariance.
         Span<float> positionsX = positions.X;
@@ -1952,7 +1952,7 @@ public static class PhysicsSystem
         }
     }
 
-    public static void DrawCentroids(HowlApp app, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, Colour colour, int count)
+    public static void DrawCentroids(HowlAppState app, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, Colour colour, int count)
     {
         // hoisting invariance.
         Span<float> centroidsX = centroids.X;
@@ -1970,7 +1970,7 @@ public static class PhysicsSystem
         }
     }
 
-    public static void DrawAabbs(HowlApp app, Soa_Vector2 min, Soa_Vector2 max, Span<PhysicsBodyFlags> flags, Colour colour)
+    public static void DrawAabbs(HowlAppState app, Soa_Vector2 min, Soa_Vector2 max, Span<PhysicsBodyFlags> flags, Colour colour)
     {
         for(int i = 0; i < flags.Length; i++)
         {

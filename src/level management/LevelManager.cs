@@ -16,7 +16,7 @@ public static class LevelManager
     /// <param name="app">the howl app instance to load the project into.</param>
     /// <param name="path">the file path relative to <c><see cref="LevelsFolder"/></c></param>
     /// <returns>true, if the project was loaded successfully; otherwise false.</returns>
-    public static bool LoadProject(HowlApp app, string projectPath)
+    public static bool LoadProject(HowlAppState app, string projectPath)
     {
         return LdtkParser.LoadProject(app.LdtkParserState, projectPath);
     }
@@ -27,7 +27,7 @@ public static class LevelManager
     /// <param name="app">the howl application instance to parse into.</param>
     /// <param name="levelIdentifier">the name of the level.</param>
     /// <returns>true, if the level was successfully loaded; otherwise false.</returns>
-    public static bool LoadLevel(HowlApp app, string levelIdentifier)
+    public static bool LoadLevel(HowlAppState app, string levelIdentifier)
     {
         return LdtkParser.LoadLevel(app, app.LdtkParserState, levelIdentifier);
     }

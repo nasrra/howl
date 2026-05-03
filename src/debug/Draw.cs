@@ -52,7 +52,7 @@ public static class Draw
     /// <param name="drawSpace">The drawing space to render the line.</param>
     /// <param name="thickness">the thickness of the line segment.</param>
     /// <param name="scaleThickness">whether or not to scale the thickness of the line by the camera zoom.</param>
-    public static void Line(HowlApp app, Colour colour, Vector2 start, Vector2 end, DrawSpace drawSpace, 
+    public static void Line(HowlAppState app, Colour colour, Vector2 start, Vector2 end, DrawSpace drawSpace, 
         float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {
@@ -95,7 +95,7 @@ public static class Draw
     /// <param name="drawSpace">the drawing space to render the shape in.</param>
     /// <param name="thickness">the thickness of the wireframe line segments.</param>
     /// <param name="scaleThickness">whether or not to scale the thickness of the wireframe by the camera zoom.</param>
-    public static void WireRect(HowlApp app, Math.Shapes.Rectangle shape, Colour colour, DrawSpace drawSpace, 
+    public static void WireRect(HowlAppState app, Math.Shapes.Rectangle shape, Colour colour, DrawSpace drawSpace, 
         float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {
@@ -122,7 +122,7 @@ public static class Draw
     /// <param name="shape">the shape data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="drawSpace">the drawing space to render that shape in.</param>
-    public static void FillRect(HowlApp app, Math.Shapes.Rectangle shape, Colour colour, DrawSpace drawSpace)
+    public static void FillRect(HowlAppState app, Math.Shapes.Rectangle shape, Colour colour, DrawSpace drawSpace)
     {
         Camera camera = default;
         CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
@@ -159,7 +159,7 @@ public static class Draw
     /// <param name="thickness">the thickness of the wireframe line segments.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <param name="scaleThickness">whether or not to scale the thickness of the wireframe by the camera zoom.</param>
-    public static void WireCircle(HowlApp app, Math.Shapes.Circle shape, Colour colour, DrawSpace drawSpace, float thickness = DefaultWireframeThickness, 
+    public static void WireCircle(HowlAppState app, Math.Shapes.Circle shape, Colour colour, DrawSpace drawSpace, float thickness = DefaultWireframeThickness, 
         int verticeCount = DefaultCircleVerticeAmount, bool scaleThickness = true
     )
     {
@@ -187,7 +187,7 @@ public static class Draw
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="drawSpace">the drawing space of the filled shape.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
-    public static void FillCircle(HowlApp app, Math.Shapes.Circle shape, Colour colour, DrawSpace drawSpace, 
+    public static void FillCircle(HowlAppState app, Math.Shapes.Circle shape, Colour colour, DrawSpace drawSpace, 
         int verticeCount = DefaultCircleVerticeAmount
     )
     {
@@ -228,7 +228,7 @@ public static class Draw
     /// <param name="drawSpace">the drawing space of the wireframe shape.</param>
     /// <param name="thickness">the thickness of the wireframe line segments.</param>
     /// <param name="scaleThickness">whether or not to scale the thickness of the wireframe by the camera zoom.</param>
-    public static void WirePoly(HowlApp app, Span<float> verticesX, Span<float> verticesY, Colour colour, DrawSpace drawSpace,
+    public static void WirePoly(HowlAppState app, Span<float> verticesX, Span<float> verticesY, Colour colour, DrawSpace drawSpace,
         float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {

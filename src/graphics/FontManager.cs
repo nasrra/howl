@@ -9,7 +9,7 @@ public static class FontManager
     /// <param name="filePath">the file path of the font - relative to the working directory.</param>
     /// <param name="fontId">output for the id of the newly registered font.</param>
     /// <returns>true, if the texture was successfully registered; otherwise false.</returns>
-    public static bool RegisterFont(HowlApp app, string filePath, ref int fontId)
+    public static bool RegisterFont(HowlAppState app, string filePath, ref int fontId)
     {
         return Vendors.MonoGame.FontStashSharp.FontManager.RegisterFont(app.MonoGameAppState.FontManagerState, filePath, ref fontId);
     }
@@ -21,7 +21,7 @@ public static class FontManager
     /// <param name="filePath">the file path of the registered font to load - relative to the working directory.</param>
     /// <param name="lineHeight">the desired text line height in pixels.</param>
     /// <returns>true, if the font was successfully loaded; otherwise false.</returns>
-    public static bool LoadFont(HowlApp app, string filePath, int lineHeight)
+    public static bool LoadFont(HowlAppState app, string filePath, int lineHeight)
     {
         return Vendors.MonoGame.FontStashSharp.FontManager.LoadFont(app.MonoGameAppState.FontManagerState, filePath, lineHeight);
     }
@@ -32,7 +32,7 @@ public static class FontManager
     /// <param name="app">the howl app instance containing the font to unload.</param>
     /// <param name="filePath">the file path of the registered font to unload - relative to the working directory.</param>
     /// <returns>true, if the font was successfully unloaded; otherwise false.</returns>
-    public static bool UnloadFont(HowlApp app, string filePath)
+    public static bool UnloadFont(HowlAppState app, string filePath)
     {
         return Vendors.MonoGame.FontStashSharp.FontManager.UnloadFont(app.MonoGameAppState.FontManagerState, filePath);
     }
@@ -44,7 +44,7 @@ public static class FontManager
     /// <param name="filePath">the file path of the fallback font to load - relative to the working directory.</param>
     /// <param name="lineHeight">the desired text line height in pixels.</param>
     /// <returns></returns>
-    public static bool LoadNilFont(HowlApp app, string filePath, int lineHeight)
+    public static bool LoadNilFont(HowlAppState app, string filePath, int lineHeight)
     {
         return Vendors.MonoGame.FontStashSharp.FontManager.LoadNilFont(app.MonoGameAppState.FontManagerState, filePath, lineHeight);
     }
@@ -55,7 +55,7 @@ public static class FontManager
     /// <param name="app">the howl app with the loaded font.</param>
     /// <param name="fontId">the id of the font.</param>
     /// <returns>true, if the font is loaded; otherwise false.</returns>
-    public static bool IsFontLoaded(HowlApp app, int fontId)
+    public static bool IsFontLoaded(HowlAppState app, int fontId)
     {
         return app.MonoGameAppState.FontManagerState.Fonts[fontId] != null;
     }

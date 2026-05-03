@@ -33,7 +33,7 @@ public static class RendererSystem
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public static void Draw(HowlApp app)
+    public static void Draw(HowlAppState app)
     {
         // hoisting invariance.
         MonoGameAppState monoGame = app.MonoGameAppState;

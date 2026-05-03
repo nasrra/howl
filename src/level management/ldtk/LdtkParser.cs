@@ -108,7 +108,7 @@ public static class LdtkParser
     /// <param name="state">the ldtk parser state with the loaded project containing the level.</param>
     /// <param name="levelIdentifier">the identifier string given to the level in the LDTK project.</param>
     /// <returns>true, if the level was successfully loaded; otherwise false.</returns>
-    public static unsafe bool LoadLevel(HowlApp app, LdtkParserState state, string levelIdentifier)
+    public static unsafe bool LoadLevel(HowlAppState app, LdtkParserState state, string levelIdentifier)
     {
         System.Diagnostics.Debug.Assert(state.Project!=null, $"Cannot load level '{levelIdentifier}' without a loaded project file.");
 
@@ -148,7 +148,7 @@ public static class LdtkParser
         return true;
     }
 
-    public static void ParseAutoTiles(HowlApp app, Dto_AutoLayerTile[] tiles, string projectDirectory, string tilesetRelPath, 
+    public static void ParseAutoTiles(HowlAppState app, Dto_AutoLayerTile[] tiles, string projectDirectory, string tilesetRelPath, 
         int cellSize, int pixelsPerUnit
     )
     {
