@@ -7,16 +7,7 @@ using Howl.Math;
 namespace Howl.Graphics;
 
 public static class CameraSystem
-{    
-    /// <summary>
-    /// Gets and sets the main camera id.
-    /// </summary>
-    public static GenId MainCameraId;
-
-    /// <summary>
-    /// Gets and sets the gui camera id.
-    /// </summary>
-    public static GenId GuiCameraId;
+{
 
     /// <summary>
     /// Registers all necessary components for this system into the specified component registry. 
@@ -53,33 +44,16 @@ public static class CameraSystem
         }
     }
 
-    /// <summary>
-    ///     Gets the camera assigned to the draw space.
-    /// </summary>
-    /// <param name="ecs">the ecs state containing the camera.</param>
-    /// <param name="drawSpace">the draw space of the camera to retrieve.</param>
-    /// <param name="camera">output for the found camera.</param>
-    /// <returns>true, if the camera was successfully found, otherwise false.</returns>
-    public static bool GetDrawSpaceCamera(EcsState ecs, DrawSpace drawSpace, ref Camera camera)
+    public static ref Camera GetDrawSpaceCamera(HowlAppState state, DrawSpace drawSpace)
     {
-        GenIdResult result = default;
-        GenId genid = drawSpace switch
+        switch (drawSpace)
         {
-            DrawSpace.World => MainCameraId,
-            DrawSpace.Gui => GuiCameraId,
-            _ => default
-        };
-
-        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
-
-        ref Camera c = ref ComponentArray.GetData(cameras, ecs, genid, ref result);
-        if (result != GenIdResult.Ok)
-        {
-            Log.WriteLine(LogType.Warn, $"{drawSpace} camera is a stale gen id");
-            return false;
+            case DrawSpace.World:
+                return ref state.WorldCamera;
+            case DrawSpace.Screen:
+                return ref state.ScreenCamera;
+            default:
+                throw new Exception("unrecognised camera draw space");
         }
-
-        camera = c;
-        return true;
     }
 }

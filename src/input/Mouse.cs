@@ -137,15 +137,14 @@ public static class Mouse
     /// <summary>
     ///     Gets the position of the mouse in world space.
     /// </summary>
-    /// <param name="app">the howl app instance containg the mouse and camera states.</param>
+    /// <param name="state">the howl app instance containg the mouse and camera states.</param>
     /// <returns>the mouse world-space position.</returns>
-    public static Vector2 GetWorldPosition(HowlAppState app)
+    public static Vector2 GetWorldPosition(HowlAppState state)
     {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app.EcsState, DrawSpace.World, ref camera);
+        ref Camera camera = ref state.WorldCamera;
 
         Microsoft.Xna.Framework.Vector2 mCameraPosition = Vendors.MonoGame.Math.Vector2Extensions.ToMonoGame(camera.Position);
-        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetWorldPosition(app.MonoGameAppState, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
+        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetWorldPosition(state.MonoGameAppState, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
 
         return Vendors.MonoGame.Math.Vector2Extensions.ToHowl(mPosition);
     }
@@ -153,15 +152,14 @@ public static class Mouse
     /// <summary>
     ///     Gets the position of the mouse in screen-space.
     /// </summary>
-    /// <param name="app">the howl app instance containing the mouse and camera states.</param>
+    /// <param name="state">the howl app instance containing the mouse and camera states.</param>
     /// <returns>the mouse screen-space position.</returns>
-    public static Vector2 GetScreenPosition(HowlAppState app)
+    public static Vector2 GetScreenPosition(HowlAppState state)
     {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app.EcsState, DrawSpace.Gui, ref camera);
+        ref Camera camera = ref state.ScreenCamera;
 
         Microsoft.Xna.Framework.Vector2 mCameraPosition = Vendors.MonoGame.Math.Vector2Extensions.ToMonoGame(camera.Position);
-        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetScreenPosition(app.MonoGameAppState, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
+        Microsoft.Xna.Framework.Vector2 mPosition =  Vendors.MonoGame.Input.Mouse.GetScreenPosition(state.MonoGameAppState, mCameraPosition, camera.Zoom, camera.BaseVerticalFov);
 
         return Vendors.MonoGame.Math.Vector2Extensions.ToHowl(mPosition);
     }

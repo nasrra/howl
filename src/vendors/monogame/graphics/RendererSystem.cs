@@ -33,40 +33,26 @@ public static class RendererSystem
     /// <param name="componentRegistry"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public static void Draw(HowlAppState app)
+    public static void Draw(HowlAppState app, Camera worldCamera, Camera screenCamera)
     {
         // hoisting invariance.
         MonoGameAppState monoGame = app.MonoGameAppState;
         EcsState ecs = app.EcsState;
         StringRegistryState strings = app.StringRegistryState;
 
-        GenIdResult result = default;
         ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
 
-        ref Camera mainCamera = ref ComponentArray.GetData(cameras, ecs, CameraSystem.MainCameraId, ref result);
-        if(result != GenIdResult.Ok)
-        {
-            System.Diagnostics.Debug.Assert(false);
-            return;            
-        }
-        
-        ref Camera guiCamera = ref ComponentArray.GetData(cameras, ecs, CameraSystem.GuiCameraId, ref result);
-        if(result != GenIdResult.Ok)
-        {
-            System.Diagnostics.Debug.Assert(false);
-            return;
-        }
 
         monoGame.GraphicsDevice.SetRenderTarget(monoGame.FinalRenderTarget);                    
-        monoGame.GraphicsDevice.Clear(mainCamera.ClearColour.ToMonoGame());
+        monoGame.GraphicsDevice.Clear(worldCamera.ClearColour.ToMonoGame());
         
-        DrawSprites(ecs, monoGame, ref mainCamera, DrawSpace.World);
-        DrawLabels(ecs, strings, monoGame, ref mainCamera, DrawSpace.World);
+        DrawSprites(ecs, monoGame, ref worldCamera, DrawSpace.World);
+        DrawLabels(ecs, strings, monoGame, ref worldCamera, DrawSpace.World);
 
         DrawPrimitives(monoGame);
 
-        DrawSprites(ecs, monoGame, ref guiCamera, DrawSpace.Gui);
-        DrawLabels(ecs, strings, monoGame, ref guiCamera, DrawSpace.Gui);
+        DrawSprites(ecs, monoGame, ref screenCamera, DrawSpace.Screen);
+        DrawLabels(ecs, strings, monoGame, ref screenCamera, DrawSpace.Screen);
         
         monoGame.GraphicsDevice.SetRenderTarget(null);
 

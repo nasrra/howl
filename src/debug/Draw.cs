@@ -45,20 +45,20 @@ public static class Draw
     /// <summary>
     ///     Draws a line segement between two points.
     /// </summary>
-    /// <param name="app">the howl app to store the line segement to draw.</param>
+    /// <param name="state">the howl app to store the line segement to draw.</param>
     /// <param name="colour">the colour of the line when drawing.</param>
     /// <param name="start">the start point of the line segment.</param>
     /// <param name="end">the end point of the line segment.</param>
     /// <param name="drawSpace">The drawing space to render the line.</param>
     /// <param name="thickness">the thickness of the line segment.</param>
     /// <param name="scaleThickness">whether or not to scale the thickness of the line by the camera zoom.</param>
-    public static void Line(HowlAppState app, Colour colour, Vector2 start, Vector2 end, DrawSpace drawSpace, 
+    public static void Line(HowlAppState state, Colour colour, Vector2 start, Vector2 end, DrawSpace drawSpace, 
         float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
-        float outputResolutionHeight = app.MonoGameAppState.OutputResolution.Y;
+        ref Camera camera = ref CameraSystem.GetDrawSpaceCamera(state, drawSpace);
+
+        float outputResolutionHeight = state.MonoGameAppState.OutputResolution.Y;
 
         // convert to monogame.
 
@@ -69,7 +69,7 @@ public static class Draw
 
         // run monogame code.
 
-        Vendors.MonoGame.DebugDraw.Line(app.MonoGameAppState.DebugDrawState, mColour, mStart, mEnd, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
+        Vendors.MonoGame.DebugDraw.Line(state.MonoGameAppState.DebugDrawState, mColour, mStart, mEnd, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }
@@ -89,19 +89,18 @@ public static class Draw
     /// <summary>
     ///     Draws a wireframe rectangle.
     /// </summary>
-    /// <param name="app">the howl app to store the wireframe rectangle to draw. </param>
+    /// <param name="state">the howl app to store the wireframe rectangle to draw. </param>
     /// <param name="shape">the shape data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="drawSpace">the drawing space to render the shape in.</param>
     /// <param name="thickness">the thickness of the wireframe line segments.</param>
     /// <param name="scaleThickness">whether or not to scale the thickness of the wireframe by the camera zoom.</param>
-    public static void WireRect(HowlAppState app, Math.Shapes.Rectangle shape, Colour colour, DrawSpace drawSpace, 
+    public static void WireRect(HowlAppState state, Math.Shapes.Rectangle shape, Colour colour, DrawSpace drawSpace, 
         float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
-        float outputResolutionHeight = app.MonoGameAppState.OutputResolution.Y;
+        ref Camera camera = ref CameraSystem.GetDrawSpaceCamera(state, drawSpace);
+        float outputResolutionHeight = state.MonoGameAppState.OutputResolution.Y;
 
         // convert to monogame.        
         Microsoft.Xna.Framework.Vector2 mRectMin = new Microsoft.Xna.Framework.Vector2(shape.X, shape.Y - shape.Height);
@@ -110,7 +109,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
         
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.WireRect(app.MonoGameAppState.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
+        Vendors.MonoGame.DebugDraw.WireRect(state.MonoGameAppState.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }
@@ -118,14 +117,13 @@ public static class Draw
     /// <summary>
     ///     Draws a filled rectangle.
     /// </summary>
-    /// <param name="app">the howl app to store the filled rectangle to draw.</param>
+    /// <param name="state">the howl app to store the filled rectangle to draw.</param>
     /// <param name="shape">the shape data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="drawSpace">the drawing space to render that shape in.</param>
-    public static void FillRect(HowlAppState app, Math.Shapes.Rectangle shape, Colour colour, DrawSpace drawSpace)
+    public static void FillRect(HowlAppState state, Math.Shapes.Rectangle shape, Colour colour, DrawSpace drawSpace)
     {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
+        ref Camera camera = ref CameraSystem.GetDrawSpaceCamera(state, drawSpace);
 
         // convert to monogame.
         Microsoft.Xna.Framework.Vector2 mRectMin = new Microsoft.Xna.Framework.Vector2(shape.X, shape.Y - shape.Height);
@@ -134,7 +132,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
 
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.FillRect(app.MonoGameAppState.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos);
+        Vendors.MonoGame.DebugDraw.FillRect(state.MonoGameAppState.DebugDrawState, mColour, mRectMin, mRectMax, mCameraPos);
     }
 
 
@@ -152,20 +150,19 @@ public static class Draw
     /// <summary>
     ///     Draws a wireframe circle.
     /// </summary>
-    /// <param name="app">the howl app to store the wireframe circle to draw.</param>
+    /// <param name="state">the howl app to store the wireframe circle to draw.</param>
     /// <param name="shape">the shape data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="drawSpace">the drawing space to render the shape in.</param>
     /// <param name="thickness">the thickness of the wireframe line segments.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
     /// <param name="scaleThickness">whether or not to scale the thickness of the wireframe by the camera zoom.</param>
-    public static void WireCircle(HowlAppState app, Math.Shapes.Circle shape, Colour colour, DrawSpace drawSpace, float thickness = DefaultWireframeThickness, 
+    public static void WireCircle(HowlAppState state, Math.Shapes.Circle shape, Colour colour, DrawSpace drawSpace, float thickness = DefaultWireframeThickness, 
         int verticeCount = DefaultCircleVerticeAmount, bool scaleThickness = true
     )
     {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
-        float outputResolutionHeight = app.MonoGameAppState.OutputResolution.Y;
+        ref Camera camera = ref CameraSystem.GetDrawSpaceCamera(state, drawSpace);
+        float outputResolutionHeight = state.MonoGameAppState.OutputResolution.Y;
 
         // convert to monogame.        
 
@@ -174,7 +171,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
     
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.WireCircle(app.MonoGameAppState.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, 
+        Vendors.MonoGame.DebugDraw.WireCircle(state.MonoGameAppState.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, 
             camera.Zoom, camera.BaseVerticalFov, outputResolutionHeight, thickness, verticeCount, scaleThickness
         );
     }
@@ -182,17 +179,16 @@ public static class Draw
     /// <summary>
     ///     Draws a filled circle.
     /// </summary>
-    /// <param name="app">the howl app to store the filled circle to draw.</param>
+    /// <param name="state">the howl app to store the filled circle to draw.</param>
     /// <param name="shape">the shape data.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="drawSpace">the drawing space of the filled shape.</param>
     /// <param name="verticeCount">the amount of vertices used to draw the circle.</param>
-    public static void FillCircle(HowlAppState app, Math.Shapes.Circle shape, Colour colour, DrawSpace drawSpace, 
+    public static void FillCircle(HowlAppState state, Math.Shapes.Circle shape, Colour colour, DrawSpace drawSpace, 
         int verticeCount = DefaultCircleVerticeAmount
     )
     {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
+        ref Camera camera = ref CameraSystem.GetDrawSpaceCamera(state, drawSpace);
 
         // convert to monogame.        
         Microsoft.Xna.Framework.Vector2 mCirclePos = new Microsoft.Xna.Framework.Vector2(shape.X, shape.Y);
@@ -200,7 +196,7 @@ public static class Draw
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
 
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.FillCircle(app.MonoGameAppState.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, verticeCount);
+        Vendors.MonoGame.DebugDraw.FillCircle(state.MonoGameAppState.DebugDrawState, mColour, mCirclePos, shape.Radius, mCameraPos, verticeCount);
     }
 
 
@@ -221,27 +217,26 @@ public static class Draw
     /// <remarks>
     ///     This function assumes <c><paramref name="verticesX"/></c> is the same length as <c><paramref name="verticesY"/></c>.
     /// </remarks>
-    /// <param name="app">the howl app to store the wireframe polygon to draw.</param>
+    /// <param name="state">the howl app to store the wireframe polygon to draw.</param>
     /// <param name="verticesX">the x-components of the polygon's vertices.</param>
     /// <param name="verticesY">the x-components of the polygon's vertices.</param>
     /// <param name="colour">the colour used to draw the wireframe.</param>
     /// <param name="drawSpace">the drawing space of the wireframe shape.</param>
     /// <param name="thickness">the thickness of the wireframe line segments.</param>
     /// <param name="scaleThickness">whether or not to scale the thickness of the wireframe by the camera zoom.</param>
-    public static void WirePoly(HowlAppState app, Span<float> verticesX, Span<float> verticesY, Colour colour, DrawSpace drawSpace,
+    public static void WirePoly(HowlAppState state, Span<float> verticesX, Span<float> verticesY, Colour colour, DrawSpace drawSpace,
         float thickness = DefaultWireframeThickness, bool scaleThickness = true
     )
     {
-        Camera camera = default;
-        CameraSystem.GetDrawSpaceCamera(app.EcsState, drawSpace, ref camera);
-        float outputResolutionHeight = app.MonoGameAppState.OutputResolution.Y;
+        ref Camera camera = ref CameraSystem.GetDrawSpaceCamera(state, drawSpace);
+        float outputResolutionHeight = state.MonoGameAppState.OutputResolution.Y;
 
         // convert to monogame.
         Microsoft.Xna.Framework.Vector2 mCameraPos = Vendors.MonoGame.Math.Vector2Extensions.ToMonoGame(camera.Position);
         Microsoft.Xna.Framework.Color mColour = Vendors.MonoGame.Graphics.ColourExtensions.ToMonoGame(colour);
 
         // execute monogame code.
-        Vendors.MonoGame.DebugDraw.WirePoly(app.MonoGameAppState.DebugDrawState, mColour, verticesX, verticesY, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
+        Vendors.MonoGame.DebugDraw.WirePoly(state.MonoGameAppState.DebugDrawState, mColour, verticesX, verticesY, mCameraPos, camera.Zoom, camera.BaseVerticalFov, 
             outputResolutionHeight, thickness, scaleThickness
         );
     }

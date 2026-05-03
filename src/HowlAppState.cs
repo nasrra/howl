@@ -1,5 +1,6 @@
 using System;
 using Howl.Ecs;
+using Howl.Graphics;
 using Howl.LevelManagement;
 using Howl.Text;
 using Howl.Vendors.MonoGame;
@@ -104,6 +105,16 @@ public class HowlAppState
     ///     The current fixed update step time.
     /// </summary>
     public float FixedUpdateTime = 0;
+
+    /// <summary>
+    ///     The world-space camera used for renderering.
+    /// </summary>
+    public Camera WorldCamera;
+
+    /// <summary>
+    ///     The screen-space camera used for rendering.
+    /// </summary>
+    public Camera ScreenCamera;
 
     /// <summary>
     ///     Whether or not this instance has been dispose of.

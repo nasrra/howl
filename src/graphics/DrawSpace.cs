@@ -7,5 +7,5 @@ namespace Howl.Graphics;
 public enum DrawSpace : byte
 {
     World,
-    Gui,
+    Screen,
 }

@@ -90,7 +90,7 @@ public unsafe static class HowlApp
 
             monoGame.RenderCallback += (float deltaTime) =>
             {
-                Vendors.MonoGame.Graphics.RendererSystem.Draw(state);  
+                Vendors.MonoGame.Graphics.RendererSystem.Draw(state, state.WorldCamera, state.ScreenCamera);  
                 state.DrawCallback?.Invoke(deltaTime);
             };
         }
