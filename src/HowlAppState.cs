@@ -1,8 +1,6 @@
 using System;
-using Howl.Ecs;
 using Howl.Graphics;
 using Howl.LevelManagement;
-using Howl.Text;
 using Howl.Vendors.MonoGame;
 
 namespace Howl;
@@ -121,8 +119,7 @@ public class HowlAppState
     /// <summary>
     ///     Creates a new HowlAppState instance.
     /// </summary>
-    /// <param name="maxEntities">the maximum number of entities.</param>
-    public HowlAppState(int maxEntities)
+    public HowlAppState()
     {
         // instantiate debug stop watches.
         UpdateStepStopwatch         = new();
