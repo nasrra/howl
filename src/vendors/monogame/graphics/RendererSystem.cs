@@ -16,43 +16,30 @@ namespace Howl.Vendors.MonoGame.Graphics;
 
 public static class RendererSystem
 {    
-
     /// <summary>
-    /// Registers all necessary components for this system into a .
+    ///     Performs a draw step for a monogame app state.
     /// </summary>
-    /// <param name="ecs">the specified component registry.</param>
-    public static void RegisterComponents(ComponentRegistry registry)
+    /// <param name="monoGame">the state to draw to.</param>
+    /// <param name="strings">the character data for the strings in the labels to draw.</param>
+    /// <param name="transforms">the transforms of the elements to draw.</param>
+    /// <param name="sprites">the sprites to draw.</param>
+    /// <param name="labels">the labels to draw.</param>
+    /// <param name="worldCamera">the world camera data.</param>
+    /// <param name="screenCamera">the screen camera data.</param>
+    public static void Draw(MonoGameAppState monoGame, StringRegistryState strings, ComponentArray<Transform> transforms, ComponentArray<Sprite> sprites, ComponentArray<Label> labels, 
+        Camera worldCamera, Camera screenCamera
+    )
     {
-        ComponentRegistry.RegisterComponent<Sprite>(registry);
-        ComponentRegistry.RegisterComponent<Label>(registry);
-    }
-
-    /// <summary>
-    /// Creates a new draw system for this MonoGame renderer.
-    /// </summary>
-    /// <param name="componentRegistry"></param>
-    /// <param name="state"></param>
-    /// <returns></returns>
-    public static void Draw(HowlAppState app, Camera worldCamera, Camera screenCamera)
-    {
-        // hoisting invariance.
-        MonoGameAppState monoGame = app.MonoGameAppState;
-        EcsState ecs = app.EcsState;
-        StringRegistryState strings = app.StringRegistryState;
-
-        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
-
-
         monoGame.GraphicsDevice.SetRenderTarget(monoGame.FinalRenderTarget);                    
         monoGame.GraphicsDevice.Clear(worldCamera.ClearColour.ToMonoGame());
         
-        DrawSprites(ecs, monoGame, ref worldCamera, DrawSpace.World);
-        DrawLabels(ecs, strings, monoGame, ref worldCamera, DrawSpace.World);
+        DrawSprites(monoGame, transforms, sprites, ref worldCamera, DrawSpace.World);
+        DrawLabels(monoGame, strings, transforms, labels, ref worldCamera, DrawSpace.World);
 
         DrawPrimitives(monoGame);
 
-        DrawSprites(ecs, monoGame, ref screenCamera, DrawSpace.Screen);
-        DrawLabels(ecs, strings, monoGame, ref screenCamera, DrawSpace.Screen);
+        DrawSprites(monoGame, transforms, sprites, ref screenCamera, DrawSpace.Screen);
+        DrawLabels(monoGame, strings, transforms, labels, ref screenCamera, DrawSpace.Screen);
         
         monoGame.GraphicsDevice.SetRenderTarget(null);
 
@@ -78,11 +65,8 @@ public static class RendererSystem
     /// <param name="app">The state of the renderer.</param>
     /// <param name="camera">The camera to draw in relation to.</param>
     /// <param name="worldSpace">filters sprites; drawing sprites that are within the specified world space.</param>
-    private static void DrawSprites(EcsState ecs, MonoGameAppState app, ref Camera camera, DrawSpace worldSpace)
+    private static void DrawSprites(MonoGameAppState app, ComponentArray<Transform> transforms, ComponentArray<Sprite> sprites, ref Camera camera, DrawSpace worldSpace)
     {
-        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
-        ComponentArray<Sprite> sprites = EcsState.GetComponents<Sprite>(ecs);
-
         // update effects to use the new projection matrix.        
         app.EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
 
@@ -248,17 +232,16 @@ public static class RendererSystem
     }
 
     /// <summary>
-    /// Draws all texts to the currently bound render target.
+    ///     Draws all texts to the currently bound render target.
     /// </summary>
-    /// <param name="ecs">The ecs state where the texts are stored.</param>
-    /// <param name="state">The state of the renderer.</param>
-    /// <param name="camera">The camera to draw in relation to.</param>
-    /// <param name="drawSpace">filters text; drawing texts that are within the specified world space.</param>
-    public static void DrawLabels(EcsState ecs, StringRegistryState strings, MonoGameAppState state, ref Camera camera, DrawSpace drawSpace)
+    /// <param name="state">the state to draw to.</param>
+    /// <param name="strings">the collection containing the string data for the labels.</param>
+    /// <param name="transforms">the collection containing the label transforms.</param>
+    /// <param name="labels">the labels to draw.</param>
+    /// <param name="camera">the camera data to draw in relation to.</param>
+    /// <param name="drawSpace">the space to draw in.</param>
+    public static void DrawLabels(MonoGameAppState state, StringRegistryState strings, ComponentArray<Transform> transforms, ComponentArray<Label> labels, ref Camera camera, DrawSpace drawSpace)
     {
-        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
-        ComponentArray<Label> labels = EcsState.GetComponents<Label>(ecs);
-
         state.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointClamp, 

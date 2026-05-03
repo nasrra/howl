@@ -8,35 +8,13 @@ namespace Howl.Graphics;
 
 public static class CameraSystem
 {
-
     /// <summary>
-    /// Registers all necessary components for this system into the specified component registry. 
+    ///     Updates all camera's projection matrices with a renderer states output resolution aspect ratio.
     /// </summary>
-    /// <param name="componentRegistry">the component registry.</param>
-    public static void RegisterComponents(ComponentRegistry registry)
+    /// <param name="cameras">the cameras to update.</param>
+    /// <param name="outputResolutionAspectRatio">the output resolution aspect ratio.</param>
+    public static void UpdateProjectionMatrices(ComponentArray<Camera> cameras, float outputResolutionAspectRatio)
     {
-        ComponentRegistry.RegisterComponent<Camera>(registry);
-    }
-
-    /// <summary>
-    /// Creates a new update system instance.
-    /// </summary>
-    /// <param name="ecs">the ecs state containing the cameras to update.</param>
-    /// <param name="state">the renderer state.</param>
-    /// <returns>the new update system instance.</returns>
-    public static void Update(EcsState ecs, float outputResolutionAspectRatio)
-    {
-        UpdateProjectionMatrices(ecs, outputResolutionAspectRatio);  
-    }
-    
-    /// <summary>
-    /// Updates all camera's projection matrices with a renderer states output resolution aspect ratio.
-    /// </summary>
-    /// <param name="ecs">The ecs state with the camera data.</param>
-    /// <param name="state">the renderer state to update in accordance with.</param>
-    private static void UpdateProjectionMatrices(EcsState ecs, float outputResolutionAspectRatio)
-    {
-        ComponentArray<Camera> cameras = EcsState.GetComponents<Camera>(ecs);
         for(int i = 1; i < cameras.Active.Count; i++)
         {
             ref Camera camera = ref ComponentArray.GetDataUnsafe(cameras, cameras.Active[i]);

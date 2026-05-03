@@ -5,7 +5,7 @@ using Howl.Ecs;
 
 namespace Howl.Ecs;
 
-public class ComponentArray<T> : IComponentArray
+public class ComponentArray<T>
 {
     /// <summary>
     ///     The backing storage for actual elements.
@@ -715,24 +715,7 @@ public static class ComponentArray
     {
         return ref ComponentArray<T>.GetData(components, entities, genId, ref result);
     }
-
-    /// <summary>
-    ///     Gets the component data associated with a gen id in a components array.
-    /// </summary>
-    /// <param name="components">the components array storing the component data.</param>
-    /// <param name="ecs">the ecs state containing a gen-id allocator instance where the <c><paramref name="genId"/></c> comes from.</param>
-    /// <param name="genId">the gen id of the component data to retrieve.</param>
-    /// <param name="result">output for whether or not the retrieved component data is valid.</param>
-    /// <returns>
-    ///     A reference to the component data within the components array; note that the data may be
-    ///     the Nil value. Ensure to check the output <c><paramref name="result"/></c> before operating
-    ///     on the returned reference.
-    /// </returns>
-    public static ref T GetData<T>(this ComponentArray<T> components, EcsState ecs, GenId genId, ref GenIdResult result)
-    {
-        return ref ComponentArray<T>.GetData(components, ecs.Entities, genId, ref result);
-    }
-
+    
     /// <summary>
     ///     Gets the component data associated with a gen id in a components array.
     /// </summary>

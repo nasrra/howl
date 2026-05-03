@@ -23,11 +23,6 @@ public class HowlAppState
 
 
     /// <summary>
-    ///     The initialise callback.
-    /// </summary>
-    public Action Initialise;
-
-    /// <summary>
     ///     The update callback.
     /// </summary>
     public Action<float> UpdateCallback;
@@ -82,11 +77,6 @@ public class HowlAppState
 
 
     /// <summary>
-    ///     Gets the EcsState.
-    /// </summary>
-    public EcsState EcsState;
-
-    /// <summary>
     ///     The Monogame Application state used as a pump for this HowlApp.
     /// </summary>
     public MonoGameAppState MonoGameAppState;
@@ -95,11 +85,6 @@ public class HowlAppState
     ///     The LdtkParserState used for parsing ldtk level files.
     /// </summary>
     public LdtkParserState LdtkParserState;
-
-    /// <summary>
-    ///     The registry state storing all strings.
-    /// </summary>
-    public StringRegistryState StringRegistryState;
 
     /// <summary>
     ///     The current fixed update step time.
@@ -143,7 +128,6 @@ public class HowlAppState
         UpdateStepStopwatch         = new();
         FixedUpdateStepStopwatch    = new();
         DrawStepStopwatch           = new();
-        EcsState = new EcsState(maxEntities);
     }
 
     ~HowlAppState()

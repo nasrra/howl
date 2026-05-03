@@ -106,9 +106,12 @@ public static class LdtkParser
     /// </summary>
     /// <param name="app">the howl application instance to parse into.</param>
     /// <param name="state">the ldtk parser state with the loaded project containing the level.</param>
+    /// <param name="entities">the entities to write to.</param>
+    /// <param name="sprites">the sprites to write to.</param>
+    /// <param name="transforms">the transforms to write to.</param>
     /// <param name="levelIdentifier">the identifier string given to the level in the LDTK project.</param>
     /// <returns>true, if the level was successfully loaded; otherwise false.</returns>
-    public static unsafe bool LoadLevel(HowlAppState app, LdtkParserState state, string levelIdentifier)
+    public static unsafe bool LoadLevel(HowlAppState app, LdtkParserState state, EntityRegistry entities, ComponentArray<Sprite> sprites, ComponentArray<Transform> transforms, string levelIdentifier)
     {
         System.Diagnostics.Debug.Assert(state.Project!=null, $"Cannot load level '{levelIdentifier}' without a loaded project file.");
 
@@ -137,7 +140,7 @@ public static class LdtkParser
 
             if (layer.AutoLayerTiles.Length > 0) // auto tile layer.
             {
-                ParseAutoTiles(app, layer.AutoLayerTiles, state.ProjectDirectoryPath, layer.TilesetRelPath, layer.GridSize, state.PixelsPerUnit);
+                ParseAutoTiles(app, entities, sprites, transforms, layer.AutoLayerTiles, state.ProjectDirectoryPath, layer.TilesetRelPath, layer.GridSize, state.PixelsPerUnit);
             }
             else if(layer.IntGridCsv.Length > 0 && layer.TilesetRelPath == null) // int grid layer.
             {
@@ -148,14 +151,10 @@ public static class LdtkParser
         return true;
     }
 
-    public static void ParseAutoTiles(HowlAppState app, Dto_AutoLayerTile[] tiles, string projectDirectory, string tilesetRelPath, 
+    public static void ParseAutoTiles(HowlAppState app, EntityRegistry entities, ComponentArray<Sprite> sprites, ComponentArray<Transform> transforms, Dto_AutoLayerTile[] tiles, string projectDirectory, string tilesetRelPath, 
         int cellSize, int pixelsPerUnit
     )
     {
-        EcsState ecs = app.EcsState;
-
-        ComponentArray<Sprite> sprites = EcsState.GetComponents<Sprite>(ecs);
-        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
         GenId genId = default;
 
         // allocate the auto tiles.
@@ -163,7 +162,7 @@ public static class LdtkParser
         {
             string tileMapFilePath = PathUtils.FlattenPath(projectDirectory, tilesetRelPath);
 
-            if(EntityRegistry.Allocate(ecs.Entities, ref genId) == GenIdResult.Ok)
+            if(EntityRegistry.Allocate(entities, ref genId) == GenIdResult.Ok)
             {
                 Dto_AutoLayerTile tile = tiles[tileIndex];
 
@@ -175,13 +174,13 @@ public static class LdtkParser
                     tileMapFilePath, 0, SpriteOrigin.TopLeft, DrawSpace.World
                 );
 
-                ComponentArray.Allocate(sprites, ecs.Entities, genId, sprite);
+                ComponentArray.Allocate(sprites, entities, genId, sprite);
 
                 Vector2 position = new Vector2(tile.Px[0], -tile.Px[1]) * unitFactored;
                 Vector2 scale = Vector2.One * unitFactored;
 
                 Transform transform = new Transform(position, scale, 0);
-                ComponentArray.Allocate(transforms, ecs.Entities, genId, transform);                
+                ComponentArray.Allocate(transforms, entities, genId, transform);                
             }
         }                
     }

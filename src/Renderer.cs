@@ -2,6 +2,7 @@ using Howl.Ecs;
 using Howl.Graphics;
 using Howl.Input;
 using Howl.Math;
+using Howl.Text;
 using Howl.Vendors.MonoGame;
 
 namespace Howl;
@@ -174,6 +175,21 @@ public static class Renderer
     public static int GetTextureId(HowlAppState app, string texturePath)
     {
         return Vendors.MonoGame.Graphics.TextureManager.GetTextureIndex(app.MonoGameAppState.TextureManagerState, texturePath);
+    }
+
+    /// <summary>
+    ///     Draws.
+    /// </summary>
+    /// <param name="app">the state instance to draw onto.</param>
+    /// <param name="strings"></param>
+    /// <param name="transforms"></param>
+    /// <param name="sprites"></param>
+    /// <param name="labels"></param>
+    public static void Draw(HowlAppState app, StringRegistryState strings, ComponentArray<Transform> transforms, ComponentArray<Sprite> sprites, 
+        ComponentArray<Label> labels    
+    )
+    {
+        Vendors.MonoGame.Graphics.RendererSystem.Draw(app.MonoGameAppState, strings, transforms, sprites, labels, app.WorldCamera, app.ScreenCamera);
     }
 
     /// <summary>

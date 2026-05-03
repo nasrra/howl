@@ -43,14 +43,7 @@ public unsafe static class HowlApp
     /// <param name="deltaTime">the specified amount of time to tick forwards by.</param>
     public static void Update(HowlAppState state, float deltaTime)
     {
-        state.UpdateStepStopwatch.Restart();
-        
-        UpdateInputContext(state);
-        state.UpdateCallback(deltaTime);
-
-        state.UpdateStepStopwatch.Stop();
-
-        // try fixed update.
+        // try fixed update.s
         state.FixedUpdateTime += deltaTime;
         if(state.FixedUpdateTime >= FixedDt)
         {            
@@ -59,12 +52,19 @@ public unsafe static class HowlApp
             // iterate and do fixed update steps.
             while (state.FixedUpdateTime >= FixedDt)
             {
-                state.FixedUpdateCallback(FixedDt);
+                state.FixedUpdateCallback?.Invoke(FixedDt);
                 state.FixedUpdateTime -= FixedDt;
             }
 
             state.FixedUpdateStepStopwatch.Stop();
         }
+
+        state.UpdateStepStopwatch.Restart();
+        
+        UpdateInputContext(state);
+        state.UpdateCallback?.Invoke(deltaTime);
+
+        state.UpdateStepStopwatch.Stop();
     }
 
     /// <summary>
@@ -90,7 +90,6 @@ public unsafe static class HowlApp
 
             monoGame.RenderCallback += (float deltaTime) =>
             {
-                Vendors.MonoGame.Graphics.RendererSystem.Draw(state, state.WorldCamera, state.ScreenCamera);  
                 state.DrawCallback?.Invoke(deltaTime);
             };
         }
@@ -110,16 +109,6 @@ public unsafe static class HowlApp
     public static void IntialiseLdtk(HowlAppState app, delegate* <HowlAppState, IntGridView, void> parseLevelIntGrid, float scratchBufferSizeInMb, int pixelsPerUnit)
     {
         app.LdtkParserState = new LdtkParserState(parseLevelIntGrid, scratchBufferSizeInMb, pixelsPerUnit);
-    }
-
-    /// <summary>
-    ///     Initialises a string registry to manage memory for strings.
-    /// </summary>
-    /// <param name="state">The howl app instance to intialise.</param>
-    /// <param name="maxStringCharacters">the maximum amount of characters a string can have.</param>
-    public static void IntialiseStringRegistry(HowlAppState state, int maxStringCharacters)
-    {
-        state.StringRegistryState = new(maxStringCharacters);
     }
 
     /// <summary>
@@ -162,8 +151,6 @@ public unsafe static class HowlApp
         
         state.IsDisposed = true;
         state.MonoGameAppState?.Dispose();
-        state.EcsState.Dispose();
-        state.EcsState = null;
         state.UpdateStepStopwatch = null;
         state.FixedUpdateStepStopwatch = null;
         state.DrawStepStopwatch = null;

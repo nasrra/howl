@@ -23,19 +23,13 @@ public static class PhysicsSystem
     public static readonly Vector<float> VectorRectangleRotationalInertia = new(RectangleRotationalInertia);
     public static readonly Vector<float> VectorCircleRotationalInertia = new(CircleRotationalInertia);
 
-    public static void RegisterComponents(ComponentRegistry registry)
-    {
-        ComponentRegistry.RegisterComponent<Transform>(registry);
-        ComponentRegistry.RegisterComponent<PhysicsBodyComponent>(registry);
-    }
-
-    public static void FixedUpdate(EcsState ecs, PhysicsSystemState state, float deltaTime, int subSteps)
+    public static void FixedUpdate(PhysicsSystemState state, ComponentArray<Transform> transforms, ComponentArray<PhysicsBodyComponent> physicsBodyTags, float deltaTime, int subSteps)
     {
         state.FixedUpdateStepStopwatch.Restart();
 
         // Sync Colliders to Transforms Step.
         state.SyncTransformsToEntitiesStopwatch.Restart();
-        SyncTransformsToEntityTransforms(ecs, state.Transforms, state.Generations);
+        SyncTransformsToEntityTransforms(physicsBodyTags, transforms, state.Transforms, state.Generations);
         state.SyncTransformsToEntitiesStopwatch.Stop();
 
         state.IntegrateBodyPropertiesStopwatch.Restart();
@@ -177,20 +171,18 @@ public static class PhysicsSystem
     }
 
     /// <summary>
-    /// Syncs an SoaTransform collection to entities that contain both a transform component and a physics body id component. 
+    ///     Syncs an SoaTransform collection to entities that contain both a transform component and a physics body id component. 
     /// </summary>
-    /// <param name="ecs">the ecs state with the component registry housing the entity components.</param>
+    /// <param name="physicsBodyTags">the physics body tags of every entity.</param>
+    /// <param name="transforms">the transforms of all entities.</param>
     /// <param name="soaTransform">the structure-of-array transforms to mutate in relation to the entity data.</param>
     /// <param name="generation">the generations for each entry in the SOA transform's.</param>
-    public static void SyncTransformsToEntityTransforms(EcsState ecs, Soa_Transform soaTransform, Span<int> generation)
-    {
-        ComponentArray<PhysicsBodyComponent> tagged = EcsState.GetComponents<PhysicsBodyComponent>(ecs);
-        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
-        
-        for(int i = 1; i < tagged.Active.Count; i++)
+    public static void SyncTransformsToEntityTransforms(ComponentArray<PhysicsBodyComponent> physicsBodyTags, ComponentArray<Transform> transforms, Soa_Transform soaTransform, Span<int> generation)
+    {        
+        for(int i = 1; i < physicsBodyTags.Active.Count; i++)
         {
-            GenId genId = tagged.Active[i];
-            ref PhysicsBodyComponent tag = ref ComponentArray.GetDataUnsafe(tagged, genId);            
+            GenId genId = physicsBodyTags.Active[i];
+            ref PhysicsBodyComponent tag = ref ComponentArray.GetDataUnsafe(physicsBodyTags, genId);            
 
             // skip if the physics body id isn't valid.
             if(generation[GenId.GetIndex(tag.GenId)] != GenId.GetGeneration(tag.GenId))
@@ -217,21 +209,18 @@ public static class PhysicsSystem
     }
 
     /// <summary>
-    /// Syncs a entities that contain both a transform and physics body id component to an soa transform collection.
+    ///     Syncs a entities that contain both a transform and physics body id component to an soa transform collection.
     /// </summary>
-    /// <param name="transforms">the entity transform components to mutate.</param>
-    /// <param name="bodyIds">the entity physics body id components to mutate.</param>
+    /// <param name="physicsBodyTags">the physics body tags of every entity.</param>
+    /// <param name="transforms">the transforms of all entities.</param>
     /// <param name="soaTransform">the soa transforms to copy into the entity transform components.</param>
     /// <param name="generation">the generation of each soa transform entry.</param>
-    public static void SyncEntityTransformsToPhysicsBodies(EcsState ecs, Soa_Transform soaTransform, Span<int> generation)
+    public static void SyncEntityTransformsToPhysicsBodies(ComponentArray<PhysicsBodyComponent> physicsBodyTags, ComponentArray<Transform> transforms, Soa_Transform soaTransform, Span<int> generation)
     {
-        ComponentArray<PhysicsBodyComponent> tags = EcsState.GetComponents<PhysicsBodyComponent>(ecs);
-        ComponentArray<Transform> transforms = EcsState.GetComponents<Transform>(ecs);
-
-        for(int i = 1; i < tags.Active.Count; i++)
+        for(int i = 1; i < physicsBodyTags.Active.Count; i++)
         {
-            GenId genId = tags.Active[i];
-            ref PhysicsBodyComponent tag = ref ComponentArray.GetDataUnsafe(tags, genId);
+            GenId genId = physicsBodyTags.Active[i];
+            ref PhysicsBodyComponent tag = ref ComponentArray.GetDataUnsafe(physicsBodyTags, genId);
 
             // skip the tag if it is stale.
             if(generation[GenId.GetIndex(tag.GenId)] != GenId.GetGeneration(tag.GenId))
