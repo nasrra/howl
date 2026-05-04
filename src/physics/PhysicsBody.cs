@@ -1194,7 +1194,7 @@ public static class PhysicsBody
         }
 
         result = GenIdResult.Ok;
-        return state.CollisionManifoldState.ActiveIndicesCount[GenId.GetIndex(physicsBodyId)] > 0;
+        return CollisionManifold.HasContacts(state.CollisionManifoldState, GenId.GetIndex(physicsBodyId));
     }
 
     /// <summary>

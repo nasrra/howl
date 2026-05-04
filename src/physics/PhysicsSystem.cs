@@ -47,7 +47,7 @@ public static class PhysicsSystem
         for(int i = 0; i < subSteps; i++)
         {
             // clear any grabage collisions that were resolved last sub step.
-            StackArray.ClearCount(state.SubStepCollisionsToResolve);
+            SwapBackArray.ClearCount(state.SubStepCollisionsToResolve);
 
             state.FixedUpdateSubStepStopwatch.Restart();
 
@@ -135,8 +135,8 @@ public static class PhysicsSystem
                 state.KinematicPhysicsBodyColour, state.TriggeredPhysicsBodyColour
             );
 
-            DrawPolygonPhysicsBodies(app, state.WorldVertices, state.Flags, state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, 
-                state.TriggerPhysicsBodyColour 
+            DrawPolygonPhysicsBodies(app, state.CollisionManifoldState, state.WorldVertices, state.Flags, state.DynamicPhysicsBodyColour, 
+                state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, state.TriggeredPhysicsBodyColour
             );
         }
 
@@ -981,7 +981,7 @@ public static class PhysicsSystem
         BoundingVolumeHierarchy.ConstructTree(bvh);
     }
 
-    public static void FindCollisions(BoundingVolumeHierarchy bvh, CollisionManifoldState collisions, StackArray<int> subStepCollisionsToResolve,
+    public static void FindCollisions(BoundingVolumeHierarchy bvh, CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve,
         Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, Span<PhysicsBodyFlags> flags
     )
     {
@@ -1028,7 +1028,7 @@ public static class PhysicsSystem
         }
     }
 
-    public static void PolygonToCircleBodiesAreColliding(CollisionManifoldState collisions, StackArray<int> subStepCollisionsToResolve, 
+    public static void PolygonToCircleBodiesAreColliding(CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve, 
         FsSoa_Vector2 vertices, Soa_Vector2 centroids, Span<float> radii, int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, 
         PhysicsBodyFlags otherFlags
     )
@@ -1055,13 +1055,13 @@ public static class PhysicsSystem
             (int a, int b) collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, polyPosX, polyPosY, circPosX, circPosY, 
                 normalX, normalY, contactPointX, contactPointY, depth, ownerFlags, otherFlags
             );
-            StackArray.Push(subStepCollisionsToResolve, collisionIndices.a);
-            StackArray.Push(subStepCollisionsToResolve, collisionIndices.b);
+            SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.a);
+            SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.b);
         }        
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void CircleBodiesAreColliding(CollisionManifoldState collisions, Soa_Vector2 centroids, StackArray<int> subStepCollisionsToResolve, 
+    public static void CircleBodiesAreColliding(CollisionManifoldState collisions, Soa_Vector2 centroids, SwapBackArray<int> subStepCollisionsToResolve, 
         Span<float> radii, int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
@@ -1086,13 +1086,13 @@ public static class PhysicsSystem
                 normalX, normalY, contactPointX, contactPointY, depth, ownerFlags, otherFlags
             );
 
-            StackArray.Push(subStepCollisionsToResolve, collisionIndices.a);
-            StackArray.Push(subStepCollisionsToResolve, collisionIndices.b);
+            SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.a);
+            SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.b);
         }   
     }
 
     public static void PolygonBodiesAreColliding(CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
-        StackArray<int> subStepCollisionsToResolve, int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
+        SwapBackArray<int> subStepCollisionsToResolve, int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
     )
     {
         float ownerPosX = centroids.X[ownerIndex];
@@ -1118,24 +1118,87 @@ public static class PhysicsSystem
                 out int contactCount
             );
 
-            (int a, int b) collisionIndices = default;
-            switch (contactCount)
-            {
-                case 1:
-                    collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
-                        normalX, normalY, firstContactPointX, firstContactPointY, depth, ownerFlags, otherFlags
-                    );
-                    break;
-                case 2:
-                    collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
-                        normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, 
-                        ownerFlags, otherFlags
-                    );
-                    break;
-            }
 
-            StackArray.Push(subStepCollisionsToResolve, collisionIndices.a);
-            StackArray.Push(subStepCollisionsToResolve, collisionIndices.b);
+            // note:
+            // remember to create a fixed stride array matrix for collisions resolved this step.
+            // this is to remove the bug of some bodies freaking out when touching eachother.
+            // as other>owner sometimes doesnt work for some reason as ordering changes.
+
+
+            if(((ownerFlags & PhysicsBodyFlags.Trigger) != 0) && ((otherFlags & PhysicsBodyFlags.Trigger) != 0))
+            {
+                // register collisions for both trigger colliders.
+                switch (contactCount)
+                {
+                    case 1:
+                        CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                            normalX, normalY, firstContactPointX, firstContactPointY, depth, ownerFlags, otherFlags
+                        );
+                        break;
+                    case 2:
+                        CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                            normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, 
+                            ownerFlags, otherFlags
+                        );
+                        break;
+                }
+            }
+            else if((ownerFlags & PhysicsBodyFlags.Trigger) != 0)
+            {
+                // only register the collision for the owner trigger collider; trigger collisions should never have to be resolved.
+                switch (contactCount)
+                {
+                    case 1:
+                        CollisionManifold.SetDataOneWay(collisions, ownerIndex, otherIndex, otherPosX, otherPosY, normalX, normalY, 
+                            firstContactPointX, firstContactPointY, depth, otherFlags
+                        );
+                        break;
+                    case 2:
+                        CollisionManifold.SetDataOneWay(collisions, ownerIndex, otherIndex, otherPosX, otherPosY, normalX, normalY, 
+                            firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, otherFlags
+                        );
+                        break;
+                }                
+            }
+            // if other is trigger, set data one way for: aToB.
+            else if((otherFlags & PhysicsBodyFlags.Trigger) != 0)
+            {
+                // only register the collision for the other trigger collider; trigger collisions should never have to be resolved.
+                switch (contactCount)
+                {
+                    case 1:
+                        CollisionManifold.SetDataOneWay(collisions, otherIndex, ownerIndex, ownerPosX, ownerPosY, normalX, normalY, 
+                            firstContactPointX, firstContactPointY, depth, ownerFlags
+                        );
+                        break;
+                    case 2:
+                        CollisionManifold.SetDataOneWay(collisions, otherIndex, ownerIndex, ownerPosX, ownerPosY, normalX, normalY, 
+                            firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, ownerFlags
+                        );
+                        break;
+                }
+            }
+            else
+            {
+                // only register the collision for both colliders (kinematic or dynamic) and resolve them.
+                (int aToB, int bToA) collisionIndices = default;
+                switch (contactCount)
+                {
+                    case 1:
+                        collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                            normalX, normalY, firstContactPointX, firstContactPointY, depth, ownerFlags, otherFlags
+                        );
+                        break;
+                    case 2:
+                        collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                            normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, 
+                            ownerFlags, otherFlags
+                        );
+                        break;
+                }
+                SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.aToB);
+                SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.bToA);  
+            }
         }
     }
 
@@ -1182,7 +1245,7 @@ public static class PhysicsSystem
         }
     }
 
-    public static void ResolveColliderCollisions(CollisionManifoldState collisions, StackArray<int> subStepCollisionsToResolve,
+    public static void ResolveColliderCollisions(CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve,
         Soa_Transform transforms, PhysicsBodyFlags[] flags
     )
     {
@@ -1201,14 +1264,14 @@ public static class PhysicsSystem
 
         Span<int> collisionsToResolve = subStepCollisionsToResolve.Data;
 
-        for(int i = 0; i < subStepCollisionsToResolve.Count; i++)
+        for(int i = subStepCollisionsToResolve.Count; i > 0; i--)
         {
             int collisionIndex = collisionsToResolve[i];
             int ownerIndex = collisionIndex / stride; // int div truncates the remainder, always giving the owner index.
             int otherIndex = collisionIndex % stride;
 
             // avoid duplicate collisions.
-            if(ownerIndex > otherIndex)
+            if(ownerIndex < otherIndex)
             {
                 continue;
             }
@@ -1218,7 +1281,9 @@ public static class PhysicsSystem
 
             if((ownerFlag & PhysicsBodyFlags.Kinematic) != 0 && (otherFlag & PhysicsBodyFlags.Kinematic) != 0)
             {
-                // two kinematic bodies wont collide with eachother.
+                // two kinematic bodies wont collide with eachother and
+                // trigger colliders dont collider with anything.
+                SwapBackArray.RemoveAt(subStepCollisionsToResolve, i);
                 continue;
             }
             else
@@ -1253,7 +1318,7 @@ public static class PhysicsSystem
         }
     }
 
-    public static void ResolveRigidBodyCollisions(CollisionManifoldState collisions, StackArray<int> subStepCollisionsToResolve,
+    public static void ResolveRigidBodyCollisions(CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve,
         Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<float> restitutions, Span<float> angularVelocities, 
         Span<float> inverseMasses, Span<float> inverseRotationalInertia, Span<float> kineticFriction, Span<float> staticFriction, 
         Span<float> mass, PhysicsBodyFlags[] flags
@@ -1285,14 +1350,14 @@ public static class PhysicsSystem
 
         Span<int> collisionsToResolve = subStepCollisionsToResolve.Data;
 
-        for(int i = 0; i < subStepCollisionsToResolve.Count; i++)
+        for(int i = subStepCollisionsToResolve.Count; i > 0; i--)
         {
             int collisionIndex = collisionsToResolve[i];
             int ownerIndex = collisionIndex / stride; // int div truncates the remainder, always giving the owner index.
             int otherIndex = collisionIndex % stride;
 
             // avoid duplicate collisions.
-            if(ownerIndex > otherIndex)
+            if(ownerIndex < otherIndex)
             {
                 continue;
             }
@@ -1772,16 +1837,29 @@ public static class PhysicsSystem
     }
 
     /// <summary>
-    /// Draws wireframes for all polygon physics bodies.
+    ///     Draws wireframes for all polygon physics bodies.
     /// </summary>
     /// <param name="camera">the camera to draw in relation to.</param>
     /// <param name="vertices">the vertices for all the polygons.</param>
     /// <param name="flags">a span containing the flags of the polygons to draw.</param>
     /// <param name="dynamicColour">the colour to draw 'dynamic' bodies with.</param>
     /// <param name="kinematicColour">the colour to draw 'kinematic' bodies with.</param>
-    /// <param name="triggerColour">the colour to draw 'trigger' bodies with.</param>
-    public static void DrawPolygonPhysicsBodies(HowlAppState app, FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags, 
-        Colour dynamicColour, Colour kinematicColour, Colour triggerColour
+    /// <param name="triggerPassiveColour">the colour to draw 'trigger' bodies with.</param>
+
+
+    /// <summary>
+    ///     Draws wireframes for all polygon physics bodies.
+    /// </summary>
+    /// <param name="app">the howl app state instance.</param>
+    /// <param name="manifold">the manifold containing the collision information.</param>
+    /// <param name="vertices">the vertices of the physics bodies.</param>
+    /// <param name="flags">the physics body flags.</param>
+    /// <param name="dynamicColour">the colour to draw <c>dynamic</c> bodies with.</param>
+    /// <param name="kinematicColour">the colour to draw <c>kinematic</c> bodies with.</param>
+    /// <param name="triggerPassiveColour">the colour to draw <c>trigger</c> bodies that are not in contact with other bodies.</param>
+    /// <param name="triggerActiveColour">the colour to draw <c>trigger</c> bodies that are in contact with other bodies.</param>
+    public static void DrawPolygonPhysicsBodies(HowlAppState app, CollisionManifoldState manifold, FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags,
+        Colour dynamicColour, Colour kinematicColour, Colour triggerPassiveColour, Colour triggerActiveColour
     )
     {
         Span<float> polyVertsX = default;
@@ -1805,7 +1883,9 @@ public static class PhysicsSystem
             }
             else if ((flag & PhysicsBodyFlags.Trigger) != 0)
             {
-                drawColour = triggerColour;                
+                drawColour = CollisionManifold.HasContacts(manifold, i)
+                ? triggerActiveColour
+                : triggerPassiveColour;
             }
             else // dynamic body.
             {

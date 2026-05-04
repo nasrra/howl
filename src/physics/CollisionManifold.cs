@@ -306,6 +306,17 @@ public static class CollisionManifold
         }
     }
 
+    /// <summary>
+    ///     Gets whether a collider is in contact with another.
+    /// </summary>
+    /// <param name="state">the state instance that contains the collider.</param>
+    /// <param name="index">the index of the collider in the state instance.</param>
+    /// <returns>true, if the collider is in contact with another; otherwise false.</returns>
+    public static bool HasContacts(CollisionManifoldState state, int index)
+    {
+        return state.ActiveIndicesCount[index] > 0;
+    }
+
 
 
 

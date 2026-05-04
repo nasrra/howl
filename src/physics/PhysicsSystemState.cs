@@ -226,7 +226,7 @@ public sealed class PhysicsSystemState
     /// <summary>
     ///     The indices in the <c>CollisionManifoldState</c> to resolve this substep.
     /// </summary>
-    public StackArray<int> SubStepCollisionsToResolve;
+    public SwapBackArray<int> SubStepCollisionsToResolve;
 
 
 
