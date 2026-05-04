@@ -173,6 +173,18 @@ public static class Math
     }
 
     /// <summary>
+    ///     Gets the maximum value between two numbers.
+    /// </summary>
+    /// <param name="a">value a.</param>
+    /// <param name="b">value b.</param>
+    /// <returns>the maximum value between the two.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static int Max(int a, int b)
+    {
+        return b > a? b : a;
+    }
+
+    /// <summary>
     /// Gets the minimum value between two numbers.
     /// </summary>
     /// <param name="a">value a.</param>
@@ -180,6 +192,18 @@ public static class Math
     /// <returns>the minimum number between the two.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static float Min(float a, float b)
+    {
+        return b < a? b : a;
+    }
+
+    /// <summary>
+    ///     Gets the minimum value between two numbers.
+    /// </summary>
+    /// <param name="a">value a.</param>
+    /// <param name="b">value b.</param>
+    /// <returns>the minimum number between the two.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static int Min(int a, int b)
     {
         return b < a? b : a;
     }
@@ -515,4 +539,17 @@ public static class Math
         newCos = nextCos * invLen;
     }
 
+    /// <summary>
+    ///     Calculates the sum of all integers from <c><paramref name="n"/></c> to 1.
+    /// </summary>
+    /// <remarks>
+    ///     Remarks: <c><paramref name="n"/></c> should not be larger than 46430.
+    /// </remarks>
+    /// <param name="n">the n'th number.</param>
+    /// <returns>the triangular sum.</returns>
+    public static int CalculateTriangularSum(int n)
+    {
+        System.Diagnostics.Debug.Assert(n<46430);
+        return n * (n+1) / 2;
+    }
 }

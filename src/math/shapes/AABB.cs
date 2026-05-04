@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using static Howl.Math.Math;
 
 namespace Howl.Math.Shapes;
 
@@ -165,12 +164,7 @@ public struct Aabb
     /// <returns>The hash code.</returns>
     public override int GetHashCode()
     {
-        return HashCode.Combine(Min, Max);
-    }
-
-    public override string ToString()
-    {
-        return $"Min: '{Min}', Max: '{Max}'";
+        return base.GetHashCode();
     }
 
     /// <summary>
@@ -498,10 +492,10 @@ public struct Aabb
         float closestPointX;
         float closestPointY;
 
-        ClosestPoint(lineStartX, lineStartY, lineEndX, lineEndY, aabbMinX, aabbMinY, out closestPointX, out closestPointY);
+        Math.ClosestPoint(lineStartX, lineStartY, lineEndX, lineEndY, aabbMinX, aabbMinY, out closestPointX, out closestPointY);
         if(Intersect(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, closestPointX, closestPointY))
         {
-            ClosestPoint(lineStartX, lineStartY, lineEndX, lineEndY, aabbMaxX, aabbMaxY, out closestPointX, out closestPointY);
+            Math.ClosestPoint(lineStartX, lineStartY, lineEndX, lineEndY, aabbMaxX, aabbMaxY, out closestPointX, out closestPointY);
             if(Intersect(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, closestPointX, closestPointY))
             {
                 return true;
