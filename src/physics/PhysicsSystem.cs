@@ -68,13 +68,13 @@ public static class PhysicsSystem
 
             // Reconstruct Bvh.
             state.BvhReconstructionStopwatch.Restart();
-            ReconstructBvhTree(state.MinAABBVertices, state.MaxAABBVertices, state.Centroids, state.Flags, state.BvhIndices, state.Bvh);
+            ReconstructBvhTree(state.MinAABBVertices, state.MaxAABBVertices, state.Centroids, state.Flags, state.Overlaps, state.Bvh);
             state.BvhReconstructionStopwatch.Stop();
 
             // Find collisions.
             state.FindCollisionsStopwatch.Restart();
-            FindCollisions(state.Bvh, state.CollisionManifoldState, state.SubStepCollisionsToResolve, state.Centroids, state.WorldVertices, 
-                state.WorldRadii, state.Flags
+            FindCollisions(state.CollisionManifoldState, state.SubStepCollisionsToResolve, state.Centroids, state.WorldVertices, 
+                state.WorldRadii, state.Flags, state.Overlaps
             );
             state.FindCollisionsStopwatch.Stop();
 
@@ -952,10 +952,9 @@ public static class PhysicsSystem
     /// <param name="radii">the radii of circle physics bodies to calculate the bounding box necessary for insertion in the bounding volume hierarchy.</param>
     /// <param name="generations">the generation for each physics body.</param>
     /// <param name="flags">the flags for each physics body.</param>
-    /// <param name="bvhIndices">output for the new indices in the bvh that were assigned to <c>Active</c> and <c>Allocated</c> physics bodies.</param>
     /// <param name="bvh">the bounding volume hierarchy instance.</param>
     public static void ReconstructBvhTree(Soa_Vector2 minAabbs, Soa_Vector2 maxAabbs, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, 
-        Span<int> bvhIndices, BoundingVolumeHierarchy bvh
+        Soa_Overlap overlaps, BoundingVolumeHierarchy bvh
     )
     {   
         // clear the previous bvh data.
@@ -972,21 +971,22 @@ public static class PhysicsSystem
                 float maxY = maxAabbs.Y[i];
 
                 // insert into the bvh.
-                bvhIndices[i] = Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroids.X[i], centroids.Y[i]);
+                Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroids.X[i], centroids.Y[i], 0);
             }
         }
 
         // construct the bvh with the new data.
         // Soa_BoundingVolumeHierarchy.ConstructTree_Slow(bvh);
         BoundingVolumeHierarchy.ConstructTree(bvh);
+        Soa_Overlap.ClearAppendCount(overlaps);
+        BoundingVolumeHierarchy.FindOverlaps(bvh.Branches, bvh.Leaves, overlaps);
     }
 
-    public static void FindCollisions(BoundingVolumeHierarchy bvh, CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve,
-        Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, Span<PhysicsBodyFlags> flags
+    public static void FindCollisions(CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve,
+        Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, Span<PhysicsBodyFlags> flags, Soa_Overlap overlaps
     )
     {
         // hoisting invariance.
-        Soa_Overlap overlaps = bvh.Overlaps;
         PhysicsBodyFlags ownerFlags;
         PhysicsBodyFlags otherFlags;
 

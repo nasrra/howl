@@ -18,17 +18,6 @@ public class BoundingVolumeHierarchy : IDisposable
     public RadixSortBuffer RadixSortBuffer;
 
     /// <summary>
-    ///     The found overlapping leaves after the bvh has been constructed.
-    /// </summary>
-    /// <remarks>
-    ///     Remarks: there are no duplicate entries.
-    /// <examples>
-    ///     Examples: there would only be one of either {ownerIndex: 1, otherIndex: 2} or {ownerIndex: 2, otherIndex: 1}; never both.
-    /// </examples>
-    /// </remarks>
-    public Soa_Overlap Overlaps;
-
-    /// <summary>
     ///     The constructed branches from the inserted leaves.
     /// </summary>
     /// <remarks>
@@ -69,7 +58,7 @@ public class BoundingVolumeHierarchy : IDisposable
     /// Creates a new bounding volume hierarchy instance.
     /// </summary>
     /// <param name="length"></param>
-    public BoundingVolumeHierarchy(int length, int maxOverlaps)
+    public BoundingVolumeHierarchy(int length)
     {
         // mapping each spatial pair onto one another (without duplicates) gives a length * 2 possible spatial pairs.
         int branchesLength = length*2;
@@ -79,7 +68,6 @@ public class BoundingVolumeHierarchy : IDisposable
         MortonCentroids = new uint[length];
         MortonLeafIds = new int[length];
         RadixSortBuffer = new(length);
-        Overlaps = new(maxOverlaps);
     }
 
     /// <summary>
@@ -137,9 +125,6 @@ public class BoundingVolumeHierarchy : IDisposable
         float scaleX = 0;
         float scaleY = 0;
         MortonCode.CalculateScaleFactor(rangeX, rangeY, ref scaleX, ref scaleY);
-        // MortonCode.CalculateMortonCodes(bvh.Leaves.Centroids.X, bvh.Leaves.Centroids.Y, bvh.MortonCentroids, minX, minY, scaleX, scaleY, 
-        //     bvh.MortonCentroids.Length
-        // );
         for(int i = 0; i < bvh.Leaves.AppendCount; i++)
         {
             bvh.MortonCentroids[i] = MortonCode.CalculateMortonCode(bvh.Leaves.Centroids.X[i], bvh.Leaves.Centroids.Y[i], minX, minY, scaleX, scaleY);
@@ -153,11 +138,6 @@ public class BoundingVolumeHierarchy : IDisposable
         {
             bvh.MortonLeafIds[i] = i;
         }
-
-
-
-        
-        // b.Restart();
         
         RadixSort.IndexedAscend(bvh.MortonCentroids, bvh.MortonLeafIds, bvh.RadixSortBuffer, 0, bvh.Leaves.AppendCount);
     
@@ -168,12 +148,6 @@ public class BoundingVolumeHierarchy : IDisposable
         float aabbMaxX = 0;
         float aabbMaxY = 0;
 
-        // b.Stop();
-
-        // double bt = b.Elapsed.TotalMilliseconds;
-
-        // c.Restart();
-
         ConstructBranches(bvh.Branches, bvh.MortonLeafIds, bvh.Leaves.Aabbs.MinX, bvh.Leaves.Aabbs.MinY, bvh.Leaves.Aabbs.MaxX, bvh.Leaves.Aabbs.MaxY, 
             bvh.Leaves.BranchIndices, 0, bvh.Leaves.AppendCount, parentIndex, ref branchCount, ref aabbMinX, ref aabbMinY, ref aabbMaxX, ref aabbMaxY
         );
@@ -183,16 +157,6 @@ public class BoundingVolumeHierarchy : IDisposable
         // inserts branches in a 'subtree size' relative order for each branch; meaning, at the end of the 
         // construction of all branches, the data is contiguous (no holes in the array entries).
         bvh.Branches.AppendCount = branchCount;
-
-        // c.Stop();
-        // double ct = c.Elapsed.TotalMilliseconds;
-
-
-        // d.Restart();
-        FindOverlaps(bvh.Branches, bvh.Leaves, bvh.Overlaps);
-        // d.Stop();
-        // double dt = d.Elapsed.TotalMilliseconds;
-
     }
 
     /// <summary>
@@ -314,6 +278,10 @@ public class BoundingVolumeHierarchy : IDisposable
     /// <summary>
     ///     Finds any leaves that overlap with eachother within a set of constructed branches and leaves.
     /// </summary>
+    /// <remarks>
+    ///     <para>Remarks:</para> 
+    ///     <para>There are no duplicate elements in the output overlap data.</para>
+    /// </remarks>
     /// <param name="branches">the constructed tree of branches to query.</param>
     /// <param name="leaves">the leaf data associated with the branches.</param>
     /// <param name="overlaps">output for the overlap data.</param>
@@ -379,6 +347,95 @@ public class BoundingVolumeHierarchy : IDisposable
                         // ensure that there are no duplicates.
                         if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
                             Soa_Overlap.Append(overlaps, ownerLeaf, otherLeaf);
+                        }
+                        break;
+                    case 0:
+                        // do nothing..., just go to next branch in the tree..
+                        break;
+                    default:
+                        System.Diagnostics.Debug.Assert(false);
+                        break;
+                }
+
+                otherBranch++;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Finds any leaves that overlap with eachother within a set of constructed branches and leaves.
+    /// </summary>
+    /// <remarks>
+    ///     <para>Remarks:</para> 
+    ///     <para>There are no duplicate elements in the output overlap data.</para>
+    /// </remarks>
+    /// <param name="branches">the constructed tree of branches to query.</param>
+    /// <param name="leaves">the leaf data associated with the branches.</param>
+    /// <param name="overlaps">output for the overlap data.</param>
+    public static void FindOverlaps(Soa_Branch branches, Soa_Leaf leaves, CategorisedOverlaps overlaps)
+    {
+        // clear any garbage data.
+        CategorisedOverlaps.ClearCounts(overlaps);
+
+        // hoisting of inavriance.
+        Span<float> leafMinX = leaves.Aabbs.MinX;
+        Span<float> leafMinY = leaves.Aabbs.MinY;
+        Span<float> leafMaxX = leaves.Aabbs.MaxX;
+        Span<float> leafMaxY = leaves.Aabbs.MaxY;
+        Span<int> leafCategories = leaves.Categories;
+        Span<float> branchMinX = branches.Aabbs.MinX;
+        Span<float> branchMinY = branches.Aabbs.MinY;
+        Span<float> branchMaxX = branches.Aabbs.MaxX;
+        Span<float> branchMaxY = branches.Aabbs.MaxY;
+        Span<int> branchSubtreeSizes = branches.SubtreeSizes;
+        Span<int> branchLeafCounts = branches.LeafCounts;
+        Span<int> leftLeafIndices = branches.LeftLeafIndices;
+        Span<int> rightLeafIndices = branches.RightLeafIndices;
+        float minX;
+        float minY; 
+        float maxX;
+        float maxY;
+        int otherLeaf;
+
+        for(int ownerLeaf = 0; ownerLeaf < leaves.AppendCount; ownerLeaf++)
+        {
+            minX = leafMinX[ownerLeaf];
+            minY = leafMinY[ownerLeaf];
+            maxX = leafMaxX[ownerLeaf];
+            maxY = leafMaxY[ownerLeaf];
+
+            int otherBranch = 0;
+            while(otherBranch < branches.AppendCount)
+            {
+                if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[otherBranch], branchMinY[otherBranch], branchMaxX[otherBranch], branchMaxY[otherBranch]))
+                {
+                    // skip the entire subtree.
+                    otherBranch+= branchSubtreeSizes[otherBranch];
+                    continue;
+                }
+
+                int leafCount = branchLeafCounts[otherBranch];
+
+                switch (leafCount)
+                {
+                    case 1:
+                        // left leaf index should always be set to a leaf index for branches with leaf(s) attatched; it is the default leaf to set first.
+                        otherLeaf = leftLeafIndices[otherBranch];
+                        if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                            // Soa_Overlap.Append(overlaps, ownerLeaf, otherLeaf);
+                            CategorisedOverlaps.AppendOverlap(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
+                        }
+                        break;
+                    case 2:
+                        otherLeaf = leftLeafIndices[otherBranch];
+                        // ensure that there are no duplicates.
+                        if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                            CategorisedOverlaps.AppendOverlap(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
+                        }
+                        otherLeaf = rightLeafIndices[otherBranch];
+                        // ensure that there are no duplicates.
+                        if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
+                            CategorisedOverlaps.AppendOverlap(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
                         }
                         break;
                     case 0:
@@ -678,9 +735,6 @@ public class BoundingVolumeHierarchy : IDisposable
         RadixSortBuffer.Dispose(bvh.RadixSortBuffer);
         bvh.RadixSortBuffer = null;
 
-        Soa_Overlap.Dispose(bvh.Overlaps);
-        bvh.Overlaps = null;
-        
         GC.SuppressFinalize(bvh);
     }
 

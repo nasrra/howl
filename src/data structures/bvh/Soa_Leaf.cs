@@ -8,40 +8,45 @@ namespace Howl.DataStructures.Bvh;
 public class Soa_Leaf : IDisposable
 {
     /// <summary>
-    /// The Axis-Aligned Bounding-Boxes.
+    ///     The Axis-Aligned Bounding-Boxes.
     /// </summary>
     public Soa_Aabb Aabbs;
 
     /// <summary>
-    /// The centroids of the Aabbs.
+    ///     The centroids of the Aabbs.
     /// </summary>
     public Soa_Vector2 Centroids;
 
     /// <summary>
-    /// Gets the indices of branches that leaves are parented to.
+    ///     The user-defined categories of the leaves (used to filter overlap results).
+    /// </summary>
+    public int[] Categories;
+
+    /// <summary>
+    ///     Gets the indices of branches that leaves are parented to.
     /// </summary>
     /// <remarks>
-    /// Elements in this array should be valid after a Bounding Volume Hierarchy has been constructed.
+    ///     Elements in this array should be valid after a Bounding Volume Hierarchy has been constructed.
     /// </remarks>
     public int[] BranchIndices;
 
     /// <summary>
-    /// The count of allocated entries from appending.
+    ///     The count of allocated entries from appending.
     /// </summary>
     public int AppendCount;
 
     /// <summary>
-    /// The length of all the backing arrays of this instance.
+    ///     The length of all the backing arrays of this instance.
     /// </summary>
     public int Length;
 
     /// <summary>
-    /// Whether or not this instance has been disposed.
+    ///     Whether or not this instance has been disposed.
     /// </summary>
     public bool Disposed;
 
     /// <summary>
-    /// Creates a new soa instance.
+    ///     Creates a new soa instance.
     /// </summary>
     /// <param name="length">the length of the backing arrays.</param>
     public Soa_Leaf(int length)
@@ -53,7 +58,7 @@ public class Soa_Leaf : IDisposable
     }
 
     /// <summary>
-    /// Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
+    ///     Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
     /// </summary>
     /// <param name="soa">the soa instance to append to.</param>
     /// <param name="minX">the the x-component of the aabb minimum vertex.</param>
@@ -62,9 +67,10 @@ public class Soa_Leaf : IDisposable
     /// <param name="maxY">the the y-component of the aabb maximum vertex.</param>
     /// <param name="centroidX">the x-component of the aabb centroid.</param>
     /// <param name="centroidY">the y-component of the aabb centroid.</param>
+    /// <param name="category">the category of the leaf.</param>
     /// <returns>the index the entry was appended to in the backing arrays.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static int Append(Soa_Leaf soa, float minX, float minY, float maxX, float maxY, float centroidX, float centroidY)
+    public static int Append(Soa_Leaf soa, float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int category)
     {
         Soa_Aabb.Append(soa.Aabbs, minX, minY, maxX, maxY);
         Soa_Vector2.Append(soa.Centroids, centroidX, centroidY);
@@ -164,6 +170,8 @@ public class Soa_Leaf : IDisposable
                                         
         soa.Length = 0;
         soa.AppendCount = 0;
+
+        soa.Categories = null;
 
         GC.SuppressFinalize(soa);
     }

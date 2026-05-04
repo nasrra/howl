@@ -188,13 +188,7 @@ public sealed class PhysicsSystemState
     /// </summary>
     public StackArray<int> FreeVertexEntries;
 
-    /// <summary>
-    ///     The indices of all physics bodies in a bvh tree.
-    /// </summary>
-    /// <remarks>
-    ///     Use a <c>physicsBodyIndex</c> integer to access elements.
-    /// </remarks>
-    public int[] BvhIndices;
+    public Soa_Overlap Overlaps;
 
 
 
@@ -529,7 +523,8 @@ public sealed class PhysicsSystemState
 
         // Utility.
         int maxCollisions = physicsBodyCount*physicsBodyCount;
-        Bvh = new(physicsBodyCount, maxCollisions);
+        Bvh = new(physicsBodyCount);
+        Overlaps = new(maxCollisions);
         CollisionManifoldState = new(physicsBodyCount);
         SubStepCollisionsToResolve  = new(CollisionManifoldState.MaxEntries * CollisionManifoldState.Stride);
         Entities = new(physicsBodyCount);
@@ -556,7 +551,6 @@ public sealed class PhysicsSystemState
         InverseRotationalInertia    = new float[physicsBodyCount];
         Generations                 = new int[physicsBodyCount];
         FreeVertexEntries           = new(physicsBodyCount);
-        BvhIndices                  = new int[physicsBodyCount];
         EntityIds                   = new GenId[physicsBodyCount];
 
         // Debug diagnostic stopwatches.
