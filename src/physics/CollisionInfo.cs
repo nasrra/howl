@@ -6,14 +6,14 @@ namespace Howl.Physics;
 
 public ref struct CollisionInfo
 {
-    ref float NormalX;
-    ref float NormalY;
-    ref float FirstContactPointX;
-    ref float FirstContactPointY;
-    ref float SecondContactPointX;
-    ref float SecondContactPointY;
-    ref float Depth;
-    ref bool TwoContactPoints;
+    public ref float NormalX;
+    public ref float NormalY;
+    public ref float FirstContactPointX;
+    public ref float FirstContactPointY;
+    public ref float SecondContactPointX;
+    public ref float SecondContactPointY;
+    public ref float Depth;
+    public ref bool TwoContactPoints;
     public GenId ColliderPhysicsId;
     public GenId ColliderEntityId;
 
