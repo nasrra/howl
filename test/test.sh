@@ -36,7 +36,8 @@ declare -A TEST_MAP
 TEST_MAP=(
     ["AABB"]="${SHAPES_NAMESPACE}AABBTest"
     ["BoundingVolumeHierarchy"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Test_BoundingVolumeHierarchy"
-    ["CategorisedOverlaps"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Test_CategorisedOverlaps"
+    ["CategorisedOverlapArray"]="${COLLECTIONS_NAMESPACE}Test_CategorisedOverlapArray"
+    ["CategorisedLeafOverlaps"]="${DATA_STRUCTURES_NAMESPACE}Bvh.Test_CategorisedLeafOverlaps"
     ["CollisionManifold"]="${PHYSICS_NAMESPACE}Test_CollisionManifold"
     ["ComponentArray"]="${ECS_NAMESPACE}Test_ComponentArray"
     ["ComponentRegistry"]="${ECS_NAMESPACE}Test_ComponentRegistry"

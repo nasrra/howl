@@ -38,11 +38,6 @@ public class CollisionManifoldState
     public float[] Depths;
 
     /// <summary>
-    ///     Copies of the colliding physics body flags.
-    /// </summary>
-    public PhysicsBodyFlags[] ColliderFlags;
-
-    /// <summary>
     ///     Whether or not a collision has a second contact point.
     /// </summary>
     public bool[] TwoContactPoints;
@@ -144,7 +139,6 @@ public class CollisionManifoldState
         FirstContactPoints          = new Soa_Vector2(dataLength);
         SecondContactPoints         = new Soa_Vector2(dataLength);
         Depths                      = new float[dataLength];
-        ColliderFlags               = new PhysicsBodyFlags[dataLength];
         TwoContactPoints            = new bool[dataLength];
         ContactStates               = new ContactState[dataLength];
         PreviousContactStates       = new ContactState[dataLength];

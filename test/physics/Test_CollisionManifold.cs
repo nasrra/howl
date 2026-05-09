@@ -25,17 +25,6 @@ public class Test_CollisionManifold
         int[] expectedActiveCollisions      = [ 0,  0,  0,  1,  0,  1,  1,  1,  0];
         int[] expectedActiveIndices         = [ 0,  0,  0,  3,  5,  0,  6,  7,  0];
         int[] expectedActiveCounts          = [0,2,2];
-        PhysicsBodyFlags[] expectedColliderFlags = [
-            PhysicsBodyFlags.None, 
-            PhysicsBodyFlags.None, 
-            PhysicsBodyFlags.None, 
-            PhysicsBodyFlags.Active,
-            PhysicsBodyFlags.None,
-            PhysicsBodyFlags.Active,
-            PhysicsBodyFlags.Allocated,
-            PhysicsBodyFlags.Allocated,
-            PhysicsBodyFlags.None
-        ];
         bool[] expectedTwoContactPoints = [false, false, false, false, false, true, false, true, false];
 
 
@@ -44,37 +33,34 @@ public class Test_CollisionManifold
         expectedIndex = 3;
         CollisionManifold.SetDataOneWay(state, 1, 0, expectedCentroidX[expectedIndex], 
             expectedCentroidY[expectedIndex], expectedNormalX[expectedIndex], expectedNormalY[expectedIndex], 
-            expectedFirstContactPointX[expectedIndex], expectedFirstContactPointY[expectedIndex], expectedDepths[expectedIndex], 
-            expectedColliderFlags[expectedIndex]
+            expectedFirstContactPointX[expectedIndex], expectedFirstContactPointY[expectedIndex], expectedDepths[expectedIndex] 
         );
 
         expectedIndex = 5;
         CollisionManifold.SetDataOneWay(state, 1, 2, expectedCentroidX[expectedIndex], 
             expectedCentroidY[expectedIndex], expectedNormalX[expectedIndex], expectedNormalY[expectedIndex], 
             expectedFirstContactPointX[expectedIndex], expectedFirstContactPointY[expectedIndex], 
-            expectedSecondContactPointX[expectedIndex], expectedSecondContactPointY[expectedIndex], expectedDepths[expectedIndex], 
-            expectedColliderFlags[expectedIndex]
+            expectedSecondContactPointX[expectedIndex], expectedSecondContactPointY[expectedIndex], expectedDepths[expectedIndex] 
         );
 
         expectedIndex = 6;
         CollisionManifold.SetDataOneWay(state, 2, 0, expectedCentroidX[expectedIndex], 
             expectedCentroidY[expectedIndex], expectedNormalX[expectedIndex], expectedNormalY[expectedIndex], 
-            expectedFirstContactPointX[expectedIndex], expectedFirstContactPointY[expectedIndex], expectedDepths[expectedIndex], 
-            expectedColliderFlags[expectedIndex]
+            expectedFirstContactPointX[expectedIndex], expectedFirstContactPointY[expectedIndex], expectedDepths[expectedIndex] 
         );
 
         expectedIndex = 7;
         CollisionManifold.SetDataOneWay(state, 2, 1, expectedCentroidX[expectedIndex], 
             expectedCentroidY[expectedIndex], expectedNormalX[expectedIndex], expectedNormalY[expectedIndex], 
             expectedFirstContactPointX[expectedIndex], expectedFirstContactPointY[expectedIndex], expectedSecondContactPointX[expectedIndex], 
-            expectedSecondContactPointY[expectedIndex], expectedDepths[expectedIndex], expectedColliderFlags[expectedIndex]
+            expectedSecondContactPointY[expectedIndex], expectedDepths[expectedIndex]
         );
 
         // == assert written data ==.
     
         Assert_CollisionManifoldState.Equal(expectedNormalX, expectedNormalY, expectedCentroidX, expectedCentroidY, 
             expectedFirstContactPointX, expectedFirstContactPointY, expectedSecondContactPointX, expectedSecondContactPointY, expectedDepths, 
-            expectedColliderFlags, expectedTwoContactPoints, expectedActiveCollisions, expectedActiveIndices, expectedActiveCounts, state
+            expectedTwoContactPoints, expectedActiveCollisions, expectedActiveIndices, expectedActiveCounts, state
         );
     }
 
@@ -97,36 +83,25 @@ public class Test_CollisionManifold
         int[] expectedActiveCollisions      = [ 0,  1,  0,  1,  0,  1,  0,  1,  0];
         int[] expectedActiveIndices         = [ 1,  0,  0,  3,  5,  0,  7,  0,  0];
         int[] expectedActiveCounts          = [1,2,1];
-        PhysicsBodyFlags[] expectedColliderFlags = [
-            PhysicsBodyFlags.None, 
-            PhysicsBodyFlags.Allocated,
-            PhysicsBodyFlags.None, 
-            PhysicsBodyFlags.Active,
-            PhysicsBodyFlags.None, 
-            PhysicsBodyFlags.Active,
-            PhysicsBodyFlags.None,
-            PhysicsBodyFlags.Allocated,
-            PhysicsBodyFlags.None
-        ];
         bool[] expectedTwoContactPoints = [false, false, false, false, false, true, false, true, false];
         
         // == call functions ==.
         
         CollisionManifold.SetDataTwoWay(state, indexA: 1, indexB: 0, centroidXA: 5, centroidYA: 6, 
             centroidXB: 4, centroidYB: 5, normalX: 9, normalY: 8, contactPointX: 3, contactPointY: 4, 
-            depth: 1, flagsA: PhysicsBodyFlags.Allocated, flagsB: PhysicsBodyFlags.Active
+            depth: 1
         );
 
         CollisionManifold.SetDataTwoWay(state, indexA: 1, indexB: 2, centroidXA: 4, centroidYA: 3, centroidXB: 1, 
             centroidYB: 2, normalX: 4, normalY: 3, firstContactPointX: 5, firstContactPointY: 4, secondContactPointX: 3, 
-            secondContactPointY: 2, depth: 2, flagsA: PhysicsBodyFlags.Allocated, flagsB: PhysicsBodyFlags.Active
+            secondContactPointY: 2, depth: 2
         );
 
         // == assert written data ==.
     
         Assert_CollisionManifoldState.Equal(expectedNormalX, expectedNormalY, expectedCentroidX, expectedCentroidY, 
             expectedFirstContactPointX, expectedFirstContactPointY, expectedSecondContactPointX, expectedSecondContactPointY, expectedDepths, 
-            expectedColliderFlags, expectedTwoContactPoints, expectedActiveCollisions, expectedActiveIndices, expectedActiveCounts, state
+            expectedTwoContactPoints, expectedActiveCollisions, expectedActiveIndices, expectedActiveCounts, state
         );
     }
 

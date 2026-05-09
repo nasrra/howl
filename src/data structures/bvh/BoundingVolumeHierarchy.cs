@@ -372,10 +372,10 @@ public class BoundingVolumeHierarchy : IDisposable
     /// <param name="branches">the constructed tree of branches to query.</param>
     /// <param name="leaves">the leaf data associated with the branches.</param>
     /// <param name="overlaps">output for the overlap data.</param>
-    public static void FindOverlaps(Soa_Branch branches, Soa_Leaf leaves, CategorisedOverlaps overlaps)
+    public static void FindOverlaps(Soa_Branch branches, Soa_Leaf leaves, CategorisedLeafOverlaps overlaps)
     {
         // clear any garbage data.
-        CategorisedOverlaps.ClearCounts(overlaps);
+        CategorisedLeafOverlaps.ClearCounts(overlaps);
 
         // hoisting of inavriance.
         Span<float> leafMinX = leaves.Aabbs.MinX;
@@ -423,19 +423,19 @@ public class BoundingVolumeHierarchy : IDisposable
                         otherLeaf = leftLeafIndices[otherBranch];
                         if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
                             // Soa_Overlap.Append(overlaps, ownerLeaf, otherLeaf);
-                            CategorisedOverlaps.AppendOverlap(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
+                            CategorisedLeafOverlaps.Append(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
                         }
                         break;
                     case 2:
                         otherLeaf = leftLeafIndices[otherBranch];
                         // ensure that there are no duplicates.
                         if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
-                            CategorisedOverlaps.AppendOverlap(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
+                            CategorisedLeafOverlaps.Append(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
                         }
                         otherLeaf = rightLeafIndices[otherBranch];
                         // ensure that there are no duplicates.
                         if(ownerLeaf < otherLeaf && Soa_Leaf.Intersects(leaves, otherLeaf, minX, minY, maxX, maxY)){
-                            CategorisedOverlaps.AppendOverlap(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
+                            CategorisedLeafOverlaps.Append(overlaps, ownerLeaf, otherLeaf, leafCategories[ownerLeaf], leafCategories[otherLeaf]);
                         }
                         break;
                     case 0:

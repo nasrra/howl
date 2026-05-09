@@ -19,6 +19,9 @@ public sealed class PhysicsSystemState
     
     ********************/
 
+
+
+
     /// <summary>
     ///     The entity id's for all physics bodies.
     /// </summary>
@@ -184,12 +187,97 @@ public sealed class PhysicsSystemState
     public int[] Generations;
 
     /// <summary>
+    ///     Categories of all physics bodies when being put into the bvh.
+    /// </summary>
+    public int[] BvhCategories;
+
+    /// <summary>
+    ///     Maps a bvh leaf indice onto a physics body.
+    /// </summary>
+    /// <remarks>
+    ///     Remarks: Elements should be accessed by <c>leafIndex</c>.
+    /// <code>
+    /// int physicsBodyIndex = BvhLeafIndices[leafIndex];
+    /// </code>
+    /// </remarks>
+    public int[] BvhLeafIndices;
+
+    /// <summary>
     /// Gets and sets the vertex entry indices available for reuse and allocation in LocalRadii.
     /// </summary>
     public StackArray<int> FreeVertexEntries;
 
-    public Soa_Overlap Overlaps;
+    public CategorisedLeafOverlaps Overlaps;
 
+    /// <summary>
+    ///     The indices in the <c>CollisionManifoldState</c> of collider collisions to resolve in the current substep.
+    /// </summary>
+    public CategorisedOverlapArray<int> SubStepColliderCollisionsToResolve;
+
+    /// <summary>
+    ///     The indices in the <c>CollisionManifoldState</c> of rigidbody collisions to resolve in the current substep.
+    /// </summary>
+    public StackArray<int> SubStepRigidbodyCollisionsToResolve;
+
+    /// <summary>
+    ///     The amount of allocated solid polygon colliders.
+    /// </summary>
+    public int SolidPolygonColliderCount;
+
+    /// <summary>
+    ///     The amount of allocated trigger polygon colliders.
+    /// </summary>
+    public int TriggerPolygonColliderCount;
+
+    /// <summary>
+    ///     The amount of allocated kinematic polygon colliders.
+    /// </summary>
+    public int KinematicPolygonColliderCount;
+
+    /// <summary>
+    ///     The amount of allocated solid polygon rigidbodies.
+    /// </summary>
+    public int SolidPolygonRigidBodyCount;
+
+    /// <summary>
+    ///     The amount of allocated trigger polygon rigidbodies.
+    /// </summary>
+    public int TriggerPolygonRigidBodyCount;
+
+    /// <summary>
+    ///     The amount of allocated kinematic polygon rigidbodies.
+    /// </summary>
+    public int KinematicPolygonRigidBodyCount;
+
+    /// <summary>
+    ///     The amount of allocated solid circle colliders.
+    /// </summary>
+    public int SolidCircleColliderCount;
+
+    /// <summary>
+    ///     The amount of allocated trigger circle colliders.
+    /// </summary>
+    public int TriggerCircleColliderCount;
+
+    /// <summary>
+    ///     The amount of allocated kinematic circle colliders.
+    /// </summary>
+    public int KinematicCircleColliderCount;
+
+    /// <summary>
+    ///     The amount of allocated solid circle rigidbodies.
+    /// </summary>
+    public int SolidCircleRigidBodyCount;
+    
+    /// <summary>
+    ///     The amount of allocated trigger circle rigidbodies.
+    /// </summary>
+    public int TriggerCircleRigidBodyCount;
+
+    /// <summary>
+    ///     The amount of allocated kinematic circle rigidbodies.
+    /// </summary>
+    public int KinematicCircleRigidBodyCount;
 
 
 
@@ -216,11 +304,6 @@ public sealed class PhysicsSystemState
     ///     The collision manifold.
     /// </summary>
     public CollisionManifoldState CollisionManifoldState;
-
-    /// <summary>
-    ///     The indices in the <c>CollisionManifoldState</c> to resolve this substep.
-    /// </summary>
-    public SwapBackArray<int> SubStepCollisionsToResolve;
 
 
 
@@ -524,9 +607,10 @@ public sealed class PhysicsSystemState
         // Utility.
         int maxCollisions = physicsBodyCount*physicsBodyCount;
         Bvh = new(physicsBodyCount);
-        Overlaps = new(maxCollisions);
+        Overlaps = new(BvhCategory.Count, maxCollisions);
         CollisionManifoldState = new(physicsBodyCount);
-        SubStepCollisionsToResolve  = new(CollisionManifoldState.MaxEntries * CollisionManifoldState.Stride);
+        SubStepColliderCollisionsToResolve  = new(SubStepResolutionBvhCategory.Count, maxCollisions);
+        SubStepRigidbodyCollisionsToResolve = new(maxCollisions);
         Entities = new(physicsBodyCount);
 
         // Physics body data.
@@ -550,8 +634,10 @@ public sealed class PhysicsSystemState
         RotationalInertia           = new float[physicsBodyCount];
         InverseRotationalInertia    = new float[physicsBodyCount];
         Generations                 = new int[physicsBodyCount];
+        BvhCategories               = new int[physicsBodyCount];
         FreeVertexEntries           = new(physicsBodyCount);
         EntityIds                   = new GenId[physicsBodyCount];
+        BvhLeafIndices              = new int[physicsBodyCount];
 
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();
@@ -646,7 +732,7 @@ public sealed class PhysicsSystemState
             return;
         
         state.IsDisposed = true;
-        GC.SuppressFinalize(state);        
+        GC.SuppressFinalize(state);
     }
 
     ~PhysicsSystemState()

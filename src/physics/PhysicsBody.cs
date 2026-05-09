@@ -1290,9 +1290,8 @@ public static class PhysicsBody
     /// <param name="shape">the local-space shape data.</param>
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
     /// <param name="entityId">the id of the entity associated with this physics body.</param>
-    /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
-    /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
-    /// <param name="genId">the associated gen id to the newly allocated body.</param>
+    /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
+    /// <param name="genId">output for the gen id to the newly allocated body.</param>
     ///<returns>
     ///     <list type="bullet">
     ///         <item>
@@ -1304,8 +1303,8 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult AllocateCircleCollider(PhysicsSystemState state, Circle shape, Transform transform, GenId entityId, bool isKinematic, bool isTrigger, 
-        ref GenId genId
+    public static GenIdResult AllocateCircleCollider(PhysicsSystemState state, Circle shape, Transform transform, GenId entityId, 
+        ColliderBehaviour colliderBehaviour, ref GenId genId
     )
     {
         GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId); 
@@ -1323,8 +1322,32 @@ public static class PhysicsBody
         SetActiveUnsafe(state, physicsBodyIndex, true);
         SetAllocatedUnsafe(state, physicsBodyIndex, true);
         SetRigidBodyUnsafe(state, physicsBodyIndex, false);
-        SetTriggerUnsafe(state, physicsBodyIndex, isTrigger);
-        SetKinematicUnsafe(state, physicsBodyIndex, isKinematic);
+
+        switch (colliderBehaviour)
+        {
+            case ColliderBehaviour.Solid:
+                SetTriggerUnsafe(state, physicsBodyIndex, false);
+                SetKinematicUnsafe(state, physicsBodyIndex, false);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.SolidCircleCollider;
+                state.SolidCircleColliderCount++;
+            break;
+            case ColliderBehaviour.Trigger:
+                SetTriggerUnsafe(state, physicsBodyIndex, true);
+                SetKinematicUnsafe(state, physicsBodyIndex, false);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.TriggerCircleCollider;
+                state.TriggerCircleColliderCount++;
+            break;
+            case ColliderBehaviour.Kinematic:
+                SetTriggerUnsafe(state, physicsBodyIndex, false);
+                SetKinematicUnsafe(state, physicsBodyIndex, true);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.KinematicCircleCollider;
+                state.KinematicCircleColliderCount++;
+            break;
+        }
+
+        // rigidbodies should respond to this like a kinematic rigidbody if it is solid or kinematic. 
+        state.Masses[physicsBodyIndex] = 0;
+        state.InverseMasses[physicsBodyIndex] = 0;
 
         // apply data.
         SetTransformUnsafe(state, physicsBodyIndex, transform);
@@ -1333,7 +1356,7 @@ public static class PhysicsBody
         state.EntityIds[physicsBodyIndex] = entityId;
         return GenIdResult.Ok;
     }
-
+    
     /// <summary>
     ///     Allocates a circle rigidbody into a physics system state.
     /// </summary>
@@ -1342,8 +1365,7 @@ public static class PhysicsBody
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
     /// <param name="material">the physics material to apply to the body.</param>
     /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
-    /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
-    /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
+    /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
     /// <param name="rotationalPhysics">whether to enable rotational physics for the physics body.</param>
     /// <param name="genId">the associated genId to the newly allocated body.</param>
     /// <returns>
@@ -1358,7 +1380,7 @@ public static class PhysicsBody
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static GenIdResult AllocateCircleRigidBody(PhysicsSystemState state, Circle shape, Transform transform, PhysicsMaterial material, 
-        GenId entityId, bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenId genId
+        GenId entityId, ColliderBehaviour colliderBehaviour, bool rotationalPhysics, ref GenId genId
     )
     {
         GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1376,9 +1398,29 @@ public static class PhysicsBody
         SetActiveUnsafe(state, physicsBodyIndex, true);
         SetAllocatedUnsafe(state, physicsBodyIndex, true);
         SetRigidBodyUnsafe(state, physicsBodyIndex, true);
-        SetTriggerUnsafe(state, physicsBodyIndex, isTrigger);
-        SetKinematicUnsafe(state, physicsBodyIndex, isKinematic);
         SetRotationalPhysicsUnsafe(state, physicsBodyIndex, rotationalPhysics);
+
+        switch (colliderBehaviour)
+        {
+            case ColliderBehaviour.Solid:
+                SetTriggerUnsafe(state, physicsBodyIndex, false);
+                SetKinematicUnsafe(state, physicsBodyIndex, false);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.SolidCircleRigidBody;
+                state.SolidCircleRigidBodyCount++;
+            break;
+            case ColliderBehaviour.Trigger:
+                SetTriggerUnsafe(state, physicsBodyIndex, true);
+                SetKinematicUnsafe(state, physicsBodyIndex, false);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.TriggerCircleRigidBody;
+                state.TriggerCircleRigidBodyCount++;
+            break;
+            case ColliderBehaviour.Kinematic:
+                SetTriggerUnsafe(state, physicsBodyIndex, false);
+                SetKinematicUnsafe(state, physicsBodyIndex, true);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.KinematicCircleRigidBody;
+                state.KinematicCircleRigidBodyCount++;
+            break;
+        }
 
         // apply data.
         PhysicsSystem.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
@@ -1462,8 +1504,7 @@ public static class PhysicsBody
     /// <param name="shape">the local-space shape data.</param>
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
     /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
-    /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
-    /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
+    /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
     /// <param name="genId">the associated gen id to the newly allocated body.</param>
     /// <returns>
     ///     <list type="bullet">
@@ -1477,7 +1518,7 @@ public static class PhysicsBody
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static GenIdResult AllocateRectangleCollider(PhysicsSystemState state, Rectangle shape, Transform transform, 
-        GenId entityId, bool isKinematic, bool isTrigger, ref GenId genId
+        GenId entityId, ColliderBehaviour colliderBehaviour, ref GenId genId
     )
     {
         GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1494,8 +1535,28 @@ public static class PhysicsBody
         SetActiveUnsafe(state, physicsBodyIndex, true);
         SetAllocatedUnsafe(state, physicsBodyIndex, true);
         SetRigidBodyUnsafe(state, physicsBodyIndex, false);
-        SetTriggerUnsafe(state, physicsBodyIndex, isTrigger);
-        SetKinematicUnsafe(state, physicsBodyIndex, isKinematic);
+
+        switch (colliderBehaviour)
+        {
+            case ColliderBehaviour.Solid:
+                SetTriggerUnsafe(state, physicsBodyIndex, false);
+                SetKinematicUnsafe(state, physicsBodyIndex, false);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.SolidPolygonCollider;
+                state.SolidPolygonColliderCount++;
+            break;
+            case ColliderBehaviour.Trigger:
+                SetTriggerUnsafe(state, physicsBodyIndex, true);
+                SetKinematicUnsafe(state, physicsBodyIndex, false);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.TriggerPolygonCollider;
+                state.TriggerPolygonColliderCount++;
+            break;
+            case ColliderBehaviour.Kinematic:
+                SetTriggerUnsafe(state, physicsBodyIndex, false);
+                SetKinematicUnsafe(state, physicsBodyIndex, true);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.KinematicPolygonCollider;
+                state.KinematicPolygonColliderCount++;
+            break;
+        }
 
         // apply data.
         PolygonRectangle polyRect = new(shape);
@@ -1504,6 +1565,10 @@ public static class PhysicsBody
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
         state.EntityIds[physicsBodyIndex] = entityId;
+
+        // rigidbodies should respond to this like a kinematic rigidbody if it is solid or kinematic. 
+        state.Masses[physicsBodyIndex] = 0;
+        state.InverseMasses[physicsBodyIndex] = 0;
 
         return GenIdResult.Ok;
     }
@@ -1516,8 +1581,7 @@ public static class PhysicsBody
     /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
     /// <param name="material">the physics material to apply to the body.</param>
     /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
-    /// <param name="isKinematic">whether 'trigger' behaviour is enabled.</param>
-    /// <param name="isTrigger">whether 'kinematic' behaviour is enabled.</param>
+    /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
     /// <param name="rotationalPhysics">whether to enable rotational physics for the physics body.</param>
     /// <param name="genId">the associated genId to the newly allocated body.</param>
     /// <returns>
@@ -1529,10 +1593,9 @@ public static class PhysicsBody
     ///             <see cref="GenIdResult.MemoryLimitHit"/>
     ///         </item>
     ///     </list>
-    /// </returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    /// </returns>.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static GenIdResult AllocateRectangleRigidBody(PhysicsSystemState state, Rectangle shape, Transform transform,
-        PhysicsMaterial material, GenId entityId, bool isKinematic, bool isTrigger, bool rotationalPhysics, ref GenId genId
+        PhysicsMaterial material, GenId entityId, ColliderBehaviour colliderBehaviour, bool rotationalPhysics, ref GenId genId
     )
     {
         GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1549,10 +1612,30 @@ public static class PhysicsBody
         SetActiveUnsafe(state, physicsBodyIndex, true);
         SetAllocatedUnsafe(state, physicsBodyIndex, true);
         SetRigidBodyUnsafe(state, physicsBodyIndex, true);
-        SetTriggerUnsafe(state, physicsBodyIndex, isTrigger);
-        SetKinematicUnsafe(state, physicsBodyIndex, isKinematic);
         SetRotationalPhysicsUnsafe(state, physicsBodyIndex, rotationalPhysics);
 
+        switch (colliderBehaviour)
+        {
+            case ColliderBehaviour.Solid:
+                SetTriggerUnsafe(state, physicsBodyIndex, false);
+                SetKinematicUnsafe(state, physicsBodyIndex, false);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.SolidPolygonRigidBody;
+                state.SolidPolygonRigidBodyCount++;
+            break;
+            case ColliderBehaviour.Trigger:
+                SetTriggerUnsafe(state, physicsBodyIndex, true);
+                SetKinematicUnsafe(state, physicsBodyIndex, false);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.TriggerPolygonRigidBody;
+                state.TriggerPolygonRigidBodyCount++;
+            break;
+            case ColliderBehaviour.Kinematic:
+                SetTriggerUnsafe(state, physicsBodyIndex, false);
+                SetKinematicUnsafe(state, physicsBodyIndex, true);
+                state.BvhCategories[physicsBodyIndex] = BvhCategory.KinematicPolygonRigidBody;
+                state.KinematicPolygonRigidBodyCount++;
+            break;
+        }
+        
         // apply data.
         PolygonRectangle polyRect = new(shape);
         PhysicsSystem.AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);

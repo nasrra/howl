@@ -37,8 +37,7 @@ public static class CollisionManifold
     /// <returns>the collision index that the data was written to.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static int SetDataOneWay(CollisionManifoldState state, int recipientIndex, int colliderIndex, 
-        float colliderCentroidX, float colliderCentroidY, float normalX, float normalY, float contactPointX, float contactPointY, float depth, 
-        PhysicsBodyFlags colliderFlags
+        float colliderCentroidX, float colliderCentroidY, float normalX, float normalY, float contactPointX, float contactPointY, float depth
     )
     {
         int elementIndex = FixedStrideArray.GetElementIndex(recipientIndex, state.Stride, colliderIndex);
@@ -60,7 +59,6 @@ public static class CollisionManifold
         state.FirstContactPoints.X[elementIndex]   = contactPointX;
         state.FirstContactPoints.Y[elementIndex]   = contactPointY;
         state.Depths[elementIndex]                 = depth;
-        state.ColliderFlags[elementIndex]          = colliderFlags;
         state.TwoContactPoints[elementIndex]       = false;
 
         return elementIndex;
@@ -86,7 +84,7 @@ public static class CollisionManifold
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static int SetDataOneWay(CollisionManifoldState state, int recipientIndex, int colliderIndex, 
         float colliderCentroidX, float colliderCentroidY, float normalX, float normalY, float firstContactPointX, float firstContactPointY, 
-        float secondContactPointX, float secondContactPointY, float depth, PhysicsBodyFlags colliderFlags
+        float secondContactPointX, float secondContactPointY, float depth
     )
     {
         int elementIndex = FixedStrideArray.GetElementIndex(recipientIndex, state.Stride, colliderIndex);
@@ -109,7 +107,6 @@ public static class CollisionManifold
         state.SecondContactPoints.X[elementIndex]  = secondContactPointX;
         state.SecondContactPoints.Y[elementIndex]  = secondContactPointY;
         state.Depths[elementIndex]                 = depth;
-        state.ColliderFlags[elementIndex]          = colliderFlags;
         state.TwoContactPoints[elementIndex]       = true;
 
         return elementIndex;
@@ -132,8 +129,6 @@ public static class CollisionManifold
     /// <param name="secondContactPointX">the x-component of the second contact point.</param>
     /// <param name="secondContactPointY">the y-component of the second contact point.</param>
     /// <param name="depth">the depth of the collision.</param>
-    /// <param name="flagsA">the physics body flags of collider A.</param>
-    /// <param name="flagsB">the physics body flags of collider B.</param>
     /// <returns>
     ///     A tuple of the collision indices the data was written to.
     ///     <list type = "bullet">
@@ -143,16 +138,16 @@ public static class CollisionManifold
     /// </returns>
     public static (int collisionIndexA, int collisionIndexB) SetDataTwoWay(CollisionManifoldState state, int indexA, int indexB, float centroidXA, float centroidYA, 
         float centroidXB, float centroidYB, float normalX, float normalY, float firstContactPointX, float firstContactPointY, 
-        float secondContactPointX, float secondContactPointY, float depth, PhysicsBodyFlags flagsA, PhysicsBodyFlags flagsB
+        float secondContactPointX, float secondContactPointY, float depth
     )
     {
         int a = SetDataOneWay(state, indexA, indexB, centroidXB, centroidYB, normalX, normalY, firstContactPointX, firstContactPointY, 
-            secondContactPointX, secondContactPointY, depth, flagsB
+            secondContactPointX, secondContactPointY, depth
         );
 
         // note: the normal reversing.
         int b = SetDataOneWay(state, indexB, indexA, centroidXA, centroidYA, -normalX, -normalY, firstContactPointX, firstContactPointY, 
-            secondContactPointX, secondContactPointY, depth, flagsA
+            secondContactPointX, secondContactPointY, depth
         );
 
         return(a,b);  
@@ -173,8 +168,6 @@ public static class CollisionManifold
     /// <param name="contactPointX">the x-component of the contact point.</param>
     /// <param name="contactPointY">the y-component of the contact point.</param>
     /// <param name="depth">the depth of the collision.</param>
-    /// <param name="flagsA">the physics body flags of collider A.</param>
-    /// <param name="flagsB">the physics body flags of collider B.</param>
     /// <returns>
     ///     A tuple of the collision indices the data was written to.
     ///     <list type = "bullet">
@@ -184,13 +177,13 @@ public static class CollisionManifold
     /// </returns>
     public static (int collisionIndexA, int collisionIndexB) SetDataTwoWay(CollisionManifoldState state, int indexA, int indexB, float centroidXA, float centroidYA, 
         float centroidXB, float centroidYB, float normalX, float normalY, float contactPointX, float contactPointY, 
-        float depth, PhysicsBodyFlags flagsA, PhysicsBodyFlags flagsB
+        float depth
     )
     {
-        int a = SetDataOneWay(state, indexA, indexB, centroidXB, centroidYB, normalX, normalY, contactPointX, contactPointY, depth, flagsB);
+        int a = SetDataOneWay(state, indexA, indexB, centroidXB, centroidYB, normalX, normalY, contactPointX, contactPointY, depth);
 
         // note: the normal reversing.
-        int b = SetDataOneWay(state, indexB, indexA, centroidXA, centroidYA, -normalX, -normalY, contactPointX, contactPointY, depth, flagsA);
+        int b = SetDataOneWay(state, indexB, indexA, centroidXA, centroidYA, -normalX, -normalY, contactPointX, contactPointY, depth);
         
         return (a,b);
     }
@@ -355,8 +348,6 @@ public static class CollisionManifold
         state.SecondContactPoints = null;
 
         state.Depths = null;
-
-        state.ColliderFlags = null;
 
         state.TwoContactPoints = null;
 

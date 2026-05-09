@@ -36,10 +36,11 @@ public class Test_Soa_Leaf
                 int centroidX = j++;
                 int centroidY = j++;
                 int branchIndex = 0;
+                int category = j++;
 
-                int index = Soa_Leaf.Append(soa, minX, minY, maxX, maxY, centroidX, centroidY);
+                int index = Soa_Leaf.Append(soa, minX, minY, maxX, maxY, centroidX, centroidY, category);
                 Assert.Equal(i, index);
-                Assert_Soa_Leaf.EntryEqual(minX, minY, maxX, maxY, centroidX, centroidY, branchIndex, i, soa);
+                Assert_Soa_Leaf.ElementEqual(minX, minY, maxX, maxY, centroidX, centroidY, branchIndex, category, i, soa);
                 Assert.Equal(i+1, soa.AppendCount);
             }
         }
@@ -59,10 +60,11 @@ public class Test_Soa_Leaf
                 int centroidX = j++;
                 int centroidY = j++;
                 int branchIndex = 0;
+                int category = j++;
 
-                int index = Soa_Leaf.Append(soa, minX, minY, maxX, maxY, centroidX, centroidY);
+                int index = Soa_Leaf.Append(soa, minX, minY, maxX, maxY, centroidX, centroidY, category);
                 Assert.Equal(i/2, index);
-                Assert_Soa_Leaf.EntryEqual(minX, minY, maxX, maxY, centroidX, centroidY, branchIndex, index, soa);
+                Assert_Soa_Leaf.ElementEqual(minX, minY, maxX, maxY, centroidX, centroidY, branchIndex, category, index, soa);
                 Assert.Equal((i/2)+1, soa.AppendCount);
             }
         }
@@ -82,6 +84,7 @@ public class Test_Soa_Leaf
         float leaf0MaxY     = 2;
         float leaf0CentroiX = 0.5f;
         float leaf0CentroiY = 0.5f;
+        int leaf0Cat = 0;
 
         // leaf 1.
         float leaf1MinX     = -2;
@@ -90,6 +93,7 @@ public class Test_Soa_Leaf
         float leaf1MaxY     = 1;
         float leaf1CentroiX = -0.5f;
         float leaf1CentroiY = -0.5f;
+        int leaf1Cat = 0;
 
         // leaf 2.
         float leaf2MinX     = -10;
@@ -98,6 +102,7 @@ public class Test_Soa_Leaf
         float leaf2MaxY     = 10;
         float leaf2CentroiX = 0f;
         float leaf2CentroiY = 0f;
+        int leaf2Cat = 0;
 
         // leaf 3.
         float leaf3MinX     = 40;
@@ -106,12 +111,13 @@ public class Test_Soa_Leaf
         float leaf3MaxY     = 200;
         float leaf3CentroiX = 120f;
         float leaf3CentroiY = 120f;
+        int leaf3Cat = 0;
 
         // apend leaves.
-        Soa_Leaf.Append(leaves, leaf0MinX, leaf0MinY, leaf0MaxX, leaf0MaxY, leaf0CentroiX, leaf0CentroiY);
-        Soa_Leaf.Append(leaves, leaf1MinX, leaf1MinY, leaf1MaxX, leaf1MaxY, leaf1CentroiX, leaf1CentroiY);
-        Soa_Leaf.Append(leaves, leaf2MinX, leaf2MinY, leaf2MaxX, leaf2MaxY, leaf2CentroiX, leaf2CentroiY);
-        Soa_Leaf.Append(leaves, leaf3MinX, leaf3MinY, leaf3MaxX, leaf3MaxY, leaf3CentroiX, leaf3CentroiY);
+        Soa_Leaf.Append(leaves, leaf0MinX, leaf0MinY, leaf0MaxX, leaf0MaxY, leaf0CentroiX, leaf0CentroiY, leaf0Cat);
+        Soa_Leaf.Append(leaves, leaf1MinX, leaf1MinY, leaf1MaxX, leaf1MaxY, leaf1CentroiX, leaf1CentroiY, leaf1Cat);
+        Soa_Leaf.Append(leaves, leaf2MinX, leaf2MinY, leaf2MaxX, leaf2MaxY, leaf2CentroiX, leaf2CentroiY, leaf2Cat);
+        Soa_Leaf.Append(leaves, leaf3MinX, leaf3MinY, leaf3MaxX, leaf3MaxY, leaf3CentroiX, leaf3CentroiY, leaf3Cat);
 
 
         // query leaves.
@@ -130,7 +136,7 @@ public class Test_Soa_Leaf
             int j = 0;
             for(int i = 0; i < length; i++)
             {            
-                Soa_Leaf.Append(soa, j++, j++, j++, j++, j++, j++);
+                Soa_Leaf.Append(soa, j++, j++, j++, j++, j++, j++, j++);
             }        
             Assert.Equal(length, soa.AppendCount);
             Soa_Leaf.ResetCount(soa);        
@@ -147,7 +153,7 @@ public class Test_Soa_Leaf
         
         for(int i = 0; i < length; i++)
         {
-            Soa_Leaf.Append(soa, i, i, i, i, i, i);            
+            Soa_Leaf.Append(soa, i, i, i, i, i, i, i);            
         }
 
         Soa_Leaf.Dispose(soa);

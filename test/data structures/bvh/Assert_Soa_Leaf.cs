@@ -6,7 +6,7 @@ using Howl.Test.Math.Shapes;
 public static class Assert_Soa_Leaf
 {
     /// <summary>
-    ///     Asserts the equality of a soa entry and expected values.
+    ///     Asserts the equality of a soa element and expected values.
     /// </summary>
     /// <param name="minX">the expected x-component of the minimum vertex.</param>
     /// <param name="minY">the expected y-component of the minimum vertex.</param>
@@ -15,15 +15,17 @@ public static class Assert_Soa_Leaf
     /// <param name="centroidX">the expected x-component of the centroid vertex.</param>
     /// <param name="centroidY">the expected x-component of the centroid vertex.</param>
     /// <param name="branchIndex">the expected branch index.</param>
-    /// <param name="entryIndex">the index of the entry in the soa to assert equality against.</param>
-    /// <param name="soa">the soa instance containing the entry to assert.</param>
-    public static void EntryEqual(float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int branchIndex, 
-        int entryIndex, Soa_Leaf soa
+    /// <param name="soa">the soa instance containing the element to assert.</param>
+    /// <param name="elementIndex">the index of the element in the soa to assert equality against.</param>
+    /// <param name="soa">the soa instance containing the element to assert.</param>
+    public static void ElementEqual(float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int branchIndex, 
+        int category, int elementIndex, Soa_Leaf soa
     )
     {
-        Assert_Soa_Aabb.EntryEqual(minX, minY, maxX, maxY, entryIndex, soa.Aabbs);
-        Soa_Vector2Assert.EntryEqual(centroidX, centroidY, entryIndex, soa.Centroids);
-        Assert.Equal(branchIndex, soa.BranchIndices[entryIndex]);
+        Assert_Soa_Aabb.EntryEqual(minX, minY, maxX, maxY, elementIndex, soa.Aabbs);
+        Soa_Vector2Assert.EntryEqual(centroidX, centroidY, elementIndex, soa.Centroids);
+        Assert.Equal(branchIndex, soa.BranchIndices[elementIndex]);
+        Assert.Equal(category, soa.Categories[elementIndex]);
     }
 
     /// <summary>

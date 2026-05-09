@@ -1,14 +1,12 @@
 using System;
 using System.Runtime.CompilerServices;
-using Howl.DataStructures.Bvh;
 
-namespace Howl;
+namespace Howl.Collections;
 
-public class CategorisedOverlaps
+public class CategorisedOverlapArray<T>
 {
-
     /// <summary>
-    ///     The amount of leaves within a category.
+    ///     The amount of elements within a category.
     /// </summary>
     /// <remarks>
     ///     Remarks: Elements should be accessed by <c>categoryIndex</c>.
@@ -37,7 +35,7 @@ public class CategorisedOverlaps
     public int[] SubCategoryStartIndices;
 
     /// <summary>
-    ///     The count of valid overlap elements after a sub category's start index within the <c>overlap arrays</c>.
+    ///     The count of valid elements after a sub category's start index within the <c>Data</c> array.
     /// </summary>
     /// <remarks>
     ///     Remarks:
@@ -58,47 +56,33 @@ public class CategorisedOverlaps
     public int[] SubCategoryCounts;
 
     /// <summary>
-    ///     The indices of the <c>owner</c> leaf of a given overlap.
-    /// </summary>
-    /// <remarks>
-    ///     <para>Elements are associated via index to <c><see cref="OtherLeafIndices"/></c></para>
-    ///     <para>Elements should be accessed via the calculated index provided by <see cref="GetElementIndex(int, int, int)"/>.</para>
-    ///     <code>
-    ///     int index = GetElementIndex(categoryIndex, subCategoryIndex, categoriesTriangularSum);
-    ///     var element = myElements[index];
-    ///     </code>
-    /// </remarks>
-    public int[] OwnerLeafIndices;
-
-    /// <summary>
-    ///     The indices of the <c>other</c> leaf of a given overlap.
-    /// </summary>
-    /// <remarks>
-    ///     <para>Elements are associated via index to <c><see cref="OwnerLeafIndices"/></c></para>
-    ///     <para>Elements should be accessed via the calculated index provided by <see cref="GetElementIndex(int, int, int)"/>.</para>
-    ///     <code>
-    ///     int index = GetElementIndex(categoryIndex, subCategoryIndex, categoriesTriangularSum);
-    ///     var element = myElements[index];
-    ///     </code>
-    /// </remarks>
-    public int[] OtherLeafIndices;
-    
-    /// <summary>
     ///     The triangular sum of the amount of categories the overlap data can be filtered into..
     /// </summary>
     public int CategoriesTriangularSum;
 
     /// <summary>
-    ///     The maximum amount of overlaps this state instance can store.
+    ///     The maximum amount of elements this state instance can store.
     /// </summary>
-    public int MaxOverlaps;
+    public int MaxElements;
 
     /// <summary>
-    ///     Creates a new state instance.
+    ///     The element data.
+    /// </summary>
+    /// <remarks>
+    ///     <para>Elements should be accessed via the calculated index provided by <see cref="GetElementIndex(int, int, int)"/>.</para>
+    ///     <code>
+    ///     int index = GetElementIndex(categoryIndex, subCategoryIndex, categoriesTriangularSum);
+    ///     var element = myElements[index];
+    ///     </code>
+    /// </remarks>
+    public T[] Data;
+
+    /// <summary>
+    ///     Creates a new categorised array instance.
     /// </summary>
     /// <param name="categoryCount">the amount of categories the overlap data can be filtered into.</param>
-    /// <param name="maxOverlaps">the maximum amount of overlap data that this instance can hold.</param>
-    public CategorisedOverlaps(int categoryCount, int maxOverlaps)
+    /// <param name="maxElements">the maximum amount of elements that this instance can hold.</param>
+    public CategorisedOverlapArray(int categoryCount, int maxEntries)
     {
         CategoriesTriangularSum = Math.Math.CalculateTriangularSum(categoryCount);
 
@@ -107,18 +91,32 @@ public class CategorisedOverlaps
         SubCategoryStartIndices = new int [CategoriesTriangularSum];
         SubCategoryCounts = new int [CategoriesTriangularSum];
 
-        OwnerLeafIndices = new int[maxOverlaps];
-        OtherLeafIndices = new int[maxOverlaps];
+        Data = new T[maxEntries];
+    }
+}
+
+public static class CategorisedOverlapArray
+{
+    /// <summary>
+    ///     Calculates the starting indices for each sub category to write to in the data array's. 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="array">the array instance to build the chunks for.</param>
+    public static void BuildChunks<T>(this CategorisedOverlapArray<T> array)
+    {
+        BuildChunks(array.CategoryLengths, array.SubCategoryStartIndices, array.MaxElements);
     }
 
     /// <summary>
-    ///     Builds the
+    ///     Calculates the starting indices for each sub category to write to in the data array's. 
     /// </summary>
-    /// <param name="state"></param>
-    public static void BuildChunks(CategorisedOverlaps state)
+    /// <param name="categoryLengths"></param>
+    /// <param name="subCategoryStartIndices"></param>
+    /// <param name="maxElements"></param>
+    public static void BuildChunks(Span<int> categoryLengths, Span<int> subCategoryStartIndices, int maxElements)
     {
         // get the amount of categories this state instance can filter into.
-        int categoryAmount = state.CategoryLengths.Length;
+        int categoryAmount = categoryLengths.Length;
 
         // the start index of the sub category.
         int startIndex = 0;
@@ -128,18 +126,18 @@ public class CategorisedOverlaps
 
         for(int categoryIndex = categoryAmount-1; categoryIndex >= 0; categoryIndex--)
         { 
-            int categoryCount = state.CategoryLengths[categoryIndex];
+            int categoryCount = categoryLengths[categoryIndex];
             for(int subCategoryIndex = 0; subCategoryIndex <= categoryIndex; subCategoryIndex++)
             {
                 // set the start index in the overlap arrays.
-                state.SubCategoryStartIndices[writeIndex] = startIndex;
+                subCategoryStartIndices[writeIndex] = startIndex;
                 
                 writeIndex++;
 
                 // add the stride/amount of overlaps that can possibly happen between these categories.
-                startIndex += state.CategoryLengths[categoryIndex] * state.CategoryLengths[subCategoryIndex];
+                startIndex += categoryLengths[categoryIndex] * categoryLengths[subCategoryIndex];
 #if DEBUG
-                System.Diagnostics.Debug.Assert(startIndex >= state.MaxOverlaps, "StartIndex exceeded MaxOverlaps count! state instance cannot store the required amount of possible overlaps.");
+                System.Diagnostics.Debug.Assert(startIndex >= maxElements, "StartIndex exceeded max elements count! state instance cannot store the required amount of possible elements.");
 #endif
             }
         }
@@ -157,8 +155,8 @@ public class CategorisedOverlaps
         // ensure that cat is always the maxmimum.
         // Note: if the 'cat' was the min and the 'sub' was the max, the calculated
         //  index would always be incorrect (due to the formatting of the sub category arrays).
-        int cat = (int)Math.Math.Max(categoryIndex, subCategoryIndex);
-        int sub = (int)Math.Math.Min(categoryIndex, subCategoryIndex);
+        int cat = Math.Math.Max(categoryIndex, subCategoryIndex);
+        int sub = Math.Math.Min(categoryIndex, subCategoryIndex);
 
         return GetElementIndexUnsafe(cat, sub, categoriesTriangularSum);
     }
@@ -189,67 +187,97 @@ public class CategorisedOverlaps
     }
 
     /// <summary>
-    ///     Appends an overlap to an instance.
+    ///     Appends data to a pair of overlapping categories.
     /// </summary>
-    /// <param name="overlaps">the instance to append to.</param>
-    /// <param name="ownerLeafIndex">the index of the leaf that is the <c>owner</c> of the overlap.</param>
-    /// <param name="otherLeafIndex">the index of the leaf that is the <c>other</c> of the overlap.</param>
-    /// <param name="ownerCategory">the category of the <c>owner</c> leaf.</param>
-    /// <param name="otherCategory">the category of the <c>other</c> leaf.</param>
-    /// <returns>true, if the overlap was successfully appended; otherwise false.</returns>
-    public static bool AppendOverlap(CategorisedOverlaps overlaps, int ownerLeafIndex, int otherLeafIndex, 
-        int ownerCategory, int otherCategory
+    /// <typeparam name="T"></typeparam>
+    /// <param name="data">the data to copy into the array.</param>
+    /// <param name="array">the array instance to append to.</param>
+    /// <param name="categoryA"></param>
+    /// <param name="categoryB"></param>
+    /// <returns>true, if the data was successfuly appended; otherwise false.</returns>
+    public static bool Append<T>(this T data, CategorisedOverlapArray<T> array, int categoryA, int categoryB)
+    {
+        int writeIndex = 0;
+        if(IncrementSubCategoryCount(array.CategoryLengths, array.SubCategoryCounts, array.SubCategoryStartIndices, 
+            array.CategoriesTriangularSum, categoryA, categoryB, ref writeIndex
+        ))
+        {
+            // write the data to the index.
+            array.Data[writeIndex] = data;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     Increments count of elements in a sub category.
+    /// </summary>
+    /// <param name="categoryLengths"></param>
+    /// <param name="subCategoryCounts"></param>
+    /// <param name="subCategoryStartIndices"></param>
+    /// <param name="categoriesTriangularSum"></param>
+    /// <param name="categoryA"></param>
+    /// <param name="categoryB"></param>
+    /// <param name="writeIndex">output for the index that should now be written to with valid data.</param>
+    /// <returns>true, if the count was incremented; otherwise false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool IncrementSubCategoryCount(Span<int> categoryLengths, Span<int> subCategoryCounts, Span<int> subCategoryStartIndices, 
+        int categoriesTriangularSum, int categoryA, int categoryB, ref int writeIndex
     )
     {
-        int elementIndex = GetElementIndex(ownerCategory, otherCategory, overlaps.CategoriesTriangularSum);
-        int startIndex = overlaps.SubCategoryStartIndices[elementIndex];
-        ref int count = ref overlaps.SubCategoryCounts[elementIndex];
+        int elementIndex = GetElementIndex(categoryA, categoryB, categoriesTriangularSum);
+        int startIndex = subCategoryStartIndices[elementIndex];
+        ref int count = ref subCategoryCounts[elementIndex];
 
-        if ((overlaps.CategoryLengths[ownerCategory] * overlaps.CategoryLengths[otherCategory]) - 1 < count)
+        if ((categoryLengths[categoryA] * categoryLengths[categoryB]) - 1 < count)
         {
-            return false;            
+            return false;
         }
 
-        int writeIndex = startIndex + count;
-
-
-        // write the data to the index.
-        overlaps.OwnerLeafIndices[writeIndex] = ownerLeafIndex;
-        overlaps.OtherLeafIndices[writeIndex] = otherLeafIndex;
-
-        // increment the count.
+        writeIndex = startIndex + count;
         count++;
-
         return true;
     }
 
     /// <summary>
-    ///     Sets the count values in a overlaps instance to zero. 
-    /// </summary>
-    /// <param name="overlaps">the instance to clear.</param>
-    public static void ClearCounts(CategorisedOverlaps overlaps)
-    {
-        Span<int> counts = overlaps.SubCategoryCounts;
-        for(int i = 0; i < counts.Length; i++)
-        {
-            counts[i] = 0;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the overlap info for .
+    ///     Gets the data that overlaps between two categories.
     /// </summary>
     /// <param name="overlaps"></param>
     /// <param name="categoryA"></param>
     /// <param name="categoryB"></param>
-    /// <returns></returns>
-    public static OverlapInfo GetOverlaps(CategorisedOverlaps overlaps, int categoryA, int categoryB)
+    /// <returns>the data that overlaps between two categories.</returns>
+    public static Span<T> GetOverlaps<T>(this CategorisedOverlapArray<T> array, int categoryA, int categoryB)
     {
-        int elementIndex = GetElementIndex(categoryA, categoryB, overlaps.CategoriesTriangularSum);
-        int startIndex = overlaps.SubCategoryStartIndices[elementIndex];
-        int count = overlaps.SubCategoryCounts[elementIndex];
-        Span<int> ownerIndices = overlaps.OwnerLeafIndices.AsSpan(startIndex, count);
-        Span<int> otherIndices = overlaps.OtherLeafIndices.AsSpan(startIndex, count);
-        return new OverlapInfo(ownerIndices, otherIndices);
+        int elementIndex = GetElementIndex(categoryA, categoryB, array.CategoriesTriangularSum);
+        int startIndex = array.SubCategoryStartIndices[elementIndex];
+        int count = array.SubCategoryCounts[elementIndex];
+        return array.Data.AsSpan(startIndex, count);
+    }
+
+    /// <summary>
+    ///     Sets the count values in a <c>SubCategoryCounts</c> array to zero. 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="array">the array instance to clear.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ClearCounts<T>(this CategorisedOverlapArray<T> array)
+    {
+        ClearCounts(array.SubCategoryCounts);
+    }
+
+    /// <summary>
+    ///     Sets the count values in a <c>SubCategoryCounts</c> array to zero. 
+    /// </summary>
+    /// <param name="counts">the array instance to clear.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ClearCounts(Span<int> counts)
+    {
+        for(int i = 0; i < counts.Length; i++)
+        {
+            counts[i] = 0;
+        }
     }
 }

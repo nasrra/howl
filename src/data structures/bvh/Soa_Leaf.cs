@@ -54,6 +54,7 @@ public class Soa_Leaf : IDisposable
         Aabbs = new(length);
         Centroids = new(length);
         BranchIndices = new int[length];
+        Categories = new int[length];
         Length = length;
     }
 
@@ -74,6 +75,7 @@ public class Soa_Leaf : IDisposable
     {
         Soa_Aabb.Append(soa.Aabbs, minX, minY, maxX, maxY);
         Soa_Vector2.Append(soa.Centroids, centroidX, centroidY);
+        soa.Categories[soa.AppendCount] = category;
         soa.AppendCount++;
         return soa.AppendCount-1;
     }

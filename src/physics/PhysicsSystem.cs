@@ -23,13 +23,13 @@ public static class PhysicsSystem
     public static readonly Vector<float> VectorRectangleRotationalInertia = new(RectangleRotationalInertia);
     public static readonly Vector<float> VectorCircleRotationalInertia = new(CircleRotationalInertia);
 
-    public static void FixedUpdate(PhysicsSystemState state, ComponentArray<Transform> transforms, ComponentArray<PhysicsBodyComponent> physicsBodyTags, float deltaTime, int subSteps)
+    public static void FixedUpdate(HowlAppState app, PhysicsSystemState state, ComponentArray<Transform> transforms, ComponentArray<PhysicsBodyComponent> physicsBodyTags, float deltaTime, int subSteps)
     {
         state.FixedUpdateStepStopwatch.Restart();
 
         // Sync Colliders to Transforms Step.
         state.SyncTransformsToEntitiesStopwatch.Restart();
-        SyncTransformsToEntityTransforms(physicsBodyTags, transforms, state.Transforms, state.Generations);
+        // SyncTransformsToEntityTransforms(physicsBodyTags, transforms, state.Transforms, state.Generations);
         state.SyncTransformsToEntitiesStopwatch.Stop();
 
         state.IntegrateBodyPropertiesStopwatch.Restart();
@@ -47,7 +47,7 @@ public static class PhysicsSystem
         for(int i = 0; i < subSteps; i++)
         {
             // clear any grabage collisions that were resolved last sub step.
-            SwapBackArray.ClearCount(state.SubStepCollisionsToResolve);
+            CategorisedOverlapArray.ClearCounts(state.SubStepColliderCollisionsToResolve);
 
             state.FixedUpdateSubStepStopwatch.Restart();
 
@@ -68,13 +68,31 @@ public static class PhysicsSystem
 
             // Reconstruct Bvh.
             state.BvhReconstructionStopwatch.Restart();
-            ReconstructBvhTree(state.MinAABBVertices, state.MaxAABBVertices, state.Centroids, state.Flags, state.Overlaps, state.Bvh);
+            ReconstructBvhTree(state, state.MinAABBVertices, state.MaxAABBVertices, state.Centroids, state.Flags, state.BvhCategories, 
+                state.Overlaps, state.Bvh
+            );
             state.BvhReconstructionStopwatch.Stop();
+
+            // format the overlap data.
+            FormatCategorisedOverlaps(state.Overlaps, state.BvhLeafIndices, state.BvhCategories);
+
+            // prepare sub step collision resolution collection.
+            int solidCount = state.SolidPolygonColliderCount + state.SolidCircleColliderCount + 
+                state.SolidPolygonRigidBodyCount + state.SolidCircleRigidBodyCount;
+            int kinematicCount = state.KinematicPolygonColliderCount + state.KinematicCircleColliderCount + 
+                state.KinematicPolygonRigidBodyCount + state.KinematicCircleRigidBodyCount;
+            state.SubStepColliderCollisionsToResolve.CategoryLengths[SubStepResolutionBvhCategory.Solid] = solidCount;
+            state.SubStepColliderCollisionsToResolve.CategoryLengths[SubStepResolutionBvhCategory.Kinematic] = kinematicCount;
+            CategorisedOverlapArray.ClearCounts(state.SubStepColliderCollisionsToResolve);
+            CategorisedOverlapArray.BuildChunks(state.SubStepColliderCollisionsToResolve);
+
+            // prepare sub step rigidbody resolution collextion.
+            StackArray.ClearCount(state.SubStepRigidbodyCollisionsToResolve);
 
             // Find collisions.
             state.FindCollisionsStopwatch.Restart();
-            FindCollisions(state.CollisionManifoldState, state.SubStepCollisionsToResolve, state.Centroids, state.WorldVertices, 
-                state.WorldRadii, state.Flags, state.Overlaps
+            DetectCollisions(state.CollisionManifoldState, state.SubStepColliderCollisionsToResolve, state.SubStepRigidbodyCollisionsToResolve,
+                state.Centroids, state.WorldVertices, state.WorldRadii, state.BvhLeafIndices, state.Overlaps
             );
             state.FindCollisionsStopwatch.Stop();
 
@@ -84,7 +102,7 @@ public static class PhysicsSystem
             // Also make sure that this is above rigidbody collision resolution.
             // this function also moves the transforms of the colliders.
             state.ColliderCollisionResolutionStopwatch.Restart();
-            ResolveColliderCollisions(state.CollisionManifoldState, state.SubStepCollisionsToResolve, state.Transforms, state.Flags);
+            ResolveColliderCollisions(state.CollisionManifoldState, state.SubStepColliderCollisionsToResolve, state.Transforms);
             state.ColliderCollisionResolutionStopwatch.Stop();
 
             // Resolve RigidBody Collisions.
@@ -93,11 +111,11 @@ public static class PhysicsSystem
             // Also make sure that this is below collision resolution.
             // this function also moves the transforms of the colliders.
             state.RigidBodyCollisionResolutionStepStopwatch.Restart();
-            ResolveRigidBodyCollisions(state.CollisionManifoldState, state.SubStepCollisionsToResolve, state.LinearVelocities, 
-                state.Centroids, state.PhysicsMaterials.Restitution, state.AngularVelocities, state.InverseMasses, 
-                state.InverseRotationalInertia, state.PhysicsMaterials.KineticFriction, state.PhysicsMaterials.StaticFriction, 
-                state.Masses, state.Flags
-            );
+            // ResolveRigidBodyCollisions(state.CollisionManifoldState, state.SubStepCollisionsToResolve, state.LinearVelocities, 
+            //     state.Centroids, state.PhysicsMaterials.Restitution, state.AngularVelocities, state.InverseMasses, 
+            //     state.InverseRotationalInertia, state.PhysicsMaterials.KineticFriction, state.PhysicsMaterials.StaticFriction, 
+            //     state.Masses, state.Flags
+            // );
             state.RigidBodyCollisionResolutionStepStopwatch.Stop();
 
             // Sort Collision Manifold.
@@ -634,9 +652,9 @@ public static class PhysicsSystem
         Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> localRadii, Span<float> worldRadii, 
         Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags, int maxPhysicsBodyCount)
     {
-        IntegrateBodyProperties_Simd(scalesX, scalesY, masses, inverseMasses, 
+        IntegrateBodyProperties_Sisd(scalesX, scalesY, masses, inverseMasses, 
             rotationalInertia, inverseRotationalInertia, densities, localRadii, worldRadii, 
-            localWidths, localHeights, flags, maxPhysicsBodyCount
+            localWidths, localHeights, flags, maxPhysicsBodyCount, 0
         );
     }
 
@@ -905,9 +923,18 @@ public static class PhysicsSystem
                     height = localHeights[i] * scaleY;
                     width = localWidths[i] * scaleX;
 
-                    float mass = PhysicsBody.CalculateRectangleMass(width, height, densities[i]); 
-                    masses[i] = mass;
-                    inverseMasses[i] = mass == 0? 0 : 1f/mass;
+                    float mass = 0;
+
+                    if((flag & PhysicsBodyFlags.Kinematic) != 0)
+                    {
+                        inverseMasses[i] = 0;
+                    }
+                    else
+                    {
+                        mass = PhysicsBody.CalculateRectangleMass(width, height, densities[i]); 
+                        masses[i] = mass;
+                        inverseMasses[i] = mass == 0? 0 : 1f/mass;
+                    }
 
                     float inertia = PhysicsBody.CalculateRectangleRotationalInertia(width, height, mass);
                     rotationalInertia[i] = inertia;
@@ -922,9 +949,18 @@ public static class PhysicsSystem
                 // set rigidbody data if it is enabled.
                 if(isRigid)
                 {                    
-                    float mass = PhysicsBody.CalculateCircleMass(radius, densities[i]);
-                    masses[i] = mass;
-                    inverseMasses[i] = mass==0? 0 : 1f/mass;
+                    float mass = 0;
+
+                    if((flag & PhysicsBodyFlags.Kinematic) != 0)
+                    {
+                        inverseMasses[i] = 0;
+                    }
+                    else
+                    {
+                        mass = PhysicsBody.CalculateCircleMass(radius, densities[i]); 
+                        masses[i] = mass;
+                        inverseMasses[i] = mass == 0? 0 : 1f/mass;
+                    }
 
                     float rI = PhysicsBody.CalculateCircleRotationalInertia(radius, mass);
                     rotationalInertia[i] = rI;
@@ -953,10 +989,10 @@ public static class PhysicsSystem
     /// <param name="generations">the generation for each physics body.</param>
     /// <param name="flags">the flags for each physics body.</param>
     /// <param name="bvh">the bounding volume hierarchy instance.</param>
-    public static void ReconstructBvhTree(Soa_Vector2 minAabbs, Soa_Vector2 maxAabbs, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, 
-        Soa_Overlap overlaps, BoundingVolumeHierarchy bvh
+    public static void ReconstructBvhTree(PhysicsSystemState state, Soa_Vector2 minAabbs, Soa_Vector2 maxAabbs, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, 
+        Span<int> bvhCategories, CategorisedLeafOverlaps overlaps, BoundingVolumeHierarchy bvh
     )
-    {   
+    {
         // clear the previous bvh data.
         BoundingVolumeHierarchy.Clear(bvh);
 
@@ -971,63 +1007,85 @@ public static class PhysicsSystem
                 float maxY = maxAabbs.Y[i];
 
                 // insert into the bvh.
-                Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroids.X[i], centroids.Y[i], 0);
+                state.BvhLeafIndices[Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroids.X[i], centroids.Y[i], bvhCategories[i])] = i;
             }
         }
 
         // construct the bvh with the new data.
         // Soa_BoundingVolumeHierarchy.ConstructTree_Slow(bvh);
         BoundingVolumeHierarchy.ConstructTree(bvh);
-        Soa_Overlap.ClearAppendCount(overlaps);
+        CategorisedLeafOverlaps.ClearCounts(overlaps);
+        overlaps.CategoryLengths[BvhCategory.SolidCircleCollider]       = state.SolidCircleColliderCount;
+        overlaps.CategoryLengths[BvhCategory.TriggerCircleCollider]     = state.TriggerCircleColliderCount;
+        overlaps.CategoryLengths[BvhCategory.KinematicCircleCollider]   = state.KinematicCircleColliderCount;
+        overlaps.CategoryLengths[BvhCategory.SolidCircleRigidBody]      = state.SolidCircleRigidBodyCount;
+        overlaps.CategoryLengths[BvhCategory.TriggerCircleRigidBody]    = state.TriggerCircleRigidBodyCount;
+        overlaps.CategoryLengths[BvhCategory.KinematicCircleRigidBody]  = state.KinematicCircleRigidBodyCount;
+        overlaps.CategoryLengths[BvhCategory.SolidPolygonCollider]      = state.SolidPolygonColliderCount;
+        overlaps.CategoryLengths[BvhCategory.TriggerPolygonCollider]    = state.TriggerPolygonColliderCount;
+        overlaps.CategoryLengths[BvhCategory.KinematicPolygonCollider]  = state.KinematicPolygonColliderCount;
+        overlaps.CategoryLengths[BvhCategory.SolidPolygonRigidBody]     = state.SolidPolygonRigidBodyCount;
+        overlaps.CategoryLengths[BvhCategory.TriggerPolygonRigidBody]   = state.TriggerPolygonRigidBodyCount;
+        overlaps.CategoryLengths[BvhCategory.KinematicPolygonRigidBody] = state.KinematicPolygonRigidBodyCount;
+        CategorisedLeafOverlaps.BuildChunks(overlaps);
         BoundingVolumeHierarchy.FindOverlaps(bvh.Branches, bvh.Leaves, overlaps);
     }
 
-    public static void FindCollisions(CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve,
-        Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, Span<PhysicsBodyFlags> flags, Soa_Overlap overlaps
+
+
+
+    /******************
+    
+        Collision System.
+    
+    *******************/
+
+
+
+
+    public static void DetectCollisions(CollisionManifoldState collisions, CategorisedOverlapArray<int> subStepColliderCollisionsToResolve,
+        StackArray<int> subStepRigidBodyCollisionsToResolve, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, 
+        Span<int> bvhIndices, CategorisedLeafOverlaps overlaps
     )
     {
-        // hoisting invariance.
-        PhysicsBodyFlags ownerFlags;
-        PhysicsBodyFlags otherFlags;
+        Span<float> centroidsX = centroids.X;
+        Span<float> centroidsY = centroids.Y;
 
-        for(int i = 0; i < overlaps.AppendCount; i++)
-        {
-            // get the physics bodies that may be colliding.
-            // Note: add one to leaf indices as the bvh doesnt have a Nil value; unlike this physiscs system.
-            int ownerIndex = overlaps.OwnerLeafIndices[i]+1;
-            int otherIndex = overlaps.OtherLeafIndices[i]+1;
+        OverlapInfo info;
 
-            // get the flags.
-            ownerFlags = flags[ownerIndex];
-            otherFlags = flags[otherIndex];
 
-            // perform the narrow phase SAT check.
-            // Note: BVH performed Broad Phase Aabb checks already.
-            if((ownerFlags & PhysicsBodyFlags.RectangleShape) != 0)
-            {
-                if((otherFlags & PhysicsBodyFlags.RectangleShape) != 0)
-                {
-                    PolygonBodiesAreColliding(collisions, centroids, vertices, subStepCollisionsToResolve, ownerIndex, otherIndex, ownerFlags, otherFlags);
-                }
-                else
-                {                    
-                    PolygonToCircleBodiesAreColliding(collisions, subStepCollisionsToResolve, vertices, centroids, radii, ownerIndex, otherIndex, ownerFlags, otherFlags);
-                }
-            }
-            else
-            {
-                if((otherFlags & PhysicsBodyFlags.RectangleShape) != 0)
-                {                    
-                    PolygonToCircleBodiesAreColliding(collisions, subStepCollisionsToResolve, vertices, centroids, radii, otherIndex, ownerIndex, otherFlags, ownerFlags);
-                }
-                else
-                {
-                    CircleBodiesAreColliding(collisions, centroids, subStepCollisionsToResolve, radii, ownerIndex, otherIndex, ownerFlags, otherFlags);
-                }         
-            }
-        }
+        // == Solid Polygon RigidBody ==.
+
+        info = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.SolidPolygonRigidBody);
+        Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonRigidBody(bvhIndices, collisions, info, centroidsX, centroidsY, vertices, 
+            subStepColliderCollisionsToResolve
+        );
+
+        info = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.KinematicPolygonRigidBody);
+        Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonRigidBody(bvhIndices, collisions, info, centroidsX, centroidsY, vertices, subStepColliderCollisionsToResolve);
+
+        info = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.TriggerPolygonRigidBody);
+        Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonRigidBody(bvhIndices, collisions, info, centroidsX, centroidsY, vertices);
+
+        info = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.SolidPolygonCollider);
+        Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonCollider(bvhIndices, collisions, info, centroidsX, centroidsY, vertices, subStepColliderCollisionsToResolve);
+
+        info = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.KinematicPolygonCollider);
+        Collisions.Detection.SolidPolygonRigidBody_KinematicPolygonCollider(bvhIndices, collisions, info, centroidsX, centroidsY, vertices, subStepColliderCollisionsToResolve);
+
+        // == kinematic Polygon RigidBody ==.
+
+        info = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.SolidPolygonCollider);
+        Collisions.Detection.KinematicPolygonRigidBody_To_SolidPolygonCollider(bvhIndices, collisions, info, centroidsX, centroidsY, 
+            vertices, subStepColliderCollisionsToResolve
+        );
+
+        // info = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.KinematicPolygonCollider);
+        // DetectCollisions_KinPolRig_To_SolPolCol(bvhIndices, collisions, info, centroidsX, centroidsY, vertices);
+
+        // info = CategorisedOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygon, BvhCategory.KinematicCircle);
     }
-
+    
     public static void PolygonToCircleBodiesAreColliding(CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve, 
         FsSoa_Vector2 vertices, Soa_Vector2 centroids, Span<float> radii, int ownerIndex, int otherIndex, PhysicsBodyFlags ownerFlags, 
         PhysicsBodyFlags otherFlags
@@ -1053,7 +1111,7 @@ public static class PhysicsSystem
             SAT.FindContactPoints(polyVertsX, polyVertsY, circPosX, circPosY, out float contactPointX, out float contactPointY);
             
             (int a, int b) collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, polyPosX, polyPosY, circPosX, circPosY, 
-                normalX, normalY, contactPointX, contactPointY, depth, ownerFlags, otherFlags
+                normalX, normalY, contactPointX, contactPointY, depth
             );
             SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.a);
             SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.b);
@@ -1083,7 +1141,7 @@ public static class PhysicsSystem
             SAT.FindContactPoints(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, out float contactPointX, out float contactPointY);
             
             (int a, int b) collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
-                normalX, normalY, contactPointX, contactPointY, depth, ownerFlags, otherFlags
+                normalX, normalY, contactPointX, contactPointY, depth
             );
 
             SwapBackArray.Append(subStepCollisionsToResolve, collisionIndices.a);
@@ -1132,13 +1190,12 @@ public static class PhysicsSystem
                 {
                     case 1:
                         CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
-                            normalX, normalY, firstContactPointX, firstContactPointY, depth, ownerFlags, otherFlags
+                            normalX, normalY, firstContactPointX, firstContactPointY, depth
                         );
                         break;
                     case 2:
                         CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
-                            normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, 
-                            ownerFlags, otherFlags
+                            normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth
                         );
                         break;
                 }
@@ -1150,12 +1207,12 @@ public static class PhysicsSystem
                 {
                     case 1:
                         CollisionManifold.SetDataOneWay(collisions, ownerIndex, otherIndex, otherPosX, otherPosY, normalX, normalY, 
-                            firstContactPointX, firstContactPointY, depth, otherFlags
+                            firstContactPointX, firstContactPointY, depth
                         );
                         break;
                     case 2:
                         CollisionManifold.SetDataOneWay(collisions, ownerIndex, otherIndex, otherPosX, otherPosY, normalX, normalY, 
-                            firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, otherFlags
+                            firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth
                         );
                         break;
                 }                
@@ -1168,12 +1225,12 @@ public static class PhysicsSystem
                 {
                     case 1:
                         CollisionManifold.SetDataOneWay(collisions, otherIndex, ownerIndex, ownerPosX, ownerPosY, normalX, normalY, 
-                            firstContactPointX, firstContactPointY, depth, ownerFlags
+                            firstContactPointX, firstContactPointY, depth
                         );
                         break;
                     case 2:
                         CollisionManifold.SetDataOneWay(collisions, otherIndex, ownerIndex, ownerPosX, ownerPosY, normalX, normalY, 
-                            firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, ownerFlags
+                            firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth
                         );
                         break;
                 }
@@ -1186,13 +1243,12 @@ public static class PhysicsSystem
                 {
                     case 1:
                         collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
-                            normalX, normalY, firstContactPointX, firstContactPointY, depth, ownerFlags, otherFlags
+                            normalX, normalY, firstContactPointX, firstContactPointY, depth
                         );
                         break;
                     case 2:
                         collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
-                            normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth, 
-                            ownerFlags, otherFlags
+                            normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth
                         );
                         break;
                 }
@@ -1245,8 +1301,20 @@ public static class PhysicsSystem
         }
     }
 
-    public static void ResolveColliderCollisions(CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve,
-        Soa_Transform transforms, PhysicsBodyFlags[] flags
+
+
+
+    /******************
+    
+        Collider Collision Resolution.
+    
+    *******************/
+
+
+
+
+    public static void ResolveColliderCollisions(CollisionManifoldState collisions, 
+        CategorisedOverlapArray<int> subStepCollisionsToResolve, Soa_Transform transforms
     )
     {
         // hoisting invariance.
@@ -1258,67 +1326,52 @@ public static class PhysicsSystem
         Span<float> normalX = collisions.Normals.X;
         Span<float> normalY = collisions.Normals.Y;
         Span<float> depths = collisions.Depths;
-        Span<PhysicsBodyFlags> otherFlags = collisions.ColliderFlags;
-        Span<PhysicsBodyFlags> ownerFlags = flags;
         int stride = collisions.Stride;
+        int ownerIndex; // always the solid collider.
+        int otherIndex; // always the kinematic or other solid collider.
 
-        Span<int> collisionsToResolve = subStepCollisionsToResolve.Data;
+        Span<int> collisionsToResolve;
 
-        for(int i = subStepCollisionsToResolve.Count; i > 0; i--)
-        {
+        // == resolve solid to solid collisions ==.
+        collisionsToResolve = CategorisedOverlapArray.GetOverlaps(subStepCollisionsToResolve,
+            SubStepResolutionBvhCategory.Solid,
+            SubStepResolutionBvhCategory.Solid
+        );
+
+        for(int i = 0; i < collisionsToResolve.Length; i++)
+        {            
             int collisionIndex = collisionsToResolve[i];
-            int ownerIndex = collisionIndex / stride; // int div truncates the remainder, always giving the owner index.
-            int otherIndex = collisionIndex % stride;
+            ownerIndex = collisionIndex / stride; // int div truncates the remainder, always giving the owner index.
+            otherIndex = collisionIndex % stride;
+            depth = depths[collisionIndex];
+            displacementX = normalX[collisionIndex] * depth * 0.5f;
+            displacementY = normalY[collisionIndex] * depth * 0.5f;
+            positionX[otherIndex] += displacementX;
+            positionY[otherIndex] += displacementY;
+            positionX[ownerIndex] -= displacementX;
+            positionY[ownerIndex] -= displacementY; 
+        }
 
-            // avoid duplicate collisions.
-            if(ownerIndex < otherIndex)
-            {
-                continue;
-            }
+        // == resolve solid to kinematic collisions ==.
 
-            ref PhysicsBodyFlags ownerFlag = ref ownerFlags[ownerIndex];
-            ref PhysicsBodyFlags otherFlag = ref otherFlags[collisionIndex];
+        collisionsToResolve = CategorisedOverlapArray.GetOverlaps(subStepCollisionsToResolve,
+            SubStepResolutionBvhCategory.Solid,
+            SubStepResolutionBvhCategory.Kinematic
+        );
 
-            if((ownerFlag & PhysicsBodyFlags.Kinematic) != 0 && (otherFlag & PhysicsBodyFlags.Kinematic) != 0)
-            {
-                // two kinematic bodies wont collide with eachother and
-                // trigger colliders dont collider with anything.
-                SwapBackArray.RemoveAt(subStepCollisionsToResolve, i);
-                continue;
-            }
-            else
-            {
-                depth = depths[collisionIndex];
-                displacementX = normalX[collisionIndex] * depth;
-                displacementY = normalY[collisionIndex] * depth;
-
-                if((ownerFlag & PhysicsBodyFlags.Kinematic) != 0)
-                {
-                    // only move away the 'other' if the 'owner' is kinematic.
-                    positionX[otherIndex] += displacementX;
-                    positionY[otherIndex] += displacementY;
-                }
-                else if((otherFlag & PhysicsBodyFlags.Kinematic) != 0)
-                {
-                    // only move away the 'owner' if the other is kinematic.
-                    positionX[ownerIndex] -= displacementX;
-                    positionY[ownerIndex] -= displacementY;
-                }
-                else
-                {
-                    // move 'owner' and 'other' away from eachother.
-                    displacementX *= 0.5f;
-                    displacementY *= 0.5f;
-                    positionX[otherIndex] += displacementX;
-                    positionY[otherIndex] += displacementY;
-                    positionX[ownerIndex] -= displacementX;
-                    positionY[ownerIndex] -= displacementY;
-                }
-            }
+        for(int i = 0; i < collisionsToResolve.Length; i++)
+        {            
+            int collisionIndex = collisionsToResolve[i];
+            ownerIndex = collisionIndex / stride; // int div truncates the remainder, always giving the owner index.
+            depth = depths[collisionIndex];
+            displacementX = normalX[collisionIndex] * depth;
+            displacementY = normalY[collisionIndex] * depth;
+            positionX[ownerIndex] -= displacementX;
+            positionY[ownerIndex] -= displacementY; 
         }
     }
 
-    public static void ResolveRigidBodyCollisions(CollisionManifoldState collisions, SwapBackArray<int> subStepCollisionsToResolve,
+    public static void ResolveRigidBodyCollisions(CollisionManifoldState collisions, StackArray<int> subStepCollisionsToResolve,
         Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<float> restitutions, Span<float> angularVelocities, 
         Span<float> inverseMasses, Span<float> inverseRotationalInertia, Span<float> kineticFriction, Span<float> staticFriction, 
         Span<float> mass, PhysicsBodyFlags[] flags
@@ -1339,9 +1392,6 @@ public static class PhysicsSystem
         Span<float> linearVelocitiesX = linearVelocities.X;
         Span<float> linearVelocitiesY = linearVelocities.Y;
         Span<bool> twoContactPoints = collisions.TwoContactPoints;
-        Span<PhysicsBodyFlags> ownerFlags = flags;
-        Span<PhysicsBodyFlags> otherFlags = collisions.ColliderFlags;
-
         Span<float> impulseMagnitudes = stackalloc float[MaxCollisionContactPoints]; 
         Span<float> contactPointsX = stackalloc float[MaxCollisionContactPoints];
         Span<float> contactPointsY = stackalloc float[MaxCollisionContactPoints];
@@ -1362,8 +1412,8 @@ public static class PhysicsSystem
                 continue;
             }
 
-            ref PhysicsBodyFlags ownerFlag = ref ownerFlags[ownerIndex];
-            ref PhysicsBodyFlags otherFlag = ref otherFlags[collisionIndex];
+            ref PhysicsBodyFlags ownerFlag = ref flags[ownerIndex];
+            ref PhysicsBodyFlags otherFlag = ref flags[otherIndex];
 
             if((ownerFlag & PhysicsBodyFlags.RigidBody) == 0 && (otherFlag & PhysicsBodyFlags.RigidBody) == 0)
                 continue;
@@ -1774,6 +1824,43 @@ public static class PhysicsSystem
         state.AngularVelocities[bodyIndex] = 0;
         state.Forces.X[bodyIndex] = 0;
         state.Forces.Y[bodyIndex] = 0;
+    }
+
+
+    /// <summary>
+    ///     Formats overlap data so that the <c>owner</c> of an overlap is always the <c>solid</c> collider.
+    /// </summary>
+    /// <param name="overlaps">the overlap instance to format.</param>
+    /// <param name="bvhLeafIndices">the mapping of bvh leaf indices onto a physics body.</param>
+    /// <param name="bvhCategories">the categories of all physics bodies when being put into the bvh.</param>
+    /// <exception cref="Exception"></exception>
+    public static void FormatCategorisedOverlaps(CategorisedLeafOverlaps overlaps, Span<int> bvhLeafIndices, Span<int> bvhCategories)
+    {
+        // hoisting invariance.
+        int temp;
+        int otherCategory;
+        int ownerCategory;
+
+        OverlapInfo kPtoSp = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonCollider, BvhCategory.SolidPolygonCollider);
+        for(int i = 0; i < kPtoSp.Length; i++)
+        {
+            // get the data about the owner and other.
+            ref int ownerLeaf = ref kPtoSp.OwnerLeafIndices[i];
+            ref int otherLeaf = ref kPtoSp.OtherLeafIndices[i];
+            ref int ownerIndex = ref bvhLeafIndices[ownerLeaf];
+            ref int otherIndex = ref bvhLeafIndices[otherLeaf];
+            ownerCategory = bvhCategories[ownerIndex];
+            otherCategory = bvhCategories[otherIndex];
+
+            // order the leaves in ascending order.
+            if(ownerCategory < otherCategory)
+            {                
+                temp = ownerLeaf;
+                ownerLeaf = otherLeaf;
+                otherLeaf = temp;
+            }
+
+        }
     }
 
 
