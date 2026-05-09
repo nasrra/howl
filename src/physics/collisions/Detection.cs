@@ -19,9 +19,9 @@ public static class Detection
 
         (int, int) collisionIndices = default;
 
-            // gather polygon a vertices.
-            PhysicsBody.GetPolygonVerticesUnsafe(vertices, ownerIndex, ref ownerVertsX, ref ownerVertsY);
-            PhysicsBody.GetPolygonVerticesUnsafe(vertices, otherIndex, ref otherVertsX, ref otherVertsY);
+        // gather polygon a vertices.
+        PhysicsBody.GetPolygonVerticesUnsafe(vertices, ownerIndex, ref ownerVertsX, ref ownerVertsY);
+        PhysicsBody.GetPolygonVerticesUnsafe(vertices, otherIndex, ref otherVertsX, ref otherVertsY);
 
         // narrow phase SAT intersect check.
         if(SAT.PolygonsIntersect(ownerVertsX, ownerVertsY, otherVertsX, otherVertsY, ownerPosX, ownerPosY, 
@@ -32,7 +32,6 @@ public static class Detection
                 out float firstContactPointX, out float firstContactPointY, out float secondContactPointX, out float secondContactPointY, 
                 out int contactCount
             );
-
 
             switch (contactCount)
             {
@@ -74,7 +73,7 @@ public static class Detection
         Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
     {
-                bool collided = false;
+        bool collided = false;
 
         for(int i = 0; i < info.Length; i++)
         {            

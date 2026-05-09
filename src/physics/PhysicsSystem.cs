@@ -1346,10 +1346,10 @@ public static class PhysicsSystem
             depth = depths[collisionIndex];
             displacementX = normalX[collisionIndex] * depth * 0.5f;
             displacementY = normalY[collisionIndex] * depth * 0.5f;
-            positionX[otherIndex] += displacementX;
-            positionY[otherIndex] += displacementY;
-            positionX[ownerIndex] -= displacementX;
-            positionY[ownerIndex] -= displacementY; 
+            positionX[otherIndex] -= displacementX;
+            positionY[otherIndex] -= displacementY;
+            positionX[ownerIndex] += displacementX;
+            positionY[ownerIndex] += displacementY; 
         }
 
         // == resolve solid to kinematic collisions ==.
@@ -1366,8 +1366,8 @@ public static class PhysicsSystem
             depth = depths[collisionIndex];
             displacementX = normalX[collisionIndex] * depth;
             displacementY = normalY[collisionIndex] * depth;
-            positionX[ownerIndex] -= displacementX;
-            positionY[ownerIndex] -= displacementY; 
+            positionX[ownerIndex] += displacementX;
+            positionY[ownerIndex] += displacementY; 
         }
     }
 
@@ -2007,8 +2007,8 @@ public static class PhysicsSystem
         float otherCentroidX;
         float otherCentroidY;
         
-        Math.Vector2 normalStart = default;
-        Math.Vector2 normalEnd = default;
+        Math.Vector2 normalStart;
+        Math.Vector2 normalEnd;
 
         int[] active = collisions.ActiveIndices;
         int[] activeCounts = collisions.ActiveIndicesCount;
@@ -2027,13 +2027,13 @@ public static class PhysicsSystem
                 int collisionIndex = active[elementIndex];
 
                 int ownerIndex = collisionIndex / collisions.Stride; // int div truncates the remainder, always giving the owner index.
-                // int otherIndex = otherIndices[collisionIndex];
+                int otherIndex = collisionIndex % collisions.Stride;
 
-                // // avoid duplicate collisions.
-                // if(ownerIndex > otherIndex)
-                // {
-                //     continue;
-                // }
+                // avoid duplicate collisions.
+                if(ownerIndex > otherIndex)
+                {
+                    continue;
+                }
 
                 // get normal data.
                 normalX = normalsX[collisionIndex];

@@ -365,7 +365,7 @@ public static class SAT
         // this is so that the resolution code will always push A out of B
         // and not push the two into each other when a smaller depth is found when 
         // looping through rect B.
-        if(Dot(rhsCentroidX - lhsCentroidX, rhsCentroidY - lhsCentroidY, normalX, normalY) < 0)
+        if(Dot(rhsCentroidX - lhsCentroidX, rhsCentroidY - lhsCentroidY, normalX, normalY) >= 0)
         {
             normalX = -normalX;
             normalY = -normalY;
