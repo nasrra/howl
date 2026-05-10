@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Howl.Collections;
 using Howl.DataStructures.Bvh;
 using Howl.Math;
@@ -8,16 +9,50 @@ namespace Howl.Physics.Collisions;
 
 public static class Detection
 {
-    public static (int, int) Polygon_To_Polygon(FsSoa_Vector2 vertices, CollisionManifoldState collisions, 
-        int ownerIndex, int otherIndex, float ownerPosX, float otherPosX, float ownerPosY, float otherPosY, ref bool collided
+
+
+
+
+    /******************
+    
+        Util.
+    
+    *******************/
+
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="collisions"></param>
+    /// <param name="vertices"></param>
+    /// <param name="centroidsX"></param>
+    /// <param name="centroidsY"></param>
+    /// <param name="ownerIndex"></param>
+    /// <param name="otherIndex"></param>
+    /// <param name="collided"></param>
+    /// <returns>
+    /// <remarks>
+    ///     <list type = "bullet">
+    ///         <item><see cref="CollisionIndexPair.AToB"/> = owner to other</item>
+    ///         <item><see cref="CollisionIndexPair.BToA"/> = other to owner</item>
+    ///     </list>
+    /// </remarks>
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static CollisionIndexPair Polygon_To_Polygon(CollisionManifoldState collisions, FsSoa_Vector2 vertices,
+        Span<float> centroidsX, Span<float> centroidsY, int ownerIndex, int otherIndex, ref bool collided
     )
     {
+        ref float ownerPosX = ref centroidsX[ownerIndex]; 
+        ref float otherPosX = ref centroidsX[otherIndex]; 
+        ref float ownerPosY = ref centroidsY[ownerIndex]; 
+        ref float otherPosY = ref centroidsY[otherIndex];
+
         Span<float> ownerVertsX = default;
         Span<float> ownerVertsY = default;
         Span<float> otherVertsX = default;
         Span<float> otherVertsY = default;
-
-        (int, int) collisionIndices = default;
 
         // gather polygon a vertices.
         PhysicsBody.GetPolygonVerticesUnsafe(vertices, ownerIndex, ref ownerVertsX, ref ownerVertsY);
@@ -33,28 +68,112 @@ public static class Detection
                 out int contactCount
             );
 
+            collided = true;
+
             switch (contactCount)
             {
                 case 1:
-                    collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                    return CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
                         normalX, normalY, firstContactPointX, firstContactPointY, depth
                     );
-                    break;
                 case 2:
-                    collisionIndices = CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                    return CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
                         normalX, normalY, firstContactPointX, firstContactPointY, secondContactPointX, secondContactPointY, depth
                     );
-                    break;
             }
 
+        }
+        
+        collided = false;
+        return default;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="collisions"></param>
+    /// <param name="vertices"></param>
+    /// <param name="centroidsX"></param>
+    /// <param name="centroidsY"></param>
+    /// <param name="radii"></param>
+    /// <param name="polyIndex"></param>
+    /// <param name="circIndex"></param>
+    /// <param name="collided"></param>
+    /// <returns>
+    /// <remarks>
+    ///     <list type = "bullet">
+    ///         <item><see cref="CollisionIndexPair.AToB"/> = poly to circle</item>
+    ///         <item><see cref="CollisionIndexPair.BToA"/> = circle to poly</item>
+    ///     </list>
+    /// </remarks>
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static CollisionIndexPair Polygon_To_Circle(CollisionManifoldState collisions, FsSoa_Vector2 vertices, 
+        Span<float> centroidsX, Span<float> centroidsY, Span<float> radii, int polyIndex, int circIndex, ref bool collided
+    )
+    {
+        ref float polyPosX = ref centroidsX[polyIndex]; 
+        ref float circPosX = ref centroidsX[circIndex]; 
+        ref float polyPosY = ref centroidsY[polyIndex]; 
+        ref float circPosY = ref centroidsY[circIndex];
+
+        Span<float> polyVertsX = default;
+        Span<float> polyVertsY = default;
+
+        // gather polygon a vertices.
+        PhysicsBody.GetPolygonVerticesUnsafe(vertices, polyIndex, ref polyVertsX, ref polyVertsY);
+
+        bool intersect = SAT.PolygonAndCircleIntersect(polyVertsX, polyVertsY, polyPosX, polyPosY, circPosX, circPosY, radii[circIndex], 
+            circPosX, circPosY, out float normalX, out float normalY, out float depth
+        );
+        // narrow phase intersect check.
+        if(intersect)
+        {            
+            SAT.FindContactPoints(polyVertsX, polyVertsY, circPosX, circPosY, out float contactPointX, out float contactPointY);
+            
             collided = true;
+
+            return CollisionManifold.SetDataTwoWay(collisions, polyIndex, circIndex, polyPosX, polyPosY, circPosX, circPosY, 
+                normalX, normalY, contactPointX, contactPointY, depth
+            );
         }
         else
         {
-            collided = false;            
+            collided = false;
+            return default;
         }
+    }
 
-        return collisionIndices;
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static CollisionIndexPair Circle_To_Circle(CollisionManifoldState collisions, Span<float> centroidsX, Span<float> centroidsY, 
+        Span<float> radii, int ownerIndex, int otherIndex, ref bool collided
+    )
+    {
+        ref float ownerPosX = ref centroidsX[ownerIndex];
+        ref float otherPosX = ref centroidsX[otherIndex];
+        ref float ownerPosY = ref centroidsY[ownerIndex];
+        ref float otherPosY = ref centroidsY[otherIndex];        
+        ref float ownerR = ref radii[ownerIndex];
+        ref float otherR = ref radii[otherIndex];
+
+        bool intersects = SAT.CirclesIntersect(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, otherR, out float normalX, 
+            out float normalY, out float depth
+        );
+    
+        if(intersects)
+        {
+            collided = true;
+
+            // submit the collision with contact points if one of the colliders needs them.
+            SAT.FindContactPoints(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, out float contactPointX, out float contactPointY);
+            
+            return CollisionManifold.SetDataTwoWay(collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
+                normalX, normalY, contactPointX, contactPointY, depth
+            );
+        }   
+
+        collided = false;
+        return default;
     }
 
 
@@ -70,7 +189,8 @@ public static class Detection
 
 
     public static void SolidPolygonRigidBody_To_SolidPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, OverlapInfo info, 
-        Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve 
+        Soa_Vector2 centroids, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
+        StackArray<int> rigidBodyCollisionsToResolve 
     )
     {
         bool collided = false;
@@ -82,24 +202,50 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
 
             // detect a collision.
-            (int aToB, int bToA) collisionIndices = Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            CollisionIndexPair collisionIndices = Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
 
             // resolve the collision.
             if (collided == true)
             {
-                CategorisedOverlapArray.Append(collisionIndices.aToB, subStepCollisionsToResolve, 
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
                     SubStepResolutionBvhCategory.Solid,
                     SubStepResolutionBvhCategory.Solid
                 );
+
+                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
             }
         }
     }
 
-    public static void SolidPolygonRigidBody_To_SolidCircleRigidBody()
+    public static void SolidPolygonRigidBody_To_SolidCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+        CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
+    )
     {
-        throw new NotImplementedException();
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Solid
+                );
+
+                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+            }
+        }
     }
 
     public static void SolidPolygonRigidBody_To_SolidCapsuleRigidbody()
@@ -108,8 +254,8 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_KinematicPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices, 
-        CategorisedOverlapArray<int> subStepCollisionsToResolve 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
+        CategorisedOverlapArray<int> subStepCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -121,24 +267,50 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             // detect a collision.
-            (int aToB, int bToA) collisionIndices = Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            CollisionIndexPair collisionIndices = Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
 
             // resolve the collision.
             if (collided == true)
             {
-                CategorisedOverlapArray.Append(collisionIndices.bToA, subStepCollisionsToResolve, 
+                CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
                     SubStepResolutionBvhCategory.Solid,
                     SubStepResolutionBvhCategory.Kinematic
                 );
+
+                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
             }
         }
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicCircleRigidBody()
+    public static void SolidPolygonRigidBody_To_KinematicCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+        CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
+    )
     {
-        throw new NotImplementedException();
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+
+                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+            }
+        }
     }
 
     public static void SolidPolygonRigidBody_To_KinematicCapsuleRigidBody()
@@ -147,7 +319,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, OverlapInfo info, 
-        Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices
+        Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -159,15 +331,27 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
 
             // detect a collision.
-            Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
         }
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCircleRigidBody()
+    public static void SolidPolygonRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
     {
-        throw new NotImplementedException();
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
     }
 
     public static void SolidPolygonRigidBody_To_TriggerCapsuleRigidBody()
@@ -176,7 +360,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
     {
@@ -189,14 +373,12 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             // detect a collision.
-            (int aToB, int bToA) collisionIndices = Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            CollisionIndexPair collisionIndices = Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
 
             // resolve the collision.
             if (collided == true)
             {
-                CategorisedOverlapArray.Append(collisionIndices.bToA, subStepCollisionsToResolve, 
+                CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
                     SubStepResolutionBvhCategory.Solid,
                     SubStepResolutionBvhCategory.Solid
                 );
@@ -204,9 +386,33 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonRigidBody_To_SolidCircleCollider()
+    public static void SolidPolygonRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
     {
-        throw new NotImplementedException();
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Solid
+                );
+            }
+        }
     }
 
     public static void SolidPolygonRigidBody_To_SolidCapsuleCollider()
@@ -215,7 +421,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
     {
@@ -228,14 +434,12 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             // detect a collision.
-            (int aToB, int bToA) collisionIndices = Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            CollisionIndexPair collisionIndices = Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
 
             // resolve the collision.
             if (collided == true)
             {
-                CategorisedOverlapArray.Append(collisionIndices.bToA, subStepCollisionsToResolve, 
+                CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
                     SubStepResolutionBvhCategory.Solid,
                     SubStepResolutionBvhCategory.Kinematic
                 );
@@ -243,9 +447,33 @@ public static class Detection
         }        
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicCircleCollider()
+    public static void SolidPolygonRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
     {
-        throw new NotImplementedException();
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }    
     }
 
     public static void SolidPolygonRigidBody_To_KinematicCapsuleCollider()
@@ -254,7 +482,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
     )
     {
         bool collided = false;
@@ -266,18 +494,339 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             // detect a collision.
-            Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
         }   
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCircleCollider()
+    public static void SolidPolygonRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }     
+    }
+
+    public static void SolidPolygonRigidBody_To_TriggerCapsuleCollider()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCapsuleCollider()
+
+
+
+    /******************
+    
+        Solid Circle RigidBody.
+    
+    *******************/
+
+
+    public static void SolidCircleRigidBody_To_SolidCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
+        StackArray<int> rigidBodyCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Solid
+                );
+
+                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+            }
+        }        
+    }
+
+    public static void SolidCircleRigidBody_To_SolidCapsuleRigidBody()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void SolidCircleRigidBody_To_KinematicPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+        CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+
+                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.BToA);
+            }
+        }
+    }
+
+    public static void SolidCircleRigidBody_To_KinematicCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
+        StackArray<int> rigidBodyCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+
+                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+            }
+        }                
+    } 
+
+    public static void SolidCircleRigidBody_To_KinematicCapsuleRigidBody()
+    {
+        throw new NotImplementedException();        
+    }
+
+    public static void SolidCircleRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+    
+    public static void SolidCircleRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }                
+    } 
+
+    public static void SolidCircleRigidBody_To_TriggerCapsuleRigidBody()
+    {
+        throw new NotImplementedException();
+    } 
+
+    public static void SolidCircleRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Solid
+                );
+            }
+        }
+    }
+
+    public static void SolidCircleRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Solid
+                );
+            }
+        }          
+    }
+
+    public static void SolidCircleRigidBody_To_SolidCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void SolidCircleRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }
+    }
+
+    public static void SolidCircleRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }
+    }
+
+    public static void SolidCircleRigidBody_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void SolidCircleRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void SolidCircleRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void SolidCircleRigidBody_To_TriggerCapsuleCollider()
     {
         throw new NotImplementedException();
     }
@@ -295,7 +844,7 @@ public static class Detection
 
 
     public static void KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
     )
     {
         bool collided = false;
@@ -307,15 +856,27 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             // detect a collision.
-            Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
         }           
     }
 
-    public static void KinematicPolygonRigidBody_To_KinematicCircleRigidBody()
+    public static void KinematicPolygonRigidBody_To_KinematicCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
     {
-        throw new NotImplementedException();
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+        }
     }
 
 
@@ -325,7 +886,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
     )
     {
         bool collided = false;
@@ -337,15 +898,27 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             // detect a collision.
-            Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
         }
     }
     
-    public static void KinematicPolygonRigidBody_To_TriggerCircleRigidBody()
+    public static void KinematicPolygonRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
     {
-        throw new NotImplementedException();
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+        }    
     }
     
     public static void KinematicPolygonRigidBody_To_TriggerCapsuleRigidBody()
@@ -353,10 +926,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public const int SolidPolygonCollider       = 9;
-
     public static void KinematicPolygonRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Span<float> centroidsX, Span<float> centroidsY, FsSoa_Vector2 vertices, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
     {
@@ -369,14 +940,12 @@ public static class Detection
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             // detect a collision.
-            (int aToB, int bToA) collisionIndices = Polygon_To_Polygon(vertices, collisions, ownerIndex, otherIndex, 
-                centroidsX[ownerIndex], centroidsX[otherIndex], centroidsY[ownerIndex], centroidsY[otherIndex], ref collided
-            );
+            CollisionIndexPair collisionIndices = Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
 
             // resolve the collision.
             if (collided == true)
             {
-                CategorisedOverlapArray.Append(collisionIndices.bToA, subStepCollisionsToResolve, 
+                CategorisedOverlapArray.Append(collisionIndices.BToA, subStepCollisionsToResolve, 
                     SubStepResolutionBvhCategory.Kinematic,
                     SubStepResolutionBvhCategory.Solid
                 );
@@ -384,12 +953,1231 @@ public static class Detection
         }  
     }
 
-    public const int SolidCircleCollider        = 10;
-    public const int SolidCapsuleCollider       = 11;
-    public const int KinematicPolygonCollider   = 12;
-    public const int KinematicCircleCollider    = 13;
-    public const int KinematicCapsuleCollider   = 14;
-    public const int TriggerPolygonCollider     = 15;
-    public const int TriggerCircleCollider      = 16;
-    public const int TriggerCapsuleCollider     = 17;
+    public static void KinematicPolygonRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }
+    }
+
+    public static void KinematicPolygonRigidBody_To_SolidCapsuleCollider()
+    {
+        throw new NotImplementedException();        
+    }
+
+    public static void KinematicPolygonRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }          
+    } 
+
+    public static void KinematicPolygonRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+
+    public static void KinematicPolygonRigidBody_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void KinematicPolygonRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }        
+    }
+
+    public static void KinematicPolygonRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void KinematicPolygonRigidBody_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    } 
+
+
+
+
+    /******************
+    
+        Kinematic Circle RigidBody.
+    
+    *******************/
+
+
+
+
+    public static void KinematicCircleRigidBody_To_KinematicCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_KinematicCapsuleRigidBody()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void KinematicCircleRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_TriggerCapsuleRigidBody()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void KinematicCircleRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);
+
+            if (collided)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_SolidCapsuleCollider()
+    {
+        throw new NotImplementedException();        
+    }
+
+    public static void KinematicCircleRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void KinematicCircleRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void KinematicCircleRigidBody_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    /******************
+    
+        Trigger Polygon Rigidbody.   
+    
+    *******************/
+
+
+
+    public static void TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }        
+    }
+
+    public static void TriggerPolygonRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void TriggerCapsuleRigidBody()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void TriggerPolygonRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }        
+    }
+
+    public static void TriggerPolygonRigidBody_To_SolidCircleCollider (Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void TriggerPolygonRigidBody_To_SolidCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void TriggerPolygonRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }        
+    }
+
+    public static void TriggerPolygonRigidBody_To_KinematicCircleCollider (Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void TriggerPolygonRigidBody_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void TriggerPolygonRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }        
+    }
+
+    public static void TriggerPolygonRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void TriggerPolygonRigidBody_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+
+
+
+    /******************
+    
+        Trigger Circle RigidBody.
+    
+    *******************/
+
+
+
+
+    public static void TriggerCircleRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void TriggerCircleRigidBody_To_TriggerCapsuleRigidBody()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void TriggerCircleRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void TriggerCircleRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void TriggerCircleRigidBody_To_SolidCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void TriggerCircleRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void TriggerCircleRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void TriggerCircleRigidBody_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void TriggerCircleRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void TriggerCircleRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void TriggerCircleRigidBody_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+
+
+
+    /******************
+    
+        Solid Polygon Collider.
+    
+    *******************/
+
+
+
+
+
+    public static void SolidPolygonCollider_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, OverlapInfo info, 
+        Soa_Vector2 centroids, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Solid
+                );
+            }
+        }
+    }
+
+    public static void SolidPolygonCollider_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Solid
+                );
+            }
+        }
+    }
+
+    public static void SolidPolygonCollider_To_SolidCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void SolidPolygonCollider_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, OverlapInfo info, 
+        Soa_Vector2 centroids, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }
+    }
+
+    public static void SolidPolygonCollider_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }
+    }
+
+    public static void SolidPolygonCollider_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void SolidPolygonCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }
+    }
+
+    public static void SolidPolygonCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+        }
+    }
+
+    public static void SolidPolygonCollider_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+
+
+
+    /******************
+    
+        Solid Circle Collider
+    
+    *******************/
+
+
+
+
+    public static void SolidCircleCollider_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Solid
+                );
+            }
+        }        
+    }
+
+    public static void SolidCircleCollider_To_SolidCapsuleCollider()
+    {
+        throw new NotImplementedException(); 
+    }
+
+    public static void SolidCircleCollider_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }
+    }
+
+    public static void SolidCircleCollider_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            CollisionIndexPair collisionIndices = Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);
+    
+            // resolve the collision.
+            if (collided == true)
+            {
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
+                    SubStepResolutionBvhCategory.Solid,
+                    SubStepResolutionBvhCategory.Kinematic
+                );
+            }
+        }        
+    }
+
+    public static void SolidCircleCollider_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void SolidCircleCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void SolidCircleCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }        
+    }
+
+    public static void SolidCircleCollider_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    /******************
+    
+        Kinematic Polygon Collider
+    
+    *******************/
+
+    public static void KinematicPolygonCollider_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }        
+    }
+
+    public static void KinematicPolygonCollider_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void KinematicPolygonCollider_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void KinematicPolygonCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }        
+    }
+
+    public static void KinematicPolygonCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void KinematicPolygonCollider_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+
+
+
+    /******************
+    
+        Kinematic Circle Collider.
+    
+    *******************/
+
+
+
+
+    public static void KinematicCircleCollider_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void KinematicCircleCollider_To_KinematicCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static void KinematicCircleCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void KinematicCircleCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void KinematicCircleCollider_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+
+
+
+    /******************
+    
+        Trigger Polygon Collider.
+    
+    *******************/
+
+
+
+
+    public static void TriggerPolygonCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {            
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            
+            // detect a collision.
+            Polygon_To_Polygon(collisions, vertices, centroids.X, centroids.Y, ownerIndex, otherIndex, ref collided);
+        }        
+    }
+
+    public static void TriggerPolygonCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Polygon_To_Circle(collisions, vertices, 
+                centroids.X, centroids.Y, radii, polyIndex, circIndex, ref collided
+            );    
+        }
+    }
+
+    public static void TriggerPolygonCollider_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();
+    }
+
+
+
+
+    /******************
+    
+        Trigger Circle Collider.
+    
+    *******************/
+
+
+
+
+    public static void TriggerCircleCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
+        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    )
+    {
+        bool collided = false;
+
+        for(int i = 0; i < info.Length; i++)
+        {
+            // get the owner and other data.
+            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+        
+            // detect a collision.
+            Circle_To_Circle(collisions, centroids.X, centroids.Y, radii, ownerIndex, otherIndex, ref collided);    
+        }
+    }
+
+    public static void TriggerCircleCollider_To_TriggerCapsuleCollider()
+    {
+        throw new NotImplementedException();        
+    }
 }

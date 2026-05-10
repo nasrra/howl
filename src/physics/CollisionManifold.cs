@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
 using Howl.Math;
+using Howl.Physics.Collisions;
 
 namespace Howl.Physics;
 
@@ -130,13 +131,9 @@ public static class CollisionManifold
     /// <param name="secondContactPointY">the y-component of the second contact point.</param>
     /// <param name="depth">the depth of the collision.</param>
     /// <returns>
-    ///     A tuple of the collision indices the data was written to.
-    ///     <list type = "bullet">
-    ///         <item> Item1 is the collision index that <c><paramref name="indexA"/></c> wrote to. </item>    
-    ///         <item> Item2 is the collision index that <c><paramref name="indexB"/></c> wrote to. </item>    
-    ///     </list>
+    ///     A collision index pair of the collision indices the data was written to.
     /// </returns>
-    public static (int collisionIndexA, int collisionIndexB) SetDataTwoWay(CollisionManifoldState state, int indexA, int indexB, float centroidXA, float centroidYA, 
+    public static CollisionIndexPair SetDataTwoWay(CollisionManifoldState state, int indexA, int indexB, float centroidXA, float centroidYA, 
         float centroidXB, float centroidYB, float normalX, float normalY, float firstContactPointX, float firstContactPointY, 
         float secondContactPointX, float secondContactPointY, float depth
     )
@@ -150,7 +147,7 @@ public static class CollisionManifold
             secondContactPointX, secondContactPointY, depth
         );
 
-        return(a,b);  
+        return new (a,b);  
     }
 
     /// <summary>
@@ -169,13 +166,9 @@ public static class CollisionManifold
     /// <param name="contactPointY">the y-component of the contact point.</param>
     /// <param name="depth">the depth of the collision.</param>
     /// <returns>
-    ///     A tuple of the collision indices the data was written to.
-    ///     <list type = "bullet">
-    ///         <item> Item1 is the collision index that <c><paramref name="indexA"/></c> wrote to. </item>    
-    ///         <item> Item2 is the collision index that <c><paramref name="indexB"/></c> wrote to. </item>  
-    ///     </list>
+    ///     A collision index pair of the collision indices the data was written to.
     /// </returns>
-    public static (int collisionIndexA, int collisionIndexB) SetDataTwoWay(CollisionManifoldState state, int indexA, int indexB, float centroidXA, float centroidYA, 
+    public static CollisionIndexPair SetDataTwoWay(CollisionManifoldState state, int indexA, int indexB, float centroidXA, float centroidYA, 
         float centroidXB, float centroidYB, float normalX, float normalY, float contactPointX, float contactPointY, 
         float depth
     )
@@ -185,7 +178,7 @@ public static class CollisionManifold
         // note: the normal reversing.
         int b = SetDataOneWay(state, indexB, indexA, centroidXA, centroidYA, -normalX, -normalY, contactPointX, contactPointY, depth);
         
-        return (a,b);
+        return new (a,b);
     }
 
 

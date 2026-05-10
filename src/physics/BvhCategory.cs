@@ -26,6 +26,9 @@ public static class BvhCategory
     public const int TriggerCircleCollider      = 16;
     public const int TriggerCapsuleCollider     = 17;
 
+
+
+
     /******************
     
         Util
