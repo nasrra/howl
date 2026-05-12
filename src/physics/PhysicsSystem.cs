@@ -33,6 +33,11 @@ public static class PhysicsSystem
         float[] collisionNormalsX = collisions.Normals.X;
         float[] collisionNormalsY = collisions.Normals.Y;
         float[] collisionDepths = collisions.Depths;
+        float[] collisionFirstContactPointsX = collisions.FirstContactPoints.X;
+        float[] collisionFirstContactPointsY = collisions.FirstContactPoints.Y;
+        float[] collisionSecondContactPointsX = collisions.SecondContactPoints.X;
+        float[] collisionSecondContactPointsY = collisions.SecondContactPoints.Y;
+        bool[] collisionTwoContactPoints = collisions.TwoContactPoints;
         int collisionsStride = collisions.Stride;
         Soa_Vector2 centroids = state.Centroids;
         FsSoa_Vector2 worldVertices = state.WorldVertices;
@@ -61,10 +66,10 @@ public static class PhysicsSystem
         float[] inverseRotationalInertia = state.InverseRotationalInertia;
         float[] previousPositionsX = state.PreviousStepPositions.X;
         float[] previousPositionsY = state.PreviousStepPositions.Y;
-        float[] density = state.PhysicsMaterials.Density;
-        float[] staticFriction = state.PhysicsMaterials.StaticFriction;
-        float[] kineticFriction = state.PhysicsMaterials.KineticFriction;
-        float[] restitution = state.PhysicsMaterials.Restitution;
+        float[] densities = state.PhysicsMaterials.Density;
+        float[] staticFrictions = state.PhysicsMaterials.StaticFriction;
+        float[] kineticFrictions = state.PhysicsMaterials.KineticFriction;
+        float[] restitutions = state.PhysicsMaterials.Restitution;
         float[] minAabbsX = state.MinAABBVertices.X;
         float[] minAabbsY = state.MinAABBVertices.Y;
         float[] maxAabbsX = state.MaxAABBVertices.X;
@@ -81,6 +86,17 @@ public static class PhysicsSystem
         float gravity = state.Gravity;
         float gravityDirectionX = state.GravityDirection.X;
         float gravityDirectionY = state.GravityDirection.Y;
+
+        // scratch buffers for rigid body reslution.
+        Span<float> impulseMagnitudes = stackalloc float[MaxCollisionContactPoints]; 
+        Span<float> contactPointsX = stackalloc float[MaxCollisionContactPoints];
+        Span<float> contactPointsY = stackalloc float[MaxCollisionContactPoints];
+        Span<float> impulsesX = stackalloc float[MaxCollisionContactPoints];
+        Span<float> impulsesY = stackalloc float[MaxCollisionContactPoints];
+        Span<float> distsAX = stackalloc float[MaxCollisionContactPoints];
+        Span<float> distsAY = stackalloc float[MaxCollisionContactPoints];
+        Span<float> distsBX = stackalloc float[MaxCollisionContactPoints];
+        Span<float> distsBY = stackalloc float[MaxCollisionContactPoints];
 
         // scale delta time by the substeps.
         deltaTime /= (float)subSteps;
@@ -99,7 +115,7 @@ public static class PhysicsSystem
             state.IntegrateBodyPropertiesStopwatch.Restart();
 
             IntegrateBodyProperties(scalesX, scalesY, masses, inverseMasses, rotationalInertia, inverseRotationalInertia, 
-                density, localRadii, worldRadii, localWidths, localHeights, flags, maxPhysicsBodyCount
+                densities, localRadii, worldRadii, localWidths, localHeights, flags, maxPhysicsBodyCount
             );
 
             state.IntegrateBodyPropertiesStopwatch.Stop();
@@ -396,10 +412,11 @@ public static class PhysicsSystem
             // Resolve RigidBody Collisions.
             // NOTE: ordering matters here, make sure this is below collision resolution.
             state.RigidBodyCollisionResolutionStepStopwatch.Restart();
-            ResolveRigidBodyCollisions(state.CollisionManifoldState, state.SubStepRigidbodyCollisionsToResolve, state.LinearVelocities, 
-                state.Centroids, state.PhysicsMaterials.Restitution, state.AngularVelocities, state.InverseMasses, 
-                state.InverseRotationalInertia, state.PhysicsMaterials.KineticFriction, state.PhysicsMaterials.StaticFriction, 
-                state.Masses, state.Flags
+            ResolveRigidBodyCollisions(rigidBodyCollisionsToResolve, collisionNormalsX, collisionNormalsY, centroidsX, centroidsY, 
+                collisionFirstContactPointsX, collisionFirstContactPointsY, collisionSecondContactPointsX, collisionSecondContactPointsY, 
+                linearVelocitiesX, linearVelocitiesY, restitutions, kineticFrictions, staticFrictions, angularVelocities, masses, inverseMasses, 
+                inverseRotationalInertia, collisionTwoContactPoints, contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, 
+                impulsesX, impulsesY, flags, collisionsStride
             );
             state.RigidBodyCollisionResolutionStepStopwatch.Stop();
 
@@ -1303,70 +1320,127 @@ public static class PhysicsSystem
         }
     }
 
-    public static void ResolveRigidBodyCollisions(CollisionManifoldState collisions, StackArray<int> subStepCollisionsToResolve,
-        Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<float> restitutions, Span<float> angularVelocities, 
-        Span<float> inverseMasses, Span<float> inverseRotationalInertia, Span<float> kineticFriction, Span<float> staticFriction, 
-        Span<float> mass, PhysicsBodyFlags[] flags
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    ///     <para>Remarks:</para>
+    ///     <para>Elements accesible by <c>collisionIndex</c>:</para>
+    ///     <list type="bullet">
+    ///         <item><paramref name="normalsX"/></item>
+    ///         <item><paramref name="normalsY"/></item>
+    ///         <item><paramref name="firstContactPointsX"/></item>
+    ///         <item><paramref name="firstContactPointsY"/></item>
+    ///         <item><paramref name="secondContactPointsX"/></item>
+    ///         <item><paramref name="secondContactPointsY"/></item>
+    ///         <item><paramref name="twoContactPoints"/></item>
+    ///     </list>
+    ///     <para>Elements accesible by <c>physicsBodyIndex</c>:</para>
+    ///     <list type="bullet">
+    ///         <item><paramref name="centroidsX"/></item>
+    ///         <item><paramref name="centroidsY"/></item>
+    ///         <item><paramref name="linearVelocitiesX"/></item>
+    ///         <item><paramref name="linearVelocitiesY"/></item>
+    ///         <item><paramref name="restitutions"/></item>
+    ///         <item><paramref name="kineticFrictions"/></item>
+    ///         <item><paramref name="staticFrictions"/></item>
+    ///         <item><paramref name="angularVelocities"/></item>
+    ///         <item><paramref name="masses"/></item>
+    ///         <item><paramref name="inverseMasses"/></item>
+    ///         <item><paramref name="inverseRotationalInertia"/></item>
+    ///         <item><paramref name="flags"/></item>
+    ///     </list>
+    ///     <para><c>NOTE:</c> All spans are scratch buffers and should have a length of <see cref="MaxCollisionContactPoints"/></para>
+    /// </remarks>
+    /// <param name="contactPointsX">scratch buffer</param>
+    /// <param name="contactPointsY">scratch buffer</param>
+    /// <param name="distsAX">scratch buffer</param>
+    /// <param name="distsAY">scratch buffer</param>
+    /// <param name="distsBX">scratch buffer</param>
+    /// <param name="distsBY">scratch buffer</param>
+    /// <param name="impulseMagnitudes">scratch buffer</param>
+    /// <param name="impulsesX">scratch buffer</param>
+    /// <param name="impulsesY">scratch buffer</param>
+    /// <param name="collisionsStride">the stride of elements in a collision entry.</param>
+    public static void ResolveRigidBodyCollisions(StackArray<int> collisionsToResolve, float[] normalsX, float[] normalsY,
+        float[] centroidsX, float[] centroidsY,float[] firstContactPointsX, float[] firstContactPointsY, 
+        float[] secondContactPointsX, float[] secondContactPointsY, float[] linearVelocitiesX, float[] linearVelocitiesY, 
+        float[] restitutions, float[] kineticFrictions, float[] staticFrictions, float[] angularVelocities,
+        float[] masses, float[] inverseMasses, float[] inverseRotationalInertia, bool[] twoContactPoints,
+        Span<float> contactPointsX, Span<float> contactPointsY, Span<float> distsAX, Span<float> distsAY, 
+        Span<float> distsBX, Span<float> distsBY, Span<float> impulseMagnitudes, Span<float> impulsesX, Span<float> impulsesY, 
+        PhysicsBodyFlags[] flags, int collisionsStride
     )
     {
-        // hoisting invariance.
-        Span<float> normalsX = collisions.Normals.X;
-        Span<float> normalsY = collisions.Normals.Y;
-        Span<float> depths = collisions.Depths;
-        Span<float> firstContactPointsX = collisions.FirstContactPoints.X;
-        Span<float> firstContactPointsY = collisions.FirstContactPoints.Y;
-        Span<float> secondContactPointsX = collisions.SecondContactPoints.X;
-        Span<float> secondContactPointsY = collisions.SecondContactPoints.Y;
-        Span<float> centroidsX = centroids.X;
-        Span<float> centroidsY = centroids.Y;
-        Span<float> linearVelocitiesX = linearVelocities.X;
-        Span<float> linearVelocitiesY = linearVelocities.Y;
-        Span<bool> twoContactPoints = collisions.TwoContactPoints;
-        Span<float> impulseMagnitudes = stackalloc float[MaxCollisionContactPoints]; 
-        Span<float> contactPointsX = stackalloc float[MaxCollisionContactPoints];
-        Span<float> contactPointsY = stackalloc float[MaxCollisionContactPoints];
+        int contactPointsCount;
+        float revNormalX = 0;
+        float revNormalY = 0;
 
-        int stride = collisions.Stride;
+        ref PhysicsBodyFlags ownerFlag = ref Unsafe.NullRef<PhysicsBodyFlags>();
+        ref PhysicsBodyFlags otherFlag = ref Unsafe.NullRef<PhysicsBodyFlags>();
+        ref float normalX = ref Unsafe.NullRef<float>();
+        ref float normalY = ref Unsafe.NullRef<float>();
+        ref float ownerCentroidX = ref Unsafe.NullRef<float>();
+        ref float ownerCentroidY = ref Unsafe.NullRef<float>();
+        ref float ownerRestitution = ref Unsafe.NullRef<float>();
+        ref float ownerAngularVelocity = ref Unsafe.NullRef<float>();
+        ref float ownerLinearVelocityX = ref Unsafe.NullRef<float>();
+        ref float ownerLinearVelocityY = ref Unsafe.NullRef<float>();
+        ref float ownerInverseMass = ref Unsafe.NullRef<float>();
+        ref float ownerInverseRotationalInertia = ref Unsafe.NullRef<float>();
+        ref float ownerStaticFriction = ref Unsafe.NullRef<float>();
+        ref float ownerKineticFriction = ref Unsafe.NullRef<float>();
+        ref float ownerMass = ref Unsafe.NullRef<float>();;
+        ref float otherCentroidX = ref Unsafe.NullRef<float>();
+        ref float otherCentroidY = ref Unsafe.NullRef<float>();
+        ref float otherRestitution = ref Unsafe.NullRef<float>();
+        ref float otherAngularVelocity = ref Unsafe.NullRef<float>();
+        ref float otherLinearVelocityX = ref Unsafe.NullRef<float>();
+        ref float otherLinearVelocityY = ref Unsafe.NullRef<float>();
+        ref float otherInverseMass = ref Unsafe.NullRef<float>();
+        ref float otherInverseRotationalInertia = ref Unsafe.NullRef<float>();
+        ref float otherStaticFriction = ref Unsafe.NullRef<float>();
+        ref float otherKineticFriction = ref Unsafe.NullRef<float>();
+        ref float otherMass = ref Unsafe.NullRef<float>();
 
-        Span<int> collisionsToResolve = subStepCollisionsToResolve.Data;
 
-        for(int i = 0; i < subStepCollisionsToResolve.Count; i++)
+
+        for(int i = 0; i < collisionsToResolve.Count; i++)
         {
             int collisionIndex = collisionsToResolve[i];
-            int ownerIndex = collisionIndex / stride; // int div truncates the remainder, always giving the owner index.
-            int otherIndex = collisionIndex % stride;
+            int ownerIndex = collisionIndex / collisionsStride; // int div truncates the remainder, always giving the owner index.
+            int otherIndex = collisionIndex % collisionsStride;
 
-            ref PhysicsBodyFlags ownerFlag = ref flags[ownerIndex];
-            ref PhysicsBodyFlags otherFlag = ref flags[otherIndex];
+            ownerFlag = ref flags[ownerIndex];
+            otherFlag = ref flags[otherIndex];
+            normalX = ref normalsX[collisionIndex];
+            normalY = ref normalsY[collisionIndex];
+            ownerCentroidX = ref centroidsX[ownerIndex];
+            ownerCentroidY = ref centroidsY[ownerIndex];
+            ownerRestitution = ref restitutions[ownerIndex];
+            ownerAngularVelocity = ref angularVelocities[ownerIndex];
+            ownerLinearVelocityX = ref linearVelocitiesX[ownerIndex];
+            ownerLinearVelocityY = ref linearVelocitiesY[ownerIndex];
+            ownerInverseMass = ref inverseMasses[ownerIndex];
+            ownerInverseRotationalInertia = ref inverseRotationalInertia[ownerIndex];
+            ownerStaticFriction = ref staticFrictions[ownerIndex];
+            ownerKineticFriction = ref kineticFrictions[ownerIndex];
+            ownerMass = ref masses[ownerIndex];
+            otherCentroidX = ref centroidsX[otherIndex];
+            otherCentroidY = ref centroidsY[otherIndex];
+            otherRestitution = ref restitutions[otherIndex];
+            otherAngularVelocity = ref angularVelocities[otherIndex];
+            otherLinearVelocityX = ref linearVelocitiesX[otherIndex];
+            otherLinearVelocityY = ref linearVelocitiesY[otherIndex];
+            otherInverseMass = ref inverseMasses[otherIndex];
+            otherInverseRotationalInertia = ref inverseRotationalInertia[otherIndex];
+            otherStaticFriction = ref staticFrictions[otherIndex];
+            otherKineticFriction = ref kineticFrictions[otherIndex];
+            otherMass = ref masses[otherIndex];
 
-            ref float normalX = ref normalsX[collisionIndex];
-            ref float normalY = ref normalsY[collisionIndex];
-            
-            ref float ownerCentroidX = ref centroidsX[ownerIndex];
-            ref float ownerCentroidY = ref centroidsY[ownerIndex];
-            ref float ownerRestitution = ref restitutions[ownerIndex];
-            ref float ownerAngularVelocity = ref angularVelocities[ownerIndex];
-            ref float ownerLinearVelocityX = ref linearVelocitiesX[ownerIndex];
-            ref float ownerLinearVelocityY = ref linearVelocitiesY[ownerIndex];
-            ref float ownerInverseMass = ref inverseMasses[ownerIndex];
-            ref float ownerInverseRotationalInertia = ref inverseRotationalInertia[ownerIndex];
-            ref float ownerStaticFriction = ref staticFriction[ownerIndex];
-            ref float ownerKineticFriction = ref kineticFriction[ownerIndex];
-            ref float ownerMass = ref mass[ownerIndex];
+            revNormalX = normalX * -1;
+            revNormalY = normalY * -1;
 
-            ref float otherCentroidX = ref centroidsX[otherIndex];
-            ref float otherCentroidY = ref centroidsY[otherIndex];
-            ref float otherRestitution = ref restitutions[otherIndex];
-            ref float otherAngularVelocity = ref angularVelocities[otherIndex];
-            ref float otherLinearVelocityX = ref linearVelocitiesX[otherIndex];
-            ref float otherLinearVelocityY = ref linearVelocitiesY[otherIndex];
-            ref float otherInverseMass = ref inverseMasses[otherIndex];
-            ref float otherInverseRotationalInertia = ref inverseRotationalInertia[otherIndex];
-            ref float otherStaticFriction = ref staticFriction[otherIndex];
-            ref float otherKineticFriction = ref kineticFriction[otherIndex];
-            ref float otherMass = ref mass[otherIndex];
-
-            int contactPointsCount;
             if (twoContactPoints[collisionIndex])
             {
                 contactPointsCount = 2;
@@ -1382,364 +1456,320 @@ public static class PhysicsSystem
                 contactPointsY[0] = firstContactPointsY[collisionIndex];
             }
 
-            // friction and rotational resolution are tightly coupled with eachother.
-            // do not remove them from eachother.
-            // if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0 || (otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
-            // {
-                // note: order matters here, do collision resolution
-                //  first do that the impulse magnitudes span is
-                // filled with the correct data to perform friction resolution.
-
-            // ResolveRigidBodyCollisionBasic(ref ownerLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityX,
-            //     ref otherLinearVelocityY, ref normalX, ref normalY, ref ownerRestitution, ref otherRestitution,
-            //     ref ownerInverseMass, ref otherInverseMass, ref ownerMass, ref otherMass,
-            //     ref ownerFlag, ref otherFlag
-            // );       
-
-            ResolveRigidBodyCollisionRotational(
-                impulseMagnitudes, 
-                contactPointsX, 
-                contactPointsY, 
-                ref ownerRestitution, 
-                ref otherRestitution, 
-                ref ownerCentroidX, 
-                ref ownerCentroidY, 
-                ref otherCentroidX, 
-                ref otherCentroidY, 
-                ref ownerAngularVelocity,
-                ref otherAngularVelocity, 
-                ref ownerLinearVelocityX, 
-                ref ownerLinearVelocityY, 
-                ref otherLinearVelocityX,
-                ref otherLinearVelocityY, 
-                ref normalX, 
-                ref normalY, 
-                ref ownerInverseMass, 
-                ref otherInverseMass,
-                ref ownerInverseRotationalInertia, 
-                ref otherInverseRotationalInertia, 
-                ref ownerFlag, 
-                ref otherFlag,
-                contactPointsCount
-            );  
-
-            ResolveRigidBodyFriction(impulseMagnitudes, contactPointsX, contactPointsY, ref ownerStaticFriction, ref otherStaticFriction, ref ownerKineticFriction,
-                ref otherKineticFriction, ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY, ref otherCentroidY, ref ownerAngularVelocity, 
-                ref otherAngularVelocity, ref ownerLinearVelocityX, ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, 
-                ref ownerInverseMass, ref otherInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref normalX, 
-                ref normalY, ref ownerFlag, ref otherFlag, contactPointsCount
-            );
-        }
-    }
-
-    public static void ResolveRigidBodyCollisionBasic(ref float ownerLinearVelocityX, ref float ownerLinearVelocityY, ref float otherLinearVelocityX,
-        ref float otherLinearVelocityY, ref float normalX, ref float normalY, ref float ownerRestitution, ref float otherRestitution,
-        ref float ownerInverseMass, ref float otherInverseMass, ref float ownerMass, ref float otherMass,
-        ref PhysicsBodyFlags ownerFlag, ref PhysicsBodyFlags otherFlag
-    )
-    {
-        float relativeVelocityX = otherLinearVelocityX - ownerLinearVelocityX;
-        float relativeVelocityY = otherLinearVelocityY - ownerLinearVelocityY;
-
-        // the magnitude of the relative velocity relative to the normal
-        float magnitude = Math.Math.Dot(relativeVelocityX, relativeVelocityY, normalX, normalY);
-
-        if(magnitude > 0)
-        {
-            return;
-        }
-
-        float restitution = MathF.Min(ownerRestitution, otherRestitution);
-
-        // magnitude of the impulse
-        float impulseMagnitude = -(1f + restitution) * magnitude;
-        impulseMagnitude /= ownerInverseMass + otherInverseMass;
-
-        float impulseForceX;
-        float impulseForceY;
-
-        if((ownerFlag & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlag & PhysicsBodyFlags.Trigger) == 0)
-        {
-            impulseForceX = -(impulseMagnitude / ownerMass * normalX);
-            impulseForceY = -(impulseMagnitude / ownerMass * normalY);
-            ownerLinearVelocityX += impulseForceX;
-            ownerLinearVelocityY += impulseForceY;
-        }
-
-        if((otherFlag & PhysicsBodyFlags.Kinematic) == 0 && (otherFlag & PhysicsBodyFlags.Trigger) == 0)
-        {
-            impulseForceX = impulseMagnitude / otherMass * normalX;
-            impulseForceY = impulseMagnitude / otherMass * normalY;
-            otherLinearVelocityX += impulseForceX;
-            otherLinearVelocityY += impulseForceY;
-        }
-    } 
-
-    public static void ResolveRigidBodyCollisionRotational(
-        Span<float> impulseMagnitudes, Span<float> contactPointsX, Span<float> contactPointsY, ref float ownerRestitution, ref float otherRestitution, 
-        ref float ownerCentroidX, ref float ownerCentroidY, ref float otherCentroidX, ref float otherCentroidY, ref float ownerAngularVelocity,
-        ref float otherAngularVelocity, ref float ownerLinearVelocityX, ref float ownerLinearVelocityY, ref float otherLinearVelocityX,
-        ref float otherLinearVelocityY, ref float normalX, ref float normalY, ref float ownerInverseMass, ref float otherInverseMass,
-        ref float ownerInverseRotationalInertia, ref float otherInverseRotationalInertia, ref PhysicsBodyFlags ownerFlag, ref PhysicsBodyFlags otherFlag,
-        int contactPointsCount
-    )
-    {
-        // operate on the reversed normal.
-        float revNormalX = normalX * -1;
-        float revNormalY = normalY * -1;
-
-        float restitution = MathF.Min(ownerRestitution, otherRestitution);
-
-        int count = contactPointsCount;
-        Span<float> impulsesX   = stackalloc float[count];
-        Span<float> impulsesY   = stackalloc float[count];
-        Span<float> distsAX     = stackalloc float[count];
-        Span<float> distsAY     = stackalloc float[count];
-        Span<float> distsBX     = stackalloc float[count];
-        Span<float> distsBY     = stackalloc float[count];
-        
-        for(int j = 0; j < count; j++)
-        {
-            float contactPointX = contactPointsX[j];
-            float contactPointY = contactPointsY[j];
-
-            // get the angular velocity to travel in.
-            distsAX[j] = contactPointX - ownerCentroidX;
-            distsAY[j] = contactPointY - ownerCentroidY;
-            distsBX[j] = contactPointX - otherCentroidX;
-            distsBY[j] = contactPointY - otherCentroidY;            
-            
-            float perpendicularAX = -distsAY[j];
-            float perpendicularAY = distsAX[j];
-            float perpendicularBX = -distsBY[j];
-            float perpendicularBY = distsBX[j];
-
-            float angularVelocityAX = perpendicularAX * ownerAngularVelocity;
-            float angularVelocityAY = perpendicularAY * ownerAngularVelocity;
-            float angularVelocityBX = perpendicularBX * otherAngularVelocity;
-            float angularVelocityBY = perpendicularBY * otherAngularVelocity;
-
-            float relativeVelocityX = (otherLinearVelocityX + angularVelocityBX) - (ownerLinearVelocityX + angularVelocityAX);
-            float relativeVelocityY = (otherLinearVelocityY + angularVelocityBY) - (ownerLinearVelocityY + angularVelocityAY);
-            
-            // the magnitude of the relative velocity relative to the normal
-            float magnitude = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
-
-            if(magnitude > 0)
+            if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0 || (otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
             {
-                continue;
+                goto ResolveCollisionRotational;
             }
-
-            // calculate the denominator.
-            float perpADotNormal = Math.Math.Dot(perpendicularAX, perpendicularAY, revNormalX, revNormalY);
-            float perpBDotNormal = Math.Math.Dot(perpendicularBX, perpendicularBY, revNormalX, revNormalY);
-            float denominator = ownerInverseMass + otherInverseMass + 
-                (perpADotNormal * perpADotNormal) * ownerInverseRotationalInertia +
-                (perpBDotNormal * perpBDotNormal) * otherInverseRotationalInertia;
-
-            // magnitude of the impulse
-            float impulseMagnitude = -(1f + restitution) * magnitude;
-            impulseMagnitude /= denominator;
-
-            // divide by the contact point count to ensure that impulse is evenly spread 
-            // across all contact points.
-            impulseMagnitude /= (float)contactPointsCount;
-            
-            // save the impulse magnitude for later friction resolution.
-            impulseMagnitudes[j] = impulseMagnitude;
-
-            impulsesX[j] = impulseMagnitude * revNormalX;
-            impulsesY[j] = impulseMagnitude * revNormalY;
-        }
-
-        // keep these outside the for loop so they dont allocate each time.
-        float impulseX;
-        float impulseY;
-        float distAX;
-        float distAY;
-        float distBX;
-        float distBY;
-
-        for(int j = 0; j < count; j++)
-        {                
-            impulseX = impulsesX[j];
-            impulseY = impulsesY[j];
-
-            // cross producting the dist and impulse gives a value indicating
-            // how much angular velocity - in radians - is needed to be applied based on the impulse direction.
-            // this is because cross producting two directions that are parallel to eachother, results in zero.
-            // which means that there should be no rotation if the collision is head on.
-            // but if the closer the two directions come to being perpendicular to one another,
-            // the larger the angular impulse will be, causing the body to rotate.
-            if((ownerFlag & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
+            else
             {
-                // always apply linear force, even if there is no rotational force to apply.
+                goto ResolveCollisionBasic;
+            }       
 
-                ownerLinearVelocityX += -impulseX * ownerInverseMass;
-                ownerLinearVelocityY += -impulseY * ownerInverseMass;
+            LoopEnd:
+            continue;
 
-                if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
-                {
-                    distAX = distsAX[j];
-                    distAY = distsAY[j];
-                    ownerAngularVelocity += -Math.Math.Cross(distAX, distAY, impulseX, impulseY) * ownerInverseRotationalInertia;
+            ResolveCollisionBasic:
+            {
+                for(int j = 0; j < contactPointsCount; j++)
+                {                    
+                    float relativeVelocityX = otherLinearVelocityX - ownerLinearVelocityX;
+                    float relativeVelocityY = otherLinearVelocityY - ownerLinearVelocityY;
+
+                    // the magnitude of the relative velocity relative to the normal
+                    float magnitude = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
+
+                    if(magnitude > 0)
+                    {
+                        // note: these have to be set to zero.
+                        // this function resuses these stack allocated spans
+                        // so without this, the loop could operate on garbage data from the previous step.
+                        impulseMagnitudes[j] = 0;
+                        continue;
+                    }
+
+                    float restitution = MathF.Min(ownerRestitution, otherRestitution);
+
+                    // magnitude of the impulse
+                    float impulseMagnitude = -(1f + restitution) * magnitude;
+                    impulseMagnitude /= ownerInverseMass + otherInverseMass;
+                    
+                    // divide by the contact point count to ensure that impulse is evenly spread 
+                    // across all contact points.
+                    impulseMagnitude /= (float)contactPointsCount;
+
+                    impulseMagnitudes[j] = impulseMagnitude;
                 }
-            }   
-            if((otherFlag & PhysicsBodyFlags.Kinematic) == 0 && (otherFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
-            {
-                // always apply linear force, even if there is no rotational force to apply.
 
-                otherLinearVelocityX += impulseX * otherInverseMass;
-                otherLinearVelocityY += impulseY * otherInverseMass;
 
-                if((otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
-                {
-                    distBX = distsBX[j];
-                    distBY = distsBY[j];
-                    otherAngularVelocity += Math.Math.Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
+                float impulseForceX;
+                float impulseForceY;
 
+                for(int j = 0; j < contactPointsCount; j++)
+                {                    
+                    float mag = impulseMagnitudes[j];
+                    if((ownerFlag & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlag & PhysicsBodyFlags.Trigger) == 0)
+                    {
+                        impulseForceX = -(mag / ownerMass * revNormalX);
+                        impulseForceY = -(mag / ownerMass * revNormalY);
+                        ownerLinearVelocityX += impulseForceX;
+                        ownerLinearVelocityY += impulseForceY;
+                    }
+
+                    if((otherFlag & PhysicsBodyFlags.Kinematic) == 0 && (otherFlag & PhysicsBodyFlags.Trigger) == 0)
+                    {
+                        impulseForceX = mag / otherMass * revNormalX;
+                        impulseForceY = mag / otherMass * revNormalY;
+                        otherLinearVelocityX += impulseForceX;
+                        otherLinearVelocityY += impulseForceY;
+                    }
                 }
+
+                goto ResolveFriction;    
+            }
+
+            ResolveCollisionRotational:
+            {
+                float restitution = MathF.Min(ownerRestitution, otherRestitution);
+                
+                for(int j = 0; j < contactPointsCount; j++)
+                {
+                    float contactPointX = contactPointsX[j];
+                    float contactPointY = contactPointsY[j];
+
+                    // get the angular velocity to travel in.
+                    distsAX[j] = contactPointX - ownerCentroidX;
+                    distsAY[j] = contactPointY - ownerCentroidY;
+                    distsBX[j] = contactPointX - otherCentroidX;
+                    distsBY[j] = contactPointY - otherCentroidY;            
+                    
+                    float perpendicularAX = -distsAY[j];
+                    float perpendicularAY = distsAX[j];
+                    float perpendicularBX = -distsBY[j];
+                    float perpendicularBY = distsBX[j];
+
+                    float angularVelocityAX = perpendicularAX * ownerAngularVelocity;
+                    float angularVelocityAY = perpendicularAY * ownerAngularVelocity;
+                    float angularVelocityBX = perpendicularBX * otherAngularVelocity;
+                    float angularVelocityBY = perpendicularBY * otherAngularVelocity;
+
+                    float relativeVelocityX = (otherLinearVelocityX + angularVelocityBX) - (ownerLinearVelocityX + angularVelocityAX);
+                    float relativeVelocityY = (otherLinearVelocityY + angularVelocityBY) - (ownerLinearVelocityY + angularVelocityAY);
+                    
+                    // the magnitude of the relative velocity relative to the normal
+                    float magnitude = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
+
+                    if(magnitude > 0)
+                    {
+                        // note: these have to be set to zero.
+                        // this function resuses these stack allocated spans
+                        // so without this, the loop could operate on garbage data from the previous step.
+                        impulseMagnitudes[j] = 0;
+                        impulsesX[j] = 0;
+                        impulsesY[j] = 0;
+                        continue;
+                    }
+
+                    // calculate the denominator.
+                    float perpADotNormal = Math.Math.Dot(perpendicularAX, perpendicularAY, revNormalX, revNormalY);
+                    float perpBDotNormal = Math.Math.Dot(perpendicularBX, perpendicularBY, revNormalX, revNormalY);
+                    float denominator = ownerInverseMass + otherInverseMass + 
+                        (perpADotNormal * perpADotNormal) * ownerInverseRotationalInertia +
+                        (perpBDotNormal * perpBDotNormal) * otherInverseRotationalInertia;
+
+                    // magnitude of the impulse
+                    float impulseMagnitude = -(1f + restitution) * magnitude;
+                    impulseMagnitude /= denominator;
+
+                    // divide by the contact point count to ensure that impulse is evenly spread 
+                    // across all contact points.
+                    impulseMagnitude /= (float)contactPointsCount;
+                    
+                    // save the impulse magnitude for later friction resolution.
+                    impulseMagnitudes[j] = impulseMagnitude;
+                    impulsesX[j] = impulseMagnitude * revNormalX;
+                    impulsesY[j] = impulseMagnitude * revNormalY;
+                }
+
+                // keep these outside the for loop so they dont allocate each time.
+                float impulseX;
+                float impulseY;
+                float distAX;
+                float distAY;
+                float distBX;
+                float distBY;
+
+                for(int j = 0; j < contactPointsCount; j++)
+                {                
+                    impulseX = impulsesX[j];
+                    impulseY = impulsesY[j];
+
+                    // cross producting the dist and impulse gives a value indicating
+                    // how much angular velocity - in radians - is needed to be applied based on the impulse direction.
+                    // this is because cross producting two directions that are parallel to eachother, results in zero.
+                    // which means that there should be no rotation if the collision is head on.
+                    // but if the closer the two directions come to being perpendicular to one another,
+                    // the larger the angular impulse will be, causing the body to rotate.
+                    if((ownerFlag & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
+                    {
+                        // always apply linear force, even if there is no rotational force to apply.
+
+                        ownerLinearVelocityX += -impulseX * ownerInverseMass;
+                        ownerLinearVelocityY += -impulseY * ownerInverseMass;
+
+                        if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+                        {
+                            distAX = distsAX[j];
+                            distAY = distsAY[j];
+                            ownerAngularVelocity += -Math.Math.Cross(distAX, distAY, impulseX, impulseY) * ownerInverseRotationalInertia;
+                        }
+                    }   
+                    if((otherFlag & PhysicsBodyFlags.Kinematic) == 0 && (otherFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
+                    {
+                        // always apply linear force, even if there is no rotational force to apply.
+
+                        otherLinearVelocityX += impulseX * otherInverseMass;
+                        otherLinearVelocityY += impulseY * otherInverseMass;
+
+                        if((otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+                        {
+                            distBX = distsBX[j];
+                            distBY = distsBY[j];
+                            otherAngularVelocity += Math.Math.Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
+                        }
+                    }
+                }
+
+                goto ResolveFriction;
+            }
+
+            ResolveFriction:
+            {                
+                // get an approximation of the friction values.
+                // this is faster than the actual physics way.
+                float staticFriction = 0;
+                float kineticFriction = 0;
+
+                staticFriction = (ownerStaticFriction + otherStaticFriction) * 0.5f;
+                kineticFriction = (ownerKineticFriction + otherKineticFriction) * 0.5f;
+                
+                for(int j = 0; j < contactPointsCount; j++)
+                {
+                    float contactPointX = contactPointsX[j];
+                    float contactPointY = contactPointsY[j];
+
+                    // get the angular velocity to travel in.
+                    distsAX[j] = contactPointX - ownerCentroidX;
+                    distsAY[j] = contactPointY - ownerCentroidY;
+                    distsBX[j] = contactPointX - otherCentroidX;
+                    distsBY[j] = contactPointY - otherCentroidY;            
+                    
+                    float perpendicularAX = -distsAY[j];
+                    float perpendicularAY = distsAX[j];
+                    float perpendicularBX = -distsBY[j];
+                    float perpendicularBY = distsBX[j];
+
+                    float angularVelocityAX = perpendicularAX * ownerAngularVelocity;
+                    float angularVelocityAY = perpendicularAY * ownerAngularVelocity;
+                    float angularVelocityBX = perpendicularBX * otherAngularVelocity;
+                    float angularVelocityBY = perpendicularBY * otherAngularVelocity;
+
+                    float relativeVelocityX = (otherLinearVelocityX + angularVelocityBX) - (ownerLinearVelocityX + angularVelocityAX);
+                    float relativeVelocityY = (otherLinearVelocityY + angularVelocityBY) - (ownerLinearVelocityY + angularVelocityAY);
+
+                    // this is the direction the body is travelling in along the contact point surface.
+                    float relativeDotNormal = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
+                    float tangentX = relativeVelocityX - relativeDotNormal * revNormalX;
+                    float tangentY = relativeVelocityY - relativeDotNormal * revNormalY;
+
+                    if(Math.Math.NearlyEqual((tangentX * tangentX) + (tangentY * tangentY), 0, 1e-12f))
+                    {
+                        // note: these have to be set to zero.
+                        // this function resuses these stack allocated spans
+                        // so without this, the loop could operate on garbage data from the previous step.
+                        impulsesX[j] = 0;
+                        impulsesY[j] = 0;    
+                        continue;
+                    }
+
+                    Math.Math.Normalise(tangentX, tangentY, out tangentX, out tangentY);
+
+                    // calculate the denominator.
+                    float perpADotTangent = Math.Math.Dot(perpendicularAX, perpendicularAY, tangentX, tangentY);
+                    float perpBDotTangent = Math.Math.Dot(perpendicularBX, perpendicularBY, tangentX, tangentY);
+                    float denominator = ownerInverseMass + otherInverseMass + 
+                        (perpADotTangent * perpADotTangent) * ownerInverseRotationalInertia +
+                        (perpBDotTangent * perpBDotTangent) * otherInverseRotationalInertia;
+
+                    // Calculate the DESIRED friction magnitude to stop all sliding.
+                    float frictionImpulseMag = -Math.Math.Dot(relativeVelocityX, relativeVelocityY, tangentX, tangentY) / denominator;
+
+                    // Coulomb's Law:
+                    // Limit that desire by the static friction. 
+                    float maxFriction = impulseMagnitudes[j] * staticFriction;
+
+                    // the the desired friction amount is greater than static friction
+                    // that means that the object should be sliding with kinetic friction.
+                    if (Math.Math.Abs(frictionImpulseMag) > maxFriction)
+                    {
+                        // Note: We multiply by the SIGN of frictionImpulseMag to keep the direction correct.
+                        frictionImpulseMag = (impulseMagnitudes[j] * kineticFriction) * MathF.Sign(frictionImpulseMag);
+                    }
+
+                    // Apply the capped magnitude to the tangent vector
+                    impulsesX[j] = frictionImpulseMag * tangentX;
+                    impulsesY[j] = frictionImpulseMag * tangentY;
+                }
+
+                // keep these outside the for loop so they dont allocate each time.
+                float impulseX;
+                float impulseY;
+                float distAX;
+                float distAY;
+                float distBX;
+                float distBY;
+
+                for(int j = 0; j < contactPointsCount; j++)
+                {                
+                    impulseX = impulsesX[j];
+                    impulseY = impulsesY[j];
+
+                    // cross producting the dist and impulse gives a value indicating
+                    // how much angular velocity - in radians - is needed to be applied based on the impulse direction.
+                    // this is because cross producting two directions that are parallel to eachother, results in zero.
+                    // which means that there should be no rotation if the collision is head on.
+                    // but if the closer the two directions come to being perpendicular to one another,
+                    // the larger the angular impulse will be, causing the body to rotate.
+                    if((ownerFlag & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
+                    {
+                        // always apply linear force, even if there is no rotational force to apply.
+                        ownerLinearVelocityX += -impulseX * ownerInverseMass;
+                        ownerLinearVelocityY += -impulseY * ownerInverseMass;
+
+                        if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+                        {
+                            distAX = distsAX[j];
+                            distAY = distsAY[j];
+                            ownerAngularVelocity += -Math.Math.Cross(distAX, distAY, impulseX, impulseY) * ownerInverseRotationalInertia;
+                        }
+                    }
+                    if((otherFlag & PhysicsBodyFlags.Kinematic) == 0 && (otherFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
+                    {
+                        // always apply linear force, even if there is no rotational force to apply.
+                        otherLinearVelocityX += impulseX * otherInverseMass;
+                        otherLinearVelocityY += impulseY * otherInverseMass;
+
+                        if((otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+                        {
+                            distBX = distsBX[j];
+                            distBY = distsBY[j];
+                            otherAngularVelocity += Math.Math.Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
+                        }       
+                    }   
+                } 
+
+                goto LoopEnd;
             }
         }
-    }
-
-    public static void ResolveRigidBodyFriction(Span<float> collisionResolutionImpulseMagnitudes, Span<float> contactPointsX,
-        Span<float> contactPointsY, ref float ownerStaticFriction, ref float otherStaticFriction, ref float ownerKineticFriction,
-        ref float otherKineticFriction, ref float ownerCentroidX, ref float otherCentroidX, ref float ownerCentroidY,
-        ref float otherCentroidY, ref float ownerAngularVelocity, ref float otherAngularVelocity, 
-        ref float ownerLinearVelocityX, ref float otherLinearVelocityX, ref float ownerLinearVelocityY, 
-        ref float otherLinearVelocityY, ref float ownerInverseMass, ref float otherInverseMass, 
-        ref float ownerInverseRotationalInertia, ref float otherInverseRotationalInertia, ref float normalX, 
-        ref float normalY, ref PhysicsBodyFlags ownerFlag, ref PhysicsBodyFlags otherFlag, int contactPointCount
-    )
-    {
-        // operate on the reversed normal.
-
-        float revNormalX = normalX * -1;
-        float revNormalY = normalY * -1;
-
-        Span<float> impulsesX   = stackalloc float[contactPointCount];
-        Span<float> impulsesY   = stackalloc float[contactPointCount];
-        Span<float> distsAX     = stackalloc float[contactPointCount];
-        Span<float> distsAY     = stackalloc float[contactPointCount];
-        Span<float> distsBX     = stackalloc float[contactPointCount];
-        Span<float> distsBY     = stackalloc float[contactPointCount];
-        
-        // get an approximation of the friction values.
-        // this is faster than the actual physics way.
-        float staticFriction = 0;
-        float kineticFriction = 0;
-
-        staticFriction = (ownerStaticFriction + otherStaticFriction) * 0.5f;
-        kineticFriction = (ownerKineticFriction + otherKineticFriction) * 0.5f;
-        
-        for(int j = 0; j < contactPointCount; j++)
-        {
-            float contactPointX = contactPointsX[j];
-            float contactPointY = contactPointsY[j];
-
-            // get the angular velocity to travel in.
-            distsAX[j] = contactPointX - ownerCentroidX;
-            distsAY[j] = contactPointY - ownerCentroidY;
-            distsBX[j] = contactPointX - otherCentroidX;
-            distsBY[j] = contactPointY - otherCentroidY;            
-            
-            float perpendicularAX = -distsAY[j];
-            float perpendicularAY = distsAX[j];
-            float perpendicularBX = -distsBY[j];
-            float perpendicularBY = distsBX[j];
-
-            float angularVelocityAX = perpendicularAX * ownerAngularVelocity;
-            float angularVelocityAY = perpendicularAY * ownerAngularVelocity;
-            float angularVelocityBX = perpendicularBX * otherAngularVelocity;
-            float angularVelocityBY = perpendicularBY * otherAngularVelocity;
-
-            float relativeVelocityX = (otherLinearVelocityX + angularVelocityBX) - (ownerLinearVelocityX + angularVelocityAX);
-            float relativeVelocityY = (otherLinearVelocityY + angularVelocityBY) - (ownerLinearVelocityY + angularVelocityAY);
-
-            // this is the direction the body is travelling in along the contact point surface.
-            float relativeDotNormal = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
-            float tangentX = relativeVelocityX - relativeDotNormal * revNormalX;
-            float tangentY = relativeVelocityY - relativeDotNormal * revNormalY;
-
-            if(Math.Math.NearlyEqual((tangentX * tangentX) + (tangentY * tangentY), 0, 1e-12f))
-                continue;
-
-            Math.Math.Normalise(tangentX, tangentY, out tangentX, out tangentY);
-
-            // calculate the denominator.
-            float perpADotTangent = Math.Math.Dot(perpendicularAX, perpendicularAY, tangentX, tangentY);
-            float perpBDotTangent = Math.Math.Dot(perpendicularBX, perpendicularBY, tangentX, tangentY);
-            float denominator = ownerInverseMass + otherInverseMass + 
-                (perpADotTangent * perpADotTangent) * ownerInverseRotationalInertia +
-                (perpBDotTangent * perpBDotTangent) * otherInverseRotationalInertia;
-
-            // Calculate the DESIRED friction magnitude to stop all sliding.
-            float frictionImpulseMag = -Math.Math.Dot(relativeVelocityX, relativeVelocityY, tangentX, tangentY) / denominator;
-
-            // Coulomb's Law:
-            // Limit that desire by the static friction. 
-            float maxFriction = collisionResolutionImpulseMagnitudes[j] * staticFriction;
-
-            // the the desired friction amount is greater than static friction
-            // that means that the object should be sliding with kinetic friction.
-            if (Math.Math.Abs(frictionImpulseMag) > maxFriction)
-            {
-                // Note: We multiply by the SIGN of frictionImpulseMag to keep the direction correct.
-                frictionImpulseMag = (collisionResolutionImpulseMagnitudes[j] * kineticFriction) * MathF.Sign(frictionImpulseMag);
-            }
-
-            // Apply the capped magnitude to the tangent vector
-            impulsesX[j] = frictionImpulseMag * tangentX;
-            impulsesY[j] = frictionImpulseMag * tangentY;
-        }
-
-        // keep these outside the for loop so they dont allocate each time.
-        float impulseX;
-        float impulseY;
-        float distAX;
-        float distAY;
-        float distBX;
-        float distBY;
-
-        for(int j = 0; j < contactPointCount; j++)
-        {                
-            impulseX = impulsesX[j];
-            impulseY = impulsesY[j];
-
-            // cross producting the dist and impulse gives a value indicating
-            // how much angular velocity - in radians - is needed to be applied based on the impulse direction.
-            // this is because cross producting two directions that are parallel to eachother, results in zero.
-            // which means that there should be no rotation if the collision is head on.
-            // but if the closer the two directions come to being perpendicular to one another,
-            // the larger the angular impulse will be, causing the body to rotate.
-            if((ownerFlag & PhysicsBodyFlags.Kinematic) == 0 && (ownerFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
-            {
-                // always apply linear force, even if there is no rotational force to apply.
-                ownerLinearVelocityX += -impulseX * ownerInverseMass;
-                ownerLinearVelocityY += -impulseY * ownerInverseMass;
-
-                if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
-                {
-                    distAX = distsAX[j];
-                    distAY = distsAY[j];
-                    ownerAngularVelocity += -Math.Math.Cross(distAX, distAY, impulseX, impulseY) * ownerInverseRotationalInertia;
-                }
-            }
-            if((otherFlag & PhysicsBodyFlags.Kinematic) == 0 && (otherFlag & PhysicsBodyFlags.Trigger) == 0) // is dynamic
-            {
-                // always apply linear force, even if there is no rotational force to apply.
-                otherLinearVelocityX += impulseX * otherInverseMass;
-                otherLinearVelocityY += impulseY * otherInverseMass;
-
-                if((otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
-                {
-                    distBX = distsBX[j];
-                    distBY = distsBY[j];
-                    otherAngularVelocity += Math.Math.Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
-                }       
-            }   
-        } 
     }
 
     // / <summary>
