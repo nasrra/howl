@@ -114,7 +114,7 @@ public class Soa_Leaf : IDisposable
         Span<float> aabbsMaxX = aabbs.MaxX;
         Span<float> aabbsMaxY = aabbs.MaxY;
 
-        return Aabb.Intersect(aabbsMinX[leafIndex], aabbsMinY[leafIndex], aabbsMaxX[leafIndex], aabbsMaxY[leafIndex], minX, minY, maxX, maxY);
+        return Aabb.Intersect(aabbsMinX[leafIndex], minX, aabbsMinY[leafIndex], minY, aabbsMaxX[leafIndex], maxX, aabbsMaxY[leafIndex], maxY);
     }
 
     /// <summary>

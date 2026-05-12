@@ -319,7 +319,7 @@ public class BoundingVolumeHierarchy : IDisposable
             int otherBranch = 0;
             while(otherBranch < branches.AppendCount)
             {
-                if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[otherBranch], branchMinY[otherBranch], branchMaxX[otherBranch], branchMaxY[otherBranch]))
+                if(!Aabb.Intersect(minX, branchMinX[otherBranch], minY, branchMinY[otherBranch], maxX, branchMaxX[otherBranch], maxY, branchMaxY[otherBranch]))
                 {
                     // skip the entire subtree.
                     otherBranch+= branchSubtreeSizes[otherBranch];
@@ -407,7 +407,7 @@ public class BoundingVolumeHierarchy : IDisposable
             int otherBranch = 0;
             while(otherBranch < branches.AppendCount)
             {
-                if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[otherBranch], branchMinY[otherBranch], branchMaxX[otherBranch], branchMaxY[otherBranch]))
+                if(!Aabb.Intersect(minX, branchMinX[otherBranch], minY, branchMinY[otherBranch], maxX, branchMaxX[otherBranch], maxY, branchMaxY[otherBranch]))
                 {
                     // skip the entire subtree.
                     otherBranch+= branchSubtreeSizes[otherBranch];
@@ -497,7 +497,7 @@ public class BoundingVolumeHierarchy : IDisposable
         int otherBranch = 0;
         while(otherBranch < branches.AppendCount)
         {
-            if(!Aabb.Intersect(minX, minY, maxX, maxY, branchMinX[otherBranch], branchMinY[otherBranch], branchMaxX[otherBranch], branchMaxY[otherBranch]))
+            if(!Aabb.Intersect(minX, branchMinX[otherBranch], minY, branchMinY[otherBranch], maxX, branchMaxX[otherBranch], maxY, branchMaxY[otherBranch]))
             {
                 // skip the entire subtree.
                 otherBranch+= branchSubtreeSizes[otherBranch];

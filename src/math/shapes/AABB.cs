@@ -339,39 +339,30 @@ public struct Aabb
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Intersect(in Aabb a, in Aabb b)
     {
-        return Intersect(
-            a.MinX,
-            a.MinY,
-            a.MaxX,
-            a.MaxY,
-            b.MinX,
-            b.MinY,
-            b.MaxX,
-            b.MaxY
-        );
+        return Intersect(a.MinX, b.MinX, a.MinY, b.MinY, a.MaxX, b.MaxX, a.MaxY, b.MaxY);
     }
 
 
     /// <summary>
     /// Checks whether two Axis-Aligned-Bounding-Boxes are intersecting.
     /// </summary>
-    /// <param name="aMinX">the x-component of the minimum vertex from aabbb a.</param>
-    /// <param name="aMinY">the y-component of the minimum vertex from aabbb a.</param>
-    /// <param name="aMaxX">the x-component of the maximum vertex from aabbb a.</param>
-    /// <param name="aMaxY">the y-component of the maximum vertex from aabbb a.</param>
-    /// <param name="bMinX">the x-component of the minimum vertex from aabbb b.</param>
-    /// <param name="bMinY">the y-component of the minimum vertex from aabbb b.</param>
-    /// <param name="bMaxX">the x-component of the maximum vertex from aabbb b.</param>
-    /// <param name="bMaxY">the y-component of the maximum vertex from aabbb b.</param>
+    /// <param name="minXA">the x-component of the minimum vertex from aabbb a.</param>
+    /// <param name="minYA">the y-component of the minimum vertex from aabbb a.</param>
+    /// <param name="maxXA">the x-component of the maximum vertex from aabbb a.</param>
+    /// <param name="maxYA">the y-component of the maximum vertex from aabbb a.</param>
+    /// <param name="minXB">the x-component of the minimum vertex from aabbb b.</param>
+    /// <param name="minYB">the y-component of the minimum vertex from aabbb b.</param>
+    /// <param name="maxXB">the x-component of the maximum vertex from aabbb b.</param>
+    /// <param name="maxYB">the y-component of the maximum vertex from aabbb b.</param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(float aMinX,float aMinY, float aMaxX, float aMaxY, float bMinX, float bMinY, float bMaxX, float bMaxY)
+    public static bool Intersect(float minXA, float minXB, float minYA, float minYB, float maxXA, float maxXB, float maxYA, float maxYB)
     {        
-        if(aMaxX <= bMinX || bMaxX <= aMinX)
+        if(maxXA <= minXB || maxXB <= minXA)
         {
             return false;
         }
-        if (aMaxY <= bMinY || bMaxY <= aMinY)
+        if (maxYA <= minYB || maxYB <= minYA)
         {
             return false;
         }
