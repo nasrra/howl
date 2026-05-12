@@ -23,7 +23,20 @@ public unsafe static class HowlApp
 
 
 
+    /// <summary>
+    ///     The amount of time in miliseconds that each fixed update should move forwards by.
+    /// </summary>
     public const float FixedDt = 1f / 60f;
+
+    /// <summary>
+    ///     The amount of time that has to be store in the fixed update accumulator
+    ///     (in milliseconds) before slowing down the game; avoiding the "spiral of death".
+    /// </summary>
+    /// <remarks>
+    ///     note that the value is not greater than or equal to the FixedDt * 2, 
+    ///     this is so that two fixed update steps are never called at a single time.
+    /// </remarks>
+    public const float AccumulatorSlowDownDt = 1f / 30.0167f;
 
 
 
@@ -44,16 +57,22 @@ public unsafe static class HowlApp
     public static void Update(HowlAppState state, float deltaTime)
     {
         // try fixed update.s
-        state.FixedUpdateTime += deltaTime;
-        if(state.FixedUpdateTime >= FixedDt)
+        state.FixedUpdateTimeAccumulator += deltaTime;
+
+        if(state.FixedUpdateTimeAccumulator > AccumulatorSlowDownDt)
+        {
+            state.FixedUpdateTimeAccumulator = AccumulatorSlowDownDt;
+        }
+
+        if(state.FixedUpdateTimeAccumulator >= FixedDt)
         {            
             state.FixedUpdateStepStopwatch.Restart();
             
             // iterate and do fixed update steps.
-            while (state.FixedUpdateTime >= FixedDt)
+            while (state.FixedUpdateTimeAccumulator >= FixedDt)
             {
                 state.FixedUpdateCallback?.Invoke(FixedDt);
-                state.FixedUpdateTime -= FixedDt;
+                state.FixedUpdateTimeAccumulator -= FixedDt;
             }
 
             state.FixedUpdateStepStopwatch.Stop();

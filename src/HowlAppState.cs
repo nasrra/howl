@@ -87,7 +87,7 @@ public class HowlAppState
     /// <summary>
     ///     The current fixed update step time.
     /// </summary>
-    public float FixedUpdateTime = 0;
+    public float FixedUpdateTimeAccumulator = 0;
 
     /// <summary>
     ///     The world-space camera used for renderering.
