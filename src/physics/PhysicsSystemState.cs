@@ -55,12 +55,20 @@ public sealed class PhysicsSystemState
     public FsSoa_Vector2 WorldVertices;
 
     /// <summary>
-    /// The local to world-space transforms for all physics bodies.
+    ///     The local to world-space transforms for all physics bodies.
     /// </summary>
     /// <remarks>
-    /// Use a <c>physicsBodyIndex</c> integer to access elements.
+    ///     Use a <c>physicsBodyIndex</c> integer to access elements.
     /// </remarks>
     public Soa_Transform Transforms;
+
+    /// <summary>
+    ///     The positions of the physics bodies from the previous step.
+    /// </summary>
+    /// <remarks>
+    ///     Use a <c>physicsBodyIndex</c> integer to access elements.
+    /// </remarks>
+    public Soa_Vector2 PreviousStepPositions;
 
     /// <summary>
     /// The force values of all all physics bodies that will be applied in the rigidbody movement step.
@@ -203,6 +211,11 @@ public sealed class PhysicsSystemState
     public int[] BvhLeafIndices;
 
     /// <summary>
+    ///     The padding for each pysics body leaf AABB in the bvh.
+    /// </summary>
+    public float[] BvhLeafPaddings;
+
+    /// <summary>
     /// Gets and sets the vertex entry indices available for reuse and allocation in LocalRadii.
     /// </summary>
     public StackArray<int> FreeVertexEntries;
@@ -218,6 +231,11 @@ public sealed class PhysicsSystemState
     ///     The indices in the <c>CollisionManifoldState</c> of rigidbody collisions to resolve in the current substep.
     /// </summary>
     public StackArray<int> SubStepRigidbodyCollisionsToResolve;
+
+    /// <summary>
+    ///     The indices of physics bodies that are currently active.
+    /// </summary>
+    public SwapBackArray<int> Active;
 
     /// <summary>
     ///     The amount of allocated solid polygon colliders.
@@ -557,6 +575,11 @@ public sealed class PhysicsSystemState
     /// </summary>
     public bool DrawCentroids;
 
+    /// <summary>
+    ///     Toggle for drawing bvh leaves.
+    /// </summary>
+    public bool DrawLeaves;
+
 
 
 
@@ -638,6 +661,9 @@ public sealed class PhysicsSystemState
         FreeVertexEntries           = new(physicsBodyCount);
         EntityIds                   = new GenId[physicsBodyCount];
         BvhLeafIndices              = new int[physicsBodyCount];
+        PreviousStepPositions       = new(physicsBodyCount);
+        BvhLeafPaddings             = new float[physicsBodyCount];
+        Active                      = new(physicsBodyCount);
 
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();
@@ -672,7 +698,6 @@ public sealed class PhysicsSystemState
         CollisionOtherColour            = Colour.LightBlue;
         NormalColour                    = Colour.Red;
         BvhBranchColour                 = Colour.Yellow;
-
 
         // Counters.
         MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;

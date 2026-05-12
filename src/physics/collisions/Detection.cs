@@ -144,6 +144,24 @@ public static class Detection
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="collisions"></param>
+    /// <param name="centroidsX"></param>
+    /// <param name="centroidsY"></param>
+    /// <param name="radii"></param>
+    /// <param name="ownerIndex"></param>
+    /// <param name="otherIndex"></param>
+    /// <param name="collided"></param>
+    /// <returns>
+    /// <remarks>
+    ///     <list type = "bullet">
+    ///         <item><see cref="CollisionIndexPair.AToB"/> = owner to other</item>
+    ///         <item><see cref="CollisionIndexPair.BToA"/> = other to owner</item>
+    ///     </list>
+    /// </remarks>
+    /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static CollisionIndexPair Circle_To_Circle(CollisionManifoldState collisions, Span<float> centroidsX, Span<float> centroidsY, 
         Span<float> radii, int ownerIndex, int otherIndex, ref bool collided
@@ -188,7 +206,7 @@ public static class Detection
 
 
 
-    public static void SolidPolygonRigidBody_To_SolidPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, OverlapInfo info, 
+    public static void SolidPolygonRigidBody_To_SolidPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, CollisionManifoldState collisions, 
         Soa_Vector2 centroids, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
         StackArray<int> rigidBodyCollisionsToResolve 
     )
@@ -217,8 +235,8 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonRigidBody_To_SolidCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+    public static void SolidPolygonRigidBody_To_SolidCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
     )
     {
@@ -253,8 +271,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
+    public static void SolidPolygonRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> subStepCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
     )
     {
@@ -282,8 +300,8 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+    public static void SolidPolygonRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
     )
     {
@@ -318,8 +336,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, OverlapInfo info, 
-        Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void SolidPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -335,8 +353,8 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void SolidPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -359,8 +377,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
+    public static void SolidPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
     {
@@ -386,8 +404,8 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+    public static void SolidPolygonRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
@@ -420,8 +438,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
+    public static void SolidPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
     {
@@ -447,8 +465,8 @@ public static class Detection
         }        
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+    public static void SolidPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
@@ -481,8 +499,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
+    public static void SolidPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
     )
     {
         bool collided = false;
@@ -498,8 +516,8 @@ public static class Detection
         }   
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void SolidPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -532,8 +550,8 @@ public static class Detection
     *******************/
 
 
-    public static void SolidCircleRigidBody_To_SolidCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
+    public static void SolidCircleRigidBody_To_SolidCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
         StackArray<int> rigidBodyCollisionsToResolve
     )
     {
@@ -566,8 +584,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidCircleRigidBody_To_KinematicPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+    public static void SolidCircleRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
     )
     {
@@ -597,9 +615,9 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleRigidBody_To_KinematicCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
-        StackArray<int> rigidBodyCollisionsToResolve
+    public static void SolidCircleRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -631,8 +649,8 @@ public static class Detection
         throw new NotImplementedException();        
     }
 
-    public static void SolidCircleRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void SolidCircleRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -650,8 +668,8 @@ public static class Detection
         }
     }
     
-    public static void SolidCircleRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void SolidCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -672,8 +690,9 @@ public static class Detection
         throw new NotImplementedException();
     } 
 
-    public static void SolidCircleRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void SolidCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -700,8 +719,9 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void SolidCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -731,8 +751,9 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidCircleRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void SolidCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -759,8 +780,9 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void SolidCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -790,8 +812,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidCircleRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void SolidCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -809,8 +831,8 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void SolidCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -843,8 +865,8 @@ public static class Detection
 
 
 
-    public static void KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
+    public static void KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
     )
     {
         bool collided = false;
@@ -860,8 +882,8 @@ public static class Detection
         }           
     }
 
-    public static void KinematicPolygonRigidBody_To_KinematicCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicPolygonRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -885,8 +907,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
+    public static void KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices 
     )
     {
         bool collided = false;
@@ -902,8 +924,8 @@ public static class Detection
         }
     }
     
-    public static void KinematicPolygonRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -926,9 +948,9 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void KinematicPolygonRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
-        CategorisedOverlapArray<int> subStepCollisionsToResolve 
+    public static void KinematicPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
+        CategorisedOverlapArray<int> subStepCollisionsToResolve
     )
     {
         bool collided = false;
@@ -953,8 +975,9 @@ public static class Detection
         }  
     }
 
-    public static void KinematicPolygonRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void KinematicPolygonRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -986,8 +1009,8 @@ public static class Detection
         throw new NotImplementedException();        
     }
 
-    public static void KinematicPolygonRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void KinematicPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1003,8 +1026,8 @@ public static class Detection
         }          
     } 
 
-    public static void KinematicPolygonRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1028,8 +1051,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void KinematicPolygonRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void KinematicPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1045,8 +1068,8 @@ public static class Detection
         }        
     }
 
-    public static void KinematicPolygonRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1081,8 +1104,8 @@ public static class Detection
 
 
 
-    public static void KinematicCircleRigidBody_To_KinematicCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void KinematicCircleRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1103,8 +1126,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicCircleRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1122,8 +1145,8 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void KinematicCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1144,8 +1167,9 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void KinematicCircleRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void KinematicCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -1172,8 +1196,9 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void KinematicCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -1202,8 +1227,8 @@ public static class Detection
         throw new NotImplementedException();        
     }
 
-    public static void KinematicCircleRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1221,8 +1246,8 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void KinematicCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1243,8 +1268,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1262,8 +1287,8 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void KinematicCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1284,6 +1309,9 @@ public static class Detection
         throw new NotImplementedException();
     }
 
+
+
+
     /******************
     
         Trigger Polygon Rigidbody.   
@@ -1292,8 +1320,8 @@ public static class Detection
 
 
 
-    public static void TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1309,8 +1337,8 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void TriggerPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1333,8 +1361,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void TriggerPolygonRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void TriggerPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1350,8 +1378,8 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonRigidBody_To_SolidCircleCollider (Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void TriggerPolygonRigidBody_To_SolidCircleCollider (OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1374,8 +1402,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void TriggerPolygonRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void TriggerPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1391,8 +1419,8 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonRigidBody_To_KinematicCircleCollider (Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void TriggerPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1415,8 +1443,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void TriggerPolygonRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void TriggerPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1432,8 +1460,8 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void TriggerPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1468,8 +1496,8 @@ public static class Detection
 
 
 
-    public static void TriggerCircleRigidBody_To_TriggerCircleRigidBody(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void TriggerCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1490,8 +1518,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void TriggerCircleRigidBody_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void TriggerCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1509,8 +1537,8 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void TriggerCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1531,8 +1559,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void TriggerCircleRigidBody_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void TriggerCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1550,8 +1578,8 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void TriggerCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1572,8 +1600,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void TriggerCircleRigidBody_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void TriggerCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1591,8 +1619,8 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void TriggerCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1626,8 +1654,9 @@ public static class Detection
 
 
 
-    public static void SolidPolygonCollider_To_SolidPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, OverlapInfo info, 
-        Soa_Vector2 centroids, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void SolidPolygonCollider_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -1652,8 +1681,8 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonCollider_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+    public static void SolidPolygonCollider_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
@@ -1686,8 +1715,9 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonCollider_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, OverlapInfo info, 
-        Soa_Vector2 centroids, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void SolidPolygonCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -1712,8 +1742,8 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonCollider_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+    public static void SolidPolygonCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
@@ -1746,8 +1776,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void SolidPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1763,8 +1793,8 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void SolidPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1799,8 +1829,9 @@ public static class Detection
 
 
 
-    public static void SolidCircleCollider_To_SolidCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void SolidCircleCollider_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -1830,8 +1861,8 @@ public static class Detection
         throw new NotImplementedException(); 
     }
 
-    public static void SolidCircleCollider_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
+    public static void SolidCircleCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
@@ -1859,8 +1890,9 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleCollider_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve
+    public static void SolidCircleCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii, 
+        CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
     {
         bool collided = false;
@@ -1890,8 +1922,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void SolidCircleCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void SolidCircleCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1909,8 +1941,8 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void SolidCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -1937,8 +1969,8 @@ public static class Detection
     
     *******************/
 
-    public static void KinematicPolygonCollider_To_KinematicPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void KinematicPolygonCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1954,8 +1986,8 @@ public static class Detection
         }        
     }
 
-    public static void KinematicPolygonCollider_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicPolygonCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -1978,8 +2010,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void KinematicPolygonCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void KinematicPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -1995,8 +2027,8 @@ public static class Detection
         }        
     }
 
-    public static void KinematicPolygonCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -2031,8 +2063,8 @@ public static class Detection
 
 
 
-    public static void KinematicCircleCollider_To_KinematicCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void KinematicCircleCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -2053,8 +2085,8 @@ public static class Detection
         throw new NotImplementedException();
     }
 
-    public static void KinematicCircleCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void KinematicCircleCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -2072,8 +2104,8 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void KinematicCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;
@@ -2106,8 +2138,8 @@ public static class Detection
 
 
 
-    public static void TriggerPolygonCollider_To_TriggerPolygonCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices
+    public static void TriggerPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices
     )
     {
         bool collided = false;
@@ -2123,8 +2155,8 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
+    public static void TriggerPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
         bool collided = false;
@@ -2159,8 +2191,8 @@ public static class Detection
 
 
 
-    public static void TriggerCircleCollider_To_TriggerCircleCollider(Span<int> bvhIndices, CollisionManifoldState collisions, 
-        OverlapInfo info, Soa_Vector2 centroids, Span<float> radii
+    public static void TriggerCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+        CollisionManifoldState collisions, Soa_Vector2 centroids, Span<float> radii
     )
     {
         bool collided = false;

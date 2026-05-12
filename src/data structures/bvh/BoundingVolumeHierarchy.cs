@@ -699,6 +699,23 @@ public class BoundingVolumeHierarchy : IDisposable
 
     }
 
+    public static void DrawLeaves(HowlAppState app, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
+    {
+        for(int i = 0; i < bvh.Leaves.AppendCount; i++)
+        {
+            Debug.Draw.WireRect(
+                app,
+                new Rectangle(
+                    new Vector2(bvh.Leaves.Aabbs.MinX[i], bvh.Leaves.Aabbs.MinY[i]), 
+                    new Vector2(bvh.Leaves.Aabbs.MaxX[i], bvh.Leaves.Aabbs.MaxY[i])
+                ), 
+                colour,
+                Graphics.DrawSpace.World
+            );
+        }
+
+    }
+
 
 
 

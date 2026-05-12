@@ -50,7 +50,7 @@ public class TransformTest
 
         Vector2 newPosition = new Vector2(-12,12);
 
-        transform.TranslateTo(newPosition);
+        transform.Warp(newPosition);
 
         Assert.Equal(newPosition, transform.Position);
     }

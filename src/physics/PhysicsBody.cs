@@ -1312,8 +1312,9 @@ public static class PhysicsBody
         {
             return result;
         }
+        
         int physicsBodyIndex = GetPhysicsBodyIndex(genId);
-
+        SwapBackArray.Append(state.Active, physicsBodyIndex);
         state.AlloctedPhysicsBodyCount++;
 
         // handle flags.
@@ -1351,9 +1352,15 @@ public static class PhysicsBody
 
         // apply data.
         SetTransformUnsafe(state, physicsBodyIndex, transform);
+
+        // set this so that the previous position isnt garbage from previous steps.
+        state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
+        state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
+
         PhysicsSystem.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
         state.LocalRadii[physicsBodyIndex] = shape.Radius;
         state.EntityIds[physicsBodyIndex] = entityId;
+
         return GenIdResult.Ok;
     }
     
@@ -1388,8 +1395,9 @@ public static class PhysicsBody
         {
             return result;
         }
-        int physicsBodyIndex = GetPhysicsBodyIndex(genId);
 
+        int physicsBodyIndex = GetPhysicsBodyIndex(genId);
+        SwapBackArray.Append(state.Active, physicsBodyIndex);
         state.AlloctedPhysicsBodyCount++;
 
         // handle flags.
@@ -1425,6 +1433,11 @@ public static class PhysicsBody
         // apply data.
         PhysicsSystem.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
         SetTransformUnsafe(state, physicsBodyIndex, transform);
+
+        // set this so that the previous position isnt garbage from previous steps.
+        state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
+        state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
+
         Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, material.Density, 
             material.Restitution, physicsBodyIndex
         );
@@ -1526,8 +1539,9 @@ public static class PhysicsBody
         {
             return result;
         }
-        int physicsBodyIndex = GetPhysicsBodyIndex(genId);
 
+        int physicsBodyIndex = GetPhysicsBodyIndex(genId);
+        SwapBackArray.Append(state.Active, physicsBodyIndex);
         state.AlloctedPhysicsBodyCount++;
 
         // handle flags.
@@ -1565,6 +1579,10 @@ public static class PhysicsBody
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
         state.EntityIds[physicsBodyIndex] = entityId;
+
+        // set this so that the previous position isnt garbage from previous steps.
+        state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
+        state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
 
         // rigidbodies should respond to this like a kinematic rigidbody if it is solid or kinematic. 
         state.Masses[physicsBodyIndex] = 0;
@@ -1605,6 +1623,7 @@ public static class PhysicsBody
         }
 
         int physicsBodyIndex = GetPhysicsBodyIndex(genId);
+        SwapBackArray.Append(state.Active, physicsBodyIndex);
         state.AlloctedPhysicsBodyCount++;
         
         // handle flags.
@@ -1640,6 +1659,11 @@ public static class PhysicsBody
         PolygonRectangle polyRect = new(shape);
         PhysicsSystem.AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
         SetTransformUnsafe(state, physicsBodyIndex, transform);
+
+        // set this so that the previous position isnt garbage from previous steps.
+        state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
+        state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
+
         state.LocalHeights[physicsBodyIndex] = shape.Height;
         state.LocalWidths[physicsBodyIndex] = shape.Width;
         state.EntityIds[physicsBodyIndex] = entityId;

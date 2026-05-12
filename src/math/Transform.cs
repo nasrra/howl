@@ -14,42 +14,75 @@ public struct Transform
     public static Transform Identity = new Transform(new Vector2(0,0), new Vector2(1,1), 0);
 
     /// <summary>
-    /// Gets and sets the position.
+    ///     the position.
     /// </summary>
+    /// <remarks>
+    ///     <para>Remarks:</para> 
+    ///     <para>this should only be directly modified in special cases.</para>
+    ///     <para>instead use the functions:</para>
+    ///     <list type = "bullet">
+    ///         <item><see cref="Translate(ref Transform, Vector2)"/></item>
+    ///         <item><see cref="Warp(ref Transform, Vector2)"/></item>
+    ///     </list>
+    /// </remarks>
     public Vector2 Position;
 
     /// <summary>
-    /// Gets and sets the scale.
+    ///     The scale.
     /// </summary>
+    /// <remarks>
+    ///     <para>Remarks:</para>
+    ///     <para>this should only be directly modified in special cases.</para>
+    ///     <para>instead use the functions:</para>
+    ///     <list type = "bullet">
+    ///         <item><see cref="SetScale(ref Transform, Vector2)"/></item>
+    ///     </list>
+    /// </remarks>
     public Vector2 Scale;
 
     /// <summary>
-    /// The rotation in radians.
+    ///     the rotational value - in radians.
     /// </summary>
-    private float rotation;
+    /// <remarks>
+    ///     <para>Remarks:</para>
+    ///     <para>this should only be directly modified in special cases.</para>
+    ///     <para>instead use the functions:</para>
+    ///     <list type = "bullet">
+    ///         <item><see cref="Rotate(ref Transform, float)"/></item>
+    ///     </list>
+    /// </remarks>
+    public float Rotation;
 
     /// <summary>
-    /// Gets and sets the rotational value - in radians.
+    ///     the sin value of the rotation.
     /// </summary>
-    public float Rotation {
-        get => rotation;
-        set
-        {
-            rotation = value;
-            Sin = MathF.Sin(value);
-            Cos = MathF.Cos(value);
-        }
-    }
-
-    /// <summary>
-    /// Gets and sets the sin value of the rotation.
-    /// </summary>
+    /// <remarks>
+    ///     <para>Remarks:</para>
+    ///     <para>this should only be directly modified in special cases.</para>
+    ///     <para>instead use the functions:</para>
+    ///     <list type = "bullet">
+    ///         <item><see cref="Rotate(ref Transform, float)"/></item>
+    ///     </list>
+    /// </remarks>
     public float Sin;
 
     /// <summary>
-    /// Gets and sets the cos value of the rotation.
+    ///     the cos value of the rotation.
     /// </summary>
+    /// <remarks>
+    ///     <para>Remarks:</para>
+    ///     <para>this should only be directly modified in special cases.</para>
+    ///     <para>instead use the functions:</para>
+    ///     <list type = "bullet">
+    ///         <item><see cref="Rotate(ref Transform, float)"/></item>
+    ///     </list>
+    /// </remarks>
     public float Cos;
+
+    /// <summary>
+    ///     the current step of being <c>dirty</c>.
+    /// </summary>
+    public int IsDirtyStep;
 
     /// <summary>
     /// Constructs a Transform.
@@ -104,21 +137,52 @@ public struct Transform
         }
     }
 
+    /// <summary>
+    ///     Translates a transform's position.
+    /// </summary>
+    /// <param name="transform">the transform to translate.</param>
+    /// <param name="traslation">the displacement to add to the position.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public void Translate(Vector2 traslation)
+    public static void Translate(ref Transform transform, Vector2 traslation)
     {
-        Position += traslation;
+        transform.Position += traslation;
+        transform.IsDirtyStep++;
     }
 
+    /// <summary>
+    ///     Sets a transform's position.
+    /// </summary>
+    /// <param name="transform">the transform to set.</param>
+    /// <param name="position">the position to warp to.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public void TranslateTo(Vector2 position)
+    public static void Warp(ref Transform transform, Vector2 position)
     {
-        Position = position;
+        transform.Position = position;
+        transform.IsDirtyStep++;
     }
 
+    /// <summary>
+    ///     Sets the scale of a transform.
+    /// </summary>
+    /// <param name="transform">the transform to set.</param>
+    /// <param name="scale">the scale to set to.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public void SetScale(Vector2 scale)
+    public static void SetScale(ref Transform transform, Vector2 scale)
     {
-        Scale = scale;
+        transform.Scale = scale;
+        transform.IsDirtyStep++;
+    }
+
+    /// <summary>
+    ///     Rotates a transform.
+    /// </summary>
+    /// <param name="transform">the transform to rotate.</param>
+    /// <param name="radians">the amount in radians to rotate by.</param>
+    public static void Rotate(ref Transform transform, float radians)
+    {
+        transform.Rotation += radians;
+        transform.Sin = MathF.Sin(transform.Rotation);
+        transform.Cos = MathF.Cos(transform.Rotation);
+        transform.IsDirtyStep++;
     }
 }

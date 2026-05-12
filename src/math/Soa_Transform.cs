@@ -35,7 +35,7 @@ public class Soa_Transform
         Positions    = new(length);
         Scales       = new(length);
         Sins         = new float[length];
-        Coses         = new float[length];
+        Coses        = new float[length];
     }
 
     /// <summary>
