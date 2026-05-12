@@ -19,12 +19,12 @@ public class Soa_Transform
     /// <summary>
     /// Gets and sets the Sin value of a rotation.
     /// </summary>
-    public float[] Sins;
+    public float[] Sines;
 
     /// <summary>
     /// Gets and sets the Cos value of a rotation.
     /// </summary>
-    public float[] Coses;
+    public float[] Cosines;
 
     /// <summary>
     /// Creates a new SoaTransform instance.
@@ -34,8 +34,8 @@ public class Soa_Transform
     {
         Positions    = new(length);
         Scales       = new(length);
-        Sins         = new float[length];
-        Coses        = new float[length];
+        Sines         = new float[length];
+        Cosines        = new float[length];
     }
 
     /// <summary>
@@ -51,8 +51,8 @@ public class Soa_Transform
         transform.Position.Y = soa.Positions.Y[index];
         transform.Scale.X = soa.Scales.X[index];
         transform.Scale.Y = soa.Scales.Y[index];
-        transform.Sin = soa.Sins[index];
-        transform.Cos = soa.Coses[index];
+        transform.Sin = soa.Sines[index];
+        transform.Cos = soa.Cosines[index];
     }
 
     /// <summary>
@@ -85,8 +85,8 @@ public class Soa_Transform
         soa.Positions.Y[insertIndex] = posY;
         soa.Scales.X[insertIndex] = scaleX;
         soa.Scales.Y[insertIndex] = scaleY;
-        soa.Sins[insertIndex] = sin;
-        soa.Coses[insertIndex] = cos;        
+        soa.Sines[insertIndex] = sin;
+        soa.Cosines[insertIndex] = cos;        
     }
 
     /// <summary>
@@ -95,8 +95,8 @@ public class Soa_Transform
     /// <param name="soa">the soa instance.</param>
     public static void EnforceNil(Soa_Transform soa)
     {
-        Nil.Enforce(soa.Coses);
-        Nil.Enforce(soa.Sins);
+        Nil.Enforce(soa.Cosines);
+        Nil.Enforce(soa.Sines);
         Soa_Vector2.EnforceNil(soa.Positions);
         Soa_Vector2.EnforceNil(soa.Scales);
     }

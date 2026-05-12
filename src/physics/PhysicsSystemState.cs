@@ -367,7 +367,7 @@ public sealed class PhysicsSystemState
     /// <summary>
     /// Gets and sets the stopwatch for timing a bvh reconstruction step.
     /// </summary>
-    public Stopwatch BvhReconstructionStopwatch;
+    public Stopwatch BvhStopwatch;
 
     /// <summary>
     /// Gets and sets the stopwatch for timing a spatial pair filtering step.
@@ -672,7 +672,7 @@ public sealed class PhysicsSystemState
         IntegrateBodyPropertiesStopwatch = new();
         RigidBodyMovementStepStopwatch = new();
         TransformPhysicsBodiesStopwatch = new();
-        BvhReconstructionStopwatch = new();
+        BvhStopwatch = new();
         FilterBvhIntoCollisionManifoldStopwatch = new();
         FindCollisionsStopwatch = new();
         ColliderCollisionResolutionStopwatch = new();

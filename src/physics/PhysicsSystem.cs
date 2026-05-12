@@ -22,67 +22,148 @@ public static class PhysicsSystem
     public static readonly Vector<float> VectorRectangleRotationalInertia = new(RectangleRotationalInertia);
     public static readonly Vector<float> VectorCircleRotationalInertia = new(CircleRotationalInertia);
 
-    public static void FixedUpdate(HowlAppState app, PhysicsSystemState state, ComponentArray<Transform> transforms, ComponentArray<PhysicsBodyComponent> physicsBodyTags, float deltaTime, int subSteps)
+    public static void FixedUpdate(HowlAppState app, PhysicsSystemState state, float deltaTime, int subSteps)
     {
+        state.FixedUpdateStepStopwatch.Restart();
 
-        int[] bvhIndices = state.BvhLeafIndices;
+        // == hoisting invariance. ==.
+        
+        int[] bvhLeafIndices = state.BvhLeafIndices;
         CollisionManifoldState collisions = state.CollisionManifoldState;
+        float[] collisionNormalsX = collisions.Normals.X;
+        float[] collisionNormalsY = collisions.Normals.Y;
+        float[] collisionDepths = collisions.Depths;
+        int collisionsStride = collisions.Stride;
         Soa_Vector2 centroids = state.Centroids;
         FsSoa_Vector2 worldVertices = state.WorldVertices;
         CategorisedOverlapArray<int> colliderCollisionsToResolve = state.SubStepColliderCollisionsToResolve;
         StackArray<int> rigidBodyCollisionsToResolve = state.SubStepRigidbodyCollisionsToResolve;
         float[] worldRadii = state.WorldRadii;
-
-        state.FixedUpdateStepStopwatch.Restart();
-
-        // Sync Colliders to Transforms Step.
-        state.SyncTransformsToEntitiesStopwatch.Restart();
-        // SyncTransformsToEntityTransforms(physicsBodyTags, transforms, state.Transforms, state.Generations);
-        state.SyncTransformsToEntitiesStopwatch.Stop();
-
-        state.IntegrateBodyPropertiesStopwatch.Restart();
-        IntegrateBodyProperties(state.Transforms.Scales.X, state.Transforms.Scales.Y, state.Masses, state.InverseMasses, 
-            state.RotationalInertia, state.InverseRotationalInertia, state.PhysicsMaterials.Density, state.LocalRadii, state.WorldRadii, 
-            state.LocalWidths, state.LocalHeights, state.Flags, state.MaxPhysicsBodyCount
-        );
-        state.IntegrateBodyPropertiesStopwatch.Stop();
+        CategorisedLeafOverlaps overlaps = state.Overlaps;
+        BoundingVolumeHierarchy bvh = state.Bvh;
+        float[] bvhLeafPaddings = state.BvhLeafPaddings;
+        int[] bvhCategories = state.BvhCategories;
+        PhysicsBodyFlags[] flags = state.Flags;
+        FsSoa_Vector2 localVertices = state.LocalVertices;
+        float[] localRadii = state.LocalRadii;
+        float[] localWidths = state.LocalWidths;
+        float[] localHeights = state.LocalHeights;
+        Soa_Transform transforms = state.Transforms;
+        float[] positionsX = transforms.Positions.X;
+        float[] positionsY = transforms.Positions.Y;  
+        float[] scalesX = transforms.Scales.X;
+        float[] scalesY = transforms.Scales.Y;
+        float[] cosines = transforms.Cosines;
+        float[] sines = transforms.Sines;
+        float[] masses = state.Masses;
+        float[] inverseMasses = state.InverseMasses;
+        float[] rotationalInertia = state.RotationalInertia;
+        float[] inverseRotationalInertia = state.InverseRotationalInertia;
+        float[] previousPositionsX = state.PreviousStepPositions.X;
+        float[] previousPositionsY = state.PreviousStepPositions.Y;
+        float[] density = state.PhysicsMaterials.Density;
+        float[] staticFriction = state.PhysicsMaterials.StaticFriction;
+        float[] kineticFriction = state.PhysicsMaterials.KineticFriction;
+        float[] restitution = state.PhysicsMaterials.Restitution;
+        float[] minAabbsX = state.MinAABBVertices.X;
+        float[] minAabbsY = state.MinAABBVertices.Y;
+        float[] maxAabbsX = state.MaxAABBVertices.X;
+        float[] maxAabbsY = state.MaxAABBVertices.Y;
+        float[] centroidsX = state.Centroids.X;
+        float[] centroidsY = state.Centroids.Y;
+        float[] linearVelocitiesX = state.LinearVelocities.X;
+        float[] linearVelocitiesY = state.LinearVelocities.Y;
+        float[] forcesX = state.Forces.X;
+        float[] forcesY = state.Forces.Y;
+        float[] angularVelocities = state.AngularVelocities;
+        SwapBackArray<int> activeBodies = state.Active;
+        int maxPhysicsBodyCount = state.MaxPhysicsBodyCount;
+        float gravity = state.Gravity;
+        float gravityDirectionX = state.GravityDirection.X;
+        float gravityDirectionY = state.GravityDirection.Y;
 
         // scale delta time by the substeps.
         deltaTime /= (float)subSteps;
-
-        CollisionManifold.PrepareForNextStep(state.CollisionManifoldState);  
         
-        // calculate movement from previous to new pos here.
-        // add it to aabb for BVH.
-        CalculateBvhLeafPadding(state.Transforms.Positions, state.PreviousStepPositions, state.Active, state.BvhLeafPaddings, deltaTime);
-        SetPreviousPositions(state.Transforms.Positions, state.PreviousStepPositions);      
+        {   // Sync Bodies To Entities.
 
-        // Reconstruct Bvh.
-        state.BvhReconstructionStopwatch.Restart();
-        ReconstructBvhTree(state, state.MinAABBVertices, state.MaxAABBVertices, state.Centroids, 
-            state.Flags, state.BvhCategories, state.BvhLeafPaddings, state.Overlaps, state.Bvh
-        );
-        state.BvhReconstructionStopwatch.Stop();
-
-        // format the overlap data.
-        FormatCategorisedOverlaps(state.Overlaps, state.BvhLeafIndices, state.BvhCategories);
-
-        // prepare sub step collision resolution collection.
-        int solidCount = state.SolidPolygonColliderCount + state.SolidCircleColliderCount + 
-            state.SolidPolygonRigidBodyCount + state.SolidCircleRigidBodyCount;
-        int kinematicCount = state.KinematicPolygonColliderCount + state.KinematicCircleColliderCount + 
-            state.KinematicPolygonRigidBodyCount + state.KinematicCircleRigidBodyCount;
-        state.SubStepColliderCollisionsToResolve.CategoryLengths[SubStepResolutionBvhCategory.Solid] = solidCount;
-        state.SubStepColliderCollisionsToResolve.CategoryLengths[SubStepResolutionBvhCategory.Kinematic] = kinematicCount;
-        CategorisedOverlapArray.ClearCounts(state.SubStepColliderCollisionsToResolve);
-        CategorisedOverlapArray.BuildChunks(state.SubStepColliderCollisionsToResolve);
-
-        // prepare sub step rigidbody resolution collextion.
-        StackArray.ClearCount(state.SubStepRigidbodyCollisionsToResolve);
-
-        // == retrieve overlap info ==.
+            state.SyncTransformsToEntitiesStopwatch.Restart();
         
-        CategorisedLeafOverlaps overlaps = state.Overlaps;
+            // SyncTransformsToEntityTransforms(physicsBodyTags, transforms, state.Transforms, state.Generations);
+                    
+            state.SyncTransformsToEntitiesStopwatch.Stop();
+        }
+
+        {   // Integrate Body Properties.
+            
+            state.IntegrateBodyPropertiesStopwatch.Restart();
+
+            IntegrateBodyProperties(scalesX, scalesY, masses, inverseMasses, rotationalInertia, inverseRotationalInertia, 
+                density, localRadii, worldRadii, localWidths, localHeights, flags, maxPhysicsBodyCount
+            );
+
+            state.IntegrateBodyPropertiesStopwatch.Stop();
+        }
+
+        {   // Prepare Collisions
+            
+            CollisionManifold.PrepareForNextStep(collisions);
+
+            // prepare sub step collision resolution collection.
+            int solidCount = state.SolidPolygonColliderCount + state.SolidCircleColliderCount + state.SolidPolygonRigidBodyCount + state.SolidCircleRigidBodyCount;
+            int kinematicCount = state.KinematicPolygonColliderCount + state.KinematicCircleColliderCount + state.KinematicPolygonRigidBodyCount + state.KinematicCircleRigidBodyCount;
+            colliderCollisionsToResolve.CategoryLengths[SubStepResolutionBvhCategory.Solid] = solidCount;
+            colliderCollisionsToResolve.CategoryLengths[SubStepResolutionBvhCategory.Kinematic] = kinematicCount;
+            CategorisedOverlapArray.BuildChunks(colliderCollisionsToResolve);
+
+            CategorisedOverlapArray.ClearCounts(colliderCollisionsToResolve);
+            StackArray.ClearCount(rigidBodyCollisionsToResolve);
+        }
+
+        {   // Bvh
+            
+            state.BvhStopwatch.Restart();
+            
+            CalculateBvhLeafPadding(positionsX, positionsY, previousPositionsX, previousPositionsY, activeBodies, bvhLeafPaddings, deltaTime);
+
+            // Update Overlap Scratch Buffer Category Length.       
+            {                
+             
+                CategorisedLeafOverlaps.ClearCounts(overlaps);
+                overlaps.CategoryLengths[BvhCategory.SolidCircleCollider]       = state.SolidCircleColliderCount;
+                overlaps.CategoryLengths[BvhCategory.TriggerCircleCollider]     = state.TriggerCircleColliderCount;
+                overlaps.CategoryLengths[BvhCategory.KinematicCircleCollider]   = state.KinematicCircleColliderCount;
+                
+                overlaps.CategoryLengths[BvhCategory.SolidCircleRigidBody]      = state.SolidCircleRigidBodyCount;
+                overlaps.CategoryLengths[BvhCategory.TriggerCircleRigidBody]    = state.TriggerCircleRigidBodyCount;
+                overlaps.CategoryLengths[BvhCategory.KinematicCircleRigidBody]  = state.KinematicCircleRigidBodyCount;
+
+                overlaps.CategoryLengths[BvhCategory.SolidPolygonCollider]      = state.SolidPolygonColliderCount;
+                overlaps.CategoryLengths[BvhCategory.TriggerPolygonCollider]    = state.TriggerPolygonColliderCount;
+                overlaps.CategoryLengths[BvhCategory.KinematicPolygonCollider]  = state.KinematicPolygonColliderCount;
+                
+                overlaps.CategoryLengths[BvhCategory.SolidPolygonRigidBody]     = state.SolidPolygonRigidBodyCount;
+                overlaps.CategoryLengths[BvhCategory.TriggerPolygonRigidBody]   = state.TriggerPolygonRigidBodyCount;
+                overlaps.CategoryLengths[BvhCategory.KinematicPolygonRigidBody] = state.KinematicPolygonRigidBodyCount;
+                
+                CategorisedLeafOverlaps.BuildChunks(overlaps);
+            }
+
+            // Reconstruct Bvh.
+            ConstructBvhTree(minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, centroidsX, centroidsY, flags, bvhCategories, bvhLeafPaddings, 
+                bvhLeafIndices, bvh
+            );
+
+            BoundingVolumeHierarchy.FindOverlaps(bvh.Branches, bvh.Leaves, overlaps);
+            FormatCategorisedOverlaps(overlaps, bvhLeafIndices, bvhCategories);
+            
+            state.BvhStopwatch.Stop();
+        }
+        
+        // note: ordering matters here; keep this below the bvh section always.
+        SetPreviousPositions(positionsX, positionsY, previousPositionsX, previousPositionsY);      
+
+        // == retrieve overlap info.
 
         // solid polygon rigidbody.        
         OverlapInfo overlaps_SolPolRig_To_SolPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.SolidPolygonRigidBody);
@@ -189,22 +270,22 @@ public static class PhysicsSystem
         for(int i = 0; i < subSteps; i++)
         {
             // clear any grabage collisions that were resolved last sub step.
-            CategorisedOverlapArray.ClearCounts(state.SubStepColliderCollisionsToResolve);
+            CategorisedOverlapArray.ClearCounts(colliderCollisionsToResolve);
+            StackArray.ClearCount(rigidBodyCollisionsToResolve);
 
             state.FixedUpdateSubStepStopwatch.Restart();
 
             // RigidBody Movement Step.
             state.RigidBodyMovementStepStopwatch.Restart();
-            RigidBodyMovementStep(state.Transforms, state.LinearVelocities, state.Forces, 
-                state.Masses, state.Flags, state.AngularVelocities, 
-                state.GravityDirection.X, state.GravityDirection.Y, state.Gravity, deltaTime, state.MaxPhysicsBodyCount
+            RigidBodyMovementStep(linearVelocitiesX, linearVelocitiesY, forcesX, forcesY, masses, positionsX, positionsY, sines, cosines, 
+                angularVelocities, flags, gravityDirectionX, gravityDirectionY, gravity, deltaTime
             );
             state.RigidBodyMovementStepStopwatch.Stop();
 
             // transform physics bodies
             state.TransformPhysicsBodiesStopwatch.Restart();
-            TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices, state.LocalVertices, state.WorldVertices, state.Transforms, 
-                state.Flags, state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
+            TransformPhysicsBodyVertices(worldVertices, localVertices, flags, scalesX, scalesY, positionsX, positionsY, sines, cosines, 
+                minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, centroidsX, centroidsY, localRadii, worldRadii
             );
             state.TransformPhysicsBodiesStopwatch.Stop();
 
@@ -212,112 +293,108 @@ public static class PhysicsSystem
             // Find collisions.
             state.FindCollisionsStopwatch.Restart();
                         
-            Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonRigidBody(    overlaps_SolPolRig_To_SolPolRig, bvhIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
-            Collisions.Detection.SolidPolygonRigidBody_To_SolidCircleRigidBody(     overlaps_SolPolRig_To_SolCirRig, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
-            Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonRigidBody(overlaps_SolPolRig_To_KinPolRig, bvhIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
-            Collisions.Detection.SolidPolygonRigidBody_To_KinematicCircleRigidBody( overlaps_SolPolRig_To_KinCirRig, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
-            Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_SolPolRig_To_TriPolRig, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.SolidPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_SolPolRig_To_TriCirRig, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonCollider(     overlaps_SolPolRig_To_SolPolCol, bvhIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
-            Collisions.Detection.SolidPolygonRigidBody_To_SolidCircleCollider(      overlaps_SolPolRig_To_SolCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonCollider( overlaps_SolPolRig_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
-            Collisions.Detection.SolidPolygonRigidBody_To_KinematicCircleCollider(  overlaps_SolPolRig_To_KinCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_SolPolRig_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.SolidPolygonRigidBody_To_TriggerCircleCollider(    overlaps_SolPolRig_To_TriCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonRigidBody(    overlaps_SolPolRig_To_SolPolRig, bvhLeafIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
+            Collisions.Detection.SolidPolygonRigidBody_To_SolidCircleRigidBody(     overlaps_SolPolRig_To_SolCirRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
+            Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonRigidBody(overlaps_SolPolRig_To_KinPolRig, bvhLeafIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
+            Collisions.Detection.SolidPolygonRigidBody_To_KinematicCircleRigidBody( overlaps_SolPolRig_To_KinCirRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
+            Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_SolPolRig_To_TriPolRig, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.SolidPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_SolPolRig_To_TriCirRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonCollider(     overlaps_SolPolRig_To_SolPolCol, bvhLeafIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
+            Collisions.Detection.SolidPolygonRigidBody_To_SolidCircleCollider(      overlaps_SolPolRig_To_SolCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonCollider( overlaps_SolPolRig_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
+            Collisions.Detection.SolidPolygonRigidBody_To_KinematicCircleCollider(  overlaps_SolPolRig_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_SolPolRig_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.SolidPolygonRigidBody_To_TriggerCircleCollider(    overlaps_SolPolRig_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
 
-            Collisions.Detection.SolidCircleRigidBody_To_SolidCircleRigidBody(      overlaps_SolCirRig_To_SolCirRig, bvhIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
-            Collisions.Detection.SolidCircleRigidBody_To_KinematicPolygonRigidBody( overlaps_SolCirRig_To_KinPolRig, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
-            Collisions.Detection.SolidCircleRigidBody_To_KinematicCircleRigidBody(  overlaps_SolCirRig_To_KinCirRig, bvhIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
-            Collisions.Detection.SolidCircleRigidBody_To_TriggerPolygonRigidBody(   overlaps_SolCirRig_To_TriPolRig, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.SolidCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_SolCirRig_To_TriCirRig, bvhIndices, collisions, centroids, worldRadii);
-            Collisions.Detection.SolidCircleRigidBody_To_SolidPolygonCollider(      overlaps_SolCirRig_To_SolPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidCircleRigidBody_To_SolidCircleCollider(       overlaps_SolCirRig_To_SolCirCol, bvhIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidCircleRigidBody_To_KinematicPolygonCollider(  overlaps_SolCirRig_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidCircleRigidBody_To_KinematicCircleCollider(   overlaps_SolCirRig_To_KinCirCol, bvhIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidCircleRigidBody_To_TriggerPolygonCollider(    overlaps_SolCirRig_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.SolidCircleRigidBody_To_TriggerCircleCollider(     overlaps_SolCirRig_To_TriCirCol, bvhIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.SolidCircleRigidBody_To_SolidCircleRigidBody(      overlaps_SolCirRig_To_SolCirRig, bvhLeafIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
+            Collisions.Detection.SolidCircleRigidBody_To_KinematicPolygonRigidBody( overlaps_SolCirRig_To_KinPolRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
+            Collisions.Detection.SolidCircleRigidBody_To_KinematicCircleRigidBody(  overlaps_SolCirRig_To_KinCirRig, bvhLeafIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve, rigidBodyCollisionsToResolve);
+            Collisions.Detection.SolidCircleRigidBody_To_TriggerPolygonRigidBody(   overlaps_SolCirRig_To_TriPolRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.SolidCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_SolCirRig_To_TriCirRig, bvhLeafIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.SolidCircleRigidBody_To_SolidPolygonCollider(      overlaps_SolCirRig_To_SolPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidCircleRigidBody_To_SolidCircleCollider(       overlaps_SolCirRig_To_SolCirCol, bvhLeafIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidCircleRigidBody_To_KinematicPolygonCollider(  overlaps_SolCirRig_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidCircleRigidBody_To_KinematicCircleCollider(   overlaps_SolCirRig_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidCircleRigidBody_To_TriggerPolygonCollider(    overlaps_SolCirRig_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.SolidCircleRigidBody_To_TriggerCircleCollider(     overlaps_SolCirRig_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
 
-            Collisions.Detection.KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(overlaps_KinPolRig_To_KinPolRig, bvhIndices, collisions, centroids, worldVertices);            
-            Collisions.Detection.KinematicPolygonRigidBody_To_KinematicCircleRigidBody( overlaps_KinPolRig_To_KinCirRig, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_KinPolRig_To_TriPolRig, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.KinematicPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_KinPolRig_To_TriCirRig, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.KinematicPolygonRigidBody_To_SolidPolygonCollider(     overlaps_KinPolRig_To_SolPolCol, bvhIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
-            Collisions.Detection.KinematicPolygonRigidBody_To_SolidCircleCollider(      overlaps_KinPolRig_To_SolCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.KinematicPolygonRigidBody_To_KinematicPolygonCollider( overlaps_KinPolRig_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.KinematicPolygonRigidBody_To_KinematicCircleCollider(  overlaps_KinPolRig_To_KinCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.KinematicPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_KinPolRig_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.KinematicPolygonRigidBody_To_TriggerCircleCollider(    overlaps_KinPolRig_To_TriCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(overlaps_KinPolRig_To_KinPolRig, bvhLeafIndices, collisions, centroids, worldVertices);            
+            Collisions.Detection.KinematicPolygonRigidBody_To_KinematicCircleRigidBody( overlaps_KinPolRig_To_KinCirRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_KinPolRig_To_TriPolRig, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.KinematicPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_KinPolRig_To_TriCirRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicPolygonRigidBody_To_SolidPolygonCollider(     overlaps_KinPolRig_To_SolPolCol, bvhLeafIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
+            Collisions.Detection.KinematicPolygonRigidBody_To_SolidCircleCollider(      overlaps_KinPolRig_To_SolCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.KinematicPolygonRigidBody_To_KinematicPolygonCollider( overlaps_KinPolRig_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.KinematicPolygonRigidBody_To_KinematicCircleCollider(  overlaps_KinPolRig_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_KinPolRig_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.KinematicPolygonRigidBody_To_TriggerCircleCollider(    overlaps_KinPolRig_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
 
-            Collisions.Detection.KinematicCircleRigidBody_To_KinematicCircleRigidBody(  overlaps_KinCirRig_To_KinCirRig, bvhIndices, collisions, centroids, worldRadii);
-            Collisions.Detection.KinematicCircleRigidBody_To_TriggerPolygonRigidBody(   overlaps_KinCirRig_To_TriPolRig, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.KinematicCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_KinCirRig_To_TriCirRig, bvhIndices, collisions, centroids, worldRadii);
-            Collisions.Detection.KinematicCircleRigidBody_To_SolidPolygonCollider(      overlaps_KinCirRig_To_SolPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.KinematicCircleRigidBody_To_SolidCircleCollider(       overlaps_KinCirRig_To_SolCirCol, bvhIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.KinematicCircleRigidBody_To_KinematicPolygonCollider(  overlaps_KinCirRig_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.KinematicCircleRigidBody_To_KinematicCircleCollider(   overlaps_KinCirRig_To_KinCirCol, bvhIndices, collisions, centroids, worldRadii);
-            Collisions.Detection.KinematicCircleRigidBody_To_TriggerPolygonCollider(    overlaps_KinCirRig_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.KinematicCircleRigidBody_To_TriggerCircleCollider(     overlaps_KinCirRig_To_TriCirCol, bvhIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.KinematicCircleRigidBody_To_KinematicCircleRigidBody(  overlaps_KinCirRig_To_KinCirRig, bvhLeafIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.KinematicCircleRigidBody_To_TriggerPolygonRigidBody(   overlaps_KinCirRig_To_TriPolRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_KinCirRig_To_TriCirRig, bvhLeafIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.KinematicCircleRigidBody_To_SolidPolygonCollider(      overlaps_KinCirRig_To_SolPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.KinematicCircleRigidBody_To_SolidCircleCollider(       overlaps_KinCirRig_To_SolCirCol, bvhLeafIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.KinematicCircleRigidBody_To_KinematicPolygonCollider(  overlaps_KinCirRig_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicCircleRigidBody_To_KinematicCircleCollider(   overlaps_KinCirRig_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.KinematicCircleRigidBody_To_TriggerPolygonCollider(    overlaps_KinCirRig_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicCircleRigidBody_To_TriggerCircleCollider(     overlaps_KinCirRig_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
         
-            Collisions.Detection.TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_TriPolRig_To_TriPolRig, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.TriggerPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_TriPolRig_To_TriCirRig, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.TriggerPolygonRigidBody_To_SolidPolygonCollider(     overlaps_TriPolRig_To_SolPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.TriggerPolygonRigidBody_To_SolidCircleCollider(      overlaps_TriPolRig_To_SolCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.TriggerPolygonRigidBody_To_KinematicPolygonCollider( overlaps_TriPolRig_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.TriggerPolygonRigidBody_To_KinematicCircleCollider(  overlaps_TriPolRig_To_KinCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.TriggerPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_TriPolRig_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.TriggerPolygonRigidBody_To_TriggerCircleCollider(    overlaps_TriPolRig_To_TriCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_TriPolRig_To_TriPolRig, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.TriggerPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_TriPolRig_To_TriCirRig, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.TriggerPolygonRigidBody_To_SolidPolygonCollider(     overlaps_TriPolRig_To_SolPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.TriggerPolygonRigidBody_To_SolidCircleCollider(      overlaps_TriPolRig_To_SolCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.TriggerPolygonRigidBody_To_KinematicPolygonCollider( overlaps_TriPolRig_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.TriggerPolygonRigidBody_To_KinematicCircleCollider(  overlaps_TriPolRig_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.TriggerPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_TriPolRig_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.TriggerPolygonRigidBody_To_TriggerCircleCollider(    overlaps_TriPolRig_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
 
-            Collisions.Detection.TriggerCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_TriCirRig_To_TriCirRig, bvhIndices, collisions, centroids, worldRadii);
-            Collisions.Detection.TriggerCircleRigidBody_To_SolidPolygonCollider(      overlaps_TriCirRig_To_SolPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.TriggerCircleRigidBody_To_SolidCircleCollider(       overlaps_TriCirRig_To_SolCirCol, bvhIndices, collisions, centroids, worldRadii);
-            Collisions.Detection.TriggerCircleRigidBody_To_KinematicPolygonCollider(  overlaps_TriCirRig_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.TriggerCircleRigidBody_To_KinematicCircleCollider(   overlaps_TriCirRig_To_KinCirCol, bvhIndices, collisions, centroids, worldRadii);
-            Collisions.Detection.TriggerCircleRigidBody_To_TriggerPolygonCollider(    overlaps_TriCirRig_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.TriggerCircleRigidBody_To_TriggerCircleCollider(     overlaps_TriCirRig_To_TriCirCol, bvhIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.TriggerCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_TriCirRig_To_TriCirRig, bvhLeafIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.TriggerCircleRigidBody_To_SolidPolygonCollider(      overlaps_TriCirRig_To_SolPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.TriggerCircleRigidBody_To_SolidCircleCollider(       overlaps_TriCirRig_To_SolCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.TriggerCircleRigidBody_To_KinematicPolygonCollider(  overlaps_TriCirRig_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.TriggerCircleRigidBody_To_KinematicCircleCollider(   overlaps_TriCirRig_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.TriggerCircleRigidBody_To_TriggerPolygonCollider(    overlaps_TriCirRig_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.TriggerCircleRigidBody_To_TriggerCircleCollider(     overlaps_TriCirRig_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
 
-            Collisions.Detection.SolidPolygonCollider_To_SolidPolygonCollider(     overlaps_SolPolCol_To_SolPolCol, bvhIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
-            Collisions.Detection.SolidPolygonCollider_To_SolidCircleCollider(      overlaps_SolPolCol_To_SolCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidPolygonCollider_To_KinematicPolygonCollider( overlaps_SolPolCol_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
-            Collisions.Detection.SolidPolygonCollider_To_KinematicCircleCollider(  overlaps_SolPolCol_To_KinCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidPolygonCollider_To_TriggerPolygonCollider(   overlaps_SolPolCol_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.SolidPolygonCollider_To_TriggerCircleCollider(    overlaps_SolPolCol_To_TriCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.SolidPolygonCollider_To_SolidPolygonCollider(     overlaps_SolPolCol_To_SolPolCol, bvhLeafIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
+            Collisions.Detection.SolidPolygonCollider_To_SolidCircleCollider(      overlaps_SolPolCol_To_SolCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidPolygonCollider_To_KinematicPolygonCollider( overlaps_SolPolCol_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices, colliderCollisionsToResolve);
+            Collisions.Detection.SolidPolygonCollider_To_KinematicCircleCollider(  overlaps_SolPolCol_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidPolygonCollider_To_TriggerPolygonCollider(   overlaps_SolPolCol_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.SolidPolygonCollider_To_TriggerCircleCollider(    overlaps_SolPolCol_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
 
-            Collisions.Detection.SolidCircleCollider_To_SolidCircleCollider(       overlaps_SolCirCol_To_SolCirCol, bvhIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidCircleCollider_To_KinematicPolygonCollider(  overlaps_SolCirCol_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidCircleCollider_To_KinematicCircleCollider(   overlaps_SolCirCol_To_KinCirCol, bvhIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
-            Collisions.Detection.SolidCircleCollider_To_TriggerPolygonCollider(    overlaps_SolCirCol_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.SolidCircleCollider_To_TriggerCircleCollider(     overlaps_SolCirCol_To_TriCirCol, bvhIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.SolidCircleCollider_To_SolidCircleCollider(       overlaps_SolCirCol_To_SolCirCol, bvhLeafIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidCircleCollider_To_KinematicPolygonCollider(  overlaps_SolCirCol_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidCircleCollider_To_KinematicCircleCollider(   overlaps_SolCirCol_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldRadii, colliderCollisionsToResolve);
+            Collisions.Detection.SolidCircleCollider_To_TriggerPolygonCollider(    overlaps_SolCirCol_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.SolidCircleCollider_To_TriggerCircleCollider(     overlaps_SolCirCol_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
         
-            Collisions.Detection.KinematicPolygonCollider_To_KinematicPolygonCollider( overlaps_KinPolCol_To_KinPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.KinematicPolygonCollider_To_KinematicCircleCollider(  overlaps_KinPolCol_To_KinCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.KinematicPolygonCollider_To_TriggerPolygonCollider(   overlaps_KinPolCol_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.KinematicPolygonCollider_To_TriggerCircleCollider(    overlaps_KinPolCol_To_TriCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicPolygonCollider_To_KinematicPolygonCollider( overlaps_KinPolCol_To_KinPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.KinematicPolygonCollider_To_KinematicCircleCollider(  overlaps_KinPolCol_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicPolygonCollider_To_TriggerPolygonCollider(   overlaps_KinPolCol_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.KinematicPolygonCollider_To_TriggerCircleCollider(    overlaps_KinPolCol_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
         
-            Collisions.Detection.KinematicCircleCollider_To_KinematicCircleCollider(  overlaps_KinCirCol_To_KinCirCol, bvhIndices, collisions, centroids, worldRadii);
-            Collisions.Detection.KinematicCircleCollider_To_TriggerPolygonCollider(   overlaps_KinCirCol_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
-            Collisions.Detection.KinematicCircleCollider_To_TriggerCircleCollider(    overlaps_KinCirCol_To_TriCirCol, bvhIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.KinematicCircleCollider_To_KinematicCircleCollider(  overlaps_KinCirCol_To_KinCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.KinematicCircleCollider_To_TriggerPolygonCollider(   overlaps_KinCirCol_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.KinematicCircleCollider_To_TriggerCircleCollider(    overlaps_KinCirCol_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
 
-            Collisions.Detection.TriggerPolygonCollider_To_TriggerPolygonCollider(  overlaps_TriPolCol_To_TriPolCol, bvhIndices, collisions, centroids, worldVertices);
-            Collisions.Detection.TriggerPolygonCollider_To_TriggerCircleCollider(   overlaps_TriPolCol_To_TriCirCol, bvhIndices, collisions, centroids, worldVertices, worldRadii);
+            Collisions.Detection.TriggerPolygonCollider_To_TriggerPolygonCollider(  overlaps_TriPolCol_To_TriPolCol, bvhLeafIndices, collisions, centroids, worldVertices);
+            Collisions.Detection.TriggerPolygonCollider_To_TriggerCircleCollider(   overlaps_TriPolCol_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldVertices, worldRadii);
 
-            Collisions.Detection.TriggerCircleCollider_To_TriggerCircleCollider(overlaps_TriCirCol_To_TriCirCol, bvhIndices, collisions, centroids, worldRadii);
+            Collisions.Detection.TriggerCircleCollider_To_TriggerCircleCollider(overlaps_TriCirCol_To_TriCirCol, bvhLeafIndices, collisions, centroids, worldRadii);
 
             state.FindCollisionsStopwatch.Stop();
 
             // Resolve Collider Collisions.
-            // NOTE: ordering matters here, make sure to resolve 
-            // collisions before sorting the collision manifold.
-            // Also make sure that this is above rigidbody collision resolution.
-            // this function also moves the transforms of the colliders.
+            // NOTE: ordering matters here, make sure to this is above rigidbody collision resolution.
             state.ColliderCollisionResolutionStopwatch.Restart();
-            ResolveColliderCollisions(state.CollisionManifoldState, state.SubStepColliderCollisionsToResolve, state.Transforms);
+            ResolveColliderCollisions(colliderCollisionsToResolve, collisionDepths, collisionNormalsX, collisionNormalsY, 
+                positionsX, positionsY, collisionsStride
+            );
             state.ColliderCollisionResolutionStopwatch.Stop();
 
             // Resolve RigidBody Collisions.
-            // NOTE: ordering matters here, make sure to resolve 
-            // collisions before sorting the collision manifold.
-            // Also make sure that this is below collision resolution.
-            // this function also moves the transforms of the colliders.
+            // NOTE: ordering matters here, make sure this is below collision resolution.
             state.RigidBodyCollisionResolutionStepStopwatch.Restart();
             ResolveRigidBodyCollisions(state.CollisionManifoldState, state.SubStepRigidbodyCollisionsToResolve, state.LinearVelocities, 
                 state.Centroids, state.PhysicsMaterials.Restitution, state.AngularVelocities, state.InverseMasses, 
@@ -342,8 +419,8 @@ public static class PhysicsSystem
         // sub-step iteration does not transform the bodies
         // at the end of it's loop; meaning the final collision
         // resolution wouldn't be applied.
-        TransformPhysicsBodyVertices(state.Centroids, state.MinAABBVertices, state.MaxAABBVertices, state.LocalVertices, state.WorldVertices, state.Transforms, 
-            state.Flags, state.LocalRadii, state.WorldRadii, state.LocalWidths, state.LocalHeights, state.MaxPhysicsBodyCount, state.AlloctedPhysicsBodyCount
+        TransformPhysicsBodyVertices(worldVertices, localVertices, flags, scalesX, scalesY, positionsX, positionsY, sines, cosines, 
+            minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, centroidsX, centroidsY, localRadii, worldRadii
         );
 
         state.FixedUpdateStepStopwatch.Stop();
@@ -471,47 +548,9 @@ public static class PhysicsSystem
     /// <remarks>
     ///     Remarks: All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
     /// </remarks>
-    /// <param name="transforms"></param>
-    /// <param name="linearVelocities"></param>
-    /// <param name="forces"></param>
-    /// <param name="masses"></param>
-    /// <param name="flags"></param>
-    /// <param name="angularVelocities"></param>
-    /// <param name="gravityDirectionX"></param>
-    /// <param name="gravityDirectionY"></param>
-    /// <param name="gravity"></param>
-    /// <param name="deltaTime"></param>
-    /// <param name="maxPhysicsBodies"></param>
-    public static void RigidBodyMovementStep(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
-        Span<float> masses, Span<PhysicsBodyFlags> flags, Span<float> angularVelocities, 
-        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime, int maxPhysicsBodies
-    )
-    {
-        RigidBodyMovementStep_Simd(transforms, linearVelocities, forces, masses, flags, angularVelocities, gravityDirectionX, gravityDirectionY, 
-            gravity, deltaTime, maxPhysicsBodies
-        );
-    }
-
-    /// <summary>
-    ///     Performs a movement step for all physics bodies with a rigidbody.
-    /// </summary>
-    /// <remarks>
-    ///     Remarks: All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
-    /// </remarks>
-    /// <param name="transforms"></param>
-    /// <param name="linearVelocities"></param>
-    /// <param name="forces"></param>
-    /// <param name="masses"></param>
-    /// <param name="flags"></param>
-    /// <param name="angularVelocities"></param>
-    /// <param name="gravityDirectionX"></param>
-    /// <param name="gravityDirectionY"></param>
-    /// <param name="gravity"></param>
-    /// <param name="deltaTime"></param>
-    /// <param name="maxPhysicsBodies"></param>
-    public static void RigidBodyMovementStep_Simd(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
-        Span<float> masses, Span<PhysicsBodyFlags> flags, Span<float> angularVelocities, 
-        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime, int maxPhysicsBodies
+    public static void RigidBodyMovementStep(float[] linearVelocitiesX, float[] linearVelocitiesY, float[] forcesX, float[] forcesY,
+        float[] masses, float[] positionsX, float[] positionsY, float[] sines, float[] cosines, float[] angularVelocities, PhysicsBodyFlags[] flags,
+        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime
     )
     {
         int simdSize = Vector<float>.Count;
@@ -526,209 +565,156 @@ public static class PhysicsSystem
         Vector<float> vGravityY = new Vector<float>(gravityDirectionY * gravity * deltaTime);
         Vector<float> vZero = new Vector<float>(0);
 
+        int length = positionsX.Length;
+
         int i = 0;
-        for(; i <= maxPhysicsBodies - simdSize; i+= simdSize)
-        {
-            ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
-            Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
-            
-            // (flag & required) == required.
-            Vector<int> hasRequired = Vector.Equals(vFlags & vRequiredFlags, vRequiredFlags);
 
-            // (flag & forbidden) == 0.
-            Vector<int> doesntHaveForbidden = Vector.Equals(vFlags & vForbiddenFlags, Vector<int>.Zero);
-        
-            // combined mask.
-            Vector<int> vMask = hasRequired & doesntHaveForbidden;
+        {   // SIMD
 
-            // short circuit if the entire mask is zero 
-            // (all bodies in this chunk either dont have the required flags or have the forbidden flags)
-            if (vMask.Equals(Vector<int>.Zero))
+            for(; i <= length - simdSize; i+= simdSize)
             {
-                continue;
-            }
+                ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
+                Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
+                
+                // (flag & required) == required.
+                Vector<int> hasRequired = Vector.Equals(vFlags & vRequiredFlags, vRequiredFlags);
 
-            // load data.
-            Vector<float> vLinVelX = Vector.LoadUnsafe(ref linearVelocities.X[i]);
-            Vector<float> vLinVelY = Vector.LoadUnsafe(ref linearVelocities.Y[i]);
-            Vector<float> vForceX = Vector.LoadUnsafe(ref forces.X[i]);
-            Vector<float> vForceY = Vector.LoadUnsafe(ref forces.Y[i]);
-            Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
-            Vector<float> vPosX = Vector.LoadUnsafe(ref transforms.Positions.X[i]);
-            Vector<float> vPosY = Vector.LoadUnsafe(ref transforms.Positions.Y[i]);
-            Vector<float> vSin = Vector.LoadUnsafe(ref transforms.Sins[i]);
-            Vector<float> vCos = Vector.LoadUnsafe(ref transforms.Coses[i]);
-            Vector<float> vAngVel = Vector.LoadUnsafe(ref angularVelocities[i]);
+                // (flag & forbidden) == 0.
+                Vector<int> doesntHaveForbidden = Vector.Equals(vFlags & vForbiddenFlags, Vector<int>.Zero);
+            
+                // combined mask.
+                Vector<int> vMask = hasRequired & doesntHaveForbidden;
 
-            // apply gravity.
-            Vector<float> nextVelX = vLinVelX + vGravityX;
-            Vector<float> nextVelY = vLinVelY + vGravityY;
+                // short circuit if the entire mask is zero 
+                // (all bodies in this chunk either dont have the required flags or have the forbidden flags)
+                if (vMask.Equals(Vector<int>.Zero))
+                {
+                    continue;
+                }
 
-            // use Vector.GreateThan to avoid div by zero if mass is zero.
-            Vector<int> massMask = Vector.GreaterThan(vMass, vZero);
+                // load data.
+                Vector<float> vLinVelX = Vector.LoadUnsafe(ref linearVelocitiesX[i]);
+                Vector<float> vLinVelY = Vector.LoadUnsafe(ref linearVelocitiesY[i]);
+                Vector<float> vForceX = Vector.LoadUnsafe(ref forcesX[i]);
+                Vector<float> vForceY = Vector.LoadUnsafe(ref forcesY[i]);
+                Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
+                Vector<float> vPosX = Vector.LoadUnsafe(ref positionsX[i]);
+                Vector<float> vPosY = Vector.LoadUnsafe(ref positionsY[i]);
+                Vector<float> vSin = Vector.LoadUnsafe(ref sines[i]);
+                Vector<float> vCos = Vector.LoadUnsafe(ref cosines[i]);
+                Vector<float> vAngVel = Vector.LoadUnsafe(ref angularVelocities[i]);
 
-            // apply forces: acceleration = (f / m * deltaTime)
-            Vector<float> accelX = vForceX / vMass * vDeltaTime;
-            Vector<float> accelY = vForceY / vMass * vDeltaTime;
+                // apply gravity.
+                Vector<float> nextVelX = vLinVelX + vGravityX;
+                Vector<float> nextVelY = vLinVelY + vGravityY;
 
-            // only add acceleration where mass > 0 and force > 0.
-            nextVelX += Vector.ConditionalSelect(massMask & Vector.GreaterThan(vForceX, vZero), accelX, vZero);
-            nextVelY += Vector.ConditionalSelect(massMask & Vector.GreaterThan(vForceY, vZero), accelY, vZero);
+                // use Vector.GreateThan to avoid div by zero if mass is zero.
+                Vector<int> massMask = Vector.GreaterThan(vMass, vZero);
 
-            // calculate new positions.
-            Vector<float> nextPosX = vPosX + (nextVelX * vDeltaTime);
-            Vector<float> nextPosY = vPosY + (nextVelY * vDeltaTime);
+                // apply forces: acceleration = (f / m * deltaTime)
+                Vector<float> accelX = vForceX / vMass * vDeltaTime;
+                Vector<float> accelY = vForceY / vMass * vDeltaTime;
 
-            // calculate new rotations.
-            Vector<float> newSin = Vector<float>.Zero;
-            Vector<float> newCos = Vector<float>.Zero;
-            MathV.RotorMultiply(vSin, vCos, vAngVel * vDeltaTime, ref newSin, ref newCos);
+                // only add acceleration where mass > 0 and force > 0.
+                nextVelX += Vector.ConditionalSelect(massMask & Vector.GreaterThan(vForceX, vZero), accelX, vZero);
+                nextVelY += Vector.ConditionalSelect(massMask & Vector.GreaterThan(vForceY, vZero), accelY, vZero);
 
-            // conditional select (only keep results for valid flags)
-            vLinVelX = Vector.ConditionalSelect(vMask, nextVelX, vLinVelX);
-            vLinVelY = Vector.ConditionalSelect(vMask, nextVelY, vLinVelY);
-            vPosX = Vector.ConditionalSelect(vMask, nextPosX, vPosX);
-            vPosY = Vector.ConditionalSelect(vMask, nextPosY, vPosY);
-            vCos = Vector.ConditionalSelect(vMask, newCos, vCos);
-            vSin = Vector.ConditionalSelect(vMask, newSin, vSin);
+                // calculate new positions.
+                Vector<float> nextPosX = vPosX + (nextVelX * vDeltaTime);
+                Vector<float> nextPosY = vPosY + (nextVelY * vDeltaTime);
 
-            // store results.
-            vLinVelX.StoreUnsafe(ref linearVelocities.X[i]);
-            vLinVelY.StoreUnsafe(ref linearVelocities.Y[i]);
-            vPosX.StoreUnsafe(ref transforms.Positions.X[i]);
-            vPosY.StoreUnsafe(ref transforms.Positions.Y[i]);
-            vCos.StoreUnsafe(ref transforms.Coses[i]);
-            vSin.StoreUnsafe(ref transforms.Sins[i]);
+                // calculate new rotations.
+                Vector<float> newSin = Vector<float>.Zero;
+                Vector<float> newCos = Vector<float>.Zero;
+                MathV.RotorMultiply(vSin, vCos, vAngVel * vDeltaTime, ref newSin, ref newCos);
+
+                // conditional select (only keep results for valid flags)
+                vLinVelX = Vector.ConditionalSelect(vMask, nextVelX, vLinVelX);
+                vLinVelY = Vector.ConditionalSelect(vMask, nextVelY, vLinVelY);
+                vPosX = Vector.ConditionalSelect(vMask, nextPosX, vPosX);
+                vPosY = Vector.ConditionalSelect(vMask, nextPosY, vPosY);
+                vCos = Vector.ConditionalSelect(vMask, newCos, vCos);
+                vSin = Vector.ConditionalSelect(vMask, newSin, vSin);
+
+                // store results.
+                vLinVelX.StoreUnsafe(ref linearVelocitiesX[i]);
+                vLinVelY.StoreUnsafe(ref linearVelocitiesY[i]);
+                vPosX.StoreUnsafe(ref positionsX[i]);
+                vPosY.StoreUnsafe(ref positionsY[i]);
+                vCos.StoreUnsafe(ref cosines[i]);
+                vSin.StoreUnsafe(ref sines[i]);
+            }            
         }
- 
-        // tail end.
-        RigidBodyMovementStep_Sisd(transforms, linearVelocities, forces, 
-            masses, flags, angularVelocities,
-            gravityDirectionX, gravityDirectionY, gravity, deltaTime, maxPhysicsBodies, i
-        );
+
+        {   // SISD
+            
+            float gravityLinearForceX = gravityDirectionX * gravity;
+            float gravityLinearForceY = gravityDirectionY * gravity;
+
+            for(int j = i; j < length; j++)
+            {
+                PhysicsBodyFlags flag = (PhysicsBodyFlags)flags[j];
+                
+                if((flag & PhysicsBodyFlags.Allocated) == 0 ||
+                    (flag & PhysicsBodyFlags.Active) == 0 ||
+                    (flag & PhysicsBodyFlags.Kinematic) != 0 ||
+                    (flag & PhysicsBodyFlags.RigidBody) == 0)
+                {
+                    continue;
+                }
+
+                ref float linearVelocityX = ref linearVelocitiesX[j];
+                ref float linearVelocityY = ref linearVelocitiesY[j];
+                ref float mass = ref masses[j];
+
+                // apply gravity.
+                linearVelocityX += gravityLinearForceX * deltaTime;
+                linearVelocityY += gravityLinearForceY * deltaTime;
+
+                // force = mass * acceleration.
+                // acceleration = force / mass.
+                if(mass > 0)
+                {
+                    if (forcesX[j] > 0)
+                    {
+                        linearVelocityX += forcesX[j] / mass * deltaTime;
+                    }
+                    if (forcesY[j] > 0)
+                    {
+                        linearVelocityY += forcesY[j] / mass * deltaTime;
+                    }
+                }
+                
+                // apply linear velocity.
+                positionsX[j] += linearVelocityX * deltaTime;
+                positionsY[j] += linearVelocityY * deltaTime;
+        
+                Math.Math.RotorMultiply(sines[j], cosines[j], angularVelocities[j] * deltaTime ,ref sines[j], ref cosines[j]);
+            }
+        }
+
     }
 
     /// <summary>
-    ///     Performs a movement step for all physics bodies with a rigidbody.
+    ///     Transforms <c>InUse<c/> physics bodies local-space vertices by their world-space transforms.
     /// </summary>
     /// <remarks>
-    ///     Remarks: All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
+    ///     All arrays must be of the same length and elements should be vertivally accessible via <c>physicsBodyIndex</c>. 
     /// </remarks>
-    /// <param name="transforms"></param>
-    /// <param name="linearVelocities"></param>
-    /// <param name="forces"></param>
-    /// <param name="masses"></param>
-    /// <param name="flags"></param>
-    /// <param name="angularVelocities"></param>
-    /// <param name="gravityDirectionX"></param>
-    /// <param name="gravityDirectionY"></param>
-    /// <param name="gravity"></param>
-    /// <param name="deltaTime"></param>
-    /// <param name="maxBodies"></param>
-    /// <param name="startIndex"></param>
-    public static void RigidBodyMovementStep_Sisd(Soa_Transform transforms, Soa_Vector2 linearVelocities, Soa_Vector2 forces, 
-        Span<float> masses, Span<PhysicsBodyFlags> flags, Span<float> angularVelocities,
-        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime, int maxBodies, int startIndex
-    )
-    {
-        Span<float> forcesX = forces.X;
-        Span<float> forcesY = forces.Y;
-        Span<float> linearVelocitiesX = linearVelocities.X;
-        Span<float> linearVelocitiesY = linearVelocities.Y;
-        Span<float> positionsX = transforms.Positions.X;
-        Span<float> positionsY = transforms.Positions.Y;
-        Span<float> sin = transforms.Sins;
-        Span<float> cos = transforms.Coses;
-
-        float gravityLinearForceX = gravityDirectionX * gravity;
-        float gravityLinearForceY = gravityDirectionY * gravity;
-
-        for(int i = startIndex; i < maxBodies; i++)
-        {
-            PhysicsBodyFlags flag = (PhysicsBodyFlags)flags[i];
-            
-            if((flag & PhysicsBodyFlags.Allocated) == 0 ||
-                (flag & PhysicsBodyFlags.Active) == 0 ||
-                (flag & PhysicsBodyFlags.Kinematic) != 0 ||
-                (flag & PhysicsBodyFlags.RigidBody) == 0)
-            {
-                continue;
-            }
-
-            ref float linearVelocityX = ref linearVelocitiesX[i];
-            ref float linearVelocityY = ref linearVelocitiesY[i];
-            ref float mass = ref masses[i];
-
-            // apply gravity.
-            linearVelocityX += gravityLinearForceX * deltaTime;
-            linearVelocityY += gravityLinearForceY * deltaTime;
-
-            // force = mass * acceleration.
-            // acceleration = force / mass.
-            if(mass > 0)
-            {
-                if (forcesX[i] > 0)
-                {
-                    linearVelocityX += forcesX[i] / mass * deltaTime;
-                }
-                if (forcesY[i] > 0)
-                {
-                    linearVelocityY += forcesY[i] / mass * deltaTime;
-                }
-            }
-            
-            // apply linear velocity.
-            positionsX[i] += linearVelocityX * deltaTime;
-            positionsY[i] += linearVelocityY * deltaTime;
-    
-            Math.Math.RotorMultiply(sin[i], cos[i], angularVelocities[i] * deltaTime ,ref sin[i], ref cos[i]);
-        }
-    }
-
-    /// <summary>
-    /// Transforms <c>InUse<c/> physics bodies local-space vertices by their world-space transforms.
-    /// </summary>
-    /// <param name="centroids">a span to store the generated centroid values of all physics bodies.</param>
-    /// <param name="minAABBVertices">a span to store the generated mininum vertice values of all physics bodies AABB's.</param>
-    /// <param name="maxAABBVertices">a span to store the generated maximum vertice values of all physics bodies AABB's.</param>
-    /// <param name="localVertices">the local-space vertices of all physics bodies.</param>
-    /// <param name="worldVertices">output for the generated world-space vertex values of all physics bodies.</param>
-    /// <param name="transforms">the world-space transforms of all physics bodies.</param>
-    /// <param name="flags">the flags of all physics bodies.</param>
-    /// <param name="worldRadii">the world-space radius values of all phsyics bodies.</param>
-    /// <param name="localWidths">the local-space width values of all physics bodies.</param>
-    /// <param name="localHeights">the local-space height values of all physics bodies.</param>
-    /// <param name="maxPhysicsBodyCount">the max amount of physics bodies that can be stored.</param>
-    /// <param name="physicsBodyCount">the current amount of allocated physics bodies.</param>
-    public static void TransformPhysicsBodyVertices(Soa_Vector2 centroids, Soa_Vector2 minAABBVertices, Soa_Vector2 maxAABBVertices,
-        FsSoa_Vector2 localVertices, FsSoa_Vector2 worldVertices, Soa_Transform transforms, Span<PhysicsBodyFlags> flags, 
-        Span<float> localRadii, Span<float> worldRadii, Span<float> localWidths, Span<float> localHeights,
-        int maxPhysicsBodyCount, int physicsBodyCount
+    public static void TransformPhysicsBodyVertices(FsSoa_Vector2 worldVertices, FsSoa_Vector2 localVertices, PhysicsBodyFlags[] flags, 
+        float[] scalesX, float[] scalesY, float[] positionsX, float[] positionsY, float[] sines, float[] cosines, float[] minAabbsX,
+        float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, float[] centroidsX, float[] centroidsY, float[] localRadii, float[] worldRadii
     )
     {
         FsSoa_Vector2.ClearAppendCounts(worldVertices);
-
-        // hoisting invariance.
-        Span<float> localVertsX = localVertices.X;
-        Span<float> localVertsY = localVertices.Y;
-        Span<float> centroidsX = centroids.X;
-        Span<float> centroidsY = centroids.Y;
-        Span<float> minAABBVectorsX = minAABBVertices.X;
-        Span<float> minAABBVectorsY = minAABBVertices.Y;
-        Span<float> maxAABBVectorsX = maxAABBVertices.X;
-        Span<float> maxAABBVectorsY = maxAABBVertices.Y;
-        Span<float> scalesX = transforms.Scales.X;
-        Span<float> scalesY = transforms.Scales.Y;
-        Span<float> cos = transforms.Coses;
-        Span<float> sin = transforms.Sins;
-        Span<float> positionsX = transforms.Positions.X;
-        Span<float> positionsY = transforms.Positions.Y;
+        float[] localVertsX = localVertices.X;
+        float[] localVertsY = localVertices.Y;
         Span<float> polygonX = default;
         Span<float> polygonY = default;
-
         int physicsBodiesProcessed = 0;
+        int length = flags.Length;
 
-        for(int physicsBodyIndex = 0; physicsBodyIndex < maxPhysicsBodyCount; physicsBodyIndex++)
+        for(int physicsBodyIndex = 0; physicsBodyIndex < length; physicsBodyIndex++)
         {
             PhysicsBodyFlags flag = flags[physicsBodyIndex];
             
@@ -755,7 +741,7 @@ public static class PhysicsSystem
 
                         // transform the base/un-transformed vertice.
                         Math.Math.TransformVector(localVertsX[currentIndex], localVertsY[currentIndex], scaleX, scaleY,
-                            cos[physicsBodyIndex], sin[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], 
+                            cosines[physicsBodyIndex], sines[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], 
                             out float x, out float y
                         );
 
@@ -771,14 +757,14 @@ public static class PhysicsSystem
                     GetCentroid(polygonX, polygonY, ref centroidsX[physicsBodyIndex], ref centroidsY[physicsBodyIndex]);
 
                     // set the new min and max vectors.
-                    Math.Math.GetMinMaxVectors(polygonX, polygonY, out minAABBVectorsX[physicsBodyIndex], out minAABBVectorsY[physicsBodyIndex], 
-                        out maxAABBVectorsX[physicsBodyIndex], out maxAABBVectorsY[physicsBodyIndex]
+                    Math.Math.GetMinMaxVectors(polygonX, polygonY, out minAabbsX[physicsBodyIndex], out minAabbsY[physicsBodyIndex], 
+                        out maxAabbsX[physicsBodyIndex], out maxAabbsY[physicsBodyIndex]
                     );
                 }
                 else // circle shape.
                 {
                     int vertexIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, worldVertices.Stride, 0);
-                    Math.Math.TransformVector(localVertsX[vertexIndex], localVertsY[vertexIndex],scaleX, scaleY, cos[physicsBodyIndex], sin[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], out float x, out float y);
+                    Math.Math.TransformVector(localVertsX[vertexIndex], localVertsY[vertexIndex],scaleX, scaleY, cosines[physicsBodyIndex], sines[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], out float x, out float y);
 
                     // store the newly transformed vertex into the world vertices array.
                     // (TODO): this will need to be changed so that you can append directly to an entry element index
@@ -793,12 +779,12 @@ public static class PhysicsSystem
 
                     // set the new min and max vectors. 
                     Circle.GetMinMaxVectors(x, y, worldRadii[physicsBodyIndex], 
-                        out minAABBVectorsX[physicsBodyIndex], out minAABBVectorsY[physicsBodyIndex], out maxAABBVectorsX[physicsBodyIndex], out maxAABBVectorsY[physicsBodyIndex]
+                        out minAabbsX[physicsBodyIndex], out minAabbsY[physicsBodyIndex], out maxAabbsX[physicsBodyIndex], out maxAabbsY[physicsBodyIndex]
                     );
                 }
             }
 
-            if(physicsBodiesProcessed >= physicsBodyCount)
+            if(physicsBodiesProcessed >= length)
             {
                 break;
             }
@@ -1165,25 +1151,24 @@ public static class PhysicsSystem
     }
 
     /// <summary>
-    ///     Reconstructs a bounding volume hierarchy tree with physics body data.
+    ///     constructs the bvh tree in relation to physics body data.
     /// </summary>
     /// <remarks>
-    ///     Matching lengths are required as data is associated via index (SOA).
-    ///     <list type="bullet">
-    ///         <item> <paramref name="minAabbs"/> </item>
-    ///         <item> <paramref name="maxAabbs"/> </item>
-    ///         <item> <paramref name="flags"/> </item>
-    ///         <item> <paramref name="centroids"/> </item>
-    ///         <item> <paramref name="bvhIndices"/> </item>
-    ///     </list>
+    ///     All arrays must be of equal length and elements should be accessed via a <c>physicsBodyIndex</c> integer.
     /// </remarks>
-    /// <param name="vertices">the vertices of all physics bodies to insert into the bounding volume hierarchy.</param>
-    /// <param name="radii">the radii of circle physics bodies to calculate the bounding box necessary for insertion in the bounding volume hierarchy.</param>
-    /// <param name="generations">the generation for each physics body.</param>
-    /// <param name="flags">the flags for each physics body.</param>
-    /// <param name="bvh">the bounding volume hierarchy instance.</param>
-    public static void ReconstructBvhTree(PhysicsSystemState state, Soa_Vector2 minAabbs, Soa_Vector2 maxAabbs, Soa_Vector2 centroids, 
-        Span<PhysicsBodyFlags> flags, Span<int> bvhCategories, Span<float> bvhLeafPaddings, CategorisedLeafOverlaps overlaps, 
+    /// <param name="minAabbsX"></param>
+    /// <param name="minAabbsY"></param>
+    /// <param name="maxAabbsX"></param>
+    /// <param name="maxAabbsY"></param>
+    /// <param name="centroidsX"></param>
+    /// <param name="centroidsY"></param>
+    /// <param name="flags"></param>
+    /// <param name="bvhCategories"></param>
+    /// <param name="bvhLeafPaddings"></param>
+    /// <param name="bvhLeafIndices"></param>
+    /// <param name="bvh"></param>
+    public static void ConstructBvhTree(float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, float[] centroidsX, 
+        float[] centroidsY, PhysicsBodyFlags[] flags, int[] bvhCategories, float[] bvhLeafPaddings, int[] bvhLeafIndices, 
         BoundingVolumeHierarchy bvh
     )
     {
@@ -1198,40 +1183,19 @@ public static class PhysicsSystem
             if((flag & PhysicsBodyFlags.Allocated) != 0 && (flag & PhysicsBodyFlags.Active) != 0)
             {
                 ref float padding = ref bvhLeafPaddings[i];
-                float minX = minAabbs.X[i] - padding;
-                float minY = minAabbs.Y[i] - padding;
-                float maxX = maxAabbs.X[i] + padding;
-                float maxY = maxAabbs.Y[i] + padding;
+                float minX = minAabbsX[i] - padding;
+                float minY = minAabbsY[i] - padding;
+                float maxX = maxAabbsX[i] + padding;
+                float maxY = maxAabbsY[i] + padding;
 
                 // insert into the bvh.
-                state.BvhLeafIndices[Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroids.X[i], centroids.Y[i], bvhCategories[i])] = i;
+                bvhLeafIndices[Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidsX[i], centroidsY[i], bvhCategories[i])] = i;
             }
         }
 
         // construct the bvh with the new data.
-        // Soa_BoundingVolumeHierarchy.ConstructTree_Slow(bvh);
         BoundingVolumeHierarchy.ConstructTree(bvh);
-        CategorisedLeafOverlaps.ClearCounts(overlaps);
-        overlaps.CategoryLengths[BvhCategory.SolidCircleCollider]       = state.SolidCircleColliderCount;
-        overlaps.CategoryLengths[BvhCategory.TriggerCircleCollider]     = state.TriggerCircleColliderCount;
-        overlaps.CategoryLengths[BvhCategory.KinematicCircleCollider]   = state.KinematicCircleColliderCount;
-        
-        overlaps.CategoryLengths[BvhCategory.SolidCircleRigidBody]      = state.SolidCircleRigidBodyCount;
-        overlaps.CategoryLengths[BvhCategory.TriggerCircleRigidBody]    = state.TriggerCircleRigidBodyCount;
-        overlaps.CategoryLengths[BvhCategory.KinematicCircleRigidBody]  = state.KinematicCircleRigidBodyCount;
-
-        overlaps.CategoryLengths[BvhCategory.SolidPolygonCollider]      = state.SolidPolygonColliderCount;
-        overlaps.CategoryLengths[BvhCategory.TriggerPolygonCollider]    = state.TriggerPolygonColliderCount;
-        overlaps.CategoryLengths[BvhCategory.KinematicPolygonCollider]  = state.KinematicPolygonColliderCount;
-        
-        overlaps.CategoryLengths[BvhCategory.SolidPolygonRigidBody]     = state.SolidPolygonRigidBodyCount;
-        overlaps.CategoryLengths[BvhCategory.TriggerPolygonRigidBody]   = state.TriggerPolygonRigidBodyCount;
-        overlaps.CategoryLengths[BvhCategory.KinematicPolygonRigidBody] = state.KinematicPolygonRigidBodyCount;
-        
-        CategorisedLeafOverlaps.BuildChunks(overlaps);
-        BoundingVolumeHierarchy.FindOverlaps(bvh.Branches, bvh.Leaves, overlaps);
     }
-
 
 
 
@@ -1287,20 +1251,14 @@ public static class PhysicsSystem
 
 
 
-    public static void ResolveColliderCollisions(CollisionManifoldState collisions, 
-        CategorisedOverlapArray<int> subStepCollisionsToResolve, Soa_Transform transforms
+    public static void ResolveColliderCollisions(CategorisedOverlapArray<int> subStepCollisionsToResolve, float[] collisionDepths,
+        float[] collisionNormalsX, float[] collisionNormalsY, float[] positionsX, float[] positionsY, int collisionsStride
     )
     {
         // hoisting invariance.
         float depth;
         float displacementX;
         float displacementY;
-        Span<float> positionX = transforms.Positions.X;
-        Span<float> positionY = transforms.Positions.Y;
-        Span<float> normalX = collisions.Normals.X;
-        Span<float> normalY = collisions.Normals.Y;
-        Span<float> depths = collisions.Depths;
-        int stride = collisions.Stride;
         int ownerIndex; // always the solid collider.
         int otherIndex; // always the kinematic or other solid collider.
 
@@ -1315,15 +1273,15 @@ public static class PhysicsSystem
         for(int i = 0; i < collisionsToResolve.Length; i++)
         {            
             int collisionIndex = collisionsToResolve[i];
-            ownerIndex = collisionIndex / stride; // int div truncates the remainder, always giving the owner index.
-            otherIndex = collisionIndex % stride;
-            depth = depths[collisionIndex];
-            displacementX = normalX[collisionIndex] * depth * 0.5f;
-            displacementY = normalY[collisionIndex] * depth * 0.5f;
-            positionX[otherIndex] -= displacementX;
-            positionY[otherIndex] -= displacementY;
-            positionX[ownerIndex] += displacementX;
-            positionY[ownerIndex] += displacementY; 
+            ownerIndex = collisionIndex / collisionsStride; // int div truncates the remainder, always giving the owner index.
+            otherIndex = collisionIndex % collisionsStride;
+            depth = collisionDepths[collisionIndex];
+            displacementX = collisionNormalsX[collisionIndex] * depth * 0.5f;
+            displacementY = collisionNormalsY[collisionIndex] * depth * 0.5f;
+            positionsX[otherIndex] -= displacementX;
+            positionsY[otherIndex] -= displacementY;
+            positionsX[ownerIndex] += displacementX;
+            positionsY[ownerIndex] += displacementY; 
         }
 
         // == resolve solid to kinematic collisions ==.
@@ -1336,12 +1294,12 @@ public static class PhysicsSystem
         for(int i = 0; i < collisionsToResolve.Length; i++)
         {            
             int collisionIndex = collisionsToResolve[i];
-            ownerIndex = collisionIndex / stride; // int div truncates the remainder, always giving the owner index.
-            depth = depths[collisionIndex];
-            displacementX = normalX[collisionIndex] * depth;
-            displacementY = normalY[collisionIndex] * depth;
-            positionX[ownerIndex] += displacementX;
-            positionY[ownerIndex] += displacementY; 
+            ownerIndex = collisionIndex / collisionsStride; // int div truncates the remainder, always giving the owner index.
+            depth = collisionDepths[collisionIndex];
+            displacementX = collisionNormalsX[collisionIndex] * depth;
+            displacementY = collisionNormalsY[collisionIndex] * depth;
+            positionsX[ownerIndex] += displacementX;
+            positionsY[ownerIndex] += displacementY; 
         }
     }
 
@@ -1851,18 +1809,25 @@ public static class PhysicsSystem
 
 
 
-    public static void SetPreviousPositions(Soa_Vector2 currentPosition, Soa_Vector2 previousPosition)
+    /// <summary>
+    ///     Deep copies the current position to the previous position arrays.
+    /// </summary>
+    /// <remarks>
+    ///     All passed arrays should be the same length.
+    /// </remarks>
+    /// <param name="currentPosX"></param>
+    /// <param name="currentPosY"></param>
+    /// <param name="previousPosX"></param>
+    /// <param name="previousPosY"></param>
+    public static void SetPreviousPositions(float[] currentPosX, float[] currentPosY, float[] previousPosX, float[] previousPosY)
     {
-        Span<float> currentPosX = currentPosition.X;
-        Span<float> currentPosY = currentPosition.Y;
-        Span<float> previousPosX = previousPosition.X;
-        Span<float> previousPosY = previousPosition.Y;
-
         int simdSize = Vector<float>.Count;
         int i = 0;
         
+        float length = currentPosX.Length;
+
         // bulk.
-        for(; i <= currentPosition.Length - simdSize; i += simdSize)
+        for(; i <= length - simdSize; i += simdSize)
         {
             Vector<float> cX = Vector.LoadUnsafe(ref currentPosX[i]);
             Vector<float> cY = Vector.LoadUnsafe(ref currentPosY[i]);
@@ -1871,22 +1836,18 @@ public static class PhysicsSystem
         }
 
         // tail end.
-        for(int j = i; j < currentPosition.Length; j++)
+        for(int j = i; j < length; j++)
         {
             previousPosX[j] = currentPosX[j];
             previousPosY[j] = currentPosY[j];
         }
     }
 
-    public static void CalculateBvhLeafPadding(Soa_Vector2 currentPosition, Soa_Vector2 previousPosition, 
-        SwapBackArray<int> active, float[] bvhLeafPadding, float deltaTime
+    public static void CalculateBvhLeafPadding(float[] currentPositionX, float[] currentPositionY, 
+        float[] previousPositionX, float[] previousPositionY, SwapBackArray<int> active, 
+        float[] bvhLeafPadding, float deltaTime
     )
     {
-        Span<float> currentPositionX = currentPosition.X;
-        Span<float> currentPositionY = currentPosition.Y;
-        Span<float> previousPositionX = previousPosition.X;
-        Span<float> previousPositionY = previousPosition.Y;
-
         for(int i = 0; i < active.Count; i++)
         {            
             int index = active[i];

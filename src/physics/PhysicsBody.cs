@@ -307,8 +307,8 @@ public static class PhysicsBody
         state.Transforms.Positions.Y[physicsBodyIndex] = transform.Position.Y;
         state.Transforms.Scales.X[physicsBodyIndex] = transform.Scale.X;
         state.Transforms.Scales.Y[physicsBodyIndex] = transform.Scale.Y;
-        state.Transforms.Coses[physicsBodyIndex] = transform.Cos;
-        state.Transforms.Sins[physicsBodyIndex] = transform.Sin;        
+        state.Transforms.Cosines[physicsBodyIndex] = transform.Cos;
+        state.Transforms.Sines[physicsBodyIndex] = transform.Sin;        
     }
 
 

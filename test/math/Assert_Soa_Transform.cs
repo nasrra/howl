@@ -17,8 +17,8 @@ public static class Assert_Soa_Transform
         Assert.Equal(transform.Position.Y, soa.Positions.Y[entryIndex],   precision);
         Assert.Equal(transform.Scale.X,    soa.Scales.X[entryIndex],      precision);
         Assert.Equal(transform.Scale.Y,    soa.Scales.Y[entryIndex],      precision);        
-        Assert.Equal(transform.Cos,        soa.Coses[entryIndex],          precision);
-        Assert.Equal(transform.Sin,        soa.Sins[entryIndex],          precision);
+        Assert.Equal(transform.Cos,        soa.Cosines[entryIndex],          precision);
+        Assert.Equal(transform.Sin,        soa.Sines[entryIndex],          precision);
     }
 
     public static void EntryEqual(float posX, float posY, float scaleX, float scaleY, float cos, float sin, int precision, int entryIndex, 
@@ -29,7 +29,7 @@ public static class Assert_Soa_Transform
         Assert.Equal(posY, soa.Positions.Y[entryIndex], precision);
         Assert.Equal(scaleX, soa.Scales.X[entryIndex], precision);
         Assert.Equal(scaleY, soa.Scales.Y[entryIndex], precision);        
-        Assert.Equal(cos, soa.Coses[entryIndex], precision);
-        Assert.Equal(sin, soa.Sins[entryIndex], precision);
+        Assert.Equal(cos, soa.Cosines[entryIndex], precision);
+        Assert.Equal(sin, soa.Sines[entryIndex], precision);
     }
 }

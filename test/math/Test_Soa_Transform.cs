@@ -14,8 +14,8 @@ public class Test_Soa_Transform
         Assert.Equal(capacity, soa.Positions.Y.Length);
         Assert.Equal(capacity, soa.Scales.X.Length);        
         Assert.Equal(capacity, soa.Scales.Y.Length);
-        Assert.Equal(capacity, soa.Sins.Length);        
-        Assert.Equal(capacity, soa.Coses.Length);
+        Assert.Equal(capacity, soa.Sines.Length);        
+        Assert.Equal(capacity, soa.Cosines.Length);
         
         for(int i = 0; i < capacity; i++)
         {
@@ -23,8 +23,8 @@ public class Test_Soa_Transform
             Assert.Equal(0, soa.Positions.Y[i]);
             Assert.Equal(0, soa.Scales.X[i]);
             Assert.Equal(0, soa.Scales.Y[i]);
-            Assert.Equal(0, soa.Sins[i]);
-            Assert.Equal(0, soa.Coses[i]);
+            Assert.Equal(0, soa.Sines[i]);
+            Assert.Equal(0, soa.Cosines[i]);
         }
     }
 
@@ -59,8 +59,8 @@ public class Test_Soa_Transform
         soa.Positions.Y[0] = -32;
         soa.Scales.X[0] = 90;
         soa.Scales.Y[0] = -123;
-        soa.Sins[0] = 43;
-        soa.Coses[0] = 098;
+        soa.Sines[0] = 43;
+        soa.Cosines[0] = 098;
 
         Soa_Transform.EnforceNil(soa);
 
@@ -68,8 +68,8 @@ public class Test_Soa_Transform
         Assert.Equal(0, soa.Positions.Y[0]);
         Assert.Equal(0, soa.Scales.X[0]);
         Assert.Equal(0, soa.Scales.Y[0]);
-        Assert.Equal(0, soa.Sins[0]);
-        Assert.Equal(0, soa.Coses[0]);
+        Assert.Equal(0, soa.Sines[0]);
+        Assert.Equal(0, soa.Cosines[0]);
 
         Debug.Log.Suppress = false;
     }
