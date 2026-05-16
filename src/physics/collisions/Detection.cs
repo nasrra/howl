@@ -1189,8 +1189,8 @@ public static class Detection
         for(int i = 0; i < info.Length; i++)
         {            
             // get the owner and other data.
-            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
-            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int ownerIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
@@ -1217,8 +1217,8 @@ public static class Detection
         for(int i = 0; i < info.Length; i++)
         {
             // get the owner and other data.
-            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
-            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
@@ -1507,8 +1507,8 @@ public static class Detection
         for(int i = 0; i < info.Length; i++)
         {
             // get the owner and other data.
-            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
-            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
@@ -1537,8 +1537,8 @@ public static class Detection
         for(int i = 0; i < info.Length; i++)
         {
             // get the owner and other data.
-            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
-            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int ownerIndex = bvhIndices[info.OtherLeafIndices[i]];
         
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
@@ -2787,8 +2787,8 @@ public static class Detection
         for(int i = 0; i < info.Length; i++)
         {            
             // get the owner and other data.
-            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
-            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int ownerIndex = bvhIndices[info.OtherLeafIndices[i]];
             
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
@@ -2815,8 +2815,8 @@ public static class Detection
         for(int i = 0; i < info.Length; i++)
         {
             // get the owner and other data.
-            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
-            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
+            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
@@ -2895,8 +2895,8 @@ public static class Detection
         for(int i = 0; i < info.Length; i++)
         {
             // get the owner and other data.
-            int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
-            int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
+            int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
@@ -2925,8 +2925,8 @@ public static class Detection
         for(int i = 0; i < info.Length; i++)
         {
             // get the owner and other data.
-            int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
-            int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
+            int otherIndex = bvhIndices[info.OwnerLeafIndices[i]];
+            int ownerIndex = bvhIndices[info.OtherLeafIndices[i]];
         
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
