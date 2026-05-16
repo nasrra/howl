@@ -43,7 +43,7 @@ public static class PhysicsSystem
         Soa_Vector2 centroids = state.Centroids;
         FsSoa_Vector2 worldVertices = state.WorldVertices;
         CategorisedOverlapArray<int> colliderCollisionsToResolve = state.SubStepColliderCollisionsToResolve;
-        StackArray<int> rigidBodyCollisionsToResolve = state.SubStepRigidBodyCollisionsToResolve;
+        CategorisedOverlapArray<int> rigidBodyCollisionsToResolve = state.SubStepRigidBodyCollisionsToResolve;
         float[] worldRadii = state.WorldRadii;
         CategorisedLeafOverlaps overlaps = state.Overlaps;
         BoundingVolumeHierarchy bvh = state.Bvh;
@@ -135,6 +135,10 @@ public static class PhysicsSystem
             colliderCollisionsToResolve.CategoryLengths[CollisionResolutionCategory.Solid] = solidCount;
             colliderCollisionsToResolve.CategoryLengths[CollisionResolutionCategory.Kinematic] = kinematicCount;
             CategorisedOverlapArray.BuildChunks(colliderCollisionsToResolve);
+
+            rigidBodyCollisionsToResolve.CategoryLengths[CollisionResolutionCategory.Solid] = solidCount;
+            rigidBodyCollisionsToResolve.CategoryLengths[CollisionResolutionCategory.Kinematic] = kinematicCount;
+            CategorisedOverlapArray.BuildChunks(rigidBodyCollisionsToResolve);
         }
 
         {   // Bvh
@@ -288,7 +292,7 @@ public static class PhysicsSystem
         {
             // clear any grabage collisions that were resolved last sub step.
             CategorisedOverlapArray.ClearCounts(colliderCollisionsToResolve);
-            StackArray.ClearCount(rigidBodyCollisionsToResolve);
+            CategorisedOverlapArray.ClearCounts(rigidBodyCollisionsToResolve);
 
             state.FixedUpdateSubStepStopwatch.Restart();
 
@@ -413,11 +417,11 @@ public static class PhysicsSystem
             // Resolve RigidBody Collisions.
             // NOTE: ordering matters here, make sure this is below collision resolution.
             state.RigidBodyCollisionResolutionStepStopwatch.Restart();
-            ResolveRigidBodyCollisions(rigidBodyCollisionsToResolve.Data, collisionNormalsX, collisionNormalsY, centroidsX, centroidsY, 
+            ResolveRigidBodyCollisions(rigidBodyCollisionsToResolve, collisionNormalsX, collisionNormalsY, centroidsX, centroidsY, 
                 collisionFirstContactPointsX, collisionFirstContactPointsY, collisionSecondContactPointsX, collisionSecondContactPointsY, 
                 linearVelocitiesX, linearVelocitiesY, restitutions, kineticFrictions, staticFrictions, angularVelocities, masses, inverseMasses, 
                 inverseRotationalInertia, collisionTwoContactPoints, rotationalResponses, contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, 
-                impulsesX, impulsesY, flags, rigidBodyCollisionsToResolve.Count, collisionsStride
+                impulsesX, impulsesY, collisionsStride
             );
             state.RigidBodyCollisionResolutionStepStopwatch.Stop();
 
@@ -1232,22 +1236,59 @@ public static class PhysicsSystem
     /// <param name="impulsesX">scratch buffer</param>
     /// <param name="impulsesY">scratch buffer</param>
     /// <param name="collisionsStride">the stride of elements in a collision entry.</param>
-    public static void ResolveRigidBodyCollisions(int[] collisionsToResolve, float[] normalsX, float[] normalsY,
+    public static void ResolveRigidBodyCollisions(CategorisedOverlapArray<int> collisionsToResolve, float[] normalsX, float[] normalsY,
         float[] centroidsX, float[] centroidsY,float[] firstContactPointsX, float[] firstContactPointsY, 
         float[] secondContactPointsX, float[] secondContactPointsY, float[] linearVelocitiesX, float[] linearVelocitiesY, 
         float[] restitutions, float[] kineticFrictions, float[] staticFrictions, float[] angularVelocities,
         float[] masses, float[] inverseMasses, float[] inverseRotationalInertia, bool[] twoContactPoints, bool[] rotationalResponses,
         Span<float> contactPointsX, Span<float> contactPointsY, Span<float> distsAX, Span<float> distsAY, 
         Span<float> distsBX, Span<float> distsBY, Span<float> impulseMagnitudes, Span<float> impulsesX, Span<float> impulsesY, 
-        PhysicsBodyFlags[] flags, int collisionCount, int collisionsStride
+        int collisionsStride
+    )
+    {
+        Span<int> collisions;
+        bool otherIsKinematic = false;
+
+        collisions = CategorisedOverlapArray.GetOverlaps(
+            collisionsToResolve, CollisionResolutionCategory.Solid, CollisionResolutionCategory.Solid
+        );
+
+        ResolveRigidBodyCollisions(collisions, normalsX, normalsY, centroidsX, centroidsY, firstContactPointsX, firstContactPointsY, 
+            secondContactPointsX, secondContactPointsY, linearVelocitiesX, linearVelocitiesY, restitutions, kineticFrictions, 
+            staticFrictions, angularVelocities, masses, inverseMasses, inverseRotationalInertia, twoContactPoints, rotationalResponses,
+            contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, 
+            collisionsStride, otherIsKinematic 
+        );
+
+        collisions = CategorisedOverlapArray.GetOverlaps(
+            collisionsToResolve, CollisionResolutionCategory.Solid, CollisionResolutionCategory.Kinematic
+        );
+
+        otherIsKinematic = true;
+
+        ResolveRigidBodyCollisions(collisions, normalsX, normalsY, centroidsX, centroidsY, firstContactPointsX, firstContactPointsY, 
+            secondContactPointsX, secondContactPointsY, linearVelocitiesX, linearVelocitiesY, restitutions, kineticFrictions, 
+            staticFrictions, angularVelocities, masses, inverseMasses, inverseRotationalInertia, twoContactPoints, rotationalResponses,
+            contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, 
+            collisionsStride, otherIsKinematic 
+        );
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ResolveRigidBodyCollisions(Span<int> collisionsToResolve, float[] normalsX, float[] normalsY,
+        float[] centroidsX, float[] centroidsY,float[] firstContactPointsX, float[] firstContactPointsY, 
+        float[] secondContactPointsX, float[] secondContactPointsY, float[] linearVelocitiesX, float[] linearVelocitiesY, 
+        float[] restitutions, float[] kineticFrictions, float[] staticFrictions, float[] angularVelocities,
+        float[] masses, float[] inverseMasses, float[] inverseRotationalInertia, bool[] twoContactPoints, bool[] rotationalResponses,
+        Span<float> contactPointsX, Span<float> contactPointsY, Span<float> distsAX, Span<float> distsAY, 
+        Span<float> distsBX, Span<float> distsBY, Span<float> impulseMagnitudes, Span<float> impulsesX, Span<float> impulsesY, 
+        int collisionsStride, bool otherIsKinematic
     )
     {
         int contactPointsCount;
         float revNormalX = 0;
         float revNormalY = 0;
 
-        ref PhysicsBodyFlags ownerFlag = ref Unsafe.NullRef<PhysicsBodyFlags>();
-        ref PhysicsBodyFlags otherFlag = ref Unsafe.NullRef<PhysicsBodyFlags>();
         ref float normalX = ref Unsafe.NullRef<float>();
         ref float normalY = ref Unsafe.NullRef<float>();
         ref float ownerCentroidX = ref Unsafe.NullRef<float>();
@@ -1275,14 +1316,12 @@ public static class PhysicsSystem
         ref bool ownerRotationalResponse = ref Unsafe.NullRef<bool>();
         ref bool otherRotationalResponse = ref Unsafe.NullRef<bool>();
 
-        for(int i = 0; i < collisionCount; i++)
+        for(int i = 0; i < collisionsToResolve.Length; i++)
         {
             int collisionIndex = collisionsToResolve[i];
             int ownerIndex = collisionIndex / collisionsStride; // int div truncates the remainder, always giving the owner index.
             int otherIndex = collisionIndex % collisionsStride;
 
-            ownerFlag = ref flags[ownerIndex];
-            otherFlag = ref flags[otherIndex];
             normalX = ref normalsX[collisionIndex];
             normalY = ref normalsY[collisionIndex];
             ownerCentroidX = ref centroidsX[ownerIndex];
@@ -1312,8 +1351,6 @@ public static class PhysicsSystem
 
             revNormalX = normalX * -1;
             revNormalY = normalY * -1;
-
-            bool otherIsKinematic = (otherFlag & PhysicsBodyFlags.Kinematic) != 0;
 
             if (twoContactPoints[collisionIndex])
             {

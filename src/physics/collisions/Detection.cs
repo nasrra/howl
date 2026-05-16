@@ -209,7 +209,7 @@ public static class Detection
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void SolidPolygonRigidBody_To_SolidPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, CollisionManifoldState collisions, 
         float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY,
-        FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
+        FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -241,14 +241,17 @@ public static class Detection
                     CollisionResolutionCategory.Solid
                 );
 
-                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+                CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
+                );
             }
         }
     }
 
     public static void SolidPolygonRigidBody_To_SolidCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, 
-        FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
+        FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -282,7 +285,10 @@ public static class Detection
                     CollisionResolutionCategory.Solid
                 );
 
-                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+                CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
+                );
             }
         }
     }
@@ -294,8 +300,8 @@ public static class Detection
 
     public static void SolidPolygonRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
-        float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve, 
-        StackArray<int> rigidBodyCollisionsToResolve
+        float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
+        CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -322,12 +328,15 @@ public static class Detection
             // resolve the collision.
             if (collided == true)
             {
-                CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
+                CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
                     CollisionResolutionCategory.Solid,
                     CollisionResolutionCategory.Kinematic
                 );
 
-                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+                CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
+                );
             }
         }
     }
@@ -335,7 +344,7 @@ public static class Detection
     public static void SolidPolygonRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
-        CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
+        CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -369,7 +378,10 @@ public static class Detection
                     CollisionResolutionCategory.Kinematic
                 );
 
-                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+                CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
+                );
             }
         }
     }
@@ -682,7 +694,7 @@ public static class Detection
     public static void SolidCircleRigidBody_To_SolidCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
-        StackArray<int> rigidBodyCollisionsToResolve
+        CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -714,7 +726,10 @@ public static class Detection
                     CollisionResolutionCategory.Solid
                 );
 
-                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+                CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
+                );
             }
         }        
     }
@@ -727,7 +742,7 @@ public static class Detection
     public static void SolidCircleRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
-        CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
+        CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -761,7 +776,10 @@ public static class Detection
                     CollisionResolutionCategory.Kinematic
                 );
 
-                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.BToA);
+                CategorisedOverlapArray.Append(collisionIndices.BToA, rigidBodyCollisionsToResolve, 
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
+                );
             }
         }
     }
@@ -769,7 +787,7 @@ public static class Detection
     public static void SolidCircleRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
-        CategorisedOverlapArray<int> colliderCollisionsToResolve, StackArray<int> rigidBodyCollisionsToResolve
+        CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
     {
         bool collided = false;
@@ -801,7 +819,10 @@ public static class Detection
                     CollisionResolutionCategory.Kinematic
                 );
 
-                StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
+                CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
+                );
             }
         }                
     } 

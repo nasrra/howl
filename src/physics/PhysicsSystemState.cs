@@ -228,7 +228,7 @@ public sealed class PhysicsSystemState
     /// <summary>
     ///     The indices in the <c>CollisionManifoldState</c> of rigidbody collisions to resolve in the current substep.
     /// </summary>
-    public StackArray<int> SubStepRigidBodyCollisionsToResolve;
+    public CategorisedOverlapArray<int> SubStepRigidBodyCollisionsToResolve;
 
     /// <summary>
     ///     The indices of physics bodies that are currently active.
@@ -674,7 +674,7 @@ public sealed class PhysicsSystemState
         Overlaps = new(PhysicsBodyCategory.Count, maxCollisions);
         CollisionManifoldState = new(physicsBodyCount);
         SubStepColliderCollisionsToResolve  = new(CollisionResolutionCategory.Count, maxCollisions);
-        SubStepRigidBodyCollisionsToResolve = new(maxCollisions);
+        SubStepRigidBodyCollisionsToResolve = new(CollisionResolutionCategory.Count, maxCollisions);
         Entities = new(physicsBodyCount);
 
         // Physics body data.
