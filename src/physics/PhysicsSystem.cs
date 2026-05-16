@@ -1138,48 +1138,6 @@ public static class PhysicsSystem
 
 
 
-    /*******************
-    
-        Utility.
-    
-    ********************/
-
-
-
-
-    /// <summary>
-    ///     Adds un-transformed/local-space vertices into a physics system state.
-    /// </summary>
-    /// <remarks>
-    ///     Note: the next index for a given shape is inserted as a circular intrusive linked list; 
-    ///     meaning that the next vertice index of the final vertice will be the first vertice index. 
-    /// </remarks>
-    /// <param name="state">the physics system state to insert into.</param>
-    /// <param name="verticesX">the x-component values of the vertices to insert.</param>
-    /// <param name="verticesY">the y-component values of the vertices to insert.</param>
-    /// <param name="firstIndex">the index in the physics system state's vertice array that contains the first vertice index in the state's vertice array.</param>
-    /// <param name="vertexCount">the amount of vertices added.</param>
-    /// <exception cref="ArgumentException">throws if verticesX is not of the same length as verticesY.</exception>
-    public static void AddLocalVertices(PhysicsSystemState state, Span<float> verticesX, Span<float> verticesY, out int firstIndex, out int vertexCount)
-    {
-        if(verticesX.Length != verticesY.Length)
-            throw new ArgumentException($"vertices X length '{verticesX.Length}' must be equalt to vertices Y length '{verticesY.Length}'");
-
-        vertexCount = verticesX.Length;
-
-        if(vertexCount > state.MaxPhysicsBodyVertexCount)
-            throw new ArgumentException($"vertices cannot have a length greater than the state's set max physics body vertice count '{state.MaxPhysicsBodyVertexCount}'");
-
-        // add the vertices.
-        firstIndex = StackArray.Pop(state.FreeVertexEntries);
-        for(int i = 0; i < vertexCount; i++)
-        {
-            FsSoa_Vector2.Append(state.LocalVertices, firstIndex, verticesX[i], verticesY[i]);
-        }
-    }
-
-
-
 
     /******************
     
@@ -1835,8 +1793,8 @@ public static class PhysicsSystem
 
         for(int i = 1; i < count; i++) // start at one to avoid Nil.
         {
-            int physicsBodyINdex = activeBodies[i]; 
-            ref PhysicsBodyFlags flag = ref flags[physicsBodyINdex];
+            int physicsBodyIdex = activeBodies[i]; 
+            ref PhysicsBodyFlags flag = ref flags[physicsBodyIdex];
             if((flag & PhysicsBodyFlags.RectangleShape) != 0)
             {
                 continue;
@@ -1848,7 +1806,7 @@ public static class PhysicsSystem
             }
             else if((flag & PhysicsBodyFlags.Trigger) != 0)
             {
-                drawColour = CollisionManifold.HasContacts(manifold, physicsBodyINdex)
+                drawColour = CollisionManifold.HasContacts(manifold, physicsBodyIdex)
                 ? triggerActiveColour
                 : triggerPassiveColour;            
             }
@@ -1857,7 +1815,7 @@ public static class PhysicsSystem
                 drawColour = dynamicColour;
             }
 
-            Circle shape = new(centroidX[physicsBodyINdex], centroidY[physicsBodyINdex], radii[physicsBodyINdex]);
+            Circle shape = new(centroidX[physicsBodyIdex], centroidY[physicsBodyIdex], radii[physicsBodyIdex]);
 
             Debug.Draw.WireCircle(app, shape, drawColour, DrawSpace.World);
         }

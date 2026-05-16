@@ -1,4 +1,5 @@
 using System;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
@@ -1188,7 +1189,7 @@ public static class PhysicsBody
     ///         <item><see cref="GenIdResult.Ok"/></item>
     ///         <item><see cref="GenIdResult.NotAllocated"/></item>
     ///         <item><see cref="GenIdResult.NotActive"/></item>
-    ///         <item><see cref="GenIdResult.StaleGenId"/></item>
+    ///         <item><see crerf="GenIdResult.StaleGenId"/></item>
     ///     </list>
     /// </returns>
     public static GenIdResult ImpulseForce(PhysicsSystemState state, Math.Vector2 force, GenId genId)
@@ -1221,6 +1222,54 @@ public static class PhysicsBody
     public static int GetPhysicsBodyIndex(GenId genId)
     {
         return GenId.GetIndex(genId);
+    }
+
+    public static GenIdResult Deallocate(PhysicsSystemState state, GenId genId)
+    {
+        GenIdResult result = EntityRegistry.Deallocate(state.Entities, genId);
+
+        int index = GenId.GetIndex(genId);
+
+        FsSoa_Vector2.ClearEntryAppendCount(state.LocalVertices, index);
+        FsSoa_Vector2.ClearEntryAppendCount(state.WorldVertices, index);
+
+        switch (state.BvhCategories[index])
+        {
+            case BvhCategory.SolidPolygonRigidBody    : state.SolidPolygonRigidBodyCount--;     break;
+            case BvhCategory.SolidCircleRigidBody     : state.SolidCircleRigidBodyCount--;      break;
+            case BvhCategory.SolidCapsuleRigidBody    : state.SolidCapsuleRigidBodyCount--;     break;
+            
+            case BvhCategory.KinematicPolygonRigidBody: state.KinematicPolygonRigidBodyCount--; break;
+            case BvhCategory.KinematicCircleRigidBody : state.KinematicCircleRigidBodyCount--;  break;
+            case BvhCategory.KinematicCapsuleRigidBody: state.KinematicCapsuleRigidBodyCount--; break;
+            
+            case BvhCategory.TriggerPolygonRigidBody  : state.TriggerPolygonRigidBodyCount--;   break;
+            case BvhCategory.TriggerCircleRigidBody   : state.TriggerCircleRigidBodyCount--;    break;
+            case BvhCategory.TriggerCapsuleRigidBody  : state.TriggerCapsuleRigidBodyCount--;   break;
+            
+            case BvhCategory.SolidPolygonCollider     : state.SolidPolygonColliderCount--;      break;
+            case BvhCategory.SolidCircleCollider      : state.SolidCircleColliderCount--;       break;
+            case BvhCategory.SolidCapsuleCollider     : state.SolidCapsuleColliderCount--;      break;
+            
+            case BvhCategory.KinematicPolygonCollider : state.KinematicPolygonColliderCount--;  break;
+            case BvhCategory.KinematicCircleCollider  : state.KinematicCircleColliderCount--;   break;
+            case BvhCategory.KinematicCapsuleCollider : state.KinematicCapsuleColliderCount--;  break;
+            
+            case BvhCategory.TriggerPolygonCollider   : state.TriggerPolygonColliderCount--;    break;
+            case BvhCategory.TriggerCircleCollider    : state.TriggerCircleColliderCount--;     break;
+            case BvhCategory.TriggerCapsuleCollider   : state.TriggerCapsuleColliderCount--;    break;
+
+            default:
+                System.Diagnostics.Debug.Assert(false);
+                break;
+        }
+
+        if(result == GenIdResult.Ok)
+        {            
+            SetActiveUnsafe(state, GenId.GetIndex(genId), false);
+        }
+        
+        return result;
     }
 
 
@@ -1273,6 +1322,7 @@ public static class PhysicsBody
             // handle flags.
             // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
             // set, a physics body is a circle.
+            state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None; // clear any garbage flags.
             SetActiveUnsafe(state, physicsBodyIndex, true);
             SetRigidBodyUnsafe(state, physicsBodyIndex, false);
 
@@ -1309,7 +1359,7 @@ public static class PhysicsBody
             state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
             state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
 
-            PhysicsSystem.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+            FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, shape.X, shape.Y);
             state.LocalRadii[physicsBodyIndex] = shape.Radius;
             state.EntityIds[physicsBodyIndex] = entityId;
             
@@ -1354,6 +1404,7 @@ public static class PhysicsBody
             // handle flags.
             // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
             // set, a physics body is a circle.
+            state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None; // clear any garbage flags.
             SetActiveUnsafe(state, physicsBodyIndex, true);
             SetRigidBodyUnsafe(state, physicsBodyIndex, true);
             SetRotationalPhysicsUnsafe(state, physicsBodyIndex, rotationalPhysics);
@@ -1381,7 +1432,10 @@ public static class PhysicsBody
             }
 
             // apply data.
-            PhysicsSystem.AddLocalVertices(state, [shape.X], [shape.Y], out int verticesFirstIndex, out int verticeCount);
+
+            // add the vertices.
+            FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, shape.X, shape.Y);
+
             SetTransformUnsafe(state, physicsBodyIndex, transform);
 
             // set this so that the previous position isnt garbage from previous steps.
@@ -1497,6 +1551,7 @@ public static class PhysicsBody
             state.AlloctedPhysicsBodyCount++;
 
             // handle flags.
+            state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None; // clear any garbage flags.
             state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.RectangleShape;
             SetActiveUnsafe(state, physicsBodyIndex, true);
             SetRigidBodyUnsafe(state, physicsBodyIndex, false);
@@ -1525,7 +1580,14 @@ public static class PhysicsBody
 
             // apply data.
             PolygonRectangle polyRect = new(shape);
-            PhysicsSystem.AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
+
+            Span<float> xVerts = PolygonRectangle.VerticesXAsSpan(polyRect);
+            Span<float> yVerts = PolygonRectangle.VerticesYAsSpan(polyRect);            
+            for(int i = 0; i < xVerts.Length; i++)
+            {
+                FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, xVerts[i], yVerts[i]);
+            }
+                    
             SetTransformUnsafe(state, genId, transform);
             state.LocalHeights[physicsBodyIndex] = shape.Height;
             state.LocalWidths[physicsBodyIndex] = shape.Width;
@@ -1577,6 +1639,7 @@ public static class PhysicsBody
             state.AlloctedPhysicsBodyCount++;
             
             // handle flags.
+            state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None; // clear any garbage flags.
             state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.RectangleShape;
             SetActiveUnsafe(state, physicsBodyIndex, true);
             SetRigidBodyUnsafe(state, physicsBodyIndex, true);
@@ -1606,7 +1669,14 @@ public static class PhysicsBody
             
             // apply data.
             PolygonRectangle polyRect = new(shape);
-            PhysicsSystem.AddLocalVertices(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), out int verticesFirstIndex, out int verticeCount);
+
+            Span<float> xVerts = PolygonRectangle.VerticesXAsSpan(polyRect);
+            Span<float> yVerts = PolygonRectangle.VerticesYAsSpan(polyRect);            
+            for(int i = 0; i < xVerts.Length; i++)
+            {
+                FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, xVerts[i], yVerts[i]);
+            }
+
             SetTransformUnsafe(state, physicsBodyIndex, transform);
 
             // set this so that the previous position isnt garbage from previous steps.

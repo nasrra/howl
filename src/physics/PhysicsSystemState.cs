@@ -216,11 +216,6 @@ public sealed class PhysicsSystemState
     public float[] BvhLeafPaddings;
 
     /// <summary>
-    ///     The vertex entry indices available for reuse and allocation in LocalRadii.
-    /// </summary>
-    public StackArray<int> FreeVertexEntries;
-
-    /// <summary>
     ///     The scratch buffer for retrieving overlap data from the bvh. 
     /// </summary>
     public CategorisedLeafOverlaps Overlaps;
@@ -311,6 +306,35 @@ public sealed class PhysicsSystemState
     /// </summary>
     public int KinematicCircleRigidBodyCount;
 
+    /// <summary>
+    ///     The amount of allocated solid capsule rigidbodies.
+    /// </summary>
+    public int SolidCapsuleRigidBodyCount;
+
+    /// <summary>
+    ///     The amount of allocated kinematic capsule rigidbodies.
+    /// </summary>
+    public int KinematicCapsuleRigidBodyCount;
+
+    /// <summary>
+    ///     The amount of allocated trigger capsule rigidbodies.
+    /// </summary>
+    public int TriggerCapsuleRigidBodyCount;
+
+    /// <summary>
+    ///     The amount of solid capsule colliders.
+    /// </summary>
+    public int SolidCapsuleColliderCount;
+
+    /// <summary>
+    ///     The amount of kinematic capsule colliders.
+    /// </summary>
+    public int KinematicCapsuleColliderCount;
+
+    /// <summary>
+    ///     The amount of trigger capsule colliders.
+    /// </summary>
+    public int TriggerCapsuleColliderCount;
 
 
     /*******************
@@ -672,7 +696,6 @@ public sealed class PhysicsSystemState
         InverseRotationalInertia    = new float[physicsBodyCount];
         Generations                 = new int[physicsBodyCount];
         BvhCategories               = new int[physicsBodyCount];
-        FreeVertexEntries           = new(physicsBodyCount);
         EntityIds                   = new GenId[physicsBodyCount];
         BvhLeafIndices              = new int[physicsBodyCount];
         PreviousStepPositions       = new(physicsBodyCount);
@@ -717,9 +740,6 @@ public sealed class PhysicsSystemState
         // Counters.
         MaxPhysicsBodyVertexCount = maxPhysicsBodyVerticeCount;
 
-        for(int i = physicsBodyCount-1; i > 0; i--) // dont push zero as that is Nil
-            StackArray.Push(FreeVertexEntries, i); // push all available indices to the stack.
-
         // append Nil element.
         SwapBackArray.Append(ActiveBodies, 0);
     }
@@ -749,7 +769,6 @@ public sealed class PhysicsSystemState
         Nil.Enforce(state.WorldRadii);
         Nil.Enforce(state.RotationalInertia);
         Nil.Enforce(state.InverseRotationalInertia); 
-        Nil.Enforce(state.FreeVertexEntries.Data);
         Nil.Enforce(state.Generations);
     }
 

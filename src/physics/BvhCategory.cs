@@ -3,7 +3,7 @@ namespace Howl.Physics;
 
 
 /// <summary>
-///     Note: ordering matters here, value 0 is highest precedence.
+///     Note: ordering matters here, value 0 is highest precedence in <see cref="PhysicsSystem.FormatCategorisedOverlaps(Howl.CategorisedLeafOverlaps, System.Span{int}, System.Span{int})"/>.
 /// </summary>
 public static class BvhCategory
 {
