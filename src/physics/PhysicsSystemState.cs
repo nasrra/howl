@@ -216,10 +216,13 @@ public sealed class PhysicsSystemState
     public float[] BvhLeafPaddings;
 
     /// <summary>
-    /// Gets and sets the vertex entry indices available for reuse and allocation in LocalRadii.
+    ///     The vertex entry indices available for reuse and allocation in LocalRadii.
     /// </summary>
     public StackArray<int> FreeVertexEntries;
 
+    /// <summary>
+    ///     The scratch buffer for retrieving overlap data from the bvh. 
+    /// </summary>
     public CategorisedLeafOverlaps Overlaps;
 
     /// <summary>
@@ -235,7 +238,18 @@ public sealed class PhysicsSystemState
     /// <summary>
     ///     The indices of physics bodies that are currently active.
     /// </summary>
-    public SwapBackArray<int> Active;
+    /// <remarks>
+    ///     Remarks: this array contains a <c>Nil</c> element.
+    /// </remarks>
+    public SwapBackArray<int> ActiveBodies;
+
+    /// <summary>
+    ///     The indices of physics bodies that point to an element in the <c>ActiveBodies</c> array.
+    /// </summary>
+    /// <remarks>
+    ///     Remarks: this array contains a <c>Nil</c> element.
+    /// </remarks>
+    public int[] ActiveBodiesDenseIndices;
 
     /// <summary>
     ///     The amount of allocated solid polygon colliders.
@@ -663,7 +677,8 @@ public sealed class PhysicsSystemState
         BvhLeafIndices              = new int[physicsBodyCount];
         PreviousStepPositions       = new(physicsBodyCount);
         BvhLeafPaddings             = new float[physicsBodyCount];
-        Active                      = new(physicsBodyCount);
+        ActiveBodies                = new(physicsBodyCount);
+        ActiveBodiesDenseIndices    = new int[physicsBodyCount];
 
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();
@@ -704,6 +719,9 @@ public sealed class PhysicsSystemState
 
         for(int i = physicsBodyCount-1; i > 0; i--) // dont push zero as that is Nil
             StackArray.Push(FreeVertexEntries, i); // push all available indices to the stack.
+
+        // append Nil element.
+        SwapBackArray.Append(ActiveBodies, 0);
     }
 
     /// <summary>

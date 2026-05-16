@@ -81,7 +81,7 @@ public static class PhysicsSystem
         float[] forcesX = state.Forces.X;
         float[] forcesY = state.Forces.Y;
         float[] angularVelocities = state.AngularVelocities;
-        SwapBackArray<int> activeBodies = state.Active;
+        SwapBackArray<int> activeBodies = state.ActiveBodies;
         int maxPhysicsBodyCount = state.MaxPhysicsBodyCount;
         float gravity = state.Gravity;
         float gravityDirectionX = state.GravityDirection.X;
@@ -166,7 +166,7 @@ public static class PhysicsSystem
             }
 
             // Reconstruct Bvh.
-            ConstructBvhTree(minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, centroidsX, centroidsY, flags, bvhCategories, bvhLeafPaddings, 
+            ConstructBvhTree(activeBodies, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, centroidsX, centroidsY, bvhCategories, bvhLeafPaddings, 
                 bvhLeafIndices, bvh
             );
 
@@ -300,7 +300,7 @@ public static class PhysicsSystem
 
             // transform physics bodies
             state.TransformPhysicsBodiesStopwatch.Restart();
-            TransformPhysicsBodyVertices(worldVertices, localVertices, flags, scalesX, scalesY, positionsX, positionsY, sines, cosines, 
+            TransformPhysicsBodyVertices(worldVertices, localVertices, flags, activeBodies, scalesX, scalesY, positionsX, positionsY, sines, cosines, 
                 minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, centroidsX, centroidsY, localRadii, worldRadii
             );
             state.TransformPhysicsBodiesStopwatch.Stop();
@@ -436,7 +436,7 @@ public static class PhysicsSystem
         // sub-step iteration does not transform the bodies
         // at the end of it's loop; meaning the final collision
         // resolution wouldn't be applied.
-        TransformPhysicsBodyVertices(worldVertices, localVertices, flags, scalesX, scalesY, positionsX, positionsY, sines, cosines, 
+        TransformPhysicsBodyVertices(worldVertices, localVertices, flags, activeBodies, scalesX, scalesY, positionsX, positionsY, sines, cosines, 
             minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, centroidsX, centroidsY, localRadii, worldRadii
         );
 
@@ -457,42 +457,40 @@ public static class PhysicsSystem
 
         if (state.DrawColliderWireframes)
         {
-            DrawCirclePhysicsBodies(app, state.CollisionManifoldState, state.Centroids, state.WorldRadii, state.Flags, 
+            DrawCirclePhysicsBodies(app, state.CollisionManifoldState, state.ActiveBodies, state.Centroids, state.WorldRadii, state.Flags, 
                 state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, state.TriggeredPhysicsBodyColour
             );
 
-            DrawPolygonPhysicsBodies(app, state.CollisionManifoldState, state.WorldVertices, state.Flags, state.DynamicPhysicsBodyColour, 
+            DrawPolygonPhysicsBodies(app, state.CollisionManifoldState, state.ActiveBodies, state.WorldVertices, state.Flags, state.DynamicPhysicsBodyColour, 
                 state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, state.TriggeredPhysicsBodyColour
             );
         }
 
         if (state.DrawCollisionInformation)
         {
-            DrawCollisionInformation(app, state.CollisionManifoldState, state.CollisionOwnerColour, state.CollisionOtherColour, 
+            DrawCollisionInformation(app, state.CollisionManifoldState, state.CollisionOtherColour, 
                 state.ContactPointColour, state.NormalColour
             );
         }
 
         if (state.DrawAABBWireframes)
         {
-            DrawAabbs(app, state.MinAABBVertices, state.MaxAABBVertices, state.Flags, state.AABBColour);            
+            DrawAabbs(app, state.MinAABBVertices, state.MaxAABBVertices, state.ActiveBodies, state.AABBColour);            
         }
 
         if (state.DrawLinearVelocities)
         {
-            DrawLinearVelocities(app, state.LinearVelocities, state.Centroids, state.Flags, state.LinearVelocityColour, 
-                state.MaxPhysicsBodyCount
-            );
+            DrawLinearVelocities(app, state.ActiveBodies, state.LinearVelocities, state.Centroids, state.Flags, state.LinearVelocityColour);
         }
 
         if (state.DrawPositions)
         {
-            DrawPositions(app, state.Transforms.Positions, state.Flags, state.PositionColour, state.MaxPhysicsBodyCount);
+            DrawPositions(app, state.Transforms.Positions, state.ActiveBodies, state.PositionColour);
         }
 
         if (state.DrawCentroids)
         {
-            DrawCentroids(app, state.Centroids, state.Flags, state.CentroidColour, state.MaxPhysicsBodyCount);
+            DrawCentroids(app, state.Centroids, state.ActiveBodies, state.CentroidColour);
         }
     }
 
@@ -518,19 +516,6 @@ public static class PhysicsSystem
             // if it has an associated physics body id.
             ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
             Soa_Transform.Insert(soaTransform, GenId.GetIndex(genId), transform);
-        }
-    }
-
-    public static void DeallocateAllDynamicBodies(PhysicsSystemState state)
-    {
-        for(int i = 0; i < state.MaxPhysicsBodyCount; i++)
-        {            
-            if((state.Flags[i] & PhysicsBodyFlags.Allocated) != 0 && (state.Flags[i] & PhysicsBodyFlags.Kinematic) == 0)
-            {
-                state.Flags[i] = PhysicsBodyFlags.None;
-                state.AlloctedPhysicsBodyCount--;
-                EntityRegistry.Deallocate(state.Entities, state.Entities.GenIds[i]);
-            }
         }
     }
 
@@ -572,7 +557,8 @@ public static class PhysicsSystem
     {
         int simdSize = Vector<float>.Count;
 
-        PhysicsBodyFlags requiredFlags = PhysicsBodyFlags.Allocated | PhysicsBodyFlags.Active | PhysicsBodyFlags.RigidBody;
+        PhysicsBodyFlags requiredFlags = PhysicsBodyFlags.Allocated | PhysicsBodyFlags.RigidBody;
+        // PhysicsBodyFlags requiredFlags = PhysicsBodyFlags.Allocated | PhysicsBodyFlags.Active | PhysicsBodyFlags.RigidBody;
         PhysicsBodyFlags forbiddenFlags = PhysicsBodyFlags.Kinematic;
 
         Vector<int> vRequiredFlags = new Vector<int>((int)requiredFlags);
@@ -673,7 +659,7 @@ public static class PhysicsSystem
                 PhysicsBodyFlags flag = (PhysicsBodyFlags)flags[j];
                 
                 if((flag & PhysicsBodyFlags.Allocated) == 0 ||
-                    (flag & PhysicsBodyFlags.Active) == 0 ||
+                    // (flag & PhysicsBodyFlags.Active) == 0 ||
                     (flag & PhysicsBodyFlags.Kinematic) != 0 ||
                     (flag & PhysicsBodyFlags.RigidBody) == 0)
                 {
@@ -719,8 +705,9 @@ public static class PhysicsSystem
     ///     All arrays must be of the same length and elements should be vertivally accessible via <c>physicsBodyIndex</c>. 
     /// </remarks>
     public static void TransformPhysicsBodyVertices(FsSoa_Vector2 worldVertices, FsSoa_Vector2 localVertices, PhysicsBodyFlags[] flags, 
-        float[] scalesX, float[] scalesY, float[] positionsX, float[] positionsY, float[] sines, float[] cosines, float[] minAabbsX,
-        float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, float[] centroidsX, float[] centroidsY, float[] localRadii, float[] worldRadii
+        SwapBackArray<int> activeBodies, float[] scalesX, float[] scalesY, float[] positionsX, float[] positionsY, float[] sines, 
+        float[] cosines, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, float[] centroidsX, float[] centroidsY, 
+        float[] localRadii, float[] worldRadii
     )
     {
         FsSoa_Vector2.ClearAppendCounts(worldVertices);
@@ -728,83 +715,67 @@ public static class PhysicsSystem
         float[] localVertsY = localVertices.Y;
         Span<float> polygonX = default;
         Span<float> polygonY = default;
-        int physicsBodiesProcessed = 0;
-        int length = flags.Length;
+        int length = activeBodies.Count;
 
-        for(int physicsBodyIndex = 0; physicsBodyIndex < length; physicsBodyIndex++)
+        for(int i = 1; i < length; i++) // start at one to avoid Nil.
         {
+            int physicsBodyIndex = activeBodies[i];
+
             PhysicsBodyFlags flag = flags[physicsBodyIndex];
-            
-            // if the physics body had been allocated and is active.
-            if((flag & PhysicsBodyFlags.Allocated) == 0)
+            // hoisting in variance.
+            ref float scaleX = ref scalesX[physicsBodyIndex];
+            ref float scaleY = ref scalesY[physicsBodyIndex];
+
+            if((flag & PhysicsBodyFlags.RectangleShape) != 0)
             {
-                continue;
-            }
+                int vertexCount = localVertices.AppendCounts[physicsBodyIndex];
+                int startIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, localVertices.Stride, 0);                        
+                for(int vertex = 0; vertex < vertexCount; vertex++){
+                    int currentIndex = vertex + startIndex;
 
-            physicsBodiesProcessed++;
-
-            if((flag & PhysicsBodyFlags.Active) != 0)
-            {
-                // hoisting in variance.
-                ref float scaleX = ref scalesX[physicsBodyIndex];
-                ref float scaleY = ref scalesY[physicsBodyIndex];
-
-                if((flag & PhysicsBodyFlags.RectangleShape) != 0)
-                {
-                    int vertexCount = localVertices.AppendCounts[physicsBodyIndex];
-                    int startIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, localVertices.Stride, 0);                        
-                    for(int vertex = 0; vertex < vertexCount; vertex++){
-                        int currentIndex = vertex + startIndex;
-
-                        // transform the base/un-transformed vertice.
-                        Math.Math.TransformVector(localVertsX[currentIndex], localVertsY[currentIndex], scaleX, scaleY,
-                            cosines[physicsBodyIndex], sines[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], 
-                            out float x, out float y
-                        );
-
-                        // store the newly transformed vertex into the world vertices array.
-                        // (TODO): this will need to be changed so that you can append directly to an entry element index
-                        // if you already know the element index. Create a new unsafe function for it.
-                        FsSoa_Vector2.Append(worldVertices, physicsBodyIndex, x, y);
-                    }
-
-                    // set the new centroid.
-                    PhysicsBody.GetPolygonVerticesUnsafe(worldVertices, physicsBodyIndex, ref polygonX, ref polygonY);
-
-                    GetCentroid(polygonX, polygonY, ref centroidsX[physicsBodyIndex], ref centroidsY[physicsBodyIndex]);
-
-                    // set the new min and max vectors.
-                    Math.Math.GetMinMaxVectors(polygonX, polygonY, out minAabbsX[physicsBodyIndex], out minAabbsY[physicsBodyIndex], 
-                        out maxAabbsX[physicsBodyIndex], out maxAabbsY[physicsBodyIndex]
+                    // transform the base/un-transformed vertice.
+                    Math.Math.TransformVector(localVertsX[currentIndex], localVertsY[currentIndex], scaleX, scaleY,
+                        cosines[physicsBodyIndex], sines[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], 
+                        out float x, out float y
                     );
-                }
-                else // circle shape.
-                {
-                    int vertexIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, worldVertices.Stride, 0);
-                    Math.Math.TransformVector(localVertsX[vertexIndex], localVertsY[vertexIndex],scaleX, scaleY, cosines[physicsBodyIndex], sines[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], out float x, out float y);
 
                     // store the newly transformed vertex into the world vertices array.
                     // (TODO): this will need to be changed so that you can append directly to an entry element index
                     // if you already know the element index. Create a new unsafe function for it.
                     FsSoa_Vector2.Append(worldVertices, physicsBodyIndex, x, y);
-
-                    // set the new centroid.
-                    centroidsX[physicsBodyIndex] = x;
-                    centroidsY[physicsBodyIndex] = y;
-
-                    worldRadii[physicsBodyIndex] = Circle.ScaleRadius(localRadii[physicsBodyIndex], scaleX, scaleY);
-
-                    // set the new min and max vectors. 
-                    Circle.GetMinMaxVectors(x, y, worldRadii[physicsBodyIndex], 
-                        out minAabbsX[physicsBodyIndex], out minAabbsY[physicsBodyIndex], out maxAabbsX[physicsBodyIndex], out maxAabbsY[physicsBodyIndex]
-                    );
                 }
-            }
 
-            if(physicsBodiesProcessed >= length)
-            {
-                break;
+                // set the new centroid.
+                PhysicsBody.GetPolygonVerticesUnsafe(worldVertices, physicsBodyIndex, ref polygonX, ref polygonY);
+
+                GetCentroid(polygonX, polygonY, ref centroidsX[physicsBodyIndex], ref centroidsY[physicsBodyIndex]);
+
+                // set the new min and max vectors.
+                Math.Math.GetMinMaxVectors(polygonX, polygonY, out minAabbsX[physicsBodyIndex], out minAabbsY[physicsBodyIndex], 
+                    out maxAabbsX[physicsBodyIndex], out maxAabbsY[physicsBodyIndex]
+                );
             }
+            else // circle shape.
+            {
+                int vertexIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, worldVertices.Stride, 0);
+                Math.Math.TransformVector(localVertsX[vertexIndex], localVertsY[vertexIndex],scaleX, scaleY, cosines[physicsBodyIndex], sines[physicsBodyIndex], positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], out float x, out float y);
+
+                // store the newly transformed vertex into the world vertices array.
+                // (TODO): this will need to be changed so that you can append directly to an entry element index
+                // if you already know the element index. Create a new unsafe function for it.
+                FsSoa_Vector2.Append(worldVertices, physicsBodyIndex, x, y);
+
+                // set the new centroid.
+                centroidsX[physicsBodyIndex] = x;
+                centroidsY[physicsBodyIndex] = y;
+
+                worldRadii[physicsBodyIndex] = Circle.ScaleRadius(localRadii[physicsBodyIndex], scaleX, scaleY);
+
+                // set the new min and max vectors. 
+                Circle.GetMinMaxVectors(x, y, worldRadii[physicsBodyIndex], 
+                    out minAabbsX[physicsBodyIndex], out minAabbsY[physicsBodyIndex], out maxAabbsX[physicsBodyIndex], out maxAabbsY[physicsBodyIndex]
+                );
+            }            
         }
     }
 
@@ -927,7 +898,7 @@ public static class PhysicsSystem
             Vector<float> newWidth = vWidth * vScaleX;
 
             // calculate the new mass.
-            Vector<float> newMass = PhysicsBody.CalculateRectangleMass(newWidth, newHeight, vDensity);
+            Vector<float> newMass = PhysicsBody.Rectangle.CalculateMass(newWidth, newHeight, vDensity);
 
             // create a mask to ensure mass values are above zero.
             Vector<int> massMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
@@ -940,7 +911,7 @@ public static class PhysicsSystem
             newMass = Vector.ConditionalSelect(massMask, newMass, vMass);
             newInvMass = Vector.ConditionalSelect(massMask, newInvMass, vInvMass);
         
-            Vector<float> newRotInertia = PhysicsBody.CalculateRectangleRotationalInertia(newWidth, newHeight, newMass);
+            Vector<float> newRotInertia = PhysicsBody.Rectangle.CalculateRotationalInertia(newWidth, newHeight, newMass);
             
             // create a mask to ensure inerta values are above zero.
             Vector<int> inertiaMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
@@ -1015,7 +986,7 @@ public static class PhysicsSystem
             Vector<float> vDensity = Vector.LoadUnsafe(ref densities[i]);
 
             // calculate the new mass.
-            Vector<float> newMass = PhysicsBody.CalculateCircleMass(vRadii, vDensity);
+            Vector<float> newMass = PhysicsBody.Circle.CalculateMass(vRadii, vDensity);
 
             // create a mask to ensure mass values are above zero.
             Vector<int> massMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
@@ -1028,7 +999,7 @@ public static class PhysicsSystem
             newMass = Vector.ConditionalSelect(massMask, newMass, vMass);
             newInvMass = Vector.ConditionalSelect(massMask, newInvMass, vInvMass);
         
-            Vector<float> newRotInertia = PhysicsBody.CalculateCircleRotationalInertia(vRadii, newMass);
+            Vector<float> newRotInertia = PhysicsBody.Circle.CalculateRotationalInertia(vRadii, newMass);
             
             // create a mask to ensure inerta values are above zero.
             Vector<int> inertiaMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
@@ -1127,12 +1098,12 @@ public static class PhysicsSystem
                     }
                     else
                     {
-                        mass = PhysicsBody.CalculateRectangleMass(width, height, densities[i]); 
+                        mass = PhysicsBody.Rectangle.CalculateMass(width, height, densities[i]); 
                         masses[i] = mass;
                         inverseMasses[i] = mass == 0? 0 : 1f/mass;
                     }
 
-                    float inertia = PhysicsBody.CalculateRectangleRotationalInertia(width, height, mass);
+                    float inertia = PhysicsBody.Rectangle.CalculateRotationalInertia(width, height, mass);
                     rotationalInertia[i] = inertia;
                     inverseRotationalInertia[i] = inertia == 0? 0 : 1f/inertia;
                 }
@@ -1153,12 +1124,12 @@ public static class PhysicsSystem
                     }
                     else
                     {
-                        mass = PhysicsBody.CalculateCircleMass(radius, densities[i]); 
+                        mass = PhysicsBody.Circle.CalculateMass(radius, densities[i]); 
                         masses[i] = mass;
                         inverseMasses[i] = mass == 0? 0 : 1f/mass;
                     }
 
-                    float rI = PhysicsBody.CalculateCircleRotationalInertia(radius, mass);
+                    float rI = PhysicsBody.Circle.CalculateRotationalInertia(radius, mass);
                     rotationalInertia[i] = rI;
                     inverseRotationalInertia[i] = rI == 0? 0f : 1f/rI;
                 }
@@ -1184,30 +1155,28 @@ public static class PhysicsSystem
     /// <param name="bvhLeafPaddings"></param>
     /// <param name="bvhLeafIndices"></param>
     /// <param name="bvh"></param>
-    public static void ConstructBvhTree(float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, float[] centroidsX, 
-        float[] centroidsY, PhysicsBodyFlags[] flags, int[] bvhCategories, float[] bvhLeafPaddings, int[] bvhLeafIndices, 
+    public static void ConstructBvhTree(SwapBackArray<int> activeBodies, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, 
+        float[] maxAabbsY, float[] centroidsX, float[] centroidsY, int[] bvhCategories, float[] bvhLeafPaddings, int[] bvhLeafIndices, 
         BoundingVolumeHierarchy bvh
     )
     {
         // clear the previous bvh data.
         BoundingVolumeHierarchy.Clear(bvh);
 
-        for(int i = 0; i < flags.Length; i++)
+        int count = activeBodies.Count;
+        for(int i = 1; i < count; i++) // start at one to avoid Nil.
         {
-            ref PhysicsBodyFlags flag = ref flags[i];
+            int index = activeBodies[i];
+            ref float padding = ref bvhLeafPaddings[index];
+            float minX = minAabbsX[index] - padding;
+            float minY = minAabbsY[index] - padding;
+            float maxX = maxAabbsX[index] + padding;
+            float maxY = maxAabbsY[index] + padding;
 
-
-            if((flag & PhysicsBodyFlags.Allocated) != 0 && (flag & PhysicsBodyFlags.Active) != 0)
-            {
-                ref float padding = ref bvhLeafPaddings[i];
-                float minX = minAabbsX[i] - padding;
-                float minY = minAabbsY[i] - padding;
-                float maxX = maxAabbsX[i] + padding;
-                float maxY = maxAabbsY[i] + padding;
-
-                // insert into the bvh.
-                bvhLeafIndices[Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidsX[i], centroidsY[i], bvhCategories[i])] = i;
-            }
+            // insert into the bvh.
+            bvhLeafIndices[
+                Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidsX[index], centroidsY[index], bvhCategories[index])
+            ] = index;
         }
 
         // construct the bvh with the new data.
@@ -1901,17 +1870,7 @@ public static class PhysicsSystem
 
 
 
-    /// <summary>
-    /// Draws wireframes for all circle physics bodies.
-    /// </summary>
-    /// <param name="camera">the camera to draw in relation to.</param>
-    /// <param name="centroids">the source containing the centroids for the circles.</param>
-    /// <param name="radii">the radii of the circles.</param>
-    /// <param name="flags">a span containing the flags of the circles to draw.</param>
-    /// <param name="dynamicColour">the colour to draw any 'dynamic' bodies with.</param>
-    /// <param name="kinematicColour">the colour to draw any 'kinematic' bodies with.</param>
-    /// <param name="triggerColour">the colour to draw any 'trigger' bodies with.</param>
-    public static void DrawCirclePhysicsBodies(HowlAppState app, CollisionManifoldState manifold, Soa_Vector2 centroids, 
+    public static void DrawCirclePhysicsBodies(HowlAppState app, CollisionManifoldState manifold, SwapBackArray<int> activeBodies, Soa_Vector2 centroids, 
         Span<float> radii, Span<PhysicsBodyFlags> flags, Colour dynamicColour, Colour kinematicColour, Colour triggerPassiveColour,
         Colour triggerActiveColour
     )
@@ -1919,14 +1878,13 @@ public static class PhysicsSystem
         Span<float> centroidX = centroids.X;
         Span<float> centroidY = centroids.Y;
         Colour drawColour;
+        int count = activeBodies.Count;
 
-        for(int i = 0; i < flags.Length; i++)
+        for(int i = 1; i < count; i++) // start at one to avoid Nil.
         {
-            ref PhysicsBodyFlags flag = ref flags[i];
-            if((flag & PhysicsBodyFlags.Allocated) == 0 || 
-                (flag & PhysicsBodyFlags.Active) == 0 || 
-                (flag & PhysicsBodyFlags.RectangleShape) != 0
-            )
+            int physicsBodyINdex = activeBodies[i]; 
+            ref PhysicsBodyFlags flag = ref flags[physicsBodyINdex];
+            if((flag & PhysicsBodyFlags.RectangleShape) != 0)
             {
                 continue;
             }
@@ -1937,7 +1895,7 @@ public static class PhysicsSystem
             }
             else if((flag & PhysicsBodyFlags.Trigger) != 0)
             {
-                drawColour = CollisionManifold.HasContacts(manifold, i)
+                drawColour = CollisionManifold.HasContacts(manifold, physicsBodyINdex)
                 ? triggerActiveColour
                 : triggerPassiveColour;            
             }
@@ -1946,49 +1904,27 @@ public static class PhysicsSystem
                 drawColour = dynamicColour;
             }
 
-            Circle shape = new(centroidX[i], centroidY[i], radii[i]);
+            Circle shape = new(centroidX[physicsBodyINdex], centroidY[physicsBodyINdex], radii[physicsBodyINdex]);
 
             Debug.Draw.WireCircle(app, shape, drawColour, DrawSpace.World);
-        }    
+        }
     }
 
-    /// <summary>
-    ///     Draws wireframes for all polygon physics bodies.
-    /// </summary>
-    /// <param name="camera">the camera to draw in relation to.</param>
-    /// <param name="vertices">the vertices for all the polygons.</param>
-    /// <param name="flags">a span containing the flags of the polygons to draw.</param>
-    /// <param name="dynamicColour">the colour to draw 'dynamic' bodies with.</param>
-    /// <param name="kinematicColour">the colour to draw 'kinematic' bodies with.</param>
-    /// <param name="triggerPassiveColour">the colour to draw 'trigger' bodies with.</param>
-
-
-    /// <summary>
-    ///     Draws wireframes for all polygon physics bodies.
-    /// </summary>
-    /// <param name="app">the howl app state instance.</param>
-    /// <param name="manifold">the manifold containing the collision information.</param>
-    /// <param name="vertices">the vertices of the physics bodies.</param>
-    /// <param name="flags">the physics body flags.</param>
-    /// <param name="dynamicColour">the colour to draw <c>dynamic</c> bodies with.</param>
-    /// <param name="kinematicColour">the colour to draw <c>kinematic</c> bodies with.</param>
-    /// <param name="triggerPassiveColour">the colour to draw <c>trigger</c> bodies that are not in contact with other bodies.</param>
-    /// <param name="triggerActiveColour">the colour to draw <c>trigger</c> bodies that are in contact with other bodies.</param>
-    public static void DrawPolygonPhysicsBodies(HowlAppState app, CollisionManifoldState manifold, FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags,
-        Colour dynamicColour, Colour kinematicColour, Colour triggerPassiveColour, Colour triggerActiveColour
+    public static void DrawPolygonPhysicsBodies(HowlAppState app, CollisionManifoldState manifold, SwapBackArray<int> activeBodies, 
+        FsSoa_Vector2 vertices, Span<PhysicsBodyFlags> flags, Colour dynamicColour, Colour kinematicColour, Colour triggerPassiveColour, 
+        Colour triggerActiveColour
     )
     {
         Span<float> polyVertsX = default;
         Span<float> polyVertsY = default;
+        int count = activeBodies.Count;
         Colour drawColour;
 
-        for(int i = 0; i < flags.Length; i++)
+        for(int i = 1; i < count; i++) // start at one to avoid Nil.
         {
-            ref PhysicsBodyFlags flag = ref flags[i];
-
-            if((flag & PhysicsBodyFlags.Allocated) == 0 || 
-                (flag & PhysicsBodyFlags.Active) == 0 ||
-                (flag & PhysicsBodyFlags.RectangleShape) == 0)
+            int physicsBodyIndex = activeBodies[i]; 
+            ref PhysicsBodyFlags flag = ref flags[physicsBodyIndex];
+            if((flag & PhysicsBodyFlags.RectangleShape) == 0)
             {
                 continue;
             }
@@ -1999,7 +1935,7 @@ public static class PhysicsSystem
             }
             else if ((flag & PhysicsBodyFlags.Trigger) != 0)
             {
-                drawColour = CollisionManifold.HasContacts(manifold, i)
+                drawColour = CollisionManifold.HasContacts(manifold, physicsBodyIndex)
                 ? triggerActiveColour
                 : triggerPassiveColour;
             }
@@ -2008,12 +1944,12 @@ public static class PhysicsSystem
                 drawColour = dynamicColour;
             }
 
-            PhysicsBody.GetPolygonVerticesUnsafe(vertices, i, ref polyVertsX, ref polyVertsY);
+            PhysicsBody.GetPolygonVerticesUnsafe(vertices, physicsBodyIndex, ref polyVertsX, ref polyVertsY);
             Debug.Draw.WirePoly(app, polyVertsX, polyVertsY, drawColour, DrawSpace.World);
-        }        
+        }
     }
 
-    public static void DrawCollisionInformation(HowlAppState app, CollisionManifoldState collisions, Colour ownerColour, Colour otherColour, 
+    public static void DrawCollisionInformation(HowlAppState app, CollisionManifoldState collisions, Colour otherColour, 
         Colour contactPointColour, Colour normalColour
     )
     {
@@ -2105,8 +2041,8 @@ public static class PhysicsSystem
         }
     }
 
-    public static void DrawLinearVelocities(HowlAppState app, Soa_Vector2 linearVelocities, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, 
-        Colour colour, int count
+    public static void DrawLinearVelocities(HowlAppState app, SwapBackArray<int> activeBodies, Soa_Vector2 linearVelocities, Soa_Vector2 centroids, 
+        Span<PhysicsBodyFlags> flags, Colour colour
     )
     {
         // hoisting invariance.
@@ -2115,70 +2051,64 @@ public static class PhysicsSystem
         Span<float> centroidsX = centroids.X;
         Span<float> centroidsY = centroids.Y;
 
-        for(int i = 0; i < count; i++)
+        int count = activeBodies.Count;
+        for(int i = 1; i < count; i++) // start at one to skip Nil.
         {
-            ref PhysicsBodyFlags flag = ref flags[i];
-            if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.Active) == 0)
+            int physicsBodyIndex = activeBodies[i];
+            ref PhysicsBodyFlags flag = ref flags[physicsBodyIndex];
+            
+            if((flag & PhysicsBodyFlags.RigidBody) == 0)
             {
                 continue;
             }
 
-            float startX = centroidsX[i];
-            float startY = centroidsY[i];
-            float endX = startX + linearVelocitiesX[i];
-            float endY = startY + linearVelocitiesY[i];
+            float startX = centroidsX[physicsBodyIndex];
+            float startY = centroidsY[physicsBodyIndex];
+            float endX = startX + linearVelocitiesX[physicsBodyIndex];
+            float endY = startY + linearVelocitiesY[physicsBodyIndex];
 
             Debug.Draw.Line(app, colour, new Math.Vector2(startX, startY), new Math.Vector2(endX, endY), DrawSpace.World);
         }
     }
 
-    public static void DrawPositions(HowlAppState app, Soa_Vector2 positions, Span<PhysicsBodyFlags> flags, Colour colour, int count)
+    public static void DrawPositions(HowlAppState app, Soa_Vector2 positions, SwapBackArray<int> activeBodies, Colour colour)
     {
         // hoisting invariance.
         Span<float> positionsX = positions.X;
         Span<float> positionsY = positions.Y;
 
-        for(int i = 0; i < count; i++)
+        int count = activeBodies.Count;
+        for(int i = 1; i < count; i++) // start at one to skip Nil.
         {
-            ref PhysicsBodyFlags flag = ref flags[i];
-            if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.Active) == 0)
-            {
-                continue;
-            }
-
-            Debug.Draw.WireCircle(app, new Circle(positionsX[i], positionsY[i], 0.1f), colour, DrawSpace.World);
+            int physicsBodyIndex = activeBodies[i];
+            Debug.Draw.WireCircle(app, new Circle(positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], 0.1f), colour, DrawSpace.World);
         }
     }
 
-    public static void DrawCentroids(HowlAppState app, Soa_Vector2 centroids, Span<PhysicsBodyFlags> flags, Colour colour, int count)
+    public static void DrawCentroids(HowlAppState app, Soa_Vector2 centroids, SwapBackArray<int> activeBodies, Colour colour)
     {
         // hoisting invariance.
         Span<float> centroidsX = centroids.X;
         Span<float> centroidsY = centroids.Y;
 
-        for(int i = 0 ; i < count; i++)
+        int count = activeBodies.Count;
+        for(int i = 1; i < count; i++) // start at one to skip Nil.
         {
-            ref PhysicsBodyFlags flag = ref flags[i];
-            if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.Active) == 0)
-            {
-                continue;
-            }
-
-            Debug.Draw.WireCircle(app, new Circle(centroidsX[i], centroidsY[i], 0.1f), colour, DrawSpace.World);
+            int physicsBodyIndex = activeBodies[i];
+            Debug.Draw.WireCircle(app, new Circle(centroidsX[physicsBodyIndex], centroidsY[physicsBodyIndex], 0.1f), colour, DrawSpace.World);
         }
     }
 
-    public static void DrawAabbs(HowlAppState app, Soa_Vector2 min, Soa_Vector2 max, Span<PhysicsBodyFlags> flags, Colour colour)
+    public static void DrawAabbs(HowlAppState app, Soa_Vector2 min, Soa_Vector2 max, SwapBackArray<int> activeBodies, Colour colour)
     {
-        for(int i = 0; i < flags.Length; i++)
+        int count = activeBodies.Count;
+        for(int i = 1; i < count; i++) // start at one to skip Nil.
         {
-            if((flags[i] & PhysicsBodyFlags.InUse) == 0)
-                continue;
-
-            float minX = min.X[i];
-            float minY = min.Y[i];
-            float maxX = max.X[i];
-            float maxY = max.Y[i];
+            int physicsBodyIndex = activeBodies[i];
+            float minX = min.X[physicsBodyIndex];
+            float minY = min.Y[physicsBodyIndex];
+            float maxX = max.X[physicsBodyIndex];
+            float maxY = max.Y[physicsBodyIndex];
 
             Debug.Draw.WirePoly(app, [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], colour, DrawSpace.World);
         }

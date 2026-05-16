@@ -46,12 +46,7 @@ public enum PhysicsBodyFlags : int
     RigidBody = 1<<5,
 
     /// <summary>
-    /// Whether or not a physics body is in active within the physics simulation
-    /// </summary>
-    Active = 1<<6,
-
-    /// <summary>
     /// Whether or not a phsyics body is allocated and active.
     /// </summary>
-    InUse = Allocated | Active,
+    InUse = Allocated,
 }
