@@ -295,7 +295,7 @@ public static class PhysicsSystem
             // RigidBody Movement Step.
             state.RigidBodyMovementStepStopwatch.Restart();
             RigidBodyMovementStep(activeBodiesDenseIndices, linearVelocitiesX, linearVelocitiesY, forcesX, forcesY, masses, positionsX, positionsY, sines, cosines, 
-                angularVelocities, flags, gravityDirectionX, gravityDirectionY, gravity, deltaTime
+                angularVelocities, bvhCategories, gravityDirectionX, gravityDirectionY, gravity, deltaTime
             );
             state.RigidBodyMovementStepStopwatch.Stop();
 
@@ -552,17 +552,13 @@ public static class PhysicsSystem
     ///     Remarks: All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
     /// </remarks>
     public static void RigidBodyMovementStep(int[] activeBodyDenseIndices, float[] linearVelocitiesX, float[] linearVelocitiesY, float[] forcesX, float[] forcesY,
-        float[] masses, float[] positionsX, float[] positionsY, float[] sines, float[] cosines, float[] angularVelocities, PhysicsBodyFlags[] flags,
-        float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime
+        float[] masses, float[] positionsX, float[] positionsY, float[] sines, float[] cosines, float[] angularVelocities,
+        int[] categories, float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime
     )
     {
         int simdSize = Vector<float>.Count;
-        PhysicsBodyFlags requiredFlags = PhysicsBodyFlags.RigidBody;
-        PhysicsBodyFlags forbiddenFlags = PhysicsBodyFlags.Kinematic;
-
+        Vector<int> vFilter = new Vector<int>(PhysicsBodyCategory.KinematicPolygonRigidBody);
         Vector<int> vInactive = new Vector<int>(Constants.InactiveDenseIndex);
-        Vector<int> vRequiredFlags = new Vector<int>((int)requiredFlags);
-        Vector<int> vForbiddenFlags = new Vector<int>((int)forbiddenFlags);
         Vector<float> vDeltaTime = new Vector<float>(deltaTime);
         Vector<float> vGravityX = new Vector<float>(gravityDirectionX * gravity * deltaTime);
         Vector<float> vGravityY = new Vector<float>(gravityDirectionY * gravity * deltaTime);
@@ -584,21 +580,15 @@ public static class PhysicsSystem
                     continue;
                 }
 
-                ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
-                Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
-                
-                // (flag & required) == required.
-                Vector<int> hasRequired = Vector.Equals(vFlags & vRequiredFlags, vRequiredFlags);
+                Vector<int> vCats = Vector.LoadUnsafe(ref categories[i]);
 
-                // (flag & forbidden) == 0.
-                Vector<int> doesntHaveForbidden = Vector.Equals(vFlags & vForbiddenFlags, Vector<int>.Zero);
-            
-                // combined mask.
-                Vector<int> vMask = hasRequired & doesntHaveForbidden;
+                // generate the mask: example: [0,-1,-1,0];
+                // this checks if there is a body in this chunk that is a rigidbody that should move (Trigger and Solid).
+                Vector<int> mask = Vector.LessThan(vCats, vFilter);
 
                 // short circuit if the entire mask is zero 
-                // (all bodies in this chunk either dont have the required flags or have the forbidden flags)
-                if (vMask.Equals(Vector<int>.Zero))
+                // (all bodies in this chunk are not a rigidbody)
+                if (mask.Equals(Vector<int>.Zero))
                 {
                     continue;
                 }
@@ -640,12 +630,12 @@ public static class PhysicsSystem
                 MathV.RotorMultiply(vSin, vCos, vAngVel * vDeltaTime, ref newSin, ref newCos);
 
                 // conditional select (only keep results for valid flags)
-                vLinVelX = Vector.ConditionalSelect(vMask, nextVelX, vLinVelX);
-                vLinVelY = Vector.ConditionalSelect(vMask, nextVelY, vLinVelY);
-                vPosX = Vector.ConditionalSelect(vMask, nextPosX, vPosX);
-                vPosY = Vector.ConditionalSelect(vMask, nextPosY, vPosY);
-                vCos = Vector.ConditionalSelect(vMask, newCos, vCos);
-                vSin = Vector.ConditionalSelect(vMask, newSin, vSin);
+                vLinVelX = Vector.ConditionalSelect(mask, nextVelX, vLinVelX);
+                vLinVelY = Vector.ConditionalSelect(mask, nextVelY, vLinVelY);
+                vPosX = Vector.ConditionalSelect(mask, nextPosX, vPosX);
+                vPosY = Vector.ConditionalSelect(mask, nextPosY, vPosY);
+                vCos = Vector.ConditionalSelect(mask, newCos, vCos);
+                vSin = Vector.ConditionalSelect(mask, newSin, vSin);
 
                 // store results.
                 vLinVelX.StoreUnsafe(ref linearVelocitiesX[i]);
@@ -666,12 +656,13 @@ public static class PhysicsSystem
             {
                 if(activeBodyDenseIndices[j] == Constants.InactiveDenseIndex)
                 {
+                    // inactive body.
                     continue;
                 }
 
-                ref PhysicsBodyFlags flag = ref flags[j];
-                if((flag & PhysicsBodyFlags.RigidBody) != 0 && (flag & PhysicsBodyFlags.Kinematic) == 0)
+                if(categories[j] >= PhysicsBodyCategory.KinematicPolygonRigidBody)
                 {
+                    // body isnt a rigidbody that should move (not Trigger or Solid).
                     continue;
                 }
 

@@ -11,10 +11,12 @@ public static class PhysicsBodyCategory
     public const int SolidCircleRigidBody       = 1;
     public const int SolidCapsuleRigidBody      = 2;
     
-    
     public const int TriggerPolygonRigidBody    = 3;
     public const int TriggerCircleRigidBody     = 4;
     public const int TriggerCapsuleRigidBody    = 5;
+
+    // note: everything greater than KinematicPolygonRigidBody
+    // is not apart of the rigid body movement step.
 
     public const int KinematicPolygonRigidBody  = 6;
     public const int KinematicCircleRigidBody   = 7;
