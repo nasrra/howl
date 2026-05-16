@@ -237,8 +237,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
 
                 StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
@@ -278,8 +278,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
 
                 StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
@@ -323,8 +323,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
 
                 StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
@@ -365,8 +365,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
 
                 StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
@@ -472,8 +472,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
             }
         }
@@ -512,8 +512,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
             }
         }
@@ -554,8 +554,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }        
@@ -594,8 +594,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }    
@@ -710,8 +710,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
 
                 StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
@@ -757,8 +757,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
 
                 StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.BToA);
@@ -797,8 +797,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
 
                 StackArray.Push(rigidBodyCollisionsToResolve, collisionIndices.AToB);
@@ -907,8 +907,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
             }
         }
@@ -945,8 +945,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
             }
         }          
@@ -990,8 +990,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }
@@ -1028,8 +1028,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }
@@ -1273,8 +1273,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, subStepCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Kinematic,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Kinematic,
+                    CollisionResolutionCategory.Solid
                 );
             }
         }  
@@ -1313,8 +1313,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }
@@ -1593,8 +1593,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }
@@ -1630,8 +1630,8 @@ public static class Detection
             if (collided)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }
@@ -2309,8 +2309,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
             }
         }
@@ -2349,8 +2349,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
             }
         }
@@ -2392,8 +2392,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }
@@ -2432,8 +2432,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }
@@ -2550,8 +2550,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Solid
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Solid
                 );
             }
         }        
@@ -2595,8 +2595,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }
@@ -2633,8 +2633,8 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    SubStepResolutionBvhCategory.Solid,
-                    SubStepResolutionBvhCategory.Kinematic
+                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Kinematic
                 );
             }
         }        

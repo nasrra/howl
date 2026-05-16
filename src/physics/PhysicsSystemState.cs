@@ -228,7 +228,7 @@ public sealed class PhysicsSystemState
     /// <summary>
     ///     The indices in the <c>CollisionManifoldState</c> of rigidbody collisions to resolve in the current substep.
     /// </summary>
-    public StackArray<int> SubStepRigidbodyCollisionsToResolve;
+    public StackArray<int> SubStepRigidBodyCollisionsToResolve;
 
     /// <summary>
     ///     The indices of physics bodies that are currently active.
@@ -245,6 +245,14 @@ public sealed class PhysicsSystemState
     ///     Remarks: this array contains a <c>Nil</c> element.
     /// </remarks>
     public int[] ActiveBodiesDenseIndices;
+
+    /// <summary>
+    ///     Whether a rotational response is enabled for a physics body.
+    /// </summary>    
+    /// <remarks>
+    ///     Remarks: Elements should be accessed by <c>physicsBodyIndex</c>.
+    /// </remarks>
+    public bool[] RotationalResponses;
 
     /// <summary>
     ///     The amount of allocated solid polygon colliders.
@@ -547,11 +555,6 @@ public sealed class PhysicsSystemState
 
 
     /// <summary>
-    /// Gets and sets the count of allocated physics body stored in this physics system state.
-    /// </summary>
-    public int AlloctedPhysicsBodyCount = 0;
-
-    /// <summary>
     /// Gets and sets the maximum amount of vertices a physics body can have.
     /// </summary>
     /// <remarks>
@@ -668,10 +671,10 @@ public sealed class PhysicsSystemState
         // Utility.
         int maxCollisions = physicsBodyCount*physicsBodyCount;
         Bvh = new(physicsBodyCount);
-        Overlaps = new(BvhCategory.Count, maxCollisions);
+        Overlaps = new(PhysicsBodyCategory.Count, maxCollisions);
         CollisionManifoldState = new(physicsBodyCount);
-        SubStepColliderCollisionsToResolve  = new(SubStepResolutionBvhCategory.Count, maxCollisions);
-        SubStepRigidbodyCollisionsToResolve = new(maxCollisions);
+        SubStepColliderCollisionsToResolve  = new(CollisionResolutionCategory.Count, maxCollisions);
+        SubStepRigidBodyCollisionsToResolve = new(maxCollisions);
         Entities = new(physicsBodyCount);
 
         // Physics body data.
@@ -702,6 +705,7 @@ public sealed class PhysicsSystemState
         BvhLeafPaddings             = new float[physicsBodyCount];
         ActiveBodies                = new(physicsBodyCount);
         ActiveBodiesDenseIndices    = new int[physicsBodyCount];
+        RotationalResponses          = new bool[physicsBodyCount];
 
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();

@@ -1,6 +1,6 @@
 namespace Howl.Physics;
 
-public static class SubStepResolutionBvhCategory
+public static class CollisionResolutionCategory
 {
     public const int Solid = 0;
     public const int Kinematic = 1;

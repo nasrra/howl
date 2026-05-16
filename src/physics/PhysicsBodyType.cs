@@ -28,10 +28,7 @@ public enum PhysicsBodyFlags : int
     /// Turns off collision resolution for this physics body.
     /// </summary>
     Kinematic = 1<<3,
-
-    // HasPhysicsMaterial = 1<<4,
-    RotationalPhysics = 1 << 4,
-
+    
     /// <summary>
     /// Whether or not a physics body has a rigidbody.
     /// </summary>

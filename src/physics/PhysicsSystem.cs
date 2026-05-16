@@ -43,7 +43,7 @@ public static class PhysicsSystem
         Soa_Vector2 centroids = state.Centroids;
         FsSoa_Vector2 worldVertices = state.WorldVertices;
         CategorisedOverlapArray<int> colliderCollisionsToResolve = state.SubStepColliderCollisionsToResolve;
-        StackArray<int> rigidBodyCollisionsToResolve = state.SubStepRigidbodyCollisionsToResolve;
+        StackArray<int> rigidBodyCollisionsToResolve = state.SubStepRigidBodyCollisionsToResolve;
         float[] worldRadii = state.WorldRadii;
         CategorisedLeafOverlaps overlaps = state.Overlaps;
         BoundingVolumeHierarchy bvh = state.Bvh;
@@ -88,6 +88,7 @@ public static class PhysicsSystem
         float gravity = state.Gravity;
         float gravityDirectionX = state.GravityDirection.X;
         float gravityDirectionY = state.GravityDirection.Y;
+        bool[] rotationalResponses = state.RotationalResponses;
 
         // scratch buffers for rigid body reslution.
         Span<float> impulseMagnitudes = stackalloc float[MaxCollisionContactPoints]; 
@@ -123,19 +124,17 @@ public static class PhysicsSystem
             state.IntegrateBodyPropertiesStopwatch.Stop();
         }
 
-        {   // Prepare Collisions
+        {   // Prepare Substep Collisions
             
             CollisionManifold.PrepareForNextStep(collisions);
 
-            // prepare sub step collision resolution collection.
             int solidCount = state.SolidPolygonColliderCount + state.SolidCircleColliderCount + state.SolidPolygonRigidBodyCount + state.SolidCircleRigidBodyCount;
             int kinematicCount = state.KinematicPolygonColliderCount + state.KinematicCircleColliderCount + state.KinematicPolygonRigidBodyCount + state.KinematicCircleRigidBodyCount;
-            colliderCollisionsToResolve.CategoryLengths[SubStepResolutionBvhCategory.Solid] = solidCount;
-            colliderCollisionsToResolve.CategoryLengths[SubStepResolutionBvhCategory.Kinematic] = kinematicCount;
-            CategorisedOverlapArray.BuildChunks(colliderCollisionsToResolve);
 
-            CategorisedOverlapArray.ClearCounts(colliderCollisionsToResolve);
-            StackArray.ClearCount(rigidBodyCollisionsToResolve);
+            // prepare sub step collision resolution collection.
+            colliderCollisionsToResolve.CategoryLengths[CollisionResolutionCategory.Solid] = solidCount;
+            colliderCollisionsToResolve.CategoryLengths[CollisionResolutionCategory.Kinematic] = kinematicCount;
+            CategorisedOverlapArray.BuildChunks(colliderCollisionsToResolve);
         }
 
         {   // Bvh
@@ -148,21 +147,21 @@ public static class PhysicsSystem
             {                
              
                 CategorisedLeafOverlaps.ClearCounts(overlaps);
-                overlaps.CategoryLengths[BvhCategory.SolidCircleCollider]       = state.SolidCircleColliderCount;
-                overlaps.CategoryLengths[BvhCategory.TriggerCircleCollider]     = state.TriggerCircleColliderCount;
-                overlaps.CategoryLengths[BvhCategory.KinematicCircleCollider]   = state.KinematicCircleColliderCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.SolidCircleCollider]       = state.SolidCircleColliderCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.TriggerCircleCollider]     = state.TriggerCircleColliderCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.KinematicCircleCollider]   = state.KinematicCircleColliderCount;
                 
-                overlaps.CategoryLengths[BvhCategory.SolidCircleRigidBody]      = state.SolidCircleRigidBodyCount;
-                overlaps.CategoryLengths[BvhCategory.TriggerCircleRigidBody]    = state.TriggerCircleRigidBodyCount;
-                overlaps.CategoryLengths[BvhCategory.KinematicCircleRigidBody]  = state.KinematicCircleRigidBodyCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.SolidCircleRigidBody]      = state.SolidCircleRigidBodyCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.TriggerCircleRigidBody]    = state.TriggerCircleRigidBodyCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.KinematicCircleRigidBody]  = state.KinematicCircleRigidBodyCount;
 
-                overlaps.CategoryLengths[BvhCategory.SolidPolygonCollider]      = state.SolidPolygonColliderCount;
-                overlaps.CategoryLengths[BvhCategory.TriggerPolygonCollider]    = state.TriggerPolygonColliderCount;
-                overlaps.CategoryLengths[BvhCategory.KinematicPolygonCollider]  = state.KinematicPolygonColliderCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.SolidPolygonCollider]      = state.SolidPolygonColliderCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.TriggerPolygonCollider]    = state.TriggerPolygonColliderCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.KinematicPolygonCollider]  = state.KinematicPolygonColliderCount;
                 
-                overlaps.CategoryLengths[BvhCategory.SolidPolygonRigidBody]     = state.SolidPolygonRigidBodyCount;
-                overlaps.CategoryLengths[BvhCategory.TriggerPolygonRigidBody]   = state.TriggerPolygonRigidBodyCount;
-                overlaps.CategoryLengths[BvhCategory.KinematicPolygonRigidBody] = state.KinematicPolygonRigidBodyCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.SolidPolygonRigidBody]     = state.SolidPolygonRigidBodyCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.TriggerPolygonRigidBody]   = state.TriggerPolygonRigidBodyCount;
+                overlaps.CategoryLengths[PhysicsBodyCategory.KinematicPolygonRigidBody] = state.KinematicPolygonRigidBodyCount;
                 
                 CategorisedLeafOverlaps.BuildChunks(overlaps);
             }
@@ -184,106 +183,106 @@ public static class PhysicsSystem
         // == retrieve overlap info.
 
         // solid polygon rigidbody.        
-        OverlapInfo overlaps_SolPolRig_To_SolPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.SolidPolygonRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_SolCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.SolidCircleRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.KinematicPolygonRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.KinematicCircleRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.TriggerPolygonRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.TriggerCircleRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.SolidPolygonCollider);
-        OverlapInfo overlaps_SolPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.SolidCircleCollider);
-        OverlapInfo overlaps_SolPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_SolPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_SolPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_SolPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonRigidBody, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_SolPolRig_To_SolPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.SolidPolygonRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_SolCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.SolidCircleRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.KinematicPolygonRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.KinematicCircleRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.TriggerPolygonRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.TriggerCircleRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.SolidPolygonCollider);
+        OverlapInfo overlaps_SolPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.SolidCircleCollider);
+        OverlapInfo overlaps_SolPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_SolPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_SolPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_SolPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonRigidBody, PhysicsBodyCategory.TriggerCircleCollider);
         
         // solid circle rigid body.
-        OverlapInfo overlaps_SolCirRig_To_SolCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.SolidCircleRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.KinematicPolygonRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.KinematicCircleRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.TriggerPolygonRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.TriggerCircleRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.SolidPolygonCollider);
-        OverlapInfo overlaps_SolCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.SolidCircleCollider);
-        OverlapInfo overlaps_SolCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_SolCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_SolCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_SolCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleRigidBody, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_SolCirRig_To_SolCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.SolidCircleRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.KinematicPolygonRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.KinematicCircleRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.TriggerPolygonRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.TriggerCircleRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.SolidPolygonCollider);
+        OverlapInfo overlaps_SolCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.SolidCircleCollider);
+        OverlapInfo overlaps_SolCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_SolCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_SolCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_SolCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleRigidBody, PhysicsBodyCategory.TriggerCircleCollider);
 
         // kinematic polygon rigid body.
-        OverlapInfo overlaps_KinPolRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.KinematicPolygonRigidBody);
-        OverlapInfo overlaps_KinPolRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.KinematicCircleRigidBody);
-        OverlapInfo overlaps_KinPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.TriggerPolygonRigidBody);
-        OverlapInfo overlaps_KinPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.TriggerCircleRigidBody);
-        OverlapInfo overlaps_KinPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.SolidPolygonCollider);
-        OverlapInfo overlaps_KinPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.SolidCircleCollider);
-        OverlapInfo overlaps_KinPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_KinPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_KinPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_KinPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonRigidBody, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_KinPolRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.KinematicPolygonRigidBody);
+        OverlapInfo overlaps_KinPolRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.KinematicCircleRigidBody);
+        OverlapInfo overlaps_KinPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.TriggerPolygonRigidBody);
+        OverlapInfo overlaps_KinPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.TriggerCircleRigidBody);
+        OverlapInfo overlaps_KinPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.SolidPolygonCollider);
+        OverlapInfo overlaps_KinPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.SolidCircleCollider);
+        OverlapInfo overlaps_KinPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_KinPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_KinPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_KinPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonRigidBody, PhysicsBodyCategory.TriggerCircleCollider);
         
         // kinematic circle rigid body.
-        OverlapInfo overlaps_KinCirRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.KinematicCircleRigidBody);
-        OverlapInfo overlaps_KinCirRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.TriggerPolygonRigidBody);
-        OverlapInfo overlaps_KinCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.TriggerCircleRigidBody);
-        OverlapInfo overlaps_KinCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.SolidPolygonCollider);
-        OverlapInfo overlaps_KinCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.SolidCircleCollider);
-        OverlapInfo overlaps_KinCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_KinCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_KinCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_KinCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleRigidBody, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_KinCirRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.KinematicCircleRigidBody);
+        OverlapInfo overlaps_KinCirRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.TriggerPolygonRigidBody);
+        OverlapInfo overlaps_KinCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.TriggerCircleRigidBody);
+        OverlapInfo overlaps_KinCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.SolidPolygonCollider);
+        OverlapInfo overlaps_KinCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.SolidCircleCollider);
+        OverlapInfo overlaps_KinCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_KinCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_KinCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_KinCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleRigidBody, PhysicsBodyCategory.TriggerCircleCollider);
         
         // trigger polygon rigid body.
-        OverlapInfo overlaps_TriPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonRigidBody, BvhCategory.TriggerPolygonRigidBody);    
-        OverlapInfo overlaps_TriPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonRigidBody, BvhCategory.TriggerCircleRigidBody);
-        OverlapInfo overlaps_TriPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonRigidBody, BvhCategory.SolidPolygonCollider);
-        OverlapInfo overlaps_TriPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonRigidBody, BvhCategory.SolidCircleCollider);
-        OverlapInfo overlaps_TriPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonRigidBody, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_TriPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonRigidBody, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_TriPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonRigidBody, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_TriPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonRigidBody, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_TriPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonRigidBody, PhysicsBodyCategory.TriggerPolygonRigidBody);    
+        OverlapInfo overlaps_TriPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonRigidBody, PhysicsBodyCategory.TriggerCircleRigidBody);
+        OverlapInfo overlaps_TriPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonRigidBody, PhysicsBodyCategory.SolidPolygonCollider);
+        OverlapInfo overlaps_TriPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonRigidBody, PhysicsBodyCategory.SolidCircleCollider);
+        OverlapInfo overlaps_TriPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonRigidBody, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_TriPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonRigidBody, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_TriPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonRigidBody, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_TriPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonRigidBody, PhysicsBodyCategory.TriggerCircleCollider);
         
         // trigger circle rigidbody.
-        OverlapInfo overlaps_TriCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerCircleRigidBody, BvhCategory.TriggerCircleRigidBody);
-        OverlapInfo overlaps_TriCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerCircleRigidBody, BvhCategory.SolidPolygonCollider);
-        OverlapInfo overlaps_TriCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerCircleRigidBody, BvhCategory.SolidCircleCollider);
-        OverlapInfo overlaps_TriCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerCircleRigidBody, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_TriCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerCircleRigidBody, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_TriCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerCircleRigidBody, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_TriCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerCircleRigidBody, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_TriCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerCircleRigidBody, PhysicsBodyCategory.TriggerCircleRigidBody);
+        OverlapInfo overlaps_TriCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerCircleRigidBody, PhysicsBodyCategory.SolidPolygonCollider);
+        OverlapInfo overlaps_TriCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerCircleRigidBody, PhysicsBodyCategory.SolidCircleCollider);
+        OverlapInfo overlaps_TriCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerCircleRigidBody, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_TriCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerCircleRigidBody, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_TriCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerCircleRigidBody, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_TriCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerCircleRigidBody, PhysicsBodyCategory.TriggerCircleCollider);
         
         // solid polygon collider.
-        OverlapInfo overlaps_SolPolCol_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonCollider, BvhCategory.SolidPolygonCollider);
-        OverlapInfo overlaps_SolPolCol_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonCollider, BvhCategory.SolidCircleCollider);
-        OverlapInfo overlaps_SolPolCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonCollider, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_SolPolCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonCollider, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_SolPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonCollider, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_SolPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidPolygonCollider, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_SolPolCol_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonCollider, PhysicsBodyCategory.SolidPolygonCollider);
+        OverlapInfo overlaps_SolPolCol_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonCollider, PhysicsBodyCategory.SolidCircleCollider);
+        OverlapInfo overlaps_SolPolCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonCollider, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_SolPolCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonCollider, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_SolPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonCollider, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_SolPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidPolygonCollider, PhysicsBodyCategory.TriggerCircleCollider);
         
         // solid circle collider.
-        OverlapInfo overlaps_SolCirCol_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleCollider, BvhCategory.SolidCircleCollider);
-        OverlapInfo overlaps_SolCirCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleCollider, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_SolCirCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleCollider, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_SolCirCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleCollider, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_SolCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.SolidCircleCollider, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_SolCirCol_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleCollider, PhysicsBodyCategory.SolidCircleCollider);
+        OverlapInfo overlaps_SolCirCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleCollider, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_SolCirCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleCollider, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_SolCirCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleCollider, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_SolCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.SolidCircleCollider, PhysicsBodyCategory.TriggerCircleCollider);
         
         // kinematic polygon collider.
-        OverlapInfo overlaps_KinPolCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonCollider, BvhCategory.KinematicPolygonCollider);
-        OverlapInfo overlaps_KinPolCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonCollider, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_KinPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonCollider, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_KinPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicPolygonCollider, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_KinPolCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonCollider, PhysicsBodyCategory.KinematicPolygonCollider);
+        OverlapInfo overlaps_KinPolCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonCollider, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_KinPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonCollider, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_KinPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicPolygonCollider, PhysicsBodyCategory.TriggerCircleCollider);
         
         // kinematic circle collider.
-        OverlapInfo overlaps_KinCirCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleCollider, BvhCategory.KinematicCircleCollider);
-        OverlapInfo overlaps_KinCirCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleCollider, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_KinCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.KinematicCircleCollider, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_KinCirCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleCollider, PhysicsBodyCategory.KinematicCircleCollider);
+        OverlapInfo overlaps_KinCirCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleCollider, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_KinCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.KinematicCircleCollider, PhysicsBodyCategory.TriggerCircleCollider);
         
         // trigger polygon collider.
-        OverlapInfo overlaps_TriPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonCollider, BvhCategory.TriggerPolygonCollider);
-        OverlapInfo overlaps_TriPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerPolygonCollider, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_TriPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonCollider, PhysicsBodyCategory.TriggerPolygonCollider);
+        OverlapInfo overlaps_TriPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerPolygonCollider, PhysicsBodyCategory.TriggerCircleCollider);
         
         // trigger circle collider.
-        OverlapInfo overlaps_TriCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, BvhCategory.TriggerCircleCollider, BvhCategory.TriggerCircleCollider);
+        OverlapInfo overlaps_TriCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBodyCategory.TriggerCircleCollider, PhysicsBodyCategory.TriggerCircleCollider);
 
         for(int i = 0; i < subSteps; i++)
         {
@@ -417,7 +416,7 @@ public static class PhysicsSystem
             ResolveRigidBodyCollisions(rigidBodyCollisionsToResolve, collisionNormalsX, collisionNormalsY, centroidsX, centroidsY, 
                 collisionFirstContactPointsX, collisionFirstContactPointsY, collisionSecondContactPointsX, collisionSecondContactPointsY, 
                 linearVelocitiesX, linearVelocitiesY, restitutions, kineticFrictions, staticFrictions, angularVelocities, masses, inverseMasses, 
-                inverseRotationalInertia, collisionTwoContactPoints, contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, 
+                inverseRotationalInertia, collisionTwoContactPoints, rotationalResponses, contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, 
                 impulsesX, impulsesY, flags, collisionsStride
             );
             state.RigidBodyCollisionResolutionStepStopwatch.Stop();
@@ -571,7 +570,7 @@ public static class PhysicsSystem
 
         int length = activeBodyDenseIndices.Length;
 
-        int i = 0;
+        int i = 0;  
 
         {   // SIMD
 
@@ -1163,8 +1162,8 @@ public static class PhysicsSystem
 
         // == resolve solid to solid collisions ==.
         collisionsToResolve = CategorisedOverlapArray.GetOverlaps(subStepCollisionsToResolve,
-            SubStepResolutionBvhCategory.Solid,
-            SubStepResolutionBvhCategory.Solid
+            CollisionResolutionCategory.Solid,
+            CollisionResolutionCategory.Solid
         );
 
         for(int i = 0; i < collisionsToResolve.Length; i++)
@@ -1184,8 +1183,8 @@ public static class PhysicsSystem
         // == resolve solid to kinematic collisions ==.
 
         collisionsToResolve = CategorisedOverlapArray.GetOverlaps(subStepCollisionsToResolve,
-            SubStepResolutionBvhCategory.Solid,
-            SubStepResolutionBvhCategory.Kinematic
+            CollisionResolutionCategory.Solid,
+            CollisionResolutionCategory.Kinematic
         );
 
         for(int i = 0; i < collisionsToResolve.Length; i++)
@@ -1246,7 +1245,7 @@ public static class PhysicsSystem
         float[] centroidsX, float[] centroidsY,float[] firstContactPointsX, float[] firstContactPointsY, 
         float[] secondContactPointsX, float[] secondContactPointsY, float[] linearVelocitiesX, float[] linearVelocitiesY, 
         float[] restitutions, float[] kineticFrictions, float[] staticFrictions, float[] angularVelocities,
-        float[] masses, float[] inverseMasses, float[] inverseRotationalInertia, bool[] twoContactPoints,
+        float[] masses, float[] inverseMasses, float[] inverseRotationalInertia, bool[] twoContactPoints, bool[] rotationalResponses,
         Span<float> contactPointsX, Span<float> contactPointsY, Span<float> distsAX, Span<float> distsAY, 
         Span<float> distsBX, Span<float> distsBY, Span<float> impulseMagnitudes, Span<float> impulsesX, Span<float> impulsesY, 
         PhysicsBodyFlags[] flags, int collisionsStride
@@ -1282,8 +1281,8 @@ public static class PhysicsSystem
         ref float otherStaticFriction = ref Unsafe.NullRef<float>();
         ref float otherKineticFriction = ref Unsafe.NullRef<float>();
         ref float otherMass = ref Unsafe.NullRef<float>();
-
-
+        ref bool ownerRotationalResponse = ref Unsafe.NullRef<bool>();
+        ref bool otherRotationalResponse = ref Unsafe.NullRef<bool>();
 
         for(int i = 0; i < collisionsToResolve.Count; i++)
         {
@@ -1317,6 +1316,8 @@ public static class PhysicsSystem
             otherStaticFriction = ref staticFrictions[otherIndex];
             otherKineticFriction = ref kineticFrictions[otherIndex];
             otherMass = ref masses[otherIndex];
+            ownerRotationalResponse = ref rotationalResponses[ownerIndex];
+            otherRotationalResponse = ref rotationalResponses[otherIndex];
 
             revNormalX = normalX * -1;
             revNormalY = normalY * -1;
@@ -1336,7 +1337,7 @@ public static class PhysicsSystem
                 contactPointsY[0] = firstContactPointsY[collisionIndex];
             }
 
-            if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0 || (otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+            if(ownerRotationalResponse || otherRotationalResponse)
             {
                 goto ResolveCollisionRotational;
             }
@@ -1496,7 +1497,7 @@ public static class PhysicsSystem
                         ownerLinearVelocityX += -impulseX * ownerInverseMass;
                         ownerLinearVelocityY += -impulseY * ownerInverseMass;
 
-                        if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+                        if(ownerRotationalResponse)
                         {
                             distAX = distsAX[j];
                             distAY = distsAY[j];
@@ -1510,7 +1511,7 @@ public static class PhysicsSystem
                         otherLinearVelocityX += impulseX * otherInverseMass;
                         otherLinearVelocityY += impulseY * otherInverseMass;
 
-                        if((otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+                        if(otherRotationalResponse)
                         {
                             distBX = distsBX[j];
                             distBY = distsBY[j];
@@ -1625,7 +1626,7 @@ public static class PhysicsSystem
                         ownerLinearVelocityX += -impulseX * ownerInverseMass;
                         ownerLinearVelocityY += -impulseY * ownerInverseMass;
 
-                        if((ownerFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+                        if(ownerRotationalResponse)
                         {
                             distAX = distsAX[j];
                             distAY = distsAY[j];
@@ -1638,7 +1639,7 @@ public static class PhysicsSystem
                         otherLinearVelocityX += impulseX * otherInverseMass;
                         otherLinearVelocityY += impulseY * otherInverseMass;
 
-                        if((otherFlag & PhysicsBodyFlags.RotationalPhysics) != 0)
+                        if(otherRotationalResponse)
                         {
                             distBX = distsBX[j];
                             distBY = distsBY[j];
@@ -1681,9 +1682,9 @@ public static class PhysicsSystem
         int otherCategory;
         int ownerCategory;
 
-        for(int i = 0; i < BvhCategory.Count; i++)
+        for(int i = 0; i < PhysicsBodyCategory.Count; i++)
         {
-            for(int j = i; j < BvhCategory.Count; j++)
+            for(int j = i; j < PhysicsBodyCategory.Count; j++)
             {    
                 OverlapInfo info = CategorisedLeafOverlaps.GetOverlaps(overlaps, i, j);
                 for(int w = 0; w < info.Length; w++)
