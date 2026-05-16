@@ -20,14 +20,6 @@ public enum PhysicsBodyFlags : int
     RectangleShape = 1<<0,
 
     /// <summary>
-    /// Whether or not a physics body slot has been allocated in the physics system.
-    /// </summary>    
-    /// </remarks>
-    /// Note: this flag indicates whether or not a slot in a physics body array is free and available for reuse.
-    /// <remarks>
-    Allocated = 1<<1,
-
-    /// <summary>
     /// Responds to collisions by recording the intersection of a colliding object.
     /// </summary>
     Trigger = 1<<2,
@@ -44,9 +36,4 @@ public enum PhysicsBodyFlags : int
     /// Whether or not a physics body has a rigidbody.
     /// </summary>
     RigidBody = 1<<5,
-
-    /// <summary>
-    /// Whether or not a phsyics body is allocated and active.
-    /// </summary>
-    InUse = Allocated,
 }

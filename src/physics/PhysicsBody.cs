@@ -140,124 +140,6 @@ public static class PhysicsBody
     }
 
     /// <summary>
-    ///     Sets whether or not a physics body slot has been allcoated in a physics system state.
-    /// </summary>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="genId">the gen id of the physics body.</param>
-    /// <param name="isAllocated">whether or not the slot has been allocated to.</param>
-    /// <returns>
-    ///     <list type="bullet">
-    ///         <item>
-    ///             <see cref="GenIdResult.Ok"/>
-    ///         </item>
-    ///         <item>
-    ///             <see cref="GenIdResult.StaleGenId"/>
-    ///         </item>
-    ///     </list>
-    /// </returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetAllocated(PhysicsSystemState state, GenId genId, bool isAllocated)
-    {
-        if(EntityRegistry.IsGenIdStale(state.Entities, genId))
-        {
-            return GenIdResult.StaleGenId;
-        }
-
-        SetAllocatedUnsafe(state, genId, isAllocated);
-        return GenIdResult.Ok;
-    }
-
-    /// <summary>
-    ///     Sets whether or not a physics body slot has been allcoated in a physics system state.
-    /// </summary>
-    /// <remarks>
-    ///    <c>StaleGenId</c> checks are not enforced; the retrieved data at the given gen id slot will always be returned. 
-    /// </remarks>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="genId">the gen id of the physics body.</param>
-    /// <param name="isAllocated">whether or not the slot has been allocated to.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetAllocatedUnsafe(PhysicsSystemState state, GenId genId, bool isAllocated)
-    {
-        SetAllocatedUnsafe(state, GetPhysicsBodyIndex(genId), isAllocated);
-    }
-
-    /// <summary>
-    ///     Sets whether or not a physics body slot has been allcoated in a physics system state.
-    /// </summary>
-    /// <remarks>
-    ///    <c>StaleGenId</c> checks are not enforced; the retrieved data at the given gen id slot will always be returned. 
-    /// </remarks>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="physicsBodyIndex">the index of the physics body in the physics system state..</param>
-    /// <param name="isAllocated">whether or not the slot has been allocated to.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public  static void SetAllocatedUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool isAllocated)
-    {
-        if (isAllocated)
-        {
-            state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.Allocated;
-        }
-        else
-        {
-            state.Flags[physicsBodyIndex] &= ~PhysicsBodyFlags.Allocated;
-        }        
-    }
-    
-    /// <summary>
-    ///     Gets whether or not a physics body slot has been allocated in the physics system state.
-    /// </summary>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="genId">the gen id of the physics body.</param>
-    /// <param name="result">output for whether or not the retrieved reference is valid.</param>
-    /// <returns>
-    ///     <c>true</c>, if the body is <c>Allocated</c>; otherwise <c>false</c>. Ensure to check the output <c><paramref name="result"/></c> before operating
-    ///     on the returned value; as <c>false</c> will be returned when <c><paramref name="result"/></c> is not <c><see cref="GenIdResult.Ok"/></c>.
-    /// </returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsAllocated(PhysicsSystemState state, GenId genId, ref GenIdResult result)
-    {
-        if(EntityRegistry.IsGenIdStale(state.Entities, genId))
-        {
-            result = GenIdResult.StaleGenId;
-            return false;
-        }
-
-        result = GenIdResult.Ok;
-        return IsAllocatedUnsafe(state, genId);
-    }
-
-    /// <summary>
-    ///     Gets whether or not a physics body slot has been allocated in the physics system state.
-    /// </summary>
-    /// <remarks>
-    ///    <c>StaleGenId</c> checks are not enforced; the retrieved data at the given gen id slot will always be returned. 
-    /// </remarks>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="genId">the gen id of the physics body.</param>
-    /// <returns>true, if the phsyics body has been allocated; otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsAllocatedUnsafe(PhysicsSystemState state, GenId genId)
-    {
-        return IsAllocatedUnsafe(state, GetPhysicsBodyIndex(genId));
-    }
-
-    /// <summary>
-    ///     Gets whether or not a physics body slot has been allocated in the physics system state.
-    /// </summary>
-    /// <remarks>
-    ///    <c>StaleGenId</c> checks are not enforced; the retrieved data at the given gen id slot will always be returned. 
-    /// </remarks>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="physicsBodyIndex">the index of the physics body within the physics system state.</param>
-    /// <returns>true, if the phsyics body has been allocated; otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsAllocatedUnsafe(PhysicsSystemState state, int physicsBodyIndex)
-    {
-        return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.Allocated) != 0;        
-    }
-
-    /// <summary>
     ///     Sets the transform of a body in the physics simulation.
     /// </summary>
     /// <param name="state">the physics system state that contains the physics body.</param>
@@ -1134,7 +1016,7 @@ public static class PhysicsBody
         
         ref PhysicsBodyFlags flag = ref state.Flags[index];
         
-        if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.RigidBody) == 0)
+        if((flag & PhysicsBodyFlags.RigidBody) == 0)
         {
             result = GenIdResult.NotAllocated;
             return default;
@@ -1319,7 +1201,7 @@ public static class PhysicsBody
         int index = GenId.GetIndex(genId);
         ref PhysicsBodyFlags flag = ref state.Flags[index];
         
-        if((flag & PhysicsBodyFlags.Allocated) == 0 || (flag & PhysicsBodyFlags.RigidBody) == 0)
+        if((flag & PhysicsBodyFlags.RigidBody) == 0)
         {
             return GenIdResult.NotAllocated;   
         }
@@ -1392,7 +1274,6 @@ public static class PhysicsBody
             // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
             // set, a physics body is a circle.
             SetActiveUnsafe(state, physicsBodyIndex, true);
-            SetAllocatedUnsafe(state, physicsBodyIndex, true);
             SetRigidBodyUnsafe(state, physicsBodyIndex, false);
 
             switch (colliderBehaviour)
@@ -1474,7 +1355,6 @@ public static class PhysicsBody
             // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
             // set, a physics body is a circle.
             SetActiveUnsafe(state, physicsBodyIndex, true);
-            SetAllocatedUnsafe(state, physicsBodyIndex, true);
             SetRigidBodyUnsafe(state, physicsBodyIndex, true);
             SetRotationalPhysicsUnsafe(state, physicsBodyIndex, rotationalPhysics);
 
@@ -1619,7 +1499,6 @@ public static class PhysicsBody
             // handle flags.
             state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.RectangleShape;
             SetActiveUnsafe(state, physicsBodyIndex, true);
-            SetAllocatedUnsafe(state, physicsBodyIndex, true);
             SetRigidBodyUnsafe(state, physicsBodyIndex, false);
 
             switch (colliderBehaviour)
@@ -1700,7 +1579,6 @@ public static class PhysicsBody
             // handle flags.
             state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.RectangleShape;
             SetActiveUnsafe(state, physicsBodyIndex, true);
-            SetAllocatedUnsafe(state, physicsBodyIndex, true);
             SetRigidBodyUnsafe(state, physicsBodyIndex, true);
             SetRotationalPhysicsUnsafe(state, physicsBodyIndex, rotationalPhysics);
 

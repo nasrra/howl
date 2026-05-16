@@ -8,6 +8,7 @@ using System.Numerics;
 using static Howl.Math.Shapes.ShapeUtils;
 using Howl.DataStructures.Bvh;
 using Howl.Collections;
+using System.Linq;
 
 namespace Howl.Physics;
 
@@ -82,6 +83,7 @@ public static class PhysicsSystem
         float[] forcesY = state.Forces.Y;
         float[] angularVelocities = state.AngularVelocities;
         SwapBackArray<int> activeBodies = state.ActiveBodies;
+        int[] activeBodiesDenseIndices = state.ActiveBodiesDenseIndices;
         int maxPhysicsBodyCount = state.MaxPhysicsBodyCount;
         float gravity = state.Gravity;
         float gravityDirectionX = state.GravityDirection.X;
@@ -114,8 +116,8 @@ public static class PhysicsSystem
             
             state.IntegrateBodyPropertiesStopwatch.Restart();
 
-            IntegrateBodyProperties(scalesX, scalesY, masses, inverseMasses, rotationalInertia, inverseRotationalInertia, 
-                densities, localRadii, worldRadii, localWidths, localHeights, flags, maxPhysicsBodyCount
+            IntegrateBodyProperties(activeBodies, scalesX, scalesY, masses, inverseMasses, rotationalInertia, inverseRotationalInertia, 
+                densities, localRadii, worldRadii, localWidths, localHeights, flags
             );
 
             state.IntegrateBodyPropertiesStopwatch.Stop();
@@ -293,7 +295,7 @@ public static class PhysicsSystem
 
             // RigidBody Movement Step.
             state.RigidBodyMovementStepStopwatch.Restart();
-            RigidBodyMovementStep(linearVelocitiesX, linearVelocitiesY, forcesX, forcesY, masses, positionsX, positionsY, sines, cosines, 
+            RigidBodyMovementStep(activeBodiesDenseIndices, linearVelocitiesX, linearVelocitiesY, forcesX, forcesY, masses, positionsX, positionsY, sines, cosines, 
                 angularVelocities, flags, gravityDirectionX, gravityDirectionY, gravity, deltaTime
             );
             state.RigidBodyMovementStepStopwatch.Stop();
@@ -550,17 +552,16 @@ public static class PhysicsSystem
     /// <remarks>
     ///     Remarks: All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
     /// </remarks>
-    public static void RigidBodyMovementStep(float[] linearVelocitiesX, float[] linearVelocitiesY, float[] forcesX, float[] forcesY,
+    public static void RigidBodyMovementStep(int[] activeBodyDenseIndices, float[] linearVelocitiesX, float[] linearVelocitiesY, float[] forcesX, float[] forcesY,
         float[] masses, float[] positionsX, float[] positionsY, float[] sines, float[] cosines, float[] angularVelocities, PhysicsBodyFlags[] flags,
         float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime
     )
     {
         int simdSize = Vector<float>.Count;
-
-        PhysicsBodyFlags requiredFlags = PhysicsBodyFlags.Allocated | PhysicsBodyFlags.RigidBody;
-        // PhysicsBodyFlags requiredFlags = PhysicsBodyFlags.Allocated | PhysicsBodyFlags.Active | PhysicsBodyFlags.RigidBody;
+        PhysicsBodyFlags requiredFlags = PhysicsBodyFlags.RigidBody;
         PhysicsBodyFlags forbiddenFlags = PhysicsBodyFlags.Kinematic;
 
+        Vector<int> vInactive = new Vector<int>(Constants.InactiveDenseIndex);
         Vector<int> vRequiredFlags = new Vector<int>((int)requiredFlags);
         Vector<int> vForbiddenFlags = new Vector<int>((int)forbiddenFlags);
         Vector<float> vDeltaTime = new Vector<float>(deltaTime);
@@ -568,7 +569,7 @@ public static class PhysicsSystem
         Vector<float> vGravityY = new Vector<float>(gravityDirectionY * gravity * deltaTime);
         Vector<float> vZero = new Vector<float>(0);
 
-        int length = positionsX.Length;
+        int length = activeBodyDenseIndices.Length;
 
         int i = 0;
 
@@ -576,6 +577,14 @@ public static class PhysicsSystem
 
             for(; i <= length - simdSize; i+= simdSize)
             {
+                
+                // short circuit if none of the physics bodies in the chunk are active.
+                Vector<int> denseIndices = Vector.LoadUnsafe(ref activeBodyDenseIndices[i]);
+                if(denseIndices == vInactive)
+                {
+                    continue;
+                }
+
                 ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
                 Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
                 
@@ -656,12 +665,13 @@ public static class PhysicsSystem
 
             for(int j = i; j < length; j++)
             {
-                PhysicsBodyFlags flag = (PhysicsBodyFlags)flags[j];
-                
-                if((flag & PhysicsBodyFlags.Allocated) == 0 ||
-                    // (flag & PhysicsBodyFlags.Active) == 0 ||
-                    (flag & PhysicsBodyFlags.Kinematic) != 0 ||
-                    (flag & PhysicsBodyFlags.RigidBody) == 0)
+                if(activeBodyDenseIndices[j] == Constants.InactiveDenseIndex)
+                {
+                    continue;
+                }
+
+                ref PhysicsBodyFlags flag = ref flags[j];
+                if((flag & PhysicsBodyFlags.RigidBody) != 0 && (flag & PhysicsBodyFlags.Kinematic) == 0)
                 {
                     continue;
                 }
@@ -789,278 +799,223 @@ public static class PhysicsSystem
     
     ********************/
 
-    /// <summary>
-    /// Calculates world-space dimensions and rigidbody data for physics bodies.
-    /// </summary>
-    /// <remarks>
-    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
-    /// <list type="bullet">
-    /// <item><description><paramref name="scalesX"/> / <paramref name="scalesY"/></description></item>
-    /// <item><description><paramref name="masses"/> / <paramref name="inverseMasses"/></description></item>
-    /// <item><description><paramref name="rotationalInertia"/> / <paramref name="inverseRotationalInertia"/></description></item>
-    /// <item><description><paramref name="flags"/></description></item>
-    /// </list>
-    /// </remarks>
-    /// <param name="scalesX">the x-component's of all physics bodies scaling vectors.</param>
-    /// <param name="scalesY">the y-component's of all physic bodies scaling vectors.</param>
-    /// <param name="masses">output for mass values.</param>
-    /// <param name="inverseMasses">output for inverse mass values.</param>
-    /// <param name="rotationalInertia">output for rotational inertia values.</param>
-    /// <param name="inverseRotationalInertia">output for inverse rotational inertia values.</param>
-    /// <param name="densities">the densities of all physics bodies.</param>
-    /// <param name="localRadii">the local-space radii of all physics bodies.</param>
-    /// <param name="worldRadii">output for world-space radii of all physics bodies.</param>
-    /// <param name="localWidths">the local-space widths of all physics bodies.</param>
-    /// <param name="localHeights">the local-space heights of all physics bodies.</param>
-    /// <param name="flags">the flags of all physics bodies.</param>
-    /// <param name="maxPhysicsBodyCount">the maximium amount of physics bodies.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void IntegrateBodyProperties(Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
-        Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> localRadii, Span<float> worldRadii, 
-        Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags, int maxPhysicsBodyCount)
-    {
-        IntegrateBodyProperties_Sisd(scalesX, scalesY, masses, inverseMasses, 
-            rotationalInertia, inverseRotationalInertia, densities, localRadii, worldRadii, 
-            localWidths, localHeights, flags, maxPhysicsBodyCount, 0
-        );
-    }
+    // /// <summary>
+    // /// Calculates world-space dimensions and rigidbody data for physics bodies.
+    // /// </summary>
+    // /// <remarks>
+    // /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
+    // /// <list type="bullet">
+    // /// <item><description><paramref name="scalesX"/> / <paramref name="scalesY"/></description></item>
+    // /// <item><description><paramref name="masses"/> / <paramref name="inverseMasses"/></description></item>
+    // /// <item><description><paramref name="rotationalInertia"/> / <paramref name="inverseRotationalInertia"/></description></item>
+    // /// <item><description><paramref name="flags"/></description></item>
+    // /// </list>
+    // /// </remarks>
+    // /// <param name="scalesX">the x-component's of all physics bodies scaling vectors.</param>
+    // /// <param name="scalesY">the y-component's of all physic bodies scaling vectors.</param>
+    // /// <param name="masses">output for mass values.</param>
+    // /// <param name="inverseMasses">output for inverse mass values.</param>
+    // /// <param name="rotationalInertia">output for rotational inertia values.</param>
+    // /// <param name="inverseRotationalInertia">output for inverse rotational inertia values.</param>
+    // /// <param name="densities">the densities of all physics bodies.</param>
+    // /// <param name="localRadii">the local-space radii of all physics bodies.</param>
+    // /// <param name="worldRadii">output for world-space radii of all physics bodies.</param>
+    // /// <param name="localWidths">the local-space widths of all physics bodies.</param>
+    // /// <param name="localHeights">the local-space heights of all physics bodies.</param>
+    // /// <param name="flags">the flags of all physics bodies.</param>
+    // /// <param name="maxPhysicsBodyCount">the maximium amount of physics bodies.</param>
+    // public static void IntegrateBodyProperties_Simd(Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
+    //     Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> localRadii, Span<float> worldRadii, 
+    //     Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags, int maxPhysicsBodyCount
+    // )
+    // {
+    //     int simdSize = Vector<float>.Count;
 
-    /// <summary>
-    /// Calculates world-space dimensions and rigidbody data for physics bodies.
-    /// </summary>
-    /// <remarks>
-    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
-    /// <list type="bullet">
-    /// <item><description><paramref name="scalesX"/> / <paramref name="scalesY"/></description></item>
-    /// <item><description><paramref name="masses"/> / <paramref name="inverseMasses"/></description></item>
-    /// <item><description><paramref name="rotationalInertia"/> / <paramref name="inverseRotationalInertia"/></description></item>
-    /// <item><description><paramref name="flags"/></description></item>
-    /// </list>
-    /// </remarks>
-    /// <param name="scalesX">the x-component's of all physics bodies scaling vectors.</param>
-    /// <param name="scalesY">the y-component's of all physic bodies scaling vectors.</param>
-    /// <param name="masses">output for mass values.</param>
-    /// <param name="inverseMasses">output for inverse mass values.</param>
-    /// <param name="rotationalInertia">output for rotational inertia values.</param>
-    /// <param name="inverseRotationalInertia">output for inverse rotational inertia values.</param>
-    /// <param name="densities">the densities of all physics bodies.</param>
-    /// <param name="localRadii">the local-space radii of all physics bodies.</param>
-    /// <param name="worldRadii">output for world-space radii of all physics bodies.</param>
-    /// <param name="localWidths">the local-space widths of all physics bodies.</param>
-    /// <param name="localHeights">the local-space heights of all physics bodies.</param>
-    /// <param name="flags">the flags of all physics bodies.</param>
-    /// <param name="maxPhysicsBodyCount">the maximium amount of physics bodies.</param>
-    public static void IntegrateBodyProperties_Simd(Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
-        Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> localRadii, Span<float> worldRadii, 
-        Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags, int maxPhysicsBodyCount
-    )
-    {
-        int simdSize = Vector<float>.Count;
+    //     PhysicsBodyFlags RectangleRigidBodyFlags = PhysicsBodyFlags.InUse | PhysicsBodyFlags.RigidBody | PhysicsBodyFlags.RectangleShape;
+    //     PhysicsBodyFlags CircleRigidBodyFlags    = PhysicsBodyFlags.InUse | PhysicsBodyFlags.RigidBody;
+    //     PhysicsBodyFlags CirclePhysicsBodyFlags  = PhysicsBodyFlags.InUse;
+    //     PhysicsBodyFlags NotCircleShapeFlags     = PhysicsBodyFlags.RectangleShape;
 
-        PhysicsBodyFlags RectangleRigidBodyFlags = PhysicsBodyFlags.InUse | PhysicsBodyFlags.RigidBody | PhysicsBodyFlags.RectangleShape;
-        PhysicsBodyFlags CircleRigidBodyFlags    = PhysicsBodyFlags.InUse | PhysicsBodyFlags.RigidBody;
-        PhysicsBodyFlags CirclePhysicsBodyFlags  = PhysicsBodyFlags.InUse;
-        PhysicsBodyFlags NotCircleShapeFlags     = PhysicsBodyFlags.RectangleShape;
+    //     Vector<int> vRectangleRigidBodyFlags = new((int)RectangleRigidBodyFlags);
+    //     Vector<int> vCircleleRigidBodyFlags = new((int)CircleRigidBodyFlags);
+    //     Vector<int> vCirclePhysicsBodyFlags = new((int)CirclePhysicsBodyFlags);
+    //     Vector<int> vNotCircleShapeFlags = new((int)NotCircleShapeFlags);
 
-        Vector<int> vRectangleRigidBodyFlags = new((int)RectangleRigidBodyFlags);
-        Vector<int> vCircleleRigidBodyFlags = new((int)CircleRigidBodyFlags);
-        Vector<int> vCirclePhysicsBodyFlags = new((int)CirclePhysicsBodyFlags);
-        Vector<int> vNotCircleShapeFlags = new((int)NotCircleShapeFlags);
+    //     int i = 0;
+    //     for(; i <= maxPhysicsBodyCount - simdSize; i += simdSize)
+    //     {
+    //         ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
+    //         Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
 
-        int i = 0;
-        for(; i <= maxPhysicsBodyCount - simdSize; i += simdSize)
-        {
-            ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
-            Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
+    //         Vector<int> flagMask = Vector.Equals(vFlags & vRectangleRigidBodyFlags, vRectangleRigidBodyFlags);
 
-            Vector<int> flagMask = Vector.Equals(vFlags & vRectangleRigidBodyFlags, vRectangleRigidBodyFlags);
+    //         // short circuit if the entire mask is zero.
+    //         // all bodies in this chunk dont have the required flags.
+    //         if (Vector.EqualsAll(flagMask, Vector<int>.Zero))
+    //         {
+    //             continue;
+    //         }
 
-            // short circuit if the entire mask is zero.
-            // all bodies in this chunk dont have the required flags.
-            if (Vector.EqualsAll(flagMask, Vector<int>.Zero))
-            {
-                continue;
-            }
+    //         // load data.
+    //         Vector<float> vScaleX = Vector.LoadUnsafe(ref scalesX[i]);
+    //         Vector<float> vScaleY = Vector.LoadUnsafe(ref scalesY[i]);
+    //         Vector<float> vHeight = Vector.LoadUnsafe(ref localHeights[i]);
+    //         Vector<float> vWidth = Vector.LoadUnsafe(ref localWidths[i]);
+    //         Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
+    //         Vector<float> vInvMass = Vector.LoadUnsafe(ref inverseMasses[i]);
+    //         Vector<float> vRotInertia = Vector.LoadUnsafe(ref rotationalInertia[i]);
+    //         Vector<float> vInvRotInertia = Vector.LoadUnsafe(ref inverseRotationalInertia[i]);
+    //         Vector<float> vDensity = Vector.LoadUnsafe(ref densities[i]);
 
-            // load data.
-            Vector<float> vScaleX = Vector.LoadUnsafe(ref scalesX[i]);
-            Vector<float> vScaleY = Vector.LoadUnsafe(ref scalesY[i]);
-            Vector<float> vHeight = Vector.LoadUnsafe(ref localHeights[i]);
-            Vector<float> vWidth = Vector.LoadUnsafe(ref localWidths[i]);
-            Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
-            Vector<float> vInvMass = Vector.LoadUnsafe(ref inverseMasses[i]);
-            Vector<float> vRotInertia = Vector.LoadUnsafe(ref rotationalInertia[i]);
-            Vector<float> vInvRotInertia = Vector.LoadUnsafe(ref inverseRotationalInertia[i]);
-            Vector<float> vDensity = Vector.LoadUnsafe(ref densities[i]);
+    //         // calculate world-space dimensions.
+    //         Vector<float> newHeight = vHeight * vScaleY;
+    //         Vector<float> newWidth = vWidth * vScaleX;
 
-            // calculate world-space dimensions.
-            Vector<float> newHeight = vHeight * vScaleY;
-            Vector<float> newWidth = vWidth * vScaleX;
+    //         // calculate the new mass.
+    //         Vector<float> newMass = PhysicsBody.Rectangle.CalculateMass(newWidth, newHeight, vDensity);
 
-            // calculate the new mass.
-            Vector<float> newMass = PhysicsBody.Rectangle.CalculateMass(newWidth, newHeight, vDensity);
+    //         // create a mask to ensure mass values are above zero.
+    //         Vector<int> massMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
 
-            // create a mask to ensure mass values are above zero.
-            Vector<int> massMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
+    //         // calculate new inv mass.
+    //         Vector<float> newInvMass = Vector<float>.One / newMass;
 
-            // calculate new inv mass.
-            Vector<float> newInvMass = Vector<float>.One / newMass;
-
-            // set the new mass values.
-            // Note: use the mass mask to remove any NaN's as a result of divide by zero.
-            newMass = Vector.ConditionalSelect(massMask, newMass, vMass);
-            newInvMass = Vector.ConditionalSelect(massMask, newInvMass, vInvMass);
+    //         // set the new mass values.
+    //         // Note: use the mass mask to remove any NaN's as a result of divide by zero.
+    //         newMass = Vector.ConditionalSelect(massMask, newMass, vMass);
+    //         newInvMass = Vector.ConditionalSelect(massMask, newInvMass, vInvMass);
         
-            Vector<float> newRotInertia = PhysicsBody.Rectangle.CalculateRotationalInertia(newWidth, newHeight, newMass);
+    //         Vector<float> newRotInertia = PhysicsBody.Rectangle.CalculateRotationalInertia(newWidth, newHeight, newMass);
             
-            // create a mask to ensure inerta values are above zero.
-            Vector<int> inertiaMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
+    //         // create a mask to ensure inerta values are above zero.
+    //         Vector<int> inertiaMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
 
-            // calculate new inverse inertia values.
-            Vector<float> newInvRotInertia = Vector<float>.One / newRotInertia;
+    //         // calculate new inverse inertia values.
+    //         Vector<float> newInvRotInertia = Vector<float>.One / newRotInertia;
 
-            // set the new inertia values.
-            // Note: use the mass mask to remove any NaN's as a result of divide by zero.
-            newRotInertia = Vector.ConditionalSelect(inertiaMask, newRotInertia, vRotInertia);
-            newInvRotInertia = Vector.ConditionalSelect(inertiaMask, newInvRotInertia, vInvRotInertia);
+    //         // set the new inertia values.
+    //         // Note: use the mass mask to remove any NaN's as a result of divide by zero.
+    //         newRotInertia = Vector.ConditionalSelect(inertiaMask, newRotInertia, vRotInertia);
+    //         newInvRotInertia = Vector.ConditionalSelect(inertiaMask, newInvRotInertia, vInvRotInertia);
 
-            // conditional select (only keep results for valid flags)
-            vMass = Vector.ConditionalSelect(flagMask, newMass, vMass);
-            vInvMass = Vector.ConditionalSelect(flagMask, newInvMass, vInvMass);
-            vRotInertia = Vector.ConditionalSelect(flagMask, newRotInertia, vRotInertia);
-            vInvRotInertia = Vector.ConditionalSelect(flagMask, newInvRotInertia, vInvRotInertia);
+    //         // conditional select (only keep results for valid flags)
+    //         vMass = Vector.ConditionalSelect(flagMask, newMass, vMass);
+    //         vInvMass = Vector.ConditionalSelect(flagMask, newInvMass, vInvMass);
+    //         vRotInertia = Vector.ConditionalSelect(flagMask, newRotInertia, vRotInertia);
+    //         vInvRotInertia = Vector.ConditionalSelect(flagMask, newInvRotInertia, vInvRotInertia);
 
-            // store values.
-            vMass.StoreUnsafe(ref masses[i]);
-            vInvMass.StoreUnsafe(ref inverseMasses[i]);
-            vRotInertia.StoreUnsafe(ref rotationalInertia[i]);
-            vInvRotInertia.StoreUnsafe(ref inverseRotationalInertia[i]);
-        }
+    //         // store values.
+    //         vMass.StoreUnsafe(ref masses[i]);
+    //         vInvMass.StoreUnsafe(ref inverseMasses[i]);
+    //         vRotInertia.StoreUnsafe(ref rotationalInertia[i]);
+    //         vInvRotInertia.StoreUnsafe(ref inverseRotationalInertia[i]);
+    //     }
 
-        i = 0;
-        for(; i <= maxPhysicsBodyCount - simdSize; i += simdSize)
-        {
-            ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
-            Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
+    //     i = 0;
+    //     for(; i <= maxPhysicsBodyCount - simdSize; i += simdSize)
+    //     {
+    //         ref int flagsAsInt = ref Unsafe.As<PhysicsBodyFlags, int>(ref flags[i]);
+    //         Vector<int> vFlags = Vector.LoadUnsafe(ref flagsAsInt);
 
-            Vector<int> isCircleBodyMask = Vector.Equals(vFlags & vCirclePhysicsBodyFlags, vCirclePhysicsBodyFlags);
-            Vector<int> notCircleBodyMask = Vector.Equals(vFlags & vNotCircleShapeFlags, Vector<int>.Zero);
-            Vector<int> mask = isCircleBodyMask & notCircleBodyMask;
+    //         Vector<int> isCircleBodyMask = Vector.Equals(vFlags & vCirclePhysicsBodyFlags, vCirclePhysicsBodyFlags);
+    //         Vector<int> notCircleBodyMask = Vector.Equals(vFlags & vNotCircleShapeFlags, Vector<int>.Zero);
+    //         Vector<int> mask = isCircleBodyMask & notCircleBodyMask;
 
-            // short circuit if there are no circle physics bodies.
-            if (Vector.EqualsAll(mask, Vector<int>.Zero))
-            {
-                continue;
-            }
+    //         // short circuit if there are no circle physics bodies.
+    //         if (Vector.EqualsAll(mask, Vector<int>.Zero))
+    //         {
+    //             continue;
+    //         }
 
-            // load data.
-            Vector<float> vRadii = Vector.LoadUnsafe(ref localRadii[i]);
-            Vector<float> vScaleX = Vector.LoadUnsafe(ref scalesX[i]);
-            Vector<float> vScaleY = Vector.LoadUnsafe(ref scalesY[i]);
+    //         // load data.
+    //         Vector<float> vRadii = Vector.LoadUnsafe(ref localRadii[i]);
+    //         Vector<float> vScaleX = Vector.LoadUnsafe(ref scalesX[i]);
+    //         Vector<float> vScaleY = Vector.LoadUnsafe(ref scalesY[i]);
 
-            // choose the largest scale.
-            Vector<float> vScale = Vector.ConditionalSelect(Vector.GreaterThan(vScaleX, vScaleY), vScaleX, vScaleY);
+    //         // choose the largest scale.
+    //         Vector<float> vScale = Vector.ConditionalSelect(Vector.GreaterThan(vScaleX, vScaleY), vScaleX, vScaleY);
         
-            // transform local to world.
-            Vector<float> vNewRadii = vRadii * vScale;
+    //         // transform local to world.
+    //         Vector<float> vNewRadii = vRadii * vScale;
 
-            // apply the radius transformation only to circles.
-            vRadii = Vector.ConditionalSelect(mask, vNewRadii, vRadii);
+    //         // apply the radius transformation only to circles.
+    //         vRadii = Vector.ConditionalSelect(mask, vNewRadii, vRadii);
 
-            // store data.
-            vRadii.StoreUnsafe(ref worldRadii[i]);
+    //         // store data.
+    //         vRadii.StoreUnsafe(ref worldRadii[i]);
             
-            Vector<int> isCircleRigidMask = Vector.Equals(vFlags & vCircleleRigidBodyFlags, vCircleleRigidBodyFlags);
-            mask = isCircleRigidMask & notCircleBodyMask;
+    //         Vector<int> isCircleRigidMask = Vector.Equals(vFlags & vCircleleRigidBodyFlags, vCircleleRigidBodyFlags);
+    //         mask = isCircleRigidMask & notCircleBodyMask;
 
-            // short circuit if there are not circle rigidbodies.
-            if(Vector.EqualsAll(mask, Vector<int>.Zero))
-            {
-                continue;
-            }
+    //         // short circuit if there are not circle rigidbodies.
+    //         if(Vector.EqualsAll(mask, Vector<int>.Zero))
+    //         {
+    //             continue;
+    //         }
 
-            Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
-            Vector<float> vInvMass = Vector.LoadUnsafe(ref inverseMasses[i]);
-            Vector<float> vRotInertia = Vector.LoadUnsafe(ref rotationalInertia[i]);
-            Vector<float> vInvRotInertia = Vector.LoadUnsafe(ref inverseRotationalInertia[i]);
-            Vector<float> vDensity = Vector.LoadUnsafe(ref densities[i]);
+    //         Vector<float> vMass = Vector.LoadUnsafe(ref masses[i]);
+    //         Vector<float> vInvMass = Vector.LoadUnsafe(ref inverseMasses[i]);
+    //         Vector<float> vRotInertia = Vector.LoadUnsafe(ref rotationalInertia[i]);
+    //         Vector<float> vInvRotInertia = Vector.LoadUnsafe(ref inverseRotationalInertia[i]);
+    //         Vector<float> vDensity = Vector.LoadUnsafe(ref densities[i]);
 
-            // calculate the new mass.
-            Vector<float> newMass = PhysicsBody.Circle.CalculateMass(vRadii, vDensity);
+    //         // calculate the new mass.
+    //         Vector<float> newMass = PhysicsBody.Circle.CalculateMass(vRadii, vDensity);
 
-            // create a mask to ensure mass values are above zero.
-            Vector<int> massMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
+    //         // create a mask to ensure mass values are above zero.
+    //         Vector<int> massMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
 
-            // calculate new inv mass.
-            Vector<float> newInvMass = Vector<float>.One / newMass;
+    //         // calculate new inv mass.
+    //         Vector<float> newInvMass = Vector<float>.One / newMass;
 
-            // set the new mass values.
-            // Note: use the mass mask to remove any NaN's as a result of divide by zero.
-            newMass = Vector.ConditionalSelect(massMask, newMass, vMass);
-            newInvMass = Vector.ConditionalSelect(massMask, newInvMass, vInvMass);
+    //         // set the new mass values.
+    //         // Note: use the mass mask to remove any NaN's as a result of divide by zero.
+    //         newMass = Vector.ConditionalSelect(massMask, newMass, vMass);
+    //         newInvMass = Vector.ConditionalSelect(massMask, newInvMass, vInvMass);
         
-            Vector<float> newRotInertia = PhysicsBody.Circle.CalculateRotationalInertia(vRadii, newMass);
+    //         Vector<float> newRotInertia = PhysicsBody.Circle.CalculateRotationalInertia(vRadii, newMass);
             
-            // create a mask to ensure inerta values are above zero.
-            Vector<int> inertiaMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
+    //         // create a mask to ensure inerta values are above zero.
+    //         Vector<int> inertiaMask = Vector.GreaterThan(newMass, Vector<float>.Zero);
 
-            // calculate new inverse inertia values.
-            Vector<float> newInvRotInertia = Vector<float>.One / newRotInertia;
+    //         // calculate new inverse inertia values.
+    //         Vector<float> newInvRotInertia = Vector<float>.One / newRotInertia;
 
-            // set the new inertia values.
-            // Note: use the mass mask to remove any NaN's as a result of divide by zero.
-            newRotInertia = Vector.ConditionalSelect(inertiaMask, newRotInertia, vRotInertia);
-            newInvRotInertia = Vector.ConditionalSelect(inertiaMask, newInvRotInertia, vInvRotInertia);
+    //         // set the new inertia values.
+    //         // Note: use the mass mask to remove any NaN's as a result of divide by zero.
+    //         newRotInertia = Vector.ConditionalSelect(inertiaMask, newRotInertia, vRotInertia);
+    //         newInvRotInertia = Vector.ConditionalSelect(inertiaMask, newInvRotInertia, vInvRotInertia);
 
-            // conditional select (only keep results for valid flags)
-            vMass = Vector.ConditionalSelect(mask, newMass, vMass);
-            vInvMass = Vector.ConditionalSelect(mask, newInvMass, vInvMass);
-            vRotInertia = Vector.ConditionalSelect(mask, newRotInertia, vRotInertia);
-            vInvRotInertia = Vector.ConditionalSelect(mask, newInvRotInertia, vInvRotInertia);  
+    //         // conditional select (only keep results for valid flags)
+    //         vMass = Vector.ConditionalSelect(mask, newMass, vMass);
+    //         vInvMass = Vector.ConditionalSelect(mask, newInvMass, vInvMass);
+    //         vRotInertia = Vector.ConditionalSelect(mask, newRotInertia, vRotInertia);
+    //         vInvRotInertia = Vector.ConditionalSelect(mask, newInvRotInertia, vInvRotInertia);  
 
-            // store values.
-            vMass.StoreUnsafe(ref masses[i]);
-            vInvMass.StoreUnsafe(ref inverseMasses[i]);
-            vRotInertia.StoreUnsafe(ref rotationalInertia[i]);
-            vInvRotInertia.StoreUnsafe(ref inverseRotationalInertia[i]);
-        }
+    //         // store values.
+    //         vMass.StoreUnsafe(ref masses[i]);
+    //         vInvMass.StoreUnsafe(ref inverseMasses[i]);
+    //         vRotInertia.StoreUnsafe(ref rotationalInertia[i]);
+    //         vInvRotInertia.StoreUnsafe(ref inverseRotationalInertia[i]);
+    //     }
 
-        // tail end.
-        IntegrateBodyProperties_Sisd(scalesX, scalesY, masses, inverseMasses, 
-            rotationalInertia, inverseRotationalInertia, densities, localRadii, worldRadii, 
-            localWidths, localHeights, flags, maxPhysicsBodyCount, i
-        );
-    }
+    //     // tail end.
+    //     IntegrateBodyProperties_Sisd(scalesX, scalesY, masses, inverseMasses, 
+    //         rotationalInertia, inverseRotationalInertia, densities, localRadii, worldRadii, 
+    //         localWidths, localHeights, flags, maxPhysicsBodyCount, i
+    //     );
+    // }
 
     /// <summary>
     /// Calculates world-space dimensions and rigidbody data for physics bodies.
     /// </summary>
     /// <remarks>
-    /// All provided spans must be indexed by a integer <c>physicsBodyIndex</c>:
-    /// <list type="bullet">
-    /// <item><description><paramref name="scalesX"/> / <paramref name="scalesY"/></description></item>
-    /// <item><description><paramref name="masses"/> / <paramref name="inverseMasses"/></description></item>
-    /// <item><description><paramref name="rotationalInertia"/> / <paramref name="inverseRotationalInertia"/></description></item>
-    /// <item><description><paramref name="flags"/></description></item>
-    /// </list>
+    ///     All spans must be indexed by a integer <c>physicsBodyIndex</c>:
     /// </remarks>
-    /// <param name="scalesX">the x-component's of all physics bodies scaling vectors.</param>
-    /// <param name="scalesY">the y-component's of all physic bodies scaling vectors.</param>
-    /// <param name="masses">output for mass values.</param>
-    /// <param name="inverseMasses">output for inverse mass values.</param>
-    /// <param name="rotationalInertia">output for rotational inertia values.</param>
-    /// <param name="inverseRotationalInertia">output for inverse rotational inertia values.</param>
-    /// <param name="densities">the densities of all physics bodies.</param>
-    /// <param name="localRadii">the local-space radii of all physics bodies.</param>
-    /// <param name="worldRadii">output for world-space radii of all physics bodies.</param>
-    /// <param name="localWidths">the local-space widths of all physics bodies.</param>
-    /// <param name="localHeights">the local-space heights of all physics bodies.</param>
-    /// <param name="flags">the flags of all physics bodies.</param>
-    /// <param name="maxPhysicsBodyCount">the maximium amount of physics bodies.</param>
     /// <param name="startIndex">the <c>physicsBodyIndex</c> to start at.</param>    
-    public static void IntegrateBodyProperties_Sisd(Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
+    public static void IntegrateBodyProperties(SwapBackArray<int> activeBodies, Span<float> scalesX, Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, 
         Span<float> rotationalInertia, Span<float> inverseRotationalInertia, Span<float> densities, Span<float> localRadii, Span<float> worldRadii, 
-        Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags, int maxPhysicsBodyCount, int startIndex
+        Span<float> localWidths, Span<float> localHeights, Span<PhysicsBodyFlags> flags
     )
     {
         float width;
@@ -1070,16 +1025,14 @@ public static class PhysicsSystem
         float scaleY;
         bool isRigid;
 
-        for(int i = startIndex; i < maxPhysicsBodyCount; i++)
-        {
-            ref PhysicsBodyFlags flag = ref flags[i];
-            if((flag & PhysicsBodyFlags.InUse) == 0)
-            {
-                continue;
-            }
+        int count = activeBodies.Count;
 
-            scaleX = scalesX[i];
-            scaleY = scalesY[i];
+        for(int i = 1; i < count; i++) // skip nil element
+        {
+            int physicsBodyIndex = activeBodies[i];
+            ref PhysicsBodyFlags flag = ref flags[physicsBodyIndex];
+            scaleX = scalesX[physicsBodyIndex];
+            scaleY = scalesY[physicsBodyIndex];
             isRigid = (flag & PhysicsBodyFlags.RigidBody) != 0; 
 
             if((flag & PhysicsBodyFlags.RectangleShape) != 0)
@@ -1087,31 +1040,31 @@ public static class PhysicsSystem
                 // set rigidbody data if it is enabled.
                 if(isRigid)
                 {                    
-                    height = localHeights[i] * scaleY;
-                    width = localWidths[i] * scaleX;
+                    height = localHeights[physicsBodyIndex] * scaleY;
+                    width = localWidths[physicsBodyIndex] * scaleX;
 
                     float mass = 0;
 
                     if((flag & PhysicsBodyFlags.Kinematic) != 0)
                     {
-                        inverseMasses[i] = 0;
+                        inverseMasses[physicsBodyIndex] = 0;
                     }
                     else
                     {
-                        mass = PhysicsBody.Rectangle.CalculateMass(width, height, densities[i]); 
-                        masses[i] = mass;
-                        inverseMasses[i] = mass == 0? 0 : 1f/mass;
+                        mass = PhysicsBody.Rectangle.CalculateMass(width, height, densities[physicsBodyIndex]); 
+                        masses[physicsBodyIndex] = mass;
+                        inverseMasses[physicsBodyIndex] = mass == 0? 0 : 1f/mass;
                     }
 
                     float inertia = PhysicsBody.Rectangle.CalculateRotationalInertia(width, height, mass);
-                    rotationalInertia[i] = inertia;
-                    inverseRotationalInertia[i] = inertia == 0? 0 : 1f/inertia;
+                    rotationalInertia[physicsBodyIndex] = inertia;
+                    inverseRotationalInertia[physicsBodyIndex] = inertia == 0? 0 : 1f/inertia;
                 }
             }
             else // circle shape
             {
-                radius = Circle.ScaleRadius(localRadii[i], scaleX, scaleY);
-                worldRadii[i] = radius;
+                radius = Circle.ScaleRadius(localRadii[physicsBodyIndex], scaleX, scaleY);
+                worldRadii[physicsBodyIndex] = radius;
 
                 // set rigidbody data if it is enabled.
                 if(isRigid)
@@ -1124,14 +1077,14 @@ public static class PhysicsSystem
                     }
                     else
                     {
-                        mass = PhysicsBody.Circle.CalculateMass(radius, densities[i]); 
-                        masses[i] = mass;
-                        inverseMasses[i] = mass == 0? 0 : 1f/mass;
+                        mass = PhysicsBody.Circle.CalculateMass(radius, densities[physicsBodyIndex]); 
+                        masses[physicsBodyIndex] = mass;
+                        inverseMasses[physicsBodyIndex] = mass == 0? 0 : 1f/mass;
                     }
 
                     float rI = PhysicsBody.Circle.CalculateRotationalInertia(radius, mass);
-                    rotationalInertia[i] = rI;
-                    inverseRotationalInertia[i] = rI == 0? 0f : 1f/rI;
+                    rotationalInertia[physicsBodyIndex] = rI;
+                    inverseRotationalInertia[physicsBodyIndex] = rI == 0? 0f : 1f/rI;
                 }
             }
 
