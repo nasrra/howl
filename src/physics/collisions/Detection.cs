@@ -219,7 +219,7 @@ public static class Detection
             // get the owner and other data.
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
-
+        
             bool broadPhasePassed = Aabb.Intersect(
                 minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
                 maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
@@ -232,7 +232,7 @@ public static class Detection
 
             // detect a collision.
             CollisionIndexPair collisionIndices = Polygon_To_Polygon(collisions, vertices, centroidsX, centroidsY, ownerIndex, otherIndex, ref collided);
-
+    
             // resolve the collision.
             if (collided == true)
             {
@@ -245,7 +245,7 @@ public static class Detection
                     CollisionResolutionCategory.Solid,
                     CollisionResolutionCategory.Solid
                 );
-            }
+            }  
         }
     }
 

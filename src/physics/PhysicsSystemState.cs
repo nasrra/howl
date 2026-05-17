@@ -31,14 +31,6 @@ public sealed class PhysicsSystemState
     public GenId[] EntityIds;
 
     /// <summary>
-    /// The type flags for all physics bodies.
-    /// </summary>
-    /// <remarks>
-    /// Use a <c>physicsBodyIndex</c> integer to access elements.
-    /// </remarks>
-    public PhysicsBodyFlags[] Flags;
-
-    /// <summary>
     /// The local-space vertices for all physics bodies.
     /// </summary>
     /// <remarks>
@@ -247,7 +239,15 @@ public sealed class PhysicsSystemState
     public int[] ActiveBodiesDenseIndices;
 
     /// <summary>
-    ///     Whether a rotational response is enabled for a physics body.
+    ///     The shape types of all physics bodies.
+    /// </summary>
+    /// <remarks>
+    ///     Remarks: Elements are accessed via <c>physicsBodyIndex</c>.
+    /// </remarks>
+    public PhysicsBody.Shape[] Shapes;
+
+    /// <summary>
+    ///     Whether rotational collision response is enabled for a rigidbody.
     /// </summary>    
     /// <remarks>
     ///     Remarks: Elements should be accessed by <c>physicsBodyIndex</c>.
@@ -671,14 +671,13 @@ public sealed class PhysicsSystemState
         // Utility.
         int maxCollisions = physicsBodyCount*physicsBodyCount;
         Bvh = new(physicsBodyCount);
-        Overlaps = new(PhysicsBodyCategory.Count, maxCollisions);
+        Overlaps = new(PhysicsBody.Category.Count, maxCollisions);
         CollisionManifoldState = new(physicsBodyCount);
         SubStepColliderCollisionsToResolve  = new(CollisionResolutionCategory.Count, maxCollisions);
         SubStepRigidBodyCollisionsToResolve = new(CollisionResolutionCategory.Count, maxCollisions);
         Entities = new(physicsBodyCount);
 
         // Physics body data.
-        Flags                       = new PhysicsBodyFlags[physicsBodyCount];
         LocalVertices               = new FsSoa_Vector2(maxPhysicsBodyVerticeCount, physicsBodyCount);
         WorldVertices               = new FsSoa_Vector2(maxPhysicsBodyVerticeCount, physicsBodyCount);
         Transforms                  = new Soa_Transform(physicsBodyCount);
@@ -705,7 +704,8 @@ public sealed class PhysicsSystemState
         BvhLeafPaddings             = new float[physicsBodyCount];
         ActiveBodies                = new(physicsBodyCount);
         ActiveBodiesDenseIndices    = new int[physicsBodyCount];
-        RotationalResponses          = new bool[physicsBodyCount];
+        RotationalResponses         = new bool[physicsBodyCount];
+        Shapes                      = new PhysicsBody.Shape[physicsBodyCount];
 
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();
@@ -754,7 +754,6 @@ public sealed class PhysicsSystemState
     /// <param name="state">the physics system state instance.</param>
     public static void EnforceNil(PhysicsSystemState state)
     {
-        Nil.Enforce(state.Flags);
         FsSoa_Vector2.EnforceNil(state.LocalVertices);
         FsSoa_Vector2.EnforceNil(state.WorldVertices);    
         Soa_Transform.EnforceNil(state.Transforms);

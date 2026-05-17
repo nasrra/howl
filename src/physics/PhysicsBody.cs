@@ -14,6 +14,186 @@ public static class PhysicsBody
 
 
 
+    /// <summary>
+    ///     The shape a Physics Body can assume.
+    /// </summary>
+    public enum Shape : int
+    {
+        Circle,
+        Rectangle
+    }
+
+
+
+
+
+    /// <summary>
+    ///         Note: ordering matters here, value 0 is highest precedence in 
+    ///         <see cref="PhysicsSystem.FormatCategorisedOverlaps(Howl.CategorisedLeafOverlaps, System.Span{int}, System.Span{int})"/>.
+    /// </summary>
+    public static class Category
+    {
+
+        public const int SolidPolygonRigidBody      = 0;
+        public const int SolidCircleRigidBody       = 1;
+        public const int SolidCapsuleRigidBody      = 2;
+        
+        public const int TriggerPolygonRigidBody    = 3;
+        public const int TriggerCircleRigidBody     = 4;
+        public const int TriggerCapsuleRigidBody    = 5;
+
+        // note: everything greater than KinematicPolygonRigidBody
+        // is not apart of the rigid body movement step.
+
+        public const int KinematicPolygonRigidBody  = 6;
+        public const int KinematicCircleRigidBody   = 7;
+        public const int KinematicCapsuleRigidBody  = 8;
+        
+        public const int SolidPolygonCollider       = 9;
+        public const int SolidCircleCollider        = 10;
+        public const int SolidCapsuleCollider       = 11;
+        
+        public const int TriggerPolygonCollider     = 12;
+        public const int TriggerCircleCollider      = 13;
+        public const int TriggerCapsuleCollider     = 14;
+
+        public const int KinematicPolygonCollider   = 15;
+        public const int KinematicCircleCollider    = 16;
+        public const int KinematicCapsuleCollider   = 17;
+
+
+
+
+        /******************
+        
+            Util
+        
+        *******************/
+
+
+
+
+        public const int Count = 18;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool IsPolygon(int category)
+        {
+            return category < Count && category % 3 == 0;    
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool IsCircle(int category)
+        {
+            return category < Count && category % 3 == 1;    
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool IsCapsule(int category)
+        {
+            return category < Count && category % 3 == 2;    
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool IsTrigger(int category)
+        {
+            return 
+            (category >= TriggerPolygonRigidBody && category <= TriggerCapsuleRigidBody) || 
+            (category >= TriggerPolygonCollider && category <=  TriggerCapsuleCollider);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool IsSolid(int category)
+        {
+            return 
+            (category >= SolidPolygonRigidBody && category <= SolidCapsuleRigidBody) || 
+            (category >= SolidPolygonCollider && category <= SolidCapsuleCollider);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool IsKinematic(int category)
+        {
+            return 
+            (category >= KinematicPolygonRigidBody && category <= KinematicCapsuleRigidBody) || 
+            (category >= KinematicPolygonCollider && category <=  KinematicCapsuleCollider);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static bool IsRigidBody(int category)
+        {
+            return category >= SolidPolygonRigidBody && category <= KinematicCapsuleRigidBody;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static void SetToRigidBody(ref int category)
+        {
+            category = category switch
+            {
+                SolidPolygonRigidBody   => SolidPolygonRigidBody,
+                SolidCircleRigidBody    => SolidCircleRigidBody ,
+                SolidCapsuleRigidBody   => SolidCapsuleRigidBody,
+
+                TriggerPolygonRigidBody => TriggerPolygonRigidBody,
+                TriggerCircleRigidBody  => TriggerCircleRigidBody ,
+                TriggerCapsuleRigidBody => TriggerCapsuleRigidBody,
+
+                KinematicPolygonRigidBody  => KinematicPolygonRigidBody,
+                KinematicCircleRigidBody   => KinematicCircleRigidBody ,
+                KinematicCapsuleRigidBody  => KinematicCapsuleRigidBody,
+                
+                SolidPolygonCollider => SolidPolygonRigidBody,
+                SolidCircleCollider  => SolidCircleRigidBody ,
+                SolidCapsuleCollider => SolidCapsuleRigidBody,
+
+                TriggerPolygonCollider  => TriggerPolygonRigidBody,
+                TriggerCircleCollider   => TriggerCircleRigidBody ,
+                TriggerCapsuleCollider  => TriggerCapsuleRigidBody,
+
+                KinematicPolygonCollider   => KinematicPolygonRigidBody,
+                KinematicCircleCollider    => KinematicCircleRigidBody ,
+                KinematicCapsuleCollider   => KinematicCapsuleRigidBody,
+
+                _ => throw new Exception()
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static void SetToCollider(ref int category)
+        {
+            category = category switch
+            {
+                SolidPolygonRigidBody   => SolidPolygonCollider,
+                SolidCircleRigidBody    => SolidCircleCollider ,
+                SolidCapsuleRigidBody   => SolidCapsuleCollider,
+
+                TriggerPolygonRigidBody => TriggerPolygonCollider,
+                TriggerCircleRigidBody  => TriggerCircleCollider ,
+                TriggerCapsuleRigidBody => TriggerCapsuleCollider,
+
+                KinematicPolygonRigidBody  => KinematicPolygonCollider,
+                KinematicCircleRigidBody   => KinematicCircleCollider ,
+                KinematicCapsuleRigidBody  => KinematicCapsuleCollider,
+                
+                SolidPolygonCollider => SolidPolygonCollider,
+                SolidCircleCollider  => SolidCircleCollider ,
+                SolidCapsuleCollider => SolidCapsuleCollider,
+
+                TriggerPolygonCollider  => TriggerPolygonCollider,
+                TriggerCircleCollider   => TriggerCircleCollider ,
+                TriggerCapsuleCollider  => TriggerCapsuleCollider,
+
+                KinematicPolygonCollider   => KinematicPolygonCollider,
+                KinematicCircleCollider    => KinematicCircleCollider ,
+                KinematicCapsuleCollider   => KinematicCapsuleCollider,
+
+                _ => throw new Exception()
+            };
+        }
+    }
+
+
+
+
+
     /*******************
     
         Physics Body Setters & Getters.
@@ -216,69 +396,116 @@ public static class PhysicsBody
 
 
 
-    /// <summary>
-    ///     Sets a physics body to resolve collisions using <c>Trigger</c> behaviour.
-    /// </summary>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="genId">the gen id of the physics body.</param>
-    /// <param name="isTrigger">whether or not to set the body to <c>Trigger</c>.</param>
-    /// <returns>
-    ///     <list type="bullet">
-    ///         <item>
-    ///             <see cref="GenIdResult.Ok"/>
-    ///         </item>
-    ///         <item>
-    ///             <see cref="GenIdResult.StaleGenId"/>
-    ///         </item>
-    ///     </list>
-    /// </returns>
+
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetTrigger(PhysicsSystemState state, GenId genId, bool isTrigger)
+    public static int SetCategory(PhysicsSystemState state, Shape shape, ColliderBehaviour behaviour, bool rigidbodyEnabled, 
+        int physicsBodyIndex
+    )
     {
-        if(EntityRegistry.IsGenIdStale(state.Entities, genId))
+        state.Shapes[physicsBodyIndex] = shape;
+        ref int category = ref state.BvhCategories[physicsBodyIndex];
+
+        switch (shape)
         {
-            return GenIdResult.StaleGenId;
+            case Shape.Rectangle:
+                category = behaviour switch 
+                {
+                    ColliderBehaviour.Solid 
+                        => rigidbodyEnabled? Category.SolidPolygonRigidBody : Category.SolidPolygonCollider,
+                    ColliderBehaviour.Kinematic
+                        => rigidbodyEnabled? Category.KinematicPolygonRigidBody : Category.KinematicPolygonCollider,
+                    ColliderBehaviour.Trigger
+                        => rigidbodyEnabled? Category.TriggerPolygonRigidBody : Category.TriggerPolygonCollider,
+                    _ => throw new Exception()
+                };
+            break;
+
+            case Shape.Circle:
+                category = behaviour switch 
+                {
+                    ColliderBehaviour.Solid 
+                        => rigidbodyEnabled? Category.SolidCircleRigidBody : Category.SolidCircleCollider,
+                    ColliderBehaviour.Kinematic
+                        => rigidbodyEnabled? Category.KinematicCircleRigidBody : Category.KinematicCircleCollider,
+                    ColliderBehaviour.Trigger
+                        => rigidbodyEnabled? Category.TriggerCircleRigidBody : Category.TriggerCircleCollider,
+                    _ => throw new Exception()
+                };
+            break;
+
+            default:
+                throw new Exception();
         }
 
-        SetTriggerUnsafe(state, genId, isTrigger);
-        return GenIdResult.Ok;
+        return category;
     }
 
-    /// <summary>
-    ///     Sets a physics body to resolve collisions using <c>Trigger</c> behaviour.
-    /// </summary>
-    /// <remarks>
-    ///    <c>StaleGenId</c> check is not enforced; the retrieved data at the given gen id slot will always mutated. 
-    /// </remarks>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="genId">the gen id of the physics body.</param>
-    /// <param name="isTrigger">whether or not to set the body to <c>Trigger</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetTriggerUnsafe(PhysicsSystemState state, GenId genId, bool isTrigger)
+    public static void IncrementCategoryCounter(PhysicsSystemState state, int category)
     {
-        SetTriggerUnsafe(state, GetPhysicsBodyIndex(genId), isTrigger);
+        switch (category)
+        {
+            case Category.SolidPolygonRigidBody: state.SolidPolygonRigidBodyCount++; break;
+            case Category.SolidCircleRigidBody: state.SolidCircleRigidBodyCount++; break;
+            case Category.SolidCapsuleRigidBody: state.SolidCapsuleRigidBodyCount++; break;
+            
+            case Category.TriggerPolygonRigidBody: state.TriggerPolygonRigidBodyCount++; break;
+            case Category.TriggerCircleRigidBody: state.TriggerCircleRigidBodyCount++; break;
+            case Category.TriggerCapsuleRigidBody: state.TriggerCapsuleRigidBodyCount++; break;
+
+            case Category.KinematicPolygonRigidBody: state.KinematicPolygonRigidBodyCount++; break;
+            case Category.KinematicCircleRigidBody: state.KinematicCircleRigidBodyCount++; break;
+            case Category.KinematicCapsuleRigidBody: state.KinematicCapsuleRigidBodyCount++; break;
+            
+            case Category.SolidPolygonCollider: state.SolidPolygonColliderCount++; break;
+            case Category.SolidCircleCollider: state.SolidCircleColliderCount++; break;
+            case Category.SolidCapsuleCollider: state.SolidCapsuleColliderCount++; break;
+            
+            case Category.TriggerPolygonCollider: state.TriggerPolygonColliderCount++; break;
+            case Category.TriggerCircleCollider: state.TriggerCircleColliderCount++; break;
+            case Category.TriggerCapsuleCollider: state.TriggerCapsuleColliderCount++; break;
+
+            case Category.KinematicPolygonCollider: state.KinematicPolygonColliderCount++; break;
+            case Category.KinematicCircleCollider: state.KinematicCircleColliderCount++; break;
+            case Category.KinematicCapsuleCollider: state.KinematicCapsuleColliderCount++; break;
+
+            default:
+                throw new Exception();
+        }
     }
 
-    /// <summary>
-    ///     Sets a physics body to resolve collisions using <c>Trigger</c> behaviour.
-    /// </summary>
-    /// <remarks>
-    ///    <c>StaleGenId</c> check is not enforced; the retrieved data at the given gen id slot will always mutated. 
-    /// </remarks>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
-    /// <param name="isTrigger">whether or not to set the body to <c>Trigger</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetTriggerUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool isTrigger)
-    {        
-        if (isTrigger)
+    public static void DecrementCategoryCounter(PhysicsSystemState state, int category)
+    {
+        switch (category)
         {
-            state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.Trigger;
+            case Category.SolidPolygonRigidBody: state.SolidPolygonRigidBodyCount--; break;
+            case Category.SolidCircleRigidBody: state.SolidCircleRigidBodyCount--; break;
+            case Category.SolidCapsuleRigidBody: state.SolidCapsuleRigidBodyCount--; break;
+            
+            case Category.TriggerPolygonRigidBody: state.TriggerPolygonRigidBodyCount--; break;
+            case Category.TriggerCircleRigidBody: state.TriggerCircleRigidBodyCount--; break;
+            case Category.TriggerCapsuleRigidBody: state.TriggerCapsuleRigidBodyCount--; break;
+
+            case Category.KinematicPolygonRigidBody: state.KinematicPolygonRigidBodyCount--; break;
+            case Category.KinematicCircleRigidBody: state.KinematicCircleRigidBodyCount--; break;
+            case Category.KinematicCapsuleRigidBody: state.KinematicCapsuleRigidBodyCount--; break;
+            
+            case Category.SolidPolygonCollider: state.SolidPolygonColliderCount--; break;
+            case Category.SolidCircleCollider: state.SolidCircleColliderCount--; break;
+            case Category.SolidCapsuleCollider: state.SolidCapsuleColliderCount--; break;
+            
+            case Category.TriggerPolygonCollider: state.TriggerPolygonColliderCount--; break;
+            case Category.TriggerCircleCollider: state.TriggerCircleColliderCount--; break;
+            case Category.TriggerCapsuleCollider: state.TriggerCapsuleColliderCount--; break;
+
+            case Category.KinematicPolygonCollider: state.KinematicPolygonColliderCount--; break;
+            case Category.KinematicCircleCollider: state.KinematicCircleColliderCount--; break;
+            case Category.KinematicCapsuleCollider: state.KinematicCapsuleColliderCount--; break;
+
+            default:
+                throw new Exception();
         }
-        else
-        {
-            state.Flags[physicsBodyIndex] &= ~PhysicsBodyFlags.Trigger;
-        }        
     }
 
     /// <summary>
@@ -331,7 +558,7 @@ public static class PhysicsBody
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool IsTriggerUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
-        return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.Trigger) != 0;        
+        return Category.IsTrigger(state.BvhCategories[physicsBodyIndex]);
     }
 
     /// <summary>
@@ -339,7 +566,6 @@ public static class PhysicsBody
     /// </summary>
     /// <param name="state">the physics system state that contains the physics body.</param>
     /// <param name="genId">the gen id of the physics body.</param>
-    /// <param name="isKinematic">true, if <c>Kinematic</c>; otherwise false.</param>
     /// <returns>
     ///     <list type="bullet">
     ///         <item>
@@ -371,11 +597,10 @@ public static class PhysicsBody
     /// </remarks>
     /// <param name="state">the physics system state that contains the physics body.</param>
     /// <param name="genId">the gen id of the physics body.</param>
-    /// <param name="isKinematic">true, if <c>Kinematic</c>; otherwise false.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void SetKinematicUnsafe(PhysicsSystemState state, GenId genId, bool isKinematic)
     {
-        SetKinematicUnsafe(state, GetPhysicsBodyIndex(genId), isKinematic);
+        SetKinematicUnsafe(state, GetPhysicsBodyIndex(genId));
     }
 
     /// <summary>
@@ -386,18 +611,39 @@ public static class PhysicsBody
     /// </remarks>
     /// <param name="state">the physics system state that contains the physics body.</param>
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
-    /// <param name="isKinematic">true, if <c>Kinematic</c>; otherwise false.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetKinematicUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool isKinematic)
-    {        
-        if (isKinematic)
+    public static void SetKinematicUnsafe(PhysicsSystemState state, int physicsBodyIndex)
+    {
+        ref int category = ref state.BvhCategories[physicsBodyIndex];
+
+        category = category switch
         {
-            state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.Kinematic;
-        }
-        else
-        {
-            state.Flags[physicsBodyIndex] &= ~PhysicsBodyFlags.Kinematic;
-        }        
+            Category.SolidPolygonRigidBody   => Category.KinematicPolygonRigidBody,
+            Category.SolidCircleRigidBody    => Category.KinematicCircleRigidBody,
+            Category.SolidCapsuleRigidBody   => Category.KinematicCapsuleRigidBody,
+
+            Category.TriggerPolygonRigidBody => Category.KinematicPolygonRigidBody,
+            Category.TriggerCircleRigidBody  => Category.KinematicCircleRigidBody,
+            Category.TriggerCapsuleRigidBody => Category.KinematicCapsuleRigidBody,
+
+            Category.KinematicPolygonRigidBody  => Category.KinematicPolygonRigidBody,
+            Category.KinematicCircleRigidBody   => Category.KinematicCircleRigidBody,
+            Category.KinematicCapsuleRigidBody  => Category.KinematicCapsuleRigidBody,
+            
+            Category.SolidPolygonCollider    => Category.KinematicPolygonCollider,
+            Category.SolidCircleCollider     => Category.KinematicCircleCollider,
+            Category.SolidCapsuleCollider    => Category.KinematicCapsuleCollider,
+
+            Category.TriggerPolygonCollider  => Category.KinematicPolygonCollider,
+            Category.TriggerCircleCollider   => Category.KinematicCircleCollider,
+            Category.TriggerCapsuleCollider  => Category.KinematicCapsuleCollider,
+
+            Category.KinematicPolygonCollider   => Category.KinematicPolygonCollider,
+            Category.KinematicCircleCollider    => Category.KinematicCircleCollider ,
+            Category.KinematicCapsuleCollider   => Category.KinematicCapsuleCollider,
+
+            _ => throw new Exception()
+        };
     }
 
     /// <summary>
@@ -449,7 +695,7 @@ public static class PhysicsBody
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool IsKinematicUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {
-        return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.Kinematic) != 0;        
+        return Category.IsKinematic(state.BvhCategories[physicsBodyIndex]);        
     }
 
     /// <summary>
@@ -873,11 +1119,10 @@ public static class PhysicsBody
     }
 
     /// <summary>
-    ///     Sets whether or not a physics body is a rigidbody.
+    ///     Sets whether a physics body exhibits rigidbody behaviour.
     /// </summary>
     /// <param name="state">the physics system state that contains the physics body.</param>
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
-    /// <param name="isRigidBody">true, if it is a <c>RigidBody</c>; otherwise false.</param>
     /// <returns>
     ///     <list type="bullet">
     ///         <item>
@@ -889,52 +1134,37 @@ public static class PhysicsBody
     ///     </list>
     /// </returns>    
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetRigidBody(PhysicsSystemState state, GenId genId, bool isRigidBody)
+    public static GenIdResult SetRigidBody(PhysicsSystemState state, GenId genId, bool enabled)
     {
         if(EntityRegistry.IsGenIdStale(state.Entities, genId))
         {
             return GenIdResult.StaleGenId;
         }
 
-        SetRigidBodyUnsafe(state, genId, isRigidBody);
+        SetRigidBodyUnsafe(state, GenId.GetIndex(genId), enabled);
         return GenIdResult.Ok;
     }
 
     /// <summary>
-    ///     Sets whether or not a physics body is a rigidbody.
-    /// </summary>
-    /// <remarks>
-    ///    <c>StaleGenId</c> check is not enforced; the retrieved data at the given gen id slot will always mutated. 
-    /// </remarks>
-    /// <param name="state">the physics system state that contains the physics body.</param>
-    /// <param name="genId">the gen id of the physics body.</param>
-    /// <param name="isRigidBody">true, if it is a <c>RigidBody</c>; otherwise false.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetRigidBodyUnsafe(PhysicsSystemState state, GenId genId, bool hasRigidBody)
-    {
-        SetRigidBodyUnsafe(state, GetPhysicsBodyIndex(genId), hasRigidBody);
-    }
-
-    /// <summary>
-    ///     Sets whether or not a physics body is a rigidbody.
+    ///     Sets whether a physics body exhibits rigidbody behaviour.
     /// </summary>
     /// <remarks>
     ///    <c>StaleGenId</c> check is not enforced; the retrieved data at the given gen id slot will always mutated. 
     /// </remarks>
     /// <param name="state">the physics system state that contains the physics body.</param>
     /// <param name="physicsBodyIndex">the index of the physics body in the physics system state.</param>
-    /// <param name="isRigidBody">true, if it is a <c>RigidBody</c>; otherwise false.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetRigidBodyUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool hasRigidBody)
+    public static void SetRigidBodyUnsafe(PhysicsSystemState state, int physicsBodyIndex, bool enabled)
     {
-        if (hasRigidBody)
+        switch (enabled)
         {
-            state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.RigidBody;
+            case true:
+                Category.SetToRigidBody(ref state.BvhCategories[physicsBodyIndex]);
+            break;
+            case false:
+                Category.SetToCollider(ref state.BvhCategories[physicsBodyIndex]);
+            break;
         }
-        else
-        {
-            state.Flags[physicsBodyIndex] &= ~PhysicsBodyFlags.RigidBody;
-        }                
     }
 
     /// <summary>
@@ -988,7 +1218,7 @@ public static class PhysicsBody
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool IsRigidBodyUnsafe(PhysicsSystemState state, int physicsBodyIndex)
     {        
-        return (state.Flags[physicsBodyIndex] & PhysicsBodyFlags.RigidBody) != 0;
+        return Category.IsRigidBody(state.BvhCategories[physicsBodyIndex]);
     }
 
     /// <summary>
@@ -1007,10 +1237,8 @@ public static class PhysicsBody
         }
 
         int index = GenId.GetIndex(genId);
-        
-        ref PhysicsBodyFlags flag = ref state.Flags[index];
-        
-        if((flag & PhysicsBodyFlags.RigidBody) == 0)
+                
+        if(Category.IsRigidBody(state.BvhCategories[index]) == false)
         {
             result = GenIdResult.NotAllocated;
             return default;
@@ -1193,9 +1421,8 @@ public static class PhysicsBody
         }
 
         int index = GenId.GetIndex(genId);
-        ref PhysicsBodyFlags flag = ref state.Flags[index];
         
-        if((flag & PhysicsBodyFlags.RigidBody) == 0)
+        if(Category.IsRigidBody(state.BvhCategories[index]) == false)
         {
             return GenIdResult.NotAllocated;   
         }
@@ -1225,33 +1452,32 @@ public static class PhysicsBody
 
         // this is here temporarily and SHOULD be removed.
         FsSoa_Vector2.ClearEntryAppendCount(state.LocalVertices, index);
-        state.Flags[index] = PhysicsBodyFlags.None;
 
         switch (state.BvhCategories[index])
         {
-            case PhysicsBodyCategory.SolidPolygonRigidBody    : state.SolidPolygonRigidBodyCount--;     break;
-            case PhysicsBodyCategory.SolidCircleRigidBody     : state.SolidCircleRigidBodyCount--;      break;
-            case PhysicsBodyCategory.SolidCapsuleRigidBody    : state.SolidCapsuleRigidBodyCount--;     break;
+            case Category.SolidPolygonRigidBody    : state.SolidPolygonRigidBodyCount--;     break;
+            case Category.SolidCircleRigidBody     : state.SolidCircleRigidBodyCount--;      break;
+            case Category.SolidCapsuleRigidBody    : state.SolidCapsuleRigidBodyCount--;     break;
             
-            case PhysicsBodyCategory.KinematicPolygonRigidBody: state.KinematicPolygonRigidBodyCount--; break;
-            case PhysicsBodyCategory.KinematicCircleRigidBody : state.KinematicCircleRigidBodyCount--;  break;
-            case PhysicsBodyCategory.KinematicCapsuleRigidBody: state.KinematicCapsuleRigidBodyCount--; break;
+            case Category.KinematicPolygonRigidBody: state.KinematicPolygonRigidBodyCount--; break;
+            case Category.KinematicCircleRigidBody : state.KinematicCircleRigidBodyCount--;  break;
+            case Category.KinematicCapsuleRigidBody: state.KinematicCapsuleRigidBodyCount--; break;
             
-            case PhysicsBodyCategory.TriggerPolygonRigidBody  : state.TriggerPolygonRigidBodyCount--;   break;
-            case PhysicsBodyCategory.TriggerCircleRigidBody   : state.TriggerCircleRigidBodyCount--;    break;
-            case PhysicsBodyCategory.TriggerCapsuleRigidBody  : state.TriggerCapsuleRigidBodyCount--;   break;
+            case Category.TriggerPolygonRigidBody  : state.TriggerPolygonRigidBodyCount--;   break;
+            case Category.TriggerCircleRigidBody   : state.TriggerCircleRigidBodyCount--;    break;
+            case Category.TriggerCapsuleRigidBody  : state.TriggerCapsuleRigidBodyCount--;   break;
             
-            case PhysicsBodyCategory.SolidPolygonCollider     : state.SolidPolygonColliderCount--;      break;
-            case PhysicsBodyCategory.SolidCircleCollider      : state.SolidCircleColliderCount--;       break;
-            case PhysicsBodyCategory.SolidCapsuleCollider     : state.SolidCapsuleColliderCount--;      break;
+            case Category.SolidPolygonCollider     : state.SolidPolygonColliderCount--;      break;
+            case Category.SolidCircleCollider      : state.SolidCircleColliderCount--;       break;
+            case Category.SolidCapsuleCollider     : state.SolidCapsuleColliderCount--;      break;
             
-            case PhysicsBodyCategory.KinematicPolygonCollider : state.KinematicPolygonColliderCount--;  break;
-            case PhysicsBodyCategory.KinematicCircleCollider  : state.KinematicCircleColliderCount--;   break;
-            case PhysicsBodyCategory.KinematicCapsuleCollider : state.KinematicCapsuleColliderCount--;  break;
+            case Category.KinematicPolygonCollider : state.KinematicPolygonColliderCount--;  break;
+            case Category.KinematicCircleCollider  : state.KinematicCircleColliderCount--;   break;
+            case Category.KinematicCapsuleCollider : state.KinematicCapsuleColliderCount--;  break;
             
-            case PhysicsBodyCategory.TriggerPolygonCollider   : state.TriggerPolygonColliderCount--;    break;
-            case PhysicsBodyCategory.TriggerCircleCollider    : state.TriggerCircleColliderCount--;     break;
-            case PhysicsBodyCategory.TriggerCapsuleCollider   : state.TriggerCapsuleColliderCount--;    break;
+            case Category.TriggerPolygonCollider   : state.TriggerPolygonColliderCount--;    break;
+            case Category.TriggerCircleCollider    : state.TriggerCircleColliderCount--;     break;
+            case Category.TriggerCapsuleCollider   : state.TriggerCapsuleColliderCount--;    break;
 
             default:
                 System.Diagnostics.Debug.Assert(false);
@@ -1266,18 +1492,37 @@ public static class PhysicsBody
         return result;
     }
 
-    public static void PrepareForPhysicsBodyAllocation(PhysicsSystemState state, int physicsBodyIndex)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void PreparePhysicsBodyAllocation(PhysicsSystemState state, Transform transform, Span<float> localVertsX, 
+        Span<float> localVertsY, ColliderBehaviour colliderBehaviour, GenId entityId, int physicsBodyIndex, bool IsRigidBody, Shape shape
+    )
     {
         // clear any garbage data from previous allocations.
         FsSoa_Vector2.ClearEntryAppendCount(state.LocalVertices, physicsBodyIndex);
-        state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None;
+
+        // set the new data.
+        SetActiveUnsafe(state, physicsBodyIndex, true);
+        int category = SetCategory(state, shape, colliderBehaviour, IsRigidBody, physicsBodyIndex);            
+        IncrementCategoryCounter(state, category);
+        SetTransformUnsafe(state, physicsBodyIndex, transform);
+
+        for(int i = 0; i < localVertsX.Length; i++)
+        {
+            FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, localVertsX[i], localVertsY[i]);
+        }
+        
+        state.EntityIds[physicsBodyIndex] = entityId;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void FinalisePhysicsBodyAllocation(PhysicsSystemState state, int physicsBodyIndex)
     {        
         // set this so that the previous position isnt garbage from previous steps.
         state.PreviousStepPositions.X[physicsBodyIndex] = state.Transforms.Positions.X[physicsBodyIndex];
         state.PreviousStepPositions.Y[physicsBodyIndex] = state.Transforms.Positions.Y[physicsBodyIndex];
+
+        // reset any forces that were applied to previously allocated bodies.
+        PhysicsSystem.ClearForcesAndVelocities(state, physicsBodyIndex);
     }
 
 
@@ -1325,51 +1570,20 @@ public static class PhysicsBody
             }
             
             int physicsBodyIndex = GetPhysicsBodyIndex(genId);
+            PreparePhysicsBodyAllocation(state, transform, [shape.X], [shape.Y], colliderBehaviour, entityId, physicsBodyIndex, 
+                false, Shape.Circle
+            );
+            
+            { // Set specific data.
 
-            // handle flags.
-            // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
-            // set, a physics body is a circle.
-            state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None; // clear any garbage flags.
-            SetActiveUnsafe(state, physicsBodyIndex, true);
-            SetRigidBodyUnsafe(state, physicsBodyIndex, false);
-
-            switch (colliderBehaviour)
-            {
-                case ColliderBehaviour.Solid:
-                    SetTriggerUnsafe(state, physicsBodyIndex, false);
-                    SetKinematicUnsafe(state, physicsBodyIndex, false);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.SolidCircleCollider;
-                    state.SolidCircleColliderCount++;
-                break;
-                case ColliderBehaviour.Trigger:
-                    SetTriggerUnsafe(state, physicsBodyIndex, true);
-                    SetKinematicUnsafe(state, physicsBodyIndex, false);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.TriggerCircleCollider;
-                    state.TriggerCircleColliderCount++;
-                break;
-                case ColliderBehaviour.Kinematic:
-                    SetTriggerUnsafe(state, physicsBodyIndex, false);
-                    SetKinematicUnsafe(state, physicsBodyIndex, true);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.KinematicCircleCollider;
-                    state.KinematicCircleColliderCount++;
-                break;
+                // rigidbodies should respond to this like a kinematic rigidbody if it is solid or kinematic. 
+                state.Masses[physicsBodyIndex] = 0;
+                state.InverseMasses[physicsBodyIndex] = 0;
+                state.LocalRadii[physicsBodyIndex] = shape.Radius;            
             }
 
-            // rigidbodies should respond to this like a kinematic rigidbody if it is solid or kinematic. 
-            state.Masses[physicsBodyIndex] = 0;
-            state.InverseMasses[physicsBodyIndex] = 0;
-
-            // apply data.
-            SetTransformUnsafe(state, physicsBodyIndex, transform);
-
-            // set this so that the previous position isnt garbage from previous steps.
-            state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
-            state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
-
-            FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, shape.X, shape.Y);
-            state.LocalRadii[physicsBodyIndex] = shape.Radius;
-            state.EntityIds[physicsBodyIndex] = entityId;
-            
+            FinalisePhysicsBodyAllocation(state, physicsBodyIndex);
+        
             return GenIdResult.Ok;
         }
         
@@ -1382,7 +1596,7 @@ public static class PhysicsBody
         /// <param name="material">the physics material to apply to the body.</param>
         /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
         /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
-        /// <param name="rotationalPhysics">whether to enable rotational physics for the physics body.</param>
+        /// <param name="rotationalResponse">whether rotational collision response is enabled for the rigidbody.</param>
         /// <param name="genId">the associated genId to the newly allocated body.</param>
         /// <returns>
         ///     <list type="bullet">
@@ -1396,7 +1610,7 @@ public static class PhysicsBody
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static GenIdResult AllocateRigidBody(PhysicsSystemState state, Math.Shapes.Circle shape, Transform transform, PhysicsMaterial material, 
-            GenId entityId, ColliderBehaviour colliderBehaviour, bool rotationalPhysics, ref GenId genId
+            GenId entityId, ColliderBehaviour colliderBehaviour, bool rotationalResponse, ref GenId genId
         )
         {
             GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1406,56 +1620,21 @@ public static class PhysicsBody
             }
 
             int physicsBodyIndex = GetPhysicsBodyIndex(genId);
+            PreparePhysicsBodyAllocation(state, transform, [shape.X], [shape.Y], colliderBehaviour, entityId, physicsBodyIndex, 
+                true, Shape.Circle
+            );
 
-            // handle flags.
-            // note: no circle shape is needed to be set as it is implied by the system that when a shape is not
-            // set, a physics body is a circle.
-            state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None; // clear any garbage flags.
-            SetActiveUnsafe(state, physicsBodyIndex, true);
-            SetRigidBodyUnsafe(state, physicsBodyIndex, true);
-            SetRotationalResponseUnsafe(state, physicsBodyIndex, rotationalPhysics);
-
-            switch (colliderBehaviour)
-            {
-                case ColliderBehaviour.Solid:
-                    SetTriggerUnsafe(state, physicsBodyIndex, false);
-                    SetKinematicUnsafe(state, physicsBodyIndex, false);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.SolidCircleRigidBody;
-                    state.SolidCircleRigidBodyCount++;
-                break;
-                case ColliderBehaviour.Trigger:
-                    SetTriggerUnsafe(state, physicsBodyIndex, true);
-                    SetKinematicUnsafe(state, physicsBodyIndex, false);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.TriggerCircleRigidBody;
-                    state.TriggerCircleRigidBodyCount++;
-                break;
-                case ColliderBehaviour.Kinematic:
-                    SetTriggerUnsafe(state, physicsBodyIndex, false);
-                    SetKinematicUnsafe(state, physicsBodyIndex, true);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.KinematicCircleRigidBody;
-                    state.KinematicCircleRigidBodyCount++;
-                break;
+            {   // Set specific data. 
+                
+                SetRotationalResponseUnsafe(state, physicsBodyIndex, rotationalResponse);
+                Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, material.Density, 
+                    material.Restitution, physicsBodyIndex
+                );
+                state.LocalRadii[physicsBodyIndex] = shape.Radius;
+                state.EntityIds[physicsBodyIndex] = entityId;
             }
 
-            // apply data.
-
-            // add the vertices.
-            FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, shape.X, shape.Y);
-
-            SetTransformUnsafe(state, physicsBodyIndex, transform);
-
-            // set this so that the previous position isnt garbage from previous steps.
-            state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
-            state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
-
-            Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, material.Density, 
-                material.Restitution, physicsBodyIndex
-            );
-            state.LocalRadii[physicsBodyIndex] = shape.Radius;
-            state.EntityIds[physicsBodyIndex] = entityId;
-
-            // reset forces
-            PhysicsSystem.ClearForcesAndVelocities(state, physicsBodyIndex);
+            FinalisePhysicsBodyAllocation(state, physicsBodyIndex);
 
             return GenIdResult.Ok;
         }
@@ -1553,58 +1732,25 @@ public static class PhysicsBody
                 return result;
             }
 
-            int physicsBodyIndex = GetPhysicsBodyIndex(genId);
-
-            // handle flags.
-            state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None; // clear any garbage flags.
-            state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.RectangleShape;
-            SetActiveUnsafe(state, physicsBodyIndex, true);
-            SetRigidBodyUnsafe(state, physicsBodyIndex, false);
-
-            switch (colliderBehaviour)
-            {
-                case ColliderBehaviour.Solid:
-                    SetTriggerUnsafe(state, physicsBodyIndex, false);
-                    SetKinematicUnsafe(state, physicsBodyIndex, false);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.SolidPolygonCollider;
-                    state.SolidPolygonColliderCount++;
-                break;
-                case ColliderBehaviour.Trigger:
-                    SetTriggerUnsafe(state, physicsBodyIndex, true);
-                    SetKinematicUnsafe(state, physicsBodyIndex, false);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.TriggerPolygonCollider;
-                    state.TriggerPolygonColliderCount++;
-                break;
-                case ColliderBehaviour.Kinematic:
-                    SetTriggerUnsafe(state, physicsBodyIndex, false);
-                    SetKinematicUnsafe(state, physicsBodyIndex, true);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.KinematicPolygonCollider;
-                    state.KinematicPolygonColliderCount++;
-                break;
-            }
-
-            // apply data.
             PolygonRectangle polyRect = new(shape);
 
-            Span<float> xVerts = PolygonRectangle.VerticesXAsSpan(polyRect);
-            Span<float> yVerts = PolygonRectangle.VerticesYAsSpan(polyRect);            
-            for(int i = 0; i < xVerts.Length; i++)
-            {
-                FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, xVerts[i], yVerts[i]);
+            int physicsBodyIndex = GetPhysicsBodyIndex(genId);
+            PreparePhysicsBodyAllocation(state, transform, PolygonRectangle.VerticesXAsSpan(polyRect), 
+                PolygonRectangle.VerticesYAsSpan(polyRect), colliderBehaviour, entityId, physicsBodyIndex, false, Shape.Rectangle
+            );
+
+            {   // set specific data.
+                
+                // apply data.                        
+                state.LocalHeights[physicsBodyIndex] = shape.Height;
+                state.LocalWidths[physicsBodyIndex] = shape.Width;
+
+                // rigidbodies should respond to this like a kinematic rigidbody if it is solid or kinematic. 
+                state.Masses[physicsBodyIndex] = 0;
+                state.InverseMasses[physicsBodyIndex] = 0;
             }
-                    
-            SetTransformUnsafe(state, genId, transform);
-            state.LocalHeights[physicsBodyIndex] = shape.Height;
-            state.LocalWidths[physicsBodyIndex] = shape.Width;
-            state.EntityIds[physicsBodyIndex] = entityId;
 
-            // set this so that the previous position isnt garbage from previous steps.
-            state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
-            state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
-
-            // rigidbodies should respond to this like a kinematic rigidbody if it is solid or kinematic. 
-            state.Masses[physicsBodyIndex] = 0;
-            state.InverseMasses[physicsBodyIndex] = 0;
+            FinalisePhysicsBodyAllocation(state, physicsBodyIndex);
 
             return GenIdResult.Ok;
         }
@@ -1618,7 +1764,7 @@ public static class PhysicsBody
         /// <param name="material">the physics material to apply to the body.</param>
         /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
         /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
-        /// <param name="rotationalPhysics">whether to enable rotational physics for the physics body.</param>
+        /// <param name="rotationalResponse">Whether rotational collision response is enabled for a rigidbody.</param>
         /// <param name="genId">the associated genId to the newly allocated body.</param>
         /// <returns>
         ///     <list type="bullet">
@@ -1631,7 +1777,7 @@ public static class PhysicsBody
         ///     </list>
         /// </returns>.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static GenIdResult AllocateRigidBody(PhysicsSystemState state, Math.Shapes.Rectangle shape, Transform transform,
-            PhysicsMaterial material, GenId entityId, ColliderBehaviour colliderBehaviour, bool rotationalPhysics, ref GenId genId
+            PhysicsMaterial material, GenId entityId, ColliderBehaviour colliderBehaviour, bool rotationalResponse, ref GenId genId
         )
         {
             GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1640,63 +1786,24 @@ public static class PhysicsBody
                 return result;
             }
 
-            int physicsBodyIndex = GetPhysicsBodyIndex(genId);
-            
-            // handle flags.
-            state.Flags[physicsBodyIndex] = PhysicsBodyFlags.None; // clear any garbage flags.
-            state.Flags[physicsBodyIndex] |= PhysicsBodyFlags.RectangleShape;
-            SetActiveUnsafe(state, physicsBodyIndex, true);
-            SetRigidBodyUnsafe(state, physicsBodyIndex, true);
-            SetRotationalResponseUnsafe(state, physicsBodyIndex, rotationalPhysics);
-
-            switch (colliderBehaviour)
-            {
-                case ColliderBehaviour.Solid:
-                    SetTriggerUnsafe(state, physicsBodyIndex, false);
-                    SetKinematicUnsafe(state, physicsBodyIndex, false);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.SolidPolygonRigidBody;
-                    state.SolidPolygonRigidBodyCount++;
-                break;
-                case ColliderBehaviour.Trigger:
-                    SetTriggerUnsafe(state, physicsBodyIndex, true);
-                    SetKinematicUnsafe(state, physicsBodyIndex, false);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.TriggerPolygonRigidBody;
-                    state.TriggerPolygonRigidBodyCount++;
-                break;
-                case ColliderBehaviour.Kinematic:
-                    SetTriggerUnsafe(state, physicsBodyIndex, false);
-                    SetKinematicUnsafe(state, physicsBodyIndex, true);
-                    state.BvhCategories[physicsBodyIndex] = PhysicsBodyCategory.KinematicPolygonRigidBody;
-                    state.KinematicPolygonRigidBodyCount++;
-                break;
-            }
-            
-            // apply data.
             PolygonRectangle polyRect = new(shape);
-
-            Span<float> xVerts = PolygonRectangle.VerticesXAsSpan(polyRect);
-            Span<float> yVerts = PolygonRectangle.VerticesYAsSpan(polyRect);            
-            for(int i = 0; i < xVerts.Length; i++)
-            {
-                FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, xVerts[i], yVerts[i]);
-            }
-
-            SetTransformUnsafe(state, physicsBodyIndex, transform);
-
-            // set this so that the previous position isnt garbage from previous steps.
-            state.PreviousStepPositions.X[physicsBodyIndex] = transform.Position.X;
-            state.PreviousStepPositions.Y[physicsBodyIndex] = transform.Position.Y;
-
-            state.LocalHeights[physicsBodyIndex] = shape.Height;
-            state.LocalWidths[physicsBodyIndex] = shape.Width;
-            state.EntityIds[physicsBodyIndex] = entityId;
-            Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, material.Density, 
-                material.Restitution, physicsBodyIndex
+            
+            int physicsBodyIndex = GetPhysicsBodyIndex(genId);
+            PreparePhysicsBodyAllocation(state, transform, PolygonRectangle.VerticesXAsSpan(polyRect), 
+                PolygonRectangle.VerticesYAsSpan(polyRect), colliderBehaviour, entityId, physicsBodyIndex, true, Shape.Rectangle
             );
 
-            // reset forces.
-            PhysicsSystem.ClearForcesAndVelocities(state, physicsBodyIndex);
+            {   // specific data.
+                
+                SetRotationalResponseUnsafe(state, physicsBodyIndex, rotationalResponse);
+                state.LocalHeights[physicsBodyIndex] = shape.Height;
+                state.LocalWidths[physicsBodyIndex] = shape.Width;
+                Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, material.Density, 
+                    material.Restitution, physicsBodyIndex
+                );
+            }
 
+            FinalisePhysicsBodyAllocation(state, physicsBodyIndex);
             return GenIdResult.Ok;
         }
 

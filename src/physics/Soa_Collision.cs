@@ -55,16 +55,6 @@ public class Soa_Collision
     public float[] Depths;
 
     /// <summary>
-    /// Gets and sets a copy of an owner's physics body flags for a collision.
-    /// </summary>
-    public PhysicsBodyFlags[] OwnerFlags;
-
-    /// <summary>
-    /// Gets and sets a copy of an other's physics body flags for a collision.
-    /// </summary>
-    public PhysicsBodyFlags[] OtherFlags;
-
-    /// <summary>
     /// Gets and sets whether or not a collision has a second contact point.
     /// </summary>
     public bool[] TwoContactPoints;
@@ -97,8 +87,6 @@ public class Soa_Collision
         FirstContactPoints          = new Soa_Vector2(maxCollisions);
         SecondContactPoints         = new Soa_Vector2(maxCollisions);
         Depths                       = new float[maxCollisions];
-        OwnerFlags                  = new PhysicsBodyFlags[maxCollisions];
-        OtherFlags                  = new PhysicsBodyFlags[maxCollisions];
         TwoContactPoints            = new bool[maxCollisions];
     }
 
@@ -117,12 +105,10 @@ public class Soa_Collision
     /// <param name="contactPointX">the x-component of the contact point vector.</param>
     /// <param name="contactPointY">the y-component of the contact point vector.</param>
     /// <param name="depth">the depth of the collision.</param>
-    /// <param name="ownerFlags">the physics body flags of the <c>owner</c>.</param>
-    /// <param name="otherFlags">the physics body flags of the <c>other</c>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void AppendCollision(Soa_Collision buffer, GenId ownerId, GenId otherId, float normalX, float normalY, float ownerShapeCenterX,
         float ownerShapeCenterY, float otherShapeCenterX, float otherShapeCenterY, float contactPointX,
-        float contactPointY, float depth, PhysicsBodyFlags ownerFlags, PhysicsBodyFlags otherFlags
+        float contactPointY, float depth
     )
     {
         int count = buffer.Count;
@@ -138,8 +124,6 @@ public class Soa_Collision
         buffer.FirstContactPoints.X[count] = contactPointX;
         buffer.FirstContactPoints.Y[count] = contactPointY;
         buffer.Depths[count] = depth;
-        buffer.OwnerFlags[count] = ownerFlags;
-        buffer.OtherFlags[count] = otherFlags;
         buffer.TwoContactPoints[count] = false;
         
         buffer.Count++;
@@ -162,13 +146,10 @@ public class Soa_Collision
     /// <param name="secondContactPointX">the x-component of the second contact point vector.</param>
     /// <param name="secondContactPointY">the y-component of the second contact point vector.</param>
     /// <param name="depth">the depth of the collision.</param>
-    /// <param name="ownerFlags">the flags of the owner physics body.</param>
-    /// <param name="otherFlags">the flags of the other physics body.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void AppendCollision(Soa_Collision buffer, GenId ownerId, GenId otherId, float normalX, float normalY, float ownerShapeCenterX,
         float ownerShapeCenterY, float otherShapeCenterX, float otherShapeCenterY, float firstContactPointX,
-        float firstContactPointY, float secondContactPointX, float secondContactPointY, float depth, PhysicsBodyFlags ownerFlags, 
-        PhysicsBodyFlags otherFlags
+        float firstContactPointY, float secondContactPointX, float secondContactPointY, float depth
     )
     {
         int count = buffer.Count;
@@ -186,8 +167,6 @@ public class Soa_Collision
         buffer.SecondContactPoints.X[count] = secondContactPointX;
         buffer.SecondContactPoints.Y[count] = secondContactPointY;
         buffer.Depths[count] = depth;
-        buffer.OwnerFlags[count] = ownerFlags;
-        buffer.OtherFlags[count] = otherFlags;
         buffer.TwoContactPoints[count] = true;
         
         buffer.Count++;
