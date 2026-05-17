@@ -1,7 +1,5 @@
 using System;
-using System.Runtime.CompilerServices;
 using Howl.Collections;
-using Howl.Debug;
 
 namespace Howl.Text;
 
@@ -34,7 +32,7 @@ public static class StringRegistry
     {
         if(state.StringAllocators[allocatorLength] != null)
         {
-            Log.WriteLine(LogType.Error, $"Text Allocator already allocated a String Allocator with a max characters count of '{allocatorLength}'");
+            Debug.LogError( $"Text Allocator already allocated a String Allocator with a max characters count of '{allocatorLength}'");
             return false;
         }
 
@@ -56,7 +54,7 @@ public static class StringRegistry
     {
         if(state.StringAllocators[allocatorLength] == null)
         {
-            Log.WriteLine(LogType.Error, $"Text Allocator already deallocated a String Allocator with a max characters count of '{allocatorLength}'");
+            Debug.LogError( $"Text Allocator already deallocated a String Allocator with a max characters count of '{allocatorLength}'");
             return false;
         }
 
@@ -120,7 +118,7 @@ public static class StringRegistry
         StringAllocatorState allocator = state.StringAllocators[allocatorLength]; 
         if(allocator == null)
         {
-            Log.WriteLine(LogType.Error, $"Cannot allocate string '{characters}', the requested string allocator at index '{stringId.AllocatorIndex}' has not been intialised.");
+            Debug.LogError( $"Cannot allocate string '{characters}', the requested string allocator at index '{stringId.AllocatorIndex}' has not been intialised.");
             return false;
         }
         
@@ -146,7 +144,7 @@ public static class StringRegistry
         StringAllocatorState allocator = state.StringAllocators[stringId.AllocatorIndex]; 
         if(allocator == null)
         {
-            Log.WriteLine(LogType.Error, $"Cannot set string '{characters}', the requested string allocator at index '{stringId.AllocatorIndex}' has not been intialised.");
+            Debug.LogError( $"Cannot set string '{characters}', the requested string allocator at index '{stringId.AllocatorIndex}' has not been intialised.");
             return false;
         }
         return StringAllocator.SetChars(allocator, characters, stringId.StringIndex);
@@ -163,7 +161,7 @@ public static class StringRegistry
         StringAllocatorState allocator = state.StringAllocators[stringId.AllocatorIndex]; 
         if(allocator == null)
         {
-            Log.WriteLine(LogType.Error, $"Cannot deallocate string, the requested string allocator at index '{stringId.AllocatorIndex} ' has not been intialised.");
+            Debug.LogError( $"Cannot deallocate string, the requested string allocator at index '{stringId.AllocatorIndex} ' has not been intialised.");
             return false;
         }
         return StringAllocator.Deallocate(allocator, stringId.StringIndex);
@@ -181,7 +179,7 @@ public static class StringRegistry
         StringAllocatorState allocator = state.StringAllocators[allocatorLength]; 
         if(allocator == null)
         {
-            Log.WriteLine(LogType.Error, $"Cannot set Nil string, the requested string allocator at index '{allocatorLength} ' has not been intialised.");
+            Debug.LogError( $"Cannot set Nil string, the requested string allocator at index '{allocatorLength} ' has not been intialised.");
             return false;
         }
 
@@ -199,7 +197,7 @@ public static class StringRegistry
         StringAllocatorState allocator = state.StringAllocators[stringId.AllocatorIndex]; 
         if(allocator == null)
         {
-            Log.WriteLine(LogType.Error, $"Cannot get string, the requested string allocator at index '{stringId.AllocatorIndex} ' has not been intialised.");
+            Debug.LogError( $"Cannot get string, the requested string allocator at index '{stringId.AllocatorIndex} ' has not been intialised.");
             
             // return the registry Nil string instead of the allocator's.
             isValid = false;

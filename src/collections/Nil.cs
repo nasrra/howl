@@ -11,7 +11,7 @@ public static class Nil
 #if DEBUG
         if (EqualityComparer<T>.Default.Equals(array[0], default) != true)
         {
-            Debug.Log.MethodCall(Debug.LogType.Error, 2, "Nil value written to!");
+            Debug.LogError("Nil value written to!", stackDepth: 2);
         }
 #endif
         array[0] = default;
@@ -25,7 +25,7 @@ public static class Nil
 #if DEBUG
             if (EqualityComparer<T>.Default.Equals(array[i], default) != true)
             {
-                Debug.Log.MethodCall(Debug.LogType.Error, 2, "Nil value written to!");
+                Debug.LogError("Nil value written to!", stackDepth: 2);
             }
 #endif
             array[i] = default;

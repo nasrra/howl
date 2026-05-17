@@ -1,5 +1,4 @@
 using System;
-using Howl.Debug;
 using Howl.Graphics;
 using Howl.Input;
 using Howl.LevelManagement;
@@ -114,7 +113,7 @@ public unsafe static class HowlApp
         }
         else
         {
-            Log.WriteLine(LogType.Warn, "Multiple Initialisations of MonoGame backend occured.");
+            Debug.LogWarning("Multiple Initialisations of MonoGame backend occured.");
         }
     }
 

@@ -1,6 +1,5 @@
 using System.IO;
 using System.Runtime.CompilerServices;
-using Howl.Debug;
 using Howl.Io;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -50,7 +49,7 @@ public static class TextureManager
     {        
         if(state.FilePathToIndex.ContainsKey(filePath) == false)
         {
-            Log.WriteLine(LogType.Error, $"Texture '{filePath}' cannot be loaded as it hasn't been registered");
+            Debug.LogError( $"Texture '{filePath}' cannot be loaded as it hasn't been registered");
             return false;
         }
 
@@ -58,7 +57,7 @@ public static class TextureManager
 
         if (state.Textures[index] != null)
         {
-            Log.WriteLine(LogType.Error, $"Texture '{filePath}' has already been loaded.");
+            Debug.LogError( $"Texture '{filePath}' has already been loaded.");
             return false;
         }
 
@@ -71,7 +70,7 @@ public static class TextureManager
         }
         catch(IOException e)
         {
-            Log.WriteLine(LogType.Error, e.Message);
+            Debug.LogError( e.Message);
             return false;
         }
 
@@ -88,7 +87,7 @@ public static class TextureManager
     {
         if(state.FilePathToIndex.ContainsKey(filePath) == false)
         {
-            Log.WriteLine(LogType.Error, $"Texture '{filePath}' cannot be loaded as it hasn't been registered");
+            Debug.LogError( $"Texture '{filePath}' cannot be loaded as it hasn't been registered");
             return false;
         }
 
@@ -96,7 +95,7 @@ public static class TextureManager
 
         if(state.Textures[textureIndex] == null)
         {
-            Log.WriteLine(LogType.Error, $"Texture '{filePath}' has already been unloaded.");
+            Debug.LogError( $"Texture '{filePath}' has already been unloaded.");
             return false;
         }
 
@@ -129,7 +128,7 @@ public static class TextureManager
         }
         catch(IOException e)
         {
-            Log.WriteLine(LogType.Error, e.Message);
+            Debug.LogError( e.Message);
             return false;
         }
 
@@ -149,7 +148,7 @@ public static class TextureManager
         // texture isnt loaded.
         if(state.Textures[textureIndex] == null)
         {
-            Log.WriteLine(LogType.Error, $"Texture '{textureIndex}' dimensions cannot be retrieved.");
+            Debug.LogError( $"Texture '{textureIndex}' dimensions cannot be retrieved.");
             return false;
         }
         

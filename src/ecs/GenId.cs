@@ -61,8 +61,8 @@ public struct GenId
     /// <param name="generation">the generation value.</param>
     public GenId(int index, int generation)
     {
-        Debug.Assert(index >= 0 && index <= MaxIndex, $"index value '{index}' is not between minimum '0' and maximum value '{MaxIndex}'");
-        Debug.Assert(generation >= 0 && generation <= MaxGeneration, $"generation value '{generation}' is not between minimum '0' and maximum value '{MaxGeneration}'");
+        System.Diagnostics.Debug.Assert(index >= 0 && index <= MaxIndex, $"index value '{index}' is not between minimum '0' and maximum value '{MaxIndex}'");
+        System.Diagnostics.Debug.Assert(generation >= 0 && generation <= MaxGeneration, $"generation value '{generation}' is not between minimum '0' and maximum value '{MaxGeneration}'");
 
         // shift generation up by 20 bit so its the last 12 bits in the integer. 
         Value = (uint)(generation & GenerationMask) << 20; // apply the mask anyways so there is no crash in release mode.

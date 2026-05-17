@@ -7,7 +7,6 @@ using Howl.Vendors.MonoGame.Math;
 using Microsoft.Xna.Framework.Graphics;
 using Howl.Math;
 using Microsoft.Xna.Framework;
-using Howl.Debug;
 using Howl.Vendors.MonoGame.FontStashSharp;
 using FontStashSharp;
 using Howl.Text;

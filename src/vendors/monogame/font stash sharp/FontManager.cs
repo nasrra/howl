@@ -1,7 +1,6 @@
 
 using System;
 using System.IO;
-using Howl.Debug;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -51,7 +50,7 @@ public static class FontManager
     {
         if(state.FilePathToIndex.ContainsKey(filePath) == false)
         {
-            Log.WriteLine(LogType.Error, $"SpriteFont '{filePath}' cannot be loaded as it hasn't been registered.");
+            Debug.LogError( $"SpriteFont '{filePath}' cannot be loaded as it hasn't been registered.");
             return false;
         }
 
@@ -59,7 +58,7 @@ public static class FontManager
 
         if(state.Fonts[index] != null)
         {
-            Log.WriteLine(LogType.Error, $"SpriteFont '{filePath}' has already been loaded.");
+            Debug.LogError( $"SpriteFont '{filePath}' has already been loaded.");
             return false;
         }
  
@@ -73,7 +72,7 @@ public static class FontManager
         }
         catch(Exception e)
         {
-            Log.WriteLine(LogType.Error, e.Message);
+            Debug.LogError( e.Message);
             return false;
         }
         
@@ -90,7 +89,7 @@ public static class FontManager
     {
         if(state.FilePathToIndex.ContainsKey(filePath) == false)
         {
-            Log.WriteLine(LogType.Error, $"SpriteFont '{filePath}' cannot be unloaded as it hasn't been registered");
+            Debug.LogError( $"SpriteFont '{filePath}' cannot be unloaded as it hasn't been registered");
             return false;
         }
 
@@ -98,7 +97,7 @@ public static class FontManager
 
         if(state.Fonts[textureIndex] == null)
         {
-            Log.WriteLine(LogType.Error, $"SpriteFont '{filePath}' has already been unloaded.");
+            Debug.LogError( $"SpriteFont '{filePath}' has already been unloaded.");
             return false;
         }
 
@@ -135,7 +134,7 @@ public static class FontManager
         }
         catch(Exception e)
         {
-            Log.WriteLine(LogType.Error, e.Message);
+            Debug.LogError( e.Message);
             return false;
         }
 

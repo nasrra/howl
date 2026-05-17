@@ -1838,7 +1838,7 @@ public static class PhysicsSystem
 
             Circle shape = new(centroidX[physicsBodyIndex], centroidY[physicsBodyIndex], radii[physicsBodyIndex]);
 
-            Debug.Draw.WireCircle(app, shape, drawColour, DrawSpace.World);
+            Debug.DrawWireCircle(app, shape, drawColour, DrawSpace.World);
         }
     }
 
@@ -1892,7 +1892,7 @@ public static class PhysicsSystem
             }
 
             PhysicsBody.GetPolygonVerticesUnsafe(vertices, physicsBodyIndex, ref polyVertsX, ref polyVertsY);
-            Debug.Draw.WirePoly(app, polyVertsX, polyVertsY, drawColour, DrawSpace.World);
+            Debug.DrawWirePoly(app, polyVertsX, polyVertsY, drawColour, DrawSpace.World);
         }
     }
 
@@ -1960,15 +1960,15 @@ public static class PhysicsSystem
                 otherCentroidY = otherCentroidsY[collisionIndex];
 
                 // draw centroids.
-                Debug.Draw.WireCircle(app, new Circle(otherCentroidX, otherCentroidY, 0.1f), otherColour, DrawSpace.World);
+                Debug.DrawWireCircle(app, new Circle(otherCentroidX, otherCentroidY, 0.1f), otherColour, DrawSpace.World);
 
                 // draw contact point 1.
-                Debug.Draw.WireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
+                Debug.DrawWireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
 
                 // draw normal from contact point. 
                 normalStart = new Math.Vector2(contactPointX, contactPointY);
                 normalEnd = normalStart + new Math.Vector2(normalX, normalY);
-                Debug.Draw.Line(app, normalColour, normalStart, normalEnd, DrawSpace.World);
+                Debug.DrawLine(app, normalColour, normalStart, normalEnd, DrawSpace.World);
 
                 if (twoContactPoints[collisionIndex])
                 {
@@ -1977,12 +1977,12 @@ public static class PhysicsSystem
                     contactPointY = secondContactPointsY[collisionIndex];
 
                     // draw contact point 2.
-                    Debug.Draw.WireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
+                    Debug.DrawWireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), contactPointColour, DrawSpace.World);            
 
                     // draw normal from contact point. 
                     normalStart = new Math.Vector2(contactPointX, contactPointY);
                     normalEnd = normalStart + new Math.Vector2(normalX, normalY);
-                    Debug.Draw.Line(app, normalColour, normalStart, normalEnd, DrawSpace.World);
+                    Debug.DrawLine(app, normalColour, normalStart, normalEnd, DrawSpace.World);
                 }
             }
         }
@@ -2015,7 +2015,7 @@ public static class PhysicsSystem
             float endX = startX + linearVelocitiesX[physicsBodyIndex];
             float endY = startY + linearVelocitiesY[physicsBodyIndex];
 
-            Debug.Draw.Line(app, colour, new Math.Vector2(startX, startY), new Math.Vector2(endX, endY), DrawSpace.World);
+            Debug.DrawLine(app, colour, new Math.Vector2(startX, startY), new Math.Vector2(endX, endY), DrawSpace.World);
         }
     }
 
@@ -2029,7 +2029,7 @@ public static class PhysicsSystem
         for(int i = 1; i < count; i++) // start at one to skip Nil.
         {
             int physicsBodyIndex = activeBodies[i];
-            Debug.Draw.WireCircle(app, new Circle(positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], 0.1f), colour, DrawSpace.World);
+            Debug.DrawWireCircle(app, new Circle(positionsX[physicsBodyIndex], positionsY[physicsBodyIndex], 0.1f), colour, DrawSpace.World);
         }
     }
 
@@ -2043,7 +2043,7 @@ public static class PhysicsSystem
         for(int i = 1; i < count; i++) // start at one to skip Nil.
         {
             int physicsBodyIndex = activeBodies[i];
-            Debug.Draw.WireCircle(app, new Circle(centroidsX[physicsBodyIndex], centroidsY[physicsBodyIndex], 0.1f), colour, DrawSpace.World);
+            Debug.DrawWireCircle(app, new Circle(centroidsX[physicsBodyIndex], centroidsY[physicsBodyIndex], 0.1f), colour, DrawSpace.World);
         }
     }
 
@@ -2058,7 +2058,7 @@ public static class PhysicsSystem
             float maxX = max.X[physicsBodyIndex];
             float maxY = max.Y[physicsBodyIndex];
 
-            Debug.Draw.WirePoly(app, [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], colour, DrawSpace.World);
+            Debug.DrawWirePoly(app, [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], colour, DrawSpace.World);
         }
     }
 }

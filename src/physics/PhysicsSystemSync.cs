@@ -26,7 +26,7 @@ public static class Syncer
             // skip if the physics body id isn't valid.
             if(physicsGenerations[physicsBodyIndex] != GenId.GetGeneration(tag.PhysicsBodyGenId))
             {
-                Debug.Log.WriteLine(Debug.LogType.Error, "physics body tag has stale gen id, physics body may have not been deallocated when entity was deallocated.");
+                Debug.LogError("physics body tag has stale gen id, physics body may have not been deallocated when entity was deallocated.");
                 continue;
             }
             

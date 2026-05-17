@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using Howl.Debug;
 
 namespace Howl.Text;
 
@@ -20,13 +19,13 @@ public static class StringAllocator{
     {
         if(characters.Length > state.MaxCharacterCount)
         {
-            Log.WriteLine(LogType.Error, $"Cannot set string '{characters}' as length is greater than max characters '{state.MaxCharacterCount}'.");
+            Debug.LogError($"Cannot set string '{characters}' as length is greater than max characters '{state.MaxCharacterCount}'.");
             return false;            
         }
 
         if(state.MaxStringCount <= state.AllocatedStringCount+1)
         {
-            Log.WriteLine(LogType.Error, $"Cannot allocate string '{characters}' as the maximum number of allocated strings has been reached.");
+            Debug.LogError($"Cannot allocate string '{characters}' as the maximum number of allocated strings has been reached.");
             return false;
         }
 
@@ -49,13 +48,13 @@ public static class StringAllocator{
     {
         if(characters.Length > state.MaxCharacterCount)
         {
-            Log.WriteLine(LogType.Error, $"Cannot set string '{characters}' as length is greater than max characters '{state.MaxCharacterCount}'.");
+            Debug.LogError( $"Cannot set string '{characters}' as length is greater than max characters '{state.MaxCharacterCount}'.");
             return false;            
         }
         
         if(state.Allocated[stringIndex] == false)
         {
-            Log.WriteLine(LogType.Error, $"Cannot set string '{characters}' as string index '{stringIndex}' has not been allocated.");
+            Debug.LogError( $"Cannot set string '{characters}' as string index '{stringIndex}' has not been allocated.");
             return false;
         }
 
@@ -96,7 +95,7 @@ public static class StringAllocator{
     {
         if(state.Allocated[stringIndex] == false)
         {
-            Log.WriteLine(LogType.Error, $"Cannot deallocate string at index '{stringIndex}' as it is already deallocated.");
+            Debug.LogError( $"Cannot deallocate string at index '{stringIndex}' as it is already deallocated.");
             return false;
         }
 
@@ -116,7 +115,7 @@ public static class StringAllocator{
     {
         if(characters.Length > state.MaxCharacterCount)
         {
-            Log.WriteLine(LogType.Error, $"Cannot set Nil string '{characters}' as length is greater than max characters '{state.MaxCharacterCount}'.");
+            Debug.LogError( $"Cannot set Nil string '{characters}' as length is greater than max characters '{state.MaxCharacterCount}'.");
             return false;            
         }
 
@@ -135,7 +134,7 @@ public static class StringAllocator{
     {
         if(state.Allocated[stringIndex] == false)
         {
-            Log.WriteLine(LogType.Error, $"Cannot get string at index '{stringIndex}' as it has not been allocated.");
+            Debug.LogError( $"Cannot get string at index '{stringIndex}' as it has not been allocated.");
             isValid = false;
             return state.Characters.AsSpan(0, state.TerminatorIndices[0]);
         }
