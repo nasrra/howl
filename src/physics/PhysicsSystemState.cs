@@ -23,14 +23,6 @@ public sealed class PhysicsSystemState
 
 
     /// <summary>
-    ///     The entity id's for all physics bodies.
-    /// </summary>
-    /// <remarks>
-    ///     Remarks: Use a <c>physicsBodyIndex</c> to access elements.
-    /// </remarks>
-    public GenId[] EntityIds;
-
-    /// <summary>
     /// The local-space vertices for all physics bodies.
     /// </summary>
     /// <remarks>
@@ -391,11 +383,6 @@ public sealed class PhysicsSystemState
     public Stopwatch FixedUpdateSubStepStopwatch;
 
     /// <summary>
-    /// Gets and sets the stopwatch for syncing physics bodies to their associated entities.
-    /// </summary>
-    public Stopwatch SyncTransformsToEntitiesStopwatch;
-
-    /// <summary>
     /// The diagnostic stopwatch for the IntegrateBodyProperties step.
     /// </summary>
     public Stopwatch IntegrateBodyPropertiesStopwatch;
@@ -698,7 +685,6 @@ public sealed class PhysicsSystemState
         InverseRotationalInertia    = new float[physicsBodyCount];
         Generations                 = new int[physicsBodyCount];
         BvhCategories               = new int[physicsBodyCount];
-        EntityIds                   = new GenId[physicsBodyCount];
         BvhLeafIndices              = new int[physicsBodyCount];
         PreviousStepPositions       = new(physicsBodyCount);
         BvhLeafPaddings             = new float[physicsBodyCount];
@@ -710,7 +696,6 @@ public sealed class PhysicsSystemState
         // Debug diagnostic stopwatches.
         FixedUpdateStepStopwatch = new();
         FixedUpdateSubStepStopwatch = new();
-        SyncTransformsToEntitiesStopwatch = new();
         IntegrateBodyPropertiesStopwatch = new();
         RigidBodyMovementStepStopwatch = new();
         TransformPhysicsBodiesStopwatch = new();

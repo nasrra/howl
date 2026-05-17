@@ -10,7 +10,7 @@ public struct PhysicsBodyComponent
     /// <summary>
     /// Gets and sets the gen id of the associated physics body in the physics simulation.
     /// </summary>
-    public GenId GenId;
+    public GenId PhysicsBodyGenId;
 
     /// <summary>
     /// Constructs a new Physics Body Id.
@@ -18,6 +18,6 @@ public struct PhysicsBodyComponent
     /// <param name="genId">The gen id of the associated physics body in the physics simulation</param>
     public PhysicsBodyComponent(GenId genId)
     {
-        GenId = genId;
+        PhysicsBodyGenId = genId;
     }
 }

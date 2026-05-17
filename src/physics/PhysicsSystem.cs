@@ -104,15 +104,6 @@ public static class PhysicsSystem
         // scale delta time by the substeps.
         deltaTime /= (float)subSteps;
         
-        {   // Sync Bodies To Entities.
-
-            state.SyncTransformsToEntitiesStopwatch.Restart();
-        
-            // SyncTransformsToEntityTransforms(physicsBodyTags, transforms, state.Transforms, state.Generations);
-                    
-            state.SyncTransformsToEntitiesStopwatch.Stop();
-        }
-
         {   // Integrate Body Properties.
             
             state.IntegrateBodyPropertiesStopwatch.Restart();
@@ -496,56 +487,6 @@ public static class PhysicsSystem
         if (state.DrawCentroids)
         {
             DrawCentroids(app, state.Centroids, state.ActiveBodies, state.CentroidColour);
-        }
-    }
-
-    /// <summary>
-    ///     Syncs an SoaTransform collection to entities that contain both a transform component and a physics body id component. 
-    /// </summary>
-    /// <param name="physicsBodyTags">the physics body tags of every entity.</param>
-    /// <param name="transforms">the transforms of all entities.</param>
-    /// <param name="soaTransform">the structure-of-array transforms to mutate in relation to the entity data.</param>
-    /// <param name="generation">the generations for each entry in the SOA transform's.</param>
-    public static void SyncTransformsToEntityTransforms(ComponentArray<PhysicsBodyComponent> physicsBodyTags, ComponentArray<Transform> transforms, Soa_Transform soaTransform, Span<int> generation)
-    {        
-        for(int i = 1; i < physicsBodyTags.Active.Count; i++)
-        {
-            GenId genId = physicsBodyTags.Active[i];
-            ref PhysicsBodyComponent tag = ref ComponentArray.GetDataUnsafe(physicsBodyTags, genId);            
-
-            // skip if the physics body id isn't valid.
-            if(generation[GenId.GetIndex(tag.GenId)] != GenId.GetGeneration(tag.GenId))
-                continue;
-            
-            // sync the transform data to the physics simulation 
-            // if it has an associated physics body id.
-            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-            Soa_Transform.Insert(soaTransform, GenId.GetIndex(genId), transform);
-        }
-    }
-
-    /// <summary>
-    ///     Syncs a entities that contain both a transform and physics body id component to an soa transform collection.
-    /// </summary>
-    /// <param name="physicsBodyTags">the physics body tags of every entity.</param>
-    /// <param name="transforms">the transforms of all entities.</param>
-    /// <param name="soaTransform">the soa transforms to copy into the entity transform components.</param>
-    /// <param name="generation">the generation of each soa transform entry.</param>
-    public static void SyncEntityTransformsToPhysicsBodies(ComponentArray<PhysicsBodyComponent> physicsBodyTags, ComponentArray<Transform> transforms, Soa_Transform soaTransform, Span<int> generation)
-    {
-        for(int i = 1; i < physicsBodyTags.Active.Count; i++)
-        {
-            GenId genId = physicsBodyTags.Active[i];
-            ref PhysicsBodyComponent tag = ref ComponentArray.GetDataUnsafe(physicsBodyTags, genId);
-
-            // skip the tag if it is stale.
-            if(generation[GenId.GetIndex(tag.GenId)] != GenId.GetGeneration(tag.GenId))
-            {
-                continue;
-            }
-
-            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-            Soa_Transform.CopySoaToTransform(soaTransform, ref transform, GenId.GetIndex(tag.GenId));
         }
     }
 

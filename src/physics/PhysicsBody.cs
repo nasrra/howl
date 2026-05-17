@@ -1494,7 +1494,7 @@ public static class PhysicsBody
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void PreparePhysicsBodyAllocation(PhysicsSystemState state, Transform transform, Span<float> localVertsX, 
-        Span<float> localVertsY, ColliderBehaviour colliderBehaviour, GenId entityId, int physicsBodyIndex, bool IsRigidBody, Shape shape
+        Span<float> localVertsY, ColliderBehaviour colliderBehaviour, int physicsBodyIndex, bool IsRigidBody, Shape shape
     )
     {
         // clear any garbage data from previous allocations.
@@ -1509,9 +1509,7 @@ public static class PhysicsBody
         for(int i = 0; i < localVertsX.Length; i++)
         {
             FsSoa_Vector2.Append(state.LocalVertices, physicsBodyIndex, localVertsX[i], localVertsY[i]);
-        }
-        
-        state.EntityIds[physicsBodyIndex] = entityId;
+        }        
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -1545,7 +1543,6 @@ public static class PhysicsBody
         /// <param name="state">the physics system state to allocate into.</param>
         /// <param name="shape">the local-space shape data.</param>
         /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
-        /// <param name="entityId">the id of the entity associated with this physics body.</param>
         /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
         /// <param name="genId">output for the gen id to the newly allocated body.</param>
         ///<returns>
@@ -1559,7 +1556,7 @@ public static class PhysicsBody
         ///     </list>
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public static GenIdResult AllocateCollider(PhysicsSystemState state, Math.Shapes.Circle shape, Transform transform, GenId entityId, 
+        public static GenIdResult AllocateCollider(PhysicsSystemState state, Math.Shapes.Circle shape, Transform transform, 
             ColliderBehaviour colliderBehaviour, ref GenId genId
         )
         {
@@ -1570,7 +1567,7 @@ public static class PhysicsBody
             }
             
             int physicsBodyIndex = GetPhysicsBodyIndex(genId);
-            PreparePhysicsBodyAllocation(state, transform, [shape.X], [shape.Y], colliderBehaviour, entityId, physicsBodyIndex, 
+            PreparePhysicsBodyAllocation(state, transform, [shape.X], [shape.Y], colliderBehaviour, physicsBodyIndex, 
                 false, Shape.Circle
             );
             
@@ -1594,7 +1591,6 @@ public static class PhysicsBody
         /// <param name="shape">the local-space shape data.</param>
         /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
         /// <param name="material">the physics material to apply to the body.</param>
-        /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
         /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
         /// <param name="rotationalResponse">whether rotational collision response is enabled for the rigidbody.</param>
         /// <param name="genId">the associated genId to the newly allocated body.</param>
@@ -1609,8 +1605,8 @@ public static class PhysicsBody
         ///     </list>
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public static GenIdResult AllocateRigidBody(PhysicsSystemState state, Math.Shapes.Circle shape, Transform transform, PhysicsMaterial material, 
-            GenId entityId, ColliderBehaviour colliderBehaviour, bool rotationalResponse, ref GenId genId
+        public static GenIdResult AllocateRigidBody(PhysicsSystemState state, Math.Shapes.Circle shape, Transform transform, 
+            PhysicsMaterial material, ColliderBehaviour colliderBehaviour, bool rotationalResponse, ref GenId genId
         )
         {
             GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1620,7 +1616,7 @@ public static class PhysicsBody
             }
 
             int physicsBodyIndex = GetPhysicsBodyIndex(genId);
-            PreparePhysicsBodyAllocation(state, transform, [shape.X], [shape.Y], colliderBehaviour, entityId, physicsBodyIndex, 
+            PreparePhysicsBodyAllocation(state, transform, [shape.X], [shape.Y], colliderBehaviour, physicsBodyIndex, 
                 true, Shape.Circle
             );
 
@@ -1631,7 +1627,6 @@ public static class PhysicsBody
                     material.Restitution, physicsBodyIndex
                 );
                 state.LocalRadii[physicsBodyIndex] = shape.Radius;
-                state.EntityIds[physicsBodyIndex] = entityId;
             }
 
             FinalisePhysicsBodyAllocation(state, physicsBodyIndex);
@@ -1708,7 +1703,6 @@ public static class PhysicsBody
         /// <param name="state">the physics system state to allocate into.</param>
         /// <param name="shape">the local-space shape data.</param>
         /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
-        /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
         /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
         /// <param name="genId">the associated gen id to the newly allocated body.</param>
         /// <returns>
@@ -1723,7 +1717,7 @@ public static class PhysicsBody
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static GenIdResult AllocateCollider(PhysicsSystemState state, Math.Shapes.Rectangle shape, Transform transform, 
-            GenId entityId, ColliderBehaviour colliderBehaviour, ref GenId genId
+            ColliderBehaviour colliderBehaviour, ref GenId genId
         )
         {
             GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1736,7 +1730,7 @@ public static class PhysicsBody
 
             int physicsBodyIndex = GetPhysicsBodyIndex(genId);
             PreparePhysicsBodyAllocation(state, transform, PolygonRectangle.VerticesXAsSpan(polyRect), 
-                PolygonRectangle.VerticesYAsSpan(polyRect), colliderBehaviour, entityId, physicsBodyIndex, false, Shape.Rectangle
+                PolygonRectangle.VerticesYAsSpan(polyRect), colliderBehaviour, physicsBodyIndex, false, Shape.Rectangle
             );
 
             {   // set specific data.
@@ -1762,7 +1756,6 @@ public static class PhysicsBody
         /// <param name="shape">the local-space shape data.</param>
         /// <param name="transform">the world-space transform to convert the shape from local-space into world-space.</param>
         /// <param name="material">the physics material to apply to the body.</param>
-        /// <param name="entityId">the gen id of the entity associated with this physics body.</param>
         /// <param name="colliderBehaviour">the behaviour the collider exhibits.</param>
         /// <param name="rotationalResponse">Whether rotational collision response is enabled for a rigidbody.</param>
         /// <param name="genId">the associated genId to the newly allocated body.</param>
@@ -1777,7 +1770,7 @@ public static class PhysicsBody
         ///     </list>
         /// </returns>.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static GenIdResult AllocateRigidBody(PhysicsSystemState state, Math.Shapes.Rectangle shape, Transform transform,
-            PhysicsMaterial material, GenId entityId, ColliderBehaviour colliderBehaviour, bool rotationalResponse, ref GenId genId
+            PhysicsMaterial material, ColliderBehaviour colliderBehaviour, bool rotationalResponse, ref GenId genId
         )
         {
             GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
@@ -1790,7 +1783,7 @@ public static class PhysicsBody
             
             int physicsBodyIndex = GetPhysicsBodyIndex(genId);
             PreparePhysicsBodyAllocation(state, transform, PolygonRectangle.VerticesXAsSpan(polyRect), 
-                PolygonRectangle.VerticesYAsSpan(polyRect), colliderBehaviour, entityId, physicsBodyIndex, true, Shape.Rectangle
+                PolygonRectangle.VerticesYAsSpan(polyRect), colliderBehaviour, physicsBodyIndex, true, Shape.Rectangle
             );
 
             {   // specific data.
