@@ -83,12 +83,12 @@ public class EntityRegistry : IDisposable
     {
         if(registry.FreeSlots.Count == 0)
         {
+            Debug.LogError("Memory Limit Hit", stackDepth: 2);
             return GenIdResult.MemoryLimitHit;
         }
         
         // get the next available slot to allocate in.
         int slot = StackArray.Pop(registry.FreeSlots);
-
         
         // check if its neighbour can be allocated as well.
         int nextSlot = slot + 1;

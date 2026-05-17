@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Howl;
@@ -15,12 +16,16 @@ public static class Debug
 
     public static ConsoleColor LogErrorColour = ConsoleColor.Red;
     public static ConsoleColor LogWarningColour = ConsoleColor.Yellow;
+    public static ConsoleColor LogStackTraceTagColour = ConsoleColor.Blue;
+    public static ConsoleColor LogStackTraceTextColour = ConsoleColor.DarkGray;
     public static ConsoleColor LogInfoColour = ConsoleColor.Cyan;
     public static ConsoleColor LogTextColour = ConsoleColor.Cyan;
+    public static ConsoleColor LogTimeStampColour = ConsoleColor.Gray;
 
     public static string InfoTag = "[Info]";
     public static string WarningTag = "[Warning]";
     public static string ErrorTag = "[Error]";
+    public static string StackTraceTag = "[StackTrace]";
 
     public static void Log(string msg, int stackDepth = 0, int stackStart = 0, [CallerFilePath] string filePath = "",
         [CallerMemberName] string methodName = "", [CallerLineNumber] int lineNumber = 0
@@ -29,18 +34,23 @@ public static class Debug
         if (SuppressLog)
         {
             return;
-        }        
+        }
 
         Console.ForegroundColor = LogTextColour;
+        Console.Write($"{msg} ");
+
+        Console.ForegroundColor = LogTimeStampColour;
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}]");
 
         if(stackDepth > 0)
         {            
-            // Passing (stackStart + 1) discards Debug.Log AND the wrapper (LogError/LogWarning)
-            var stackTrace = new StackTrace(stackStart + 1);
+            Console.ForegroundColor = LogStackTraceTagColour;
+            Console.WriteLine($"{StackTraceTag}");
+            Console.ForegroundColor = LogStackTraceTextColour;
+            
+            var stackTrace = new StackTrace(stackStart);
 
-            string stack = "";
-
-            for(int i = 0; i < stackDepth; i--)
+            for(int i = stackDepth; i > 0 ; i--)
             {                
                 var frame = stackTrace.GetFrame(i);
 
@@ -52,14 +62,16 @@ public static class Debug
                 
                 if(method != null)
                 {
-                    stack += $"{method.DeclaringType?.Name ?? "Unknown"}";            
+                    if(i == 1)
+                    {
+                        Console.WriteLine($"\t {method.DeclaringType?.Name ?? "Unknown"}.{method.Name}(): line {lineNumber}");                        
+                    }
+                    else
+                    {
+                        Console.WriteLine($"\t {method.DeclaringType?.Name ?? "Unknown"}.{method.Name}()");
+                    }
                 }
             }
-            Console.WriteLine($"{stack}.{methodName}():line {lineNumber}, {msg}");
-        }
-        else
-        {   
-            Console.WriteLine($"{msg}");        
         }
     }
 
