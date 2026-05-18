@@ -20,13 +20,13 @@ public class Test_StringAllocator
                 StringAllocatorState state = new(stride, maxStringCount);
                 
                 // fail case: string character length is too long.
-                Debug.Log.Suppress = true;
+                Debug.SuppressLog = true;
 
                 Assert.False(StringAllocator.Allocate(state, ['f', 'a', 'i', 'l', ' ', 'c', 'a', 's', 'e'], ref stringIndex));
                 Assert.Equal(0, stringIndex);
                 Assert.Equal(0, state.AllocatedStringCount);
 
-                Debug.Log.Suppress = false;
+                Debug.SuppressLog = false;
 
                 char[] chars = new char[stride];
                 int j = 0;
@@ -63,13 +63,13 @@ public class Test_StringAllocator
                 }
 
                 // fail case: allocator is full.
-                Debug.Log.Suppress = true;
+                Debug.SuppressLog = true;
 
                 Assert.False(StringAllocator.Allocate(state, chars, ref stringIndex));
                 Assert.Equal(maxStringCount-1, stringIndex);
                 Assert.Equal(maxStringCount-1, state.AllocatedStringCount);
 
-                Debug.Log.Suppress = false;
+                Debug.SuppressLog = false;
             }
         }
     }
@@ -169,14 +169,14 @@ public class Test_StringAllocator
                     Assert.Equal(chars.AsSpan(), retrievedChars); 
                 }
 
-                Debug.Log.Suppress = true;
+                Debug.SuppressLog = true;
 
                 StringAllocator.Deallocate(state, stringIndex);
                 // fail case.
                 Span<char> failChars = StringAllocator.GetChars(state, stringIndex, ref isValid);
                 Assert.False(isValid);
 
-                Debug.Log.Suppress = false;
+                Debug.SuppressLog = false;
             }
         }
     }

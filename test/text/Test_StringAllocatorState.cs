@@ -17,11 +17,11 @@ public class Test_StringAllocatorState
     public void Constructor_Test()
     {
         // fail case:
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
         StringAllocatorState state;
         Assert.Throws<Exception>(() =>{state = new(0,0);});
         Assert.Throws<Exception>(() =>{state = new(1,1);});
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
 
         // success cases.
         for(int i = StringAllocatorState.MinMaxStringCount; i < 8; i++)

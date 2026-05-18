@@ -2,7 +2,7 @@ using Howl.Math;
 
 namespace Howl.Test.Math;
 
-public class TransformTest
+public class Test_Transform
 {
     [Fact]
     public void ConstructorTest_Test()
@@ -34,7 +34,7 @@ public class TransformTest
         Vector2 translation = new Vector2(13, -2);
         Vector2 expected = position + translation;
 
-        transform.Translate(translation);
+        Transform.Translate(ref transform, translation);
 
         Assert.Equal(expected, transform.Position);
     }
@@ -50,7 +50,7 @@ public class TransformTest
 
         Vector2 newPosition = new Vector2(-12,12);
 
-        transform.Warp(newPosition);
+        Transform.Warp(ref transform, newPosition);
 
         Assert.Equal(newPosition, transform.Position);
     }
@@ -65,7 +65,7 @@ public class TransformTest
         Transform transform = new Transform(position, scale, rotation);
 
         Vector2 newScale = new Vector2(-2,12);
-        transform.SetScale(newScale);
+        Transform.SetScale(ref transform, newScale);
     
         Assert.Equal(newScale, transform.Scale);
     }

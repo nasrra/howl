@@ -44,9 +44,9 @@ public class Test_StringRegistry
         Assert.NotNull(state.StringAllocators[allocatorLength]);
 
         // fail case:
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
         Assert.False(StringRegistry.AllocateAllocator(state, allocatorLength, maxStringCount+10));        
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
 
         // ensure success case wasnt overwritten.
         StringAllocatorState allocator = state.StringAllocators[allocatorLength];
@@ -112,18 +112,18 @@ public class Test_StringRegistry
         Assert.Null(state.StringAllocators[allocatorLength]);
 
         // fail case:
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
         
         Assert.False(StringRegistry.DeallocateAllocator(state, allocatorLength));
         Assert.Null(state.StringAllocators[allocatorLength]);
         
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 
     [Fact]
     public void StringMutation_Test()
     {
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
 
 
         int maxStringCharacters = 10;
@@ -213,7 +213,7 @@ public class Test_StringRegistry
         Assert.Equal(allocatorNilString, c9);
 
 
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 
     [Fact]

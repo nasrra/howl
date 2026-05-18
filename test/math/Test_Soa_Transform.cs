@@ -51,7 +51,7 @@ public class Test_Soa_Transform
     [Fact]
     public void EnforeNil_Test()
     {
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
 
         Soa_Transform soa = new(3);
         
@@ -71,6 +71,6 @@ public class Test_Soa_Transform
         Assert.Equal(0, soa.Sines[0]);
         Assert.Equal(0, soa.Cosines[0]);
 
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 }

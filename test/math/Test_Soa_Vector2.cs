@@ -68,7 +68,7 @@ public class Test_Soa_Vector2
     [Fact]
     public void EnforceNil_Test()
     {
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
      
         Soa_Vector2 soa = new(2);
         soa.X[0] = 213;
@@ -77,7 +77,7 @@ public class Test_Soa_Vector2
         Assert.Equal(0, soa.X[0]);
         Assert.Equal(0, soa.Y[0]);
      
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 
     [Fact]

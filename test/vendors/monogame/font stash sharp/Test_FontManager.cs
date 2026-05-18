@@ -99,7 +99,7 @@ public class Test_FontManager
         FontManager.LoadFont(state, FilePath2, Size2);
         Assert.NotNull(state.Fonts[id]);
 
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
         
         // should return false if the file is already loaded.
         Assert.False(FontManager.LoadFont(state, FilePath2, Size2));
@@ -109,7 +109,7 @@ public class Test_FontManager
         Assert.False(FontManager.LoadFont(state, "fail case", 1));
         Assert.Equal(-1, id);
         
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class Test_FontManager
         Assert.Null(state.Fonts[f1]);
         Assert.Null(state.Fonts[f2]);
 
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
 
         // should return false if the file has already been unloaded.
         Assert.False(FontManager.UnloadFont(state, FilePath2));
@@ -155,7 +155,7 @@ public class Test_FontManager
         // should return false if the file has not been registered..
         Assert.False(FontManager.UnloadFont(state, "fail case"));
 
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 
     [Fact]

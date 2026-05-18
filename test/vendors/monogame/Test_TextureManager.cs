@@ -104,7 +104,7 @@ public class Test_TextureManager
         TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath2);
         Assert.NotNull(state.Textures[id]);
 
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
         
         // should return false if the file is already loaded.
         Assert.False(TextureManager.LoadTexture(state, AppState.GraphicsDevice, FilePath2));
@@ -114,7 +114,7 @@ public class Test_TextureManager
         Assert.False(TextureManager.LoadTexture(state, AppState.GraphicsDevice, "fail case"));
         Assert.Equal(-1, id);
         
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public class Test_TextureManager
         Assert.Null(state.Textures[t1]);
         Assert.Null(state.Textures[t2]);
 
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
 
         // should return false if the file has already been unloaded.
         Assert.False(TextureManager.UnloadTexture(state, FilePath2));
@@ -160,7 +160,7 @@ public class Test_TextureManager
         // should return false if the file has not been registered..
         Assert.False(TextureManager.UnloadTexture(state, "fail case"));
 
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 
     [Fact]
@@ -194,9 +194,9 @@ public class Test_TextureManager
         Assert.Equal(TextureWidth2, width);
         Assert.Equal(TextureHeight2, height);
 
-        Debug.Log.Suppress = true;
+        Debug.SuppressLog = true;
         Assert.False(TextureManager.GetTextureDimensions(state, 4, ref width, ref height));
-        Debug.Log.Suppress = false;
+        Debug.SuppressLog = false;
     }
 
     [Fact]
