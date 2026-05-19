@@ -173,13 +173,13 @@ public static class LdtkParser
                     tileMapFilePath, 0, SpriteOrigin.TopLeft, DrawSpace.World
                 );
 
-                ComponentArray.Allocate(sprites, entities, genId, sprite);
+                ComponentArray.Allocate(sprites, genId, sprite);
 
                 Vector2 position = new Vector2(tile.Px[0], -tile.Px[1]) * unitFactored;
                 Vector2 scale = Vector2.One * unitFactored;
 
                 Transform transform = new Transform(position, scale, 0);
-                ComponentArray.Allocate(transforms, entities, genId, transform);                
+                ComponentArray.Allocate(transforms,  genId, transform);                
             }
         }                
     }

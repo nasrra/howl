@@ -78,6 +78,9 @@ public static class MonoGameApp
     {
         switch (targetFrameRate)
         {
+            case TargetFrameRate.D30:
+                app.TargetElapsedTime = TimeSpan.FromMilliseconds(32);
+            break;
             case TargetFrameRate.D60:
                 app.TargetElapsedTime = TimeSpan.FromMilliseconds(16);
             break;
@@ -100,6 +103,9 @@ public static class MonoGameApp
                 app.TargetElapsedTime = TimeSpan.FromMilliseconds(3);
             break;
         }
+
+        // app.IsFixedTimeStep = true;
+        app.GraphicsDeviceManager.ApplyChanges();
     }
 
     /// <summary>

@@ -4,6 +4,11 @@ namespace Howl.Test.Ecs;
 
 public class Test_ComponentArray
 {
+    public Test_ComponentArray()
+    {
+        Debug.SuppressLog = true;
+    }
+
     [Fact]
     public void Constructor_Test()
     {
@@ -42,7 +47,7 @@ public class Test_ComponentArray
                 bool allocated = true;
 
                 // allocate the data.
-                ComponentArray.Allocate(nums, entities, genId, component);
+                ComponentArray.Allocate(nums, genId, component);
                 
                 // ensure the correct data was written.
                 Assert_ComponentArray.EntryEqual(component, allocated, i, nums); 
@@ -75,7 +80,7 @@ public class Test_ComponentArray
             {
                 int index = i;
                 int generation = 0;
-                ComponentArray.Allocate(nums, entities, new(index, generation), i);
+                ComponentArray.Allocate(nums, new(index, generation), i);
             }
 
             // deallocate entries.
@@ -86,11 +91,11 @@ public class Test_ComponentArray
                 GenId deallocate = new(index, generation);
 
                 // successfully deallocate.
-                Assert.Equal(GenIdResult.Ok, ComponentArray.Deallocate(nums, entities, deallocate));
+                Assert.True(ComponentArray.Deallocate(nums, deallocate));
 
                 // unsuccessfuly deallocate.
                 // entry has already been deallocated.
-                Assert.Equal(GenIdResult.NotAllocated, ComponentArray.Deallocate(nums, entities, deallocate));
+                Assert.False(ComponentArray.Deallocate(nums, deallocate));
 
                 // ensure it is no longer active.
                 Assert_ComponentArray.EntryIsInactive(deallocate, nums);
@@ -106,23 +111,23 @@ public class Test_ComponentArray
         float component = 0;
         ComponentArray<float> nums = new(maxEntities);
         EntityRegistry entities = new(maxEntities);
-        GenIdResult result = default;
+        bool isValid = default;
 
         GenId validId = default;
         GenId staleId = new(10,13);
         EntityRegistry.Allocate(entities, ref validId);
 
         // fail cases.
-        ComponentArray.GetData(nums, entities, staleId, ref result);
-        Assert.Equal(GenIdResult.StaleGenId, result);
+        ComponentArray.GetData(nums, staleId, ref isValid);
+        Assert.False(isValid);
 
-        ComponentArray.GetData(nums, entities, validId, ref result);
-        Assert.Equal(GenIdResult.NotAllocated, result);
+        ComponentArray.GetData(nums, validId, ref isValid);
+        Assert.False(isValid);
     
         // success cases.
-        ComponentArray.Allocate(nums, entities, validId, component);
-        ComponentArray.GetData(nums, entities, validId, ref result);
-        Assert.Equal(GenIdResult.Ok, result);
+        ComponentArray.Allocate(nums, validId, component);
+        ComponentArray.GetData(nums, validId, ref isValid);
+        Assert.True(isValid);
     }
 
     [Fact]
@@ -150,7 +155,7 @@ public class Test_ComponentArray
                 float component = i+1;
 
                 // allocate the data.
-                ComponentArray.Allocate(nums, entities, genId, component);
+                ComponentArray.Allocate(nums, genId, component);
             }
 
             // set inactive.
@@ -219,7 +224,7 @@ public class Test_ComponentArray
                 int index = 1;
                 int generation = 0;
                 GenId genId = new(index, generation);
-                ComponentArray.Allocate(nums, entities, genId, i);
+                ComponentArray.Allocate(nums, genId, i);
             }
 
             ComponentArray.Dispose(nums);

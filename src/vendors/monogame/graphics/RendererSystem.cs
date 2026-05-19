@@ -1,6 +1,4 @@
 using System;
-using Howl.Ecs;
-using Howl.Generic;
 using Howl.Graphics;
 using Howl.Vendors.MonoGame.Math.Shapes;
 using Howl.Vendors.MonoGame.Math;
@@ -8,8 +6,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Howl.Math;
 using Microsoft.Xna.Framework;
 using Howl.Vendors.MonoGame.FontStashSharp;
-using FontStashSharp;
 using Howl.Text;
+using Howl.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Howl.Vendors.MonoGame.Graphics;
 
@@ -18,27 +17,19 @@ public static class RendererSystem
     /// <summary>
     ///     Performs a draw step for a monogame app state.
     /// </summary>
-    /// <param name="monoGame">the state to draw to.</param>
-    /// <param name="strings">the character data for the strings in the labels to draw.</param>
-    /// <param name="transforms">the transforms of the elements to draw.</param>
-    /// <param name="sprites">the sprites to draw.</param>
-    /// <param name="labels">the labels to draw.</param>
-    /// <param name="worldCamera">the world camera data.</param>
-    /// <param name="screenCamera">the screen camera data.</param>
-    public static void Draw(MonoGameAppState monoGame, StringRegistryState strings, ComponentArray<Transform> transforms, ComponentArray<Sprite> sprites, ComponentArray<Label> labels, 
-        Camera worldCamera, Camera screenCamera
+    public static void Draw(MonoGameAppState monoGame, StringRegistryState strings, SwapBackArray<GenId> activeSprites, SwapBackArray<GenId> activeLabels, 
+        Transform[] transforms, Sprite[] sprites, Label[] labels, Camera worldCamera, Camera screenCamera
     )
     {
         monoGame.GraphicsDevice.SetRenderTarget(monoGame.FinalRenderTarget);                    
         monoGame.GraphicsDevice.Clear(worldCamera.ClearColour.ToMonoGame());
         
-        DrawSprites(monoGame, transforms, sprites, ref worldCamera, DrawSpace.World);
-        DrawLabels(monoGame, strings, transforms, labels, ref worldCamera, DrawSpace.World);
-
+        DrawSprites(monoGame, activeSprites, transforms, sprites, ref worldCamera, DrawSpace.World);
+        DrawLabels(monoGame, strings, activeLabels, transforms, labels, ref worldCamera, DrawSpace.World);
         DrawPrimitives(monoGame);
 
-        DrawSprites(monoGame, transforms, sprites, ref screenCamera, DrawSpace.Screen);
-        DrawLabels(monoGame, strings, transforms, labels, ref screenCamera, DrawSpace.Screen);
+        DrawSprites(monoGame, activeSprites, transforms, sprites, ref screenCamera, DrawSpace.Screen);
+        DrawLabels(monoGame, strings, activeLabels, transforms, labels, ref screenCamera, DrawSpace.Screen);
         
         monoGame.GraphicsDevice.SetRenderTarget(null);
 
@@ -58,13 +49,11 @@ public static class RendererSystem
     }
 
     /// <summary>
-    /// Draws all sprites to the currently bound render target.
+    ///     Draws all sprites to the currently bound render target.
     /// </summary>
-    /// <param name="ecs">The ecs state where the sprites are stored.</param>
-    /// <param name="app">The state of the renderer.</param>
-    /// <param name="camera">The camera to draw in relation to.</param>
-    /// <param name="worldSpace">filters sprites; drawing sprites that are within the specified world space.</param>
-    private static void DrawSprites(MonoGameAppState app, ComponentArray<Transform> transforms, ComponentArray<Sprite> sprites, ref Camera camera, DrawSpace worldSpace)
+    private static void DrawSprites(MonoGameAppState app, SwapBackArray<GenId> activeSprites, 
+        Transform[] transforms, Sprite[] sprites, ref Camera camera, DrawSpace drawSpace
+    )
     {
         // update effects to use the new projection matrix.        
         app.EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
@@ -77,18 +66,16 @@ public static class RendererSystem
         );   
 
         // draw sprites in relation to it.
-        for(int i = 1; i < sprites.Active.Count; i++)
+        for(int i = 1; i < activeSprites.Count; i++)
         {
-            GenId genId = sprites.Active[i];
-            
-            ref Sprite sprite = ref ComponentArray.GetDataUnsafe(sprites, genId);
-            if(sprite.DrawSpace != worldSpace)
+            int index = GenId.GetIndex(activeSprites[i]);
+            ref Sprite sprite = ref sprites[index];
+            if(sprite.DrawSpace != drawSpace)
             {
                 continue;
             }
 
-            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-        
+            ref Transform transform = ref transforms[index];
             DrawSprite(app, ref camera, ref transform, ref sprite);
         }
         app.SpriteBatch.End();
@@ -191,7 +178,7 @@ public static class RendererSystem
     }
 
     /// <summary>
-    /// Calculates the detination rectangle for a render target onto the backbuffer of the window this application is painting to.
+    ///     Calculates the detination rectangle for a render target onto the backbuffer of the window this application is painting to.
     /// </summary>
     /// <returns>The calculated destination rectangle.</returns>
     public static Howl.Math.Shapes.Rectangle CalculateRenderDestinationRectangle(MonoGameAppState state, RenderTarget2D renderTarget)
@@ -233,13 +220,9 @@ public static class RendererSystem
     /// <summary>
     ///     Draws all texts to the currently bound render target.
     /// </summary>
-    /// <param name="state">the state to draw to.</param>
-    /// <param name="strings">the collection containing the string data for the labels.</param>
-    /// <param name="transforms">the collection containing the label transforms.</param>
-    /// <param name="labels">the labels to draw.</param>
-    /// <param name="camera">the camera data to draw in relation to.</param>
-    /// <param name="drawSpace">the space to draw in.</param>
-    public static void DrawLabels(MonoGameAppState state, StringRegistryState strings, ComponentArray<Transform> transforms, ComponentArray<Label> labels, ref Camera camera, DrawSpace drawSpace)
+    public static void DrawLabels(MonoGameAppState state, StringRegistryState strings, SwapBackArray<GenId> activeLabels, Transform[] transforms, 
+        Label[] labels, ref Camera camera, DrawSpace drawSpace
+    )
     {
         state.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
@@ -251,18 +234,19 @@ public static class RendererSystem
         bool isValid = false;
 
         // draw labels.
-        for(int i = 1; i < labels.Active.Count; i++)
+        int count = activeLabels.Count;
+        for(int i = 1; i < count; i++)
         {
-            GenId genId = labels.Active[i];
-            ref Label label = ref ComponentArray.GetDataUnsafe(labels, genId);
+            int index = GenId.GetIndex(activeLabels[i]);
+            
+            ref Label label = ref labels[index];
             if(label.DrawSpace != drawSpace)
             {
                 continue;
             }
 
-            ref Transform transform = ref ComponentArray.GetDataUnsafe(transforms, genId);
-
-
+            ref Transform transform = ref transforms[index];
+            
             Span<char> chars = StringRegistry.GetString(strings, label.StringId, ref isValid);
             DrawLabel(state, ref camera, ref transform, ref label, chars);            
         }
@@ -271,14 +255,9 @@ public static class RendererSystem
     }
 
     /// <summary>
-    /// Draws text to the currently bound render target.
+    ///     Draws text to the currently bound render target.
     /// </summary>
-    /// <param name="state">The renderer state containing drawing context.</param>
-    /// <param name="camera">The camera to use for transforming coordinates.</param>
-    /// <param name="transform">The transformation to apply to the text.</param>
-    /// <param name="chars">The span of characters to draw.</param>
-    /// <param name="textParameters">The text parameters.</param>
-    /// <returns><see cref="GenIndexResult"/></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void DrawLabel(MonoGameAppState state, ref Camera camera, ref Transform transform, ref Label label, Span<char> chars)
     {
         Font font = state.FontManagerState.Fonts[label.FontId];

@@ -2,6 +2,7 @@ namespace Howl.Graphics;
 
 public enum TargetFrameRate
 {
+    D30,
     D60,
     D90,
     D120,

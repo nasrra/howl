@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 
 namespace Howl.Math;
 
-
 /// <summary>
 /// NOTE:
 /// Transform must not be default-initialised, as Cos and Sin would not be correctly set.
@@ -80,11 +79,6 @@ public struct Transform
     public float Cos;
 
     /// <summary>
-    ///     the current step of being <c>dirty</c>.
-    /// </summary>
-    public int IsDirtyStep;
-
-    /// <summary>
     /// Constructs a Transform.
     /// </summary>
     /// <param name="position">The positional x and y-coordinate values.</param>
@@ -146,7 +140,6 @@ public struct Transform
     public static void Translate(ref Transform transform, Vector2 traslation)
     {
         transform.Position += traslation;
-        transform.IsDirtyStep++;
     }
 
     /// <summary>
@@ -158,7 +151,6 @@ public struct Transform
     public static void Warp(ref Transform transform, Vector2 position)
     {
         transform.Position = position;
-        transform.IsDirtyStep++;
     }
 
     /// <summary>
@@ -170,7 +162,6 @@ public struct Transform
     public static void SetScale(ref Transform transform, Vector2 scale)
     {
         transform.Scale = scale;
-        transform.IsDirtyStep++;
     }
 
     /// <summary>
@@ -183,6 +174,20 @@ public struct Transform
         transform.Rotation += radians;
         transform.Sin = MathF.Sin(transform.Rotation);
         transform.Cos = MathF.Cos(transform.Rotation);
-        transform.IsDirtyStep++;
+    }
+
+    /// <summary>
+    ///     Offsets a transform's position and rotation by another's.
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="offset"></param>
+    /// <returns>the newly offseted transform.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static Transform Combine(Transform source, Transform offset)
+    {
+        source.Position += offset.Position;
+        source.Scale += offset.Scale;
+        Rotate(ref source, offset.Rotation);
+        return source;
     }
 }
