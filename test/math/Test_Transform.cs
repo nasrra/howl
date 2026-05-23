@@ -15,11 +15,11 @@ public class Test_Transform
 
         Assert.Equal(position, transform.Position);
         Assert.Equal(scale, transform.Scale);
-        Assert.Equal(rotation, transform.Rotation);
-        Assert.Equal(0.85f, transform.Sin, precision: 2);
-        Assert.Equal(MathF.Sin(rotation), transform.Sin, precision: 2);
-        Assert.Equal(0.525f, transform.Cos, precision: 3);
-        Assert.Equal(MathF.Cos(rotation), transform.Cos, precision: 2);
+        Assert.Equal(rotation, transform.RotationRadians);
+        Assert.Equal(0.85f, transform.Sine, precision: 2);
+        Assert.Equal(MathF.Sin(rotation), transform.Sine, precision: 2);
+        Assert.Equal(0.525f, transform.Cosine, precision: 3);
+        Assert.Equal(MathF.Cos(rotation), transform.Cosine, precision: 2);
     }
 
     [Fact]

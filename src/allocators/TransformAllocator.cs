@@ -60,7 +60,7 @@ public class TransformAllocator
         
         // set the global transform.
 
-        allocator.GlobalTransforms.Sparse[entityIndex] = Transform.Combine(
+        allocator.GlobalTransforms.Sparse[entityIndex] = Transform.TransformRelative(
             allocator.LocalTransforms.Sparse[entityIndex], allocator.GlobalTransforms.Sparse[parentIndex]
         ); 
 

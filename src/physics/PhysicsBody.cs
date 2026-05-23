@@ -380,8 +380,8 @@ public static class PhysicsBody
         state.Transforms.Positions.Y[physicsBodyIndex] = transform.Position.Y;
         state.Transforms.Scales.X[physicsBodyIndex] = transform.Scale.X;
         state.Transforms.Scales.Y[physicsBodyIndex] = transform.Scale.Y;
-        state.Transforms.Cosines[physicsBodyIndex] = transform.Cos;
-        state.Transforms.Sines[physicsBodyIndex] = transform.Sin;        
+        state.Transforms.Cosines[physicsBodyIndex] = transform.Cosine;
+        state.Transforms.Sines[physicsBodyIndex] = transform.Sine;        
     }
 
 
@@ -709,7 +709,7 @@ public static class PhysicsBody
     /// <param name="x">output for the vertex x-component.</param>
     /// <param name="y">output for the vertex y-component.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void GetCircleWorldVerticesUnsafe(FsSoa_Vector2 vertices, int physicsBodyIndex, ref float x, ref float y)
+    public static void GetCircleVerticesUnsafe(FsSoa_Vector2 vertices, int physicsBodyIndex, ref float x, ref float y)
     {
         int vertexIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, vertices.Stride, 0);
         x = vertices.X[vertexIndex];

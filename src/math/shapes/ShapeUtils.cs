@@ -59,11 +59,11 @@ public static class ShapeUtils
     /// <returns>The centroid-vector.</returns>
     /// <exception cref="ArgumentException">Throws when the passed in vertex-spans do not match in length.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 GetCentroid(Span<float> polygonVerticesX, Span<float> polygonVerticesY)
+    public static Vector2 CalculateCentroid(Span<float> polygonVerticesX, Span<float> polygonVerticesY)
     {
         float cX = 0;
         float cY = 0;
-        GetCentroid(polygonVerticesX, polygonVerticesY, ref cX, ref cY);
+        CalculateCentroid(polygonVerticesX, polygonVerticesY, ref cX, ref cY);
         return new Vector2(cX, cY);
     }
 
@@ -74,7 +74,7 @@ public static class ShapeUtils
     /// <param name="y">the y-values of the shape's vertices.</param>
     /// <param name="cX">output for the x-component of the centroid vertice.</param>
     /// <param name="cY">output for the y-component of the centroid vertice.</param>
-    public static void GetCentroid(Span<float> x, Span<float> y, ref float cX, ref float cY)
+    public static void CalculateCentroid(Span<float> x, Span<float> y, ref float cX, ref float cY)
     {
         float area = 0;
         float invArea = 0;

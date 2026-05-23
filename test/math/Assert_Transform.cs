@@ -17,7 +17,7 @@ public static class Assert_Transform
         Assert.Equal(expected.Scale.X, result.Scale.X, precision);
         Assert.Equal(expected.Scale.Y, result.Scale.Y, precision);
         // Assert.Equal(expected.Rotation, result.Rotation, precision); THIS NEEDS TO GO!!
-        Assert.Equal(expected.Sin, result.Sin, precision);
-        Assert.Equal(expected.Cos, result.Cos, precision);
+        Assert.Equal(expected.Sine, result.Sine, precision);
+        Assert.Equal(expected.Cosine, result.Cosine, precision);
     }
 }

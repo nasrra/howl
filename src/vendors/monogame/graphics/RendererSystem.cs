@@ -105,7 +105,7 @@ public static class RendererSystem
         app.EffectManager.DefaultSpriteEffect.Texture = texture;
 
         app.SpriteBatch.Draw(texture, new(position.X, position.Y), RectangleExtensions.ToMonoGame(sprite.SourceRectangle),
-            sprite.ColourTint.ToMonoGame(), -transform.Rotation, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
+            sprite.ColourTint.ToMonoGame(), -transform.RotationRadians, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
             Vector2Extensions.ToMonoGame(sprite.Origin), Vector2Extensions.ToMonoGame(sprite.Scale * transform.Scale), 
             SpriteEffects.None, sprite.LayerDepth
         );
@@ -271,7 +271,7 @@ public static class RendererSystem
         Howl.Math.Vector2 position = transform.Position.InvertY() - camera.Position.InvertY();
 
         font.SpriteFontBase.DrawText(state.SpriteBatch, chars.ToString(), Vector2Extensions.ToMonoGame(position), 
-            label.Colour.ToMonoGame(), -transform.Rotation, Vector2Extensions.ToMonoGame(label.Offset), 
+            label.Colour.ToMonoGame(), -transform.RotationRadians, Vector2Extensions.ToMonoGame(label.Offset), 
             Vector2Extensions.ToMonoGame(transform.Scale)
         );
     }

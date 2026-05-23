@@ -23,6 +23,57 @@ public static class PhysicsSystem
     public static readonly Vector<float> VectorRectangleRotationalInertia = new(RectangleRotationalInertia);
     public static readonly Vector<float> VectorCircleRotationalInertia = new(CircleRotationalInertia);
 
+    public static void Draw(HowlAppState app, PhysicsSystemState state, float deltaTime)
+    {
+        if(state.DrawBvhBranches)
+        {
+            BoundingVolumeHierarchy.DrawBranches(app, state.Bvh, Colour.Yellow);
+        }
+
+        if (state.DrawLeaves)
+        {
+            BoundingVolumeHierarchy.DrawLeaves(app, state.Bvh, Colour.Yellow);            
+        }
+
+        if (state.DrawColliderWireframes)
+        {
+            DrawCirclePhysicsBodies(app, state.CollisionManifoldState, state.ActiveBodies, state.Centroids, state.WorldRadii, state.BvhCategories, 
+                state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, state.TriggeredPhysicsBodyColour
+            );
+
+            DrawPolygonPhysicsBodies(app, state.CollisionManifoldState, state.ActiveBodies, state.WorldVertices, state.BvhCategories, state.DynamicPhysicsBodyColour, 
+                state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, state.TriggeredPhysicsBodyColour
+            );
+        }
+
+        if (state.DrawCollisionInformation)
+        {
+            DrawCollisionInformation(app, state.CollisionManifoldState, state.CollisionOtherColour, 
+                state.ContactPointColour, state.NormalColour
+            );
+        }
+
+        if (state.DrawAABBWireframes)
+        {
+            DrawAabbs(app, state.MinAABBVertices, state.MaxAABBVertices, state.ActiveBodies, state.AABBColour);            
+        }
+
+        if (state.DrawLinearVelocities)
+        {
+            DrawLinearVelocities(app, state.ActiveBodies, state.LinearVelocities, state.Centroids, state.BvhCategories, state.LinearVelocityColour);
+        }
+
+        if (state.DrawPositions)
+        {
+            DrawPositions(app, state.Transforms.Positions, state.ActiveBodies, state.PositionColour);
+        }
+
+        if (state.DrawCentroids)
+        {
+            DrawCentroids(app, state.Centroids, state.ActiveBodies, state.CentroidColour);
+        }
+    }
+
     public static void FixedUpdate(HowlAppState app, PhysicsSystemState state, float deltaTime, int subSteps)
     {
         state.FixedUpdateStepStopwatch.Restart();
@@ -439,57 +490,6 @@ public static class PhysicsSystem
         state.FixedUpdateStepStopwatch.Stop();
     }
 
-    public static void Draw(HowlAppState app, PhysicsSystemState state, float deltaTime)
-    {
-        if(state.DrawBvhBranches)
-        {
-            BoundingVolumeHierarchy.DrawBranches(app, state.Bvh, Colour.Yellow);
-        }
-
-        if (state.DrawLeaves)
-        {
-            BoundingVolumeHierarchy.DrawLeaves(app, state.Bvh, Colour.Yellow);            
-        }
-
-        if (state.DrawColliderWireframes)
-        {
-            DrawCirclePhysicsBodies(app, state.CollisionManifoldState, state.ActiveBodies, state.Centroids, state.WorldRadii, state.BvhCategories, 
-                state.DynamicPhysicsBodyColour, state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, state.TriggeredPhysicsBodyColour
-            );
-
-            DrawPolygonPhysicsBodies(app, state.CollisionManifoldState, state.ActiveBodies, state.WorldVertices, state.BvhCategories, state.DynamicPhysicsBodyColour, 
-                state.KinematicPhysicsBodyColour, state.TriggerPhysicsBodyColour, state.TriggeredPhysicsBodyColour
-            );
-        }
-
-        if (state.DrawCollisionInformation)
-        {
-            DrawCollisionInformation(app, state.CollisionManifoldState, state.CollisionOtherColour, 
-                state.ContactPointColour, state.NormalColour
-            );
-        }
-
-        if (state.DrawAABBWireframes)
-        {
-            DrawAabbs(app, state.MinAABBVertices, state.MaxAABBVertices, state.ActiveBodies, state.AABBColour);            
-        }
-
-        if (state.DrawLinearVelocities)
-        {
-            DrawLinearVelocities(app, state.ActiveBodies, state.LinearVelocities, state.Centroids, state.BvhCategories, state.LinearVelocityColour);
-        }
-
-        if (state.DrawPositions)
-        {
-            DrawPositions(app, state.Transforms.Positions, state.ActiveBodies, state.PositionColour);
-        }
-
-        if (state.DrawCentroids)
-        {
-            DrawCentroids(app, state.Centroids, state.ActiveBodies, state.CentroidColour);
-        }
-    }
-
     /// <summary>
     ///     Performs a movement step for all physics bodies with a rigidbody.
     /// </summary>
@@ -701,7 +701,7 @@ public static class PhysicsSystem
                     // set the new centroid.
                     PhysicsBody.GetPolygonVerticesUnsafe(worldVertices, physicsBodyIndex, ref polygonX, ref polygonY);
 
-                    GetCentroid(polygonX, polygonY, ref centroidsX[physicsBodyIndex], ref centroidsY[physicsBodyIndex]);
+                    CalculateCentroid(polygonX, polygonY, ref centroidsX[physicsBodyIndex], ref centroidsY[physicsBodyIndex]);
 
                     // set the new min and max vectors.
                     Math.Math.GetMinMaxVectors(polygonX, polygonY, out minAabbsX[physicsBodyIndex], out minAabbsY[physicsBodyIndex], 
@@ -1837,7 +1837,6 @@ public static class PhysicsSystem
             }
 
             Circle shape = new(centroidX[physicsBodyIndex], centroidY[physicsBodyIndex], radii[physicsBodyIndex]);
-
             Debug.DrawWireCircle(app, shape, drawColour, DrawSpace.World);
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
 using static Howl.Math.Shapes.ShapeUtils;
@@ -6,25 +7,11 @@ namespace Howl.Math;
 
 public class Soa_Transform
 {
-    /// <summary>
-    /// Gets and sets the positional values.
-    /// </summary>
     public Soa_Vector2 Positions;
-
-    /// <summary>
-    /// Gets and sets the scaling values.
-    /// </summary>
     public Soa_Vector2 Scales;
-
-    /// <summary>
-    /// Gets and sets the Sin value of a rotation.
-    /// </summary>
     public float[] Sines;
-
-    /// <summary>
-    /// Gets and sets the Cos value of a rotation.
-    /// </summary>
     public float[] Cosines;
+    public float[] RotationRadians;
 
     /// <summary>
     /// Creates a new SoaTransform instance.
@@ -36,6 +23,7 @@ public class Soa_Transform
         Scales       = new(length);
         Sines         = new float[length];
         Cosines        = new float[length];
+        RotationRadians = new float[length];
     }
 
     /// <summary>
@@ -51,8 +39,27 @@ public class Soa_Transform
         transform.Position.Y = soa.Positions.Y[index];
         transform.Scale.X = soa.Scales.X[index];
         transform.Scale.Y = soa.Scales.Y[index];
-        transform.Sin = soa.Sines[index];
-        transform.Cos = soa.Cosines[index];
+        transform.Sine = soa.Sines[index];
+        transform.Cosine = soa.Cosines[index];
+        transform.RotationRadians = soa.RotationRadians[index];
+    }
+
+    /// <summary>
+    ///     Copies an transform struct into a soa transform.
+    /// </summary>
+    /// <param name="soa">the soa collection containing the data.</param>
+    /// <param name="transform">the transform struct to mutate.</param>
+    /// <param name="index">the index in the soa collection to copy.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void CopyTransformToSoa(Soa_Transform soa, ref Transform transform, int index)
+    {
+        soa.Positions.X[index] = transform.Position.X;
+        soa.Positions.Y[index] = transform.Position.Y;
+        soa.Scales.X[index] = transform.Scale.X;
+        soa.Scales.Y[index] = transform.Scale.Y;
+        soa.Sines[index] = transform.Sine;
+        soa.Cosines[index] = transform.Cosine;
+        soa.RotationRadians[index] = transform.RotationRadians;
     }
 
     /// <summary>
@@ -64,7 +71,9 @@ public class Soa_Transform
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void Insert(Soa_Transform soa, int insertIndex, Transform transform)
     {
-        Insert(soa, insertIndex, transform.Position.X, transform.Position.Y, transform.Scale.X, transform.Scale.Y, transform.Sin, transform.Cos);
+        Insert(soa, insertIndex, transform.Position.X, transform.Position.Y, transform.Scale.X, transform.Scale.Y, transform.Sine, 
+            transform.Cosine, transform.RotationRadians
+        );
     }
 
     /// <summary>
@@ -79,14 +88,30 @@ public class Soa_Transform
     /// <param name="sin">the sin of rotation.</param>
     /// <param name="cos">the cos of roation.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Insert(Soa_Transform soa, int insertIndex, float posX, float posY, float scaleX, float scaleY, float sin, float cos)
+    public static void Insert(Soa_Transform soa, int insertIndex, float posX, float posY, float scaleX, float scaleY, float sin, float cos, 
+        float rotationRadians
+    )
     {
         soa.Positions.X[insertIndex] = posX;
         soa.Positions.Y[insertIndex] = posY;
         soa.Scales.X[insertIndex] = scaleX;
         soa.Scales.Y[insertIndex] = scaleY;
         soa.Sines[insertIndex] = sin;
-        soa.Cosines[insertIndex] = cos;        
+        soa.Cosines[insertIndex] = cos;
+        soa.RotationRadians[insertIndex] = rotationRadians;
+    }
+
+    public static void TransformRelative(Soa_Transform src, Soa_Transform dst, int srcReadIndex, int dstWriteIndex, 
+        float worldPosX, float worldPosY, float worldScaleX, float worldScaleY, float worldSine, float worldCosine, float worldRotationRadians
+    )
+    {
+        Transform.TransformRelative(src.Positions.X[srcReadIndex], src.Positions.Y[srcReadIndex], src.Scales.X[srcReadIndex], 
+            src.Scales.Y[srcReadIndex], src.Sines[srcReadIndex], src.Cosines[srcReadIndex], src.RotationRadians[srcReadIndex], 
+            worldPosX, worldPosY, worldScaleX, worldScaleY, worldSine, worldCosine, worldRotationRadians, 
+            ref dst.Positions.X[dstWriteIndex], ref dst.Positions.Y[dstWriteIndex], ref dst.Scales.X[dstWriteIndex], 
+            ref dst.Scales.Y[dstWriteIndex], ref dst.Sines[dstWriteIndex], ref dst.Cosines[dstWriteIndex], 
+            ref dst.RotationRadians[dstWriteIndex] 
+        );
     }
 
     /// <summary>

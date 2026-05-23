@@ -11,7 +11,7 @@ public enum GenIdResult : byte
     StaleGenId,
 
     /// <summary>
-    ///     Returned when a GenId accesses an unallocated value in a array when attempting to return an allocated entry. 
+    ///     Returned when a GenId accesses a value in a array that is either not allocated or the data allocated is for a different type. 
     /// </summary>
     NotAllocated,
 

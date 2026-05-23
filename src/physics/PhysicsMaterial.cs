@@ -20,45 +20,16 @@ public struct PhysicsMaterial
     // initial force to start moving compared to when they would already be
     // in motion. This is simulated as two friction values.
 
-    /// <summary>
-    /// Gets and sets the static friction value.
-    /// </summary>
-    /// <remarks>
-    /// Static friction is the resistance of motion before an object is sliding / is already in motion.
-    /// </remarks>
     public float StaticFriction;
-
-    /// <summary>
-    /// Gets and sets the kinetic friction value.
-    /// </summary>
-    /// <remarks>
-    /// Kinetic friction is the resistance of motion when an object is sliding / within motion and in contact with another object.
-    /// </remarks>
     public float KineticFriction;
-
-    /// <summary>
-    /// Gets and sets the density value.
-    /// </summary>
     public float Density;
-
-    /// <summary>
-    /// Gets and sets the restitution.
-    /// </summary>
-    /// <remarks>
-    /// Note: restitution is how 'bouncy' a body is.
-    /// </remarks>
     public float Restitution;
 
     /// <summary>
-    /// Constructs a Physics Material.
+    ///     Constructs a Physics Material.
     /// </summary>
     public PhysicsMaterial(){}
 
-    /// <summary>
-    /// Constructs a Physics Material.
-    /// </summary>
-    /// <param name="kineticFriction">The amount of kinetic friction - between 0 and 1.</param>
-    /// <param name="staticFriction">The amount of static friction - between kinetic friction and 1.</param>
     public PhysicsMaterial(float staticFriction, float kineticFriction, float density, float restitution)
     {
         SetKineticFriction(ref KineticFriction, kineticFriction);

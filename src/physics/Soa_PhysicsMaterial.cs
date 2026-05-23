@@ -6,43 +6,11 @@ namespace Howl.Physics;
 
 public class Soa_PhysicsMaterial
 {
-    /// <summary>
-    ///     The static friction values.
-    /// </summary>
-    /// <remarks>
-    ///     Static friction is the resistance of motion before an object is sliding / is already in motion.
-    /// </remarks>
     public float[] StaticFriction;
-
-    /// <summary>
-    ///     The kinetic friction values.
-    /// </summary>
-    /// <remarks>
-    ///     Kinetic friction is the resistance of motion when an object is sliding / within motion and in contact with another object.
-    /// </remarks>
     public float[] KineticFriction;
-
-    /// <summary>
-    ///     The density values.
-    /// </summary>
     public float[] Density;
-
-    /// <summary>
-    ///     The restituion values.
-    /// </summary>
-    /// <remarks>
-    ///     Restitution is how 'bouncy' a body is; specifically the opposing force applied when an object collides with another.
-    /// </remarks>
     public float[] Restitution;
-
-    /// <summary>
-    ///     The total number of elements in all the dimensions of the backing arrays; zero if there are no elements in the backing arrays.
-    /// </summary>
     public int Length;
-
-    /// <summary>
-    ///     Whether or not this instance has been disposed.
-    /// </summary>
     public bool Disposed;
 
     /// <summary>
@@ -62,21 +30,14 @@ public class Soa_PhysicsMaterial
     ///     Inserts a physics material's values into a soa instance.
     /// </summary>
     /// <remarks>
-    ///     All spans will be mutated with the newly set values.
-    ///     All spans must be the same length; as entries are associated via <paramref name="index"/>.
+    ///     <para>Remarks:</para>
+    ///     <para>All arrays will be mutated with the newly set values.</para>
+    ///     <para>All arrays must be the same length; as entries are associated via <paramref name="insertIndex"/>.</para>
     /// </remarks>
-    /// <param name="staticFrictions">the span that stores static friction values.</param>
-    /// <param name="kineticFrictions">the span that stores kinetic friction values.</param>
-    /// <param name="densities">the span that stores density values.</param>
-    /// <param name="restitutions">the span that stores restitution values.</param>
-    /// <param name="staticFriction">the static friction value to set to.</param>
-    /// <param name="kineticFriction">the kinetic friction value to set to.</param>
-    /// <param name="density">the density to set to.</param>
-    /// <param name="restitution">the restitution to set to.</param>
-    /// <param name="index">the index of the entry to modify.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Insert(Span<float> staticFrictions, Span<float> kineticFrictions, Span<float> densities, Span<float> restitutions,
-        float staticFriction, float kineticFriction, float density, float restitution, int index
+    public static void Insert(float[] staticFrictions, float[] kineticFrictions, float[] densities, float[] restitutions, 
+        float staticFriction, float kineticFriction, float density, float restitution,
+        int insertIndex
     )
     {
         PhysicsMaterial.AssertKineticFrictionInRange(kineticFriction);
@@ -84,14 +45,16 @@ public class Soa_PhysicsMaterial
         PhysicsMaterial.AssertRestitutionInRange(restitution);
         PhysicsMaterial.AssertDensityInRange(density);
 
-        staticFrictions[index] = staticFriction;
-        kineticFrictions[index] = kineticFriction;
-        densities[index] = density;
-        restitutions[index] = restitution;
+        staticFrictions[insertIndex] = staticFriction;
+        kineticFrictions[insertIndex] = kineticFriction;
+        densities[insertIndex] = density;
+        restitutions[insertIndex] = restitution;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Insert(Soa_PhysicsMaterial soa, int insertIndex, float staticFriction, float kineticFriction, float density, float restitution)
+    public static void Insert(Soa_PhysicsMaterial soa, int insertIndex, float staticFriction, float kineticFriction, float density, 
+        float restitution
+    )
     {
         PhysicsMaterial.AssertKineticFrictionInRange(kineticFriction);
         PhysicsMaterial.AssertStaticFrictionInRange(staticFriction, kineticFriction);
@@ -109,17 +72,18 @@ public class Soa_PhysicsMaterial
     /// </summary>
     /// <param name="soa">the soa instance to insert into.</param>
     /// <param name="material">the material value to set to.</param>
-    /// <param name="index">the index of the entry to modify.</param>
+    /// <param name="insertIndex">the index of the entry to modify.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Insert(Soa_PhysicsMaterial soa, PhysicsMaterial material, int index)
+    public static void Insert(Soa_PhysicsMaterial soa, PhysicsMaterial material, int insertIndex)
     {
         Insert(soa.StaticFriction, soa.KineticFriction, soa.Density, soa.Restitution,
-            material.StaticFriction, material.KineticFriction, material.Density, material.Restitution, index
+            material.StaticFriction, material.KineticFriction, material.Density, material.Restitution, insertIndex
         );  
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Insert(Soa_PhysicsMaterial soa, float staticFriction, float kineticFriction, float density, float restitution, int index)
+    public static void Insert(Soa_PhysicsMaterial soa, float staticFriction, float kineticFriction, float density, float restitution, int index
+    )
     {
         Insert(soa.StaticFriction, soa.KineticFriction, soa.Density, soa.Restitution,
             staticFriction, kineticFriction, density, restitution, index
