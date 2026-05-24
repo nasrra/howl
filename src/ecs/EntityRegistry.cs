@@ -133,14 +133,26 @@ public class EntityRegistry : IDisposable
             return GenIdResult.StaleGenId;
         }
 
+        DeallocateUnsafe(registry, index);
+        
+        return GenIdResult.Ok;
+    }
+
+    /// <summary>
+    ///     Deallocates an entity from a entity registry instance.
+    /// </summary>
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>stale gen id checks are not enforced; the entity index will always run through the deallocation procedure.</para>
+    /// </remarks>
+    public static void DeallocateUnsafe(EntityRegistry registry, int entityIndex)
+    {        
         // increment the generation so that any gen indices pointing to this data are invalidated (making them stale pointers).
-        registry.GenIds[index] = GenId.IncrementGeneration(registry.GenIds[index]);
+        registry.GenIds[entityIndex] = GenId.IncrementGeneration(registry.GenIds[entityIndex]);
 
         // deallocate the entity.
-        registry.Allocated[index] = false;
-        StackArray.Push(registry.FreeSlots, index);
-
-        return GenIdResult.Ok;
+        registry.Allocated[entityIndex] = false;
+        StackArray.Push(registry.FreeSlots, entityIndex);
     }
 
     public static void DeallocateAll(EntityRegistry registry)

@@ -885,18 +885,20 @@ public static class PhysicsNew
         public int DynamicRigidPolygonCount;
         public int TriggerRigidPolygonCount;
         public int KinematicRigidPolygonCount;
+
         public int DynamicColliderCircleCount;
         public int TriggerColliderCircleCount;
         public int KinematicColliderCircleCount;
         public int DynamicRigidCircleCount;
         public int TriggerRigidCircleCount;
         public int KinematicRigidCircleCount;
-        public int SolidCapsuleRigidBodyCount;
-        public int KinematicCapsuleRigidBodyCount;
-        public int TriggerCapsuleRigidBodyCount;
-        public int SolidCapsuleColliderCount;
-        public int KinematicCapsuleColliderCount;
-        public int TriggerCapsuleColliderCount;
+        
+        public int DynamicRigidCapsuleCount;
+        public int KinematicRigidCapsuleCount;
+        public int TriggerRigidCapsuleCount;
+        public int DynamicColliderCapsuleCount;
+        public int KinematicColliderCapsuleCount;
+        public int TriggerColliderCapsuleCount;
 
 
 
@@ -1667,7 +1669,7 @@ public static class PhysicsNew
                 ref float linearVelocityY = ref linearVelocitiesY[bodyIndex];
                 ref float mass = ref masses[bodyIndex];
 
-                if(categories[bodyIndex] < Shape.Category.KinRigPolygon && gravityAffected[bodyIndex])
+                if(gravityAffected[bodyIndex])
                 {                
                     // apply gravity.
                     linearVelocityX += gravityLinearForceX;
@@ -2654,26 +2656,26 @@ public static class PhysicsNew
             return result;
         }
 
-        public static GenIdResult Deallocate(State state, GenId genId)
-        {
-            GenIdResult result = EntityRegistry.Deallocate(state.Entities, genId);
+        // public static GenIdResult Deallocate(State state, GenId genId)
+        // {
+        //     GenIdResult result = EntityRegistry.Deallocate(state.Entities, genId);
 
-            if(result == GenIdResult.Ok)
-            {            
-                int index = GenId.GetIndex(genId);
+        //     if(result == GenIdResult.Ok)
+        //     {            
+        //         int index = GenId.GetIndex(genId);
 
-                // this is here temporarily and SHOULD be removed.
-                FsSoa_Vector2.ClearEntryAppendCount(state.BaseVertices, index);
+        //         // this is here temporarily and SHOULD be removed.
+        //         FsSoa_Vector2.ClearEntryAppendCount(state.BaseVertices, index);
 
-                Shape.DecrementCategoryCounter(state, state.Categories[index]);
+        //         Shape.DecrementCategoryCounter(state, state.Categories[index]);
 
-                state.GravityAffected[index] = false;
+        //         state.GravityAffected[index] = false;
 
-                SetActiveUnsafe(state, GenId.GetIndex(genId), false);
-            }
+        //         SetActiveUnsafe(state, GenId.GetIndex(genId), false);
+        //     }
             
-            return result;
-        }
+        //     return result;
+        // }
 
         public static GenIdResult SetActive(State state, GenId entityId, bool isActive)
         {
@@ -3078,27 +3080,27 @@ public static class PhysicsNew
             {
                 case Category.DynRigPolygon: state.DynamicRigidPolygonCount++; break;
                 case Category.DynRigCircle: state.DynamicRigidCircleCount++; break;
-                case Category.DynRigCapsule: state.SolidCapsuleRigidBodyCount++; break;
+                case Category.DynRigCapsule: state.DynamicRigidCapsuleCount++; break;
                 
                 case Category.TriRigPolygon: state.TriggerRigidPolygonCount++; break;
                 case Category.TriRigCircle: state.TriggerRigidCircleCount++; break;
-                case Category.TriRigCapsule: state.TriggerCapsuleRigidBodyCount++; break;
+                case Category.TriRigCapsule: state.TriggerRigidCapsuleCount++; break;
 
                 case Category.KinRigPolygon: state.KinematicRigidPolygonCount++; break;
                 case Category.KinRigCircle: state.KinematicRigidCircleCount++; break;
-                case Category.KinRigCapsule: state.KinematicCapsuleRigidBodyCount++; break;
+                case Category.KinRigCapsule: state.KinematicRigidCapsuleCount++; break;
                 
                 case Category.DynColPolygon: state.DynamicColliderPolygonCount++; break;
                 case Category.DynColCircle: state.DynamicColliderCircleCount++; break;
-                case Category.DynColCapsule: state.SolidCapsuleColliderCount++; break;
+                case Category.DynColCapsule: state.DynamicColliderCapsuleCount++; break;
                 
                 case Category.TriColPolygon: state.TriggerColliderPolygonCount++; break;
                 case Category.TriColCircle: state.TriggerColliderCircleCount++; break;
-                case Category.TriColCapsule: state.TriggerCapsuleColliderCount++; break;
+                case Category.TriColCapsule: state.TriggerColliderCapsuleCount++; break;
 
                 case Category.KinColPolygon: state.KinematicColliderPolygonCount++; break;
                 case Category.KinColCircle: state.KinematicColliderCircleCount++; break;
-                case Category.KinColCapsule: state.KinematicCapsuleColliderCount++; break;
+                case Category.KinColCapsule: state.KinematicColliderCapsuleCount++; break;
 
                 default:
                     throw new Exception();
@@ -3112,27 +3114,27 @@ public static class PhysicsNew
             {
                 case Category.DynRigPolygon: state.DynamicRigidPolygonCount--; break;
                 case Category.DynRigCircle: state.DynamicRigidCircleCount--; break;
-                case Category.DynRigCapsule: state.SolidCapsuleRigidBodyCount--; break;
+                case Category.DynRigCapsule: state.DynamicRigidCapsuleCount--; break;
                 
                 case Category.TriRigPolygon: state.TriggerRigidPolygonCount--; break;
                 case Category.TriRigCircle: state.TriggerRigidCircleCount--; break;
-                case Category.TriRigCapsule: state.TriggerCapsuleRigidBodyCount--; break;
+                case Category.TriRigCapsule: state.TriggerRigidCapsuleCount--; break;
 
                 case Category.KinRigPolygon: state.KinematicRigidPolygonCount--; break;
                 case Category.KinRigCircle: state.KinematicRigidCircleCount--; break;
-                case Category.KinRigCapsule: state.KinematicCapsuleRigidBodyCount--; break;
+                case Category.KinRigCapsule: state.KinematicRigidCapsuleCount--; break;
                 
                 case Category.DynColPolygon: state.DynamicColliderPolygonCount--; break;
                 case Category.DynColCircle: state.DynamicColliderCircleCount--; break;
-                case Category.DynColCapsule: state.SolidCapsuleColliderCount--; break;
+                case Category.DynColCapsule: state.DynamicColliderCapsuleCount--; break;
                 
                 case Category.TriColPolygon: state.TriggerColliderPolygonCount--; break;
                 case Category.TriColCircle: state.TriggerColliderCircleCount--; break;
-                case Category.TriColCapsule: state.TriggerCapsuleColliderCount--; break;
+                case Category.TriColCapsule: state.TriggerColliderCapsuleCount--; break;
 
                 case Category.KinColPolygon: state.KinematicColliderPolygonCount--; break;
                 case Category.KinColCircle: state.KinematicColliderCircleCount--; break;
-                case Category.KinColCapsule: state.KinematicCapsuleColliderCount--; break;
+                case Category.KinColCapsule: state.KinematicColliderCapsuleCount--; break;
 
                 default:
                     throw new Exception();
@@ -3909,6 +3911,45 @@ public static class PhysicsNew
             int appendCount = vertices.AppendCounts[bodyIndex];
             xOutput = vertices.X.AsSpan().Slice(startIndex, appendCount);
             yOutput = vertices.Y.AsSpan().Slice(startIndex, appendCount);
+        }
+
+        public static GenIdResult Deallocate(State state, GenId genId, bool recalculateBodyCenterOfMass)
+        {
+            if (EntityRegistry.IsGenIdStale(state.Entities, genId))
+            {
+                return GenIdResult.StaleGenId;
+            }
+
+            int entityIndex = GenId.GetIndex(genId);
+
+            if(state.EntityTypes[entityIndex] != EntityType.Shape)
+            {
+                System.Diagnostics.Debug.Assert(false);
+                return GenIdResult.NotAllocated;                
+            }
+
+            DeallocateUnsafe(state, entityIndex, recalculateBodyCenterOfMass);
+
+            return GenIdResult.Ok;
+        }
+
+        /// <remarks>
+        ///    <para>Remarks:</para>
+        ///    <para>stale id checks are not enforced; the entity index will always go through the deallocation procedure.</para>
+        /// </remarks>
+        public static void DeallocateUnsafe(State state, int entityIndex, bool recalculateBodyCenterOfMass)
+        {   
+            EntityRegistry.DeallocateUnsafe(state.Entities, entityIndex);         
+            DecrementCategoryCounter(state, state.Categories[entityIndex]);
+            SetActiveUnsafe(state, entityIndex, false);
+            int bodyIndex = state.BodyHierarchy.Nodes[entityIndex].Parent;
+            IntrusiveList.RemoveFromTree(state.BodyHierarchy, entityIndex);
+            SetActiveUnsafe(state, entityIndex, false);
+            
+            if (recalculateBodyCenterOfMass)
+            {
+                Body.IntegrateShapePropertiesUnsafe(state, bodyIndex);
+            }
         }
     }
 
