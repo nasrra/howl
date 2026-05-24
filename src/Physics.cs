@@ -2652,30 +2652,61 @@ public static class PhysicsNew
             state.GravityAffected[bodyIndex] = gravityAffected;
             ClearForcesAndVelocities(state, bodyIndex);
 
-            IntrusiveList.AddToTree(state.BodyHierarchy, bodyIndex);
+            System.Diagnostics.Debug.Assert(IntrusiveList.AddToTree(state.BodyHierarchy, bodyIndex) == true);
             return result;
         }
 
-        // public static GenIdResult Deallocate(State state, GenId genId)
-        // {
-        //     GenIdResult result = EntityRegistry.Deallocate(state.Entities, genId);
-
-        //     if(result == GenIdResult.Ok)
-        //     {            
-        //         int index = GenId.GetIndex(genId);
-
-        //         // this is here temporarily and SHOULD be removed.
-        //         FsSoa_Vector2.ClearEntryAppendCount(state.BaseVertices, index);
-
-        //         Shape.DecrementCategoryCounter(state, state.Categories[index]);
-
-        //         state.GravityAffected[index] = false;
-
-        //         SetActiveUnsafe(state, GenId.GetIndex(genId), false);
-        //     }
+        public static GenIdResult Deallocate(State state, GenId genId)
+        {
+            if (EntityRegistry.IsGenIdStale(state.Entities, genId))
+            {
+                return GenIdResult.StaleGenId;
+            }
             
-        //     return result;
-        // }
+            int entityIndex = GenId.GetIndex(genId);
+            if (state.EntityTypes[entityIndex] != EntityType.Body)
+            {
+                return GenIdResult.NotAllocated;
+            }
+
+            DeallocateUnsafe(state, entityIndex);
+
+            return GenIdResult.Ok;
+        }
+
+        /// <remarks>
+        ///    <para>Remarks:</para>
+        ///    <para>stale id and entity type checks are not enforced; the entity index will always go through the deallocation procedure.</para>
+        /// </remarks>
+        public static void DeallocateUnsafe(State state, int entityIndex)
+        {            
+            EntityRegistry.DeallocateUnsafe(state.Entities, entityIndex);
+            
+            // deallocate all shapes.
+            // note the reverse order and starting deallocation at the last child.
+            // this is so first shape is preserved until the end of the loop, ensuring the loop knows when to stop.
+            IntrusiveList.Node[] nodes = state.BodyHierarchy.Nodes;
+            int lastShapeIndex = nodes[nodes[entityIndex].FirstChild].PreviousSibling;
+            if(lastShapeIndex != 0)
+            {
+                int shapeIndex = lastShapeIndex;
+                int previousShapeIndex = 0;
+                while (true)
+                {
+                    if(shapeIndex == previousShapeIndex)
+                    {
+                        break;
+                    }
+                    Shape.DeallocateUnsafe(state, shapeIndex, false);
+                    previousShapeIndex = shapeIndex;
+                    shapeIndex = nodes[shapeIndex].PreviousSibling;
+                }
+            }
+
+            IntrusiveList.RemoveFromTree(state.BodyHierarchy, entityIndex);
+            state.GravityAffected[entityIndex] = false;
+            SetActiveUnsafe(state, entityIndex, false);            
+        }
 
         public static GenIdResult SetActive(State state, GenId entityId, bool isActive)
         {
@@ -3935,9 +3966,9 @@ public static class PhysicsNew
 
         /// <remarks>
         ///    <para>Remarks:</para>
-        ///    <para>stale id checks are not enforced; the entity index will always go through the deallocation procedure.</para>
+        ///    <para>stale id and entity type checks are not enforced; the entity index will always go through the deallocation procedure.</para>
         /// </remarks>
-        public static void DeallocateUnsafe(State state, int entityIndex, bool recalculateBodyCenterOfMass)
+        public static void DeallocateUnsafe(State state, int entityIndex, bool recalculateBodyCenterOfMass = true)
         {   
             EntityRegistry.DeallocateUnsafe(state.Entities, entityIndex);         
             DecrementCategoryCounter(state, state.Categories[entityIndex]);

@@ -245,7 +245,8 @@ public static class IntrusiveList
         // deallocate from parent.
         if(parentIndex != 0)
         {
-            ref Node parent = ref nodes[node.Parent];
+            node.Parent = 0;
+            ref Node parent = ref nodes[parentIndex];
             
             // if this node doesnt have any children;
             if(node.FirstChild == 0)
