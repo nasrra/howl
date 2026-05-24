@@ -52,6 +52,7 @@ public static class IntrusiveList
         /// </summary>
         /// <remarks>
         ///    <para>Remarks:</para>
+        ///    <para>contains a <c>Nil</c> element</para>.
         ///    <para>when <c>0</c> is stored, this points to the <c>Nil</c> element and is invalid.</para>
         /// </remarks>
         public int RootDenseIndex;

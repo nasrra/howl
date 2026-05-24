@@ -54,9 +54,6 @@ public struct PhysicsMaterial
         );
     }
 
-    /// <summary>
-    ///     Sets a kinetic friction value.
-    /// </summary>
     /// <remarks>
     ///     Note: this function clamps kinetic friction within physics material's min and max friction values.
     /// </remarks>
@@ -69,9 +66,6 @@ public struct PhysicsMaterial
         kineticFriction = Math.Math.Clamp(value, MinFriction, MaxFriction);
     }
 
-    /// <summary>
-    /// Sets the kinetic friction value of a physics material.
-    /// </summary>
     /// <remarks>
     ///     Note: this function clamps kinetic friction within physics material's min and max friction values.
     /// </remarks>
@@ -100,9 +94,6 @@ public struct PhysicsMaterial
         );
     }
 
-    /// <summary>
-    ///     Sets a static friction value.
-    /// </summary>
     /// <remarks>
     ///     Note: this function clamps static friction within the kinetic friction value and physic material's max friction value.
     /// </remarks>
@@ -116,9 +107,6 @@ public struct PhysicsMaterial
         staticFriction = Math.Math.Clamp(value, kineticFriction, MaxFriction);
     }
 
-    /// <summary>
-    ///     Sets the static friction value of a physics material.
-    /// </summary>
     /// <remarks>
     ///     Note: this function clamps static friction within the kinetic friction value and physic material's max friction value.
     /// </remarks>
@@ -146,9 +134,6 @@ public struct PhysicsMaterial
         );
     }
 
-    /// <summary>
-    ///     Sets a density value.
-    /// </summary>
     /// <remarks>
     ///     Note: this function clamps density within physics material's min and max density values.
     /// </remarks>
@@ -161,9 +146,6 @@ public struct PhysicsMaterial
         density = Math.Math.Clamp(value, MinDensity, MaxDensity);
     }
 
-    /// <summary>
-    ///     Sets a physics material's density value.
-    /// </summary>
     /// <param name="material">the physics material to mutate.</param>
     /// <param name="value">the new density value.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -172,9 +154,6 @@ public struct PhysicsMaterial
         SetDensity(ref material.Density, value);
     }
 
-    /// <summary>
-    ///     Asserts that a restitution value is between <c><see cref="MinRestitution"/></c> and <c><see cref="MaxDensity"/></c>.
-    /// </summary>
     /// <remarks>
     ///     Calls to this function are compiled out entirely when not in <c>DEBUG</c> builds.
     /// </remarks>
@@ -188,9 +167,6 @@ public struct PhysicsMaterial
         );
     }
 
-    /// <summary>
-    ///     Sets a restitution value.
-    /// </summary>
     /// <remarks>
     ///     Note: this function clamps restitution within physics material's min and max restitution values.
     /// </remarks>
@@ -203,9 +179,6 @@ public struct PhysicsMaterial
         restitution = Math.Math.Clamp(value, MinRestitution, MaxRestitution);
     }
 
-    /// <summary>
-    ///     Sets a physics material's restitution value.
-    /// </summary>
     /// <remarks>
     ///     Note: this function clamps restitution within physics material's min and max restitution values.
     /// </remarks>

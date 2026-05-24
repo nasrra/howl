@@ -216,7 +216,7 @@ public static class Detection
 
     /******************
     
-        Solid Polygon RigidBody.
+        Dynamic Polygon RigidBody.
     
     *******************/
 
@@ -224,7 +224,7 @@ public static class Detection
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SolidPolygonRigidBody_To_SolidPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, CollisionManifoldState collisions, IntrusiveList.Node[] nodes, 
+    public static void DynamicRigidPolygon_To_DynamicRigidPolygon(OverlapInfo info, Span<int> bvhIndices, CollisionManifoldState collisions, IntrusiveList.Node[] nodes, 
         float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY,
         FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
@@ -249,19 +249,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
 
                 CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }  
         }
     }
 
-    public static void SolidPolygonRigidBody_To_SolidCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_DynamicRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, 
         FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
@@ -288,24 +288,24 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
 
                 CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }
     }
 
-    public static void SolidPolygonRigidBody_To_SolidCapsuleRigidbody()
+    public static void DynamicRigidPolygon_To_DynamicRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_KinematicRigidPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
         CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
@@ -331,19 +331,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
 
                 CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_KinematicRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
@@ -371,24 +371,24 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
 
                 CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicCapsuleRigidBody()
+    public static void DynamicRigidPolygon_To_KinematicRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_TriggerRigidPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -411,7 +411,7 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_TriggerRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -436,12 +436,12 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCapsuleRigidBody()
+    public static void DynamicRigidPolygon_To_TriggerRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_DynamicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
@@ -466,14 +466,14 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }
     }
 
-    public static void SolidPolygonRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_DynamicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -501,19 +501,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }
     }
 
-    public static void SolidPolygonRigidBody_To_SolidCapsuleCollider()
+    public static void DynamicRigidPolygon_To_DynamicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
@@ -538,14 +538,14 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, subStepCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }        
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -573,19 +573,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }    
     }
 
-    public static void SolidPolygonRigidBody_To_KinematicCapsuleCollider()
+    public static void DynamicRigidPolygon_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices 
     )
@@ -608,7 +608,7 @@ public static class Detection
         }   
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidPolygon_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -633,7 +633,7 @@ public static class Detection
         }     
     }
 
-    public static void SolidPolygonRigidBody_To_TriggerCapsuleCollider()
+    public static void DynamicRigidPolygon_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -643,12 +643,12 @@ public static class Detection
 
     /******************
     
-        Solid Circle RigidBody.
+        Dynamic Circle RigidBody.
     
     *******************/
 
 
-    public static void SolidCircleRigidBody_To_SolidCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_DynamicRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
         CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
@@ -674,24 +674,24 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
 
                 CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }        
     }
 
-    public static void SolidCircleRigidBody_To_SolidCapsuleRigidBody()
+    public static void DynamicRigidCircle_To_DynamicRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidCircleRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_KinematicRigidPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
@@ -719,19 +719,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
 
                 CategorisedOverlapArray.Append(collisionIndices.BToA, rigidBodyCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void SolidCircleRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_KinematicRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
@@ -757,24 +757,24 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
 
                 CategorisedOverlapArray.Append(collisionIndices.AToB, rigidBodyCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }                
     } 
 
-    public static void SolidCircleRigidBody_To_KinematicCapsuleRigidBody()
+    public static void DynamicRigidCircle_To_KinematicRigidCapsule()
     {
         throw new NotImplementedException();        
     }
 
-    public static void SolidCircleRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_TriggerRigidPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -799,7 +799,7 @@ public static class Detection
         }
     }
     
-    public static void SolidCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_TriggerRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -822,12 +822,12 @@ public static class Detection
         }                
     } 
 
-    public static void SolidCircleRigidBody_To_TriggerCapsuleRigidBody()
+    public static void DynamicRigidCircle_To_TriggerRigidCapsule()
     {
         throw new NotImplementedException();
     } 
 
-    public static void SolidCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_DynamicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -855,14 +855,14 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }
     }
 
-    public static void SolidCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_DynamicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -888,19 +888,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }          
     }
 
-    public static void SolidCircleRigidBody_To_SolidCapsuleCollider()
+    public static void DynamicRigidCircle_To_DynamicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -928,14 +928,14 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void SolidCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -961,19 +961,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void SolidCircleRigidBody_To_KinematicCapsuleCollider()
+    public static void DynamicRigidCircle_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -998,7 +998,7 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicRigidCircle_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -1021,7 +1021,7 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleRigidBody_To_TriggerCapsuleCollider()
+    public static void DynamicRigidCircle_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -1038,7 +1038,7 @@ public static class Detection
 
 
 
-    public static void KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_KinematicRigidPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices 
     )
@@ -1061,7 +1061,7 @@ public static class Detection
         }           
     }
 
-    public static void KinematicPolygonRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_KinematicRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1087,12 +1087,12 @@ public static class Detection
     }
 
 
-    public static void KinematicPolygonRigidBody_To_KinematicCapsuleRigidBody()
+    public static void KinematicRigidPolygon_To_KinematicRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_TriggerRigidPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices 
     )
@@ -1115,7 +1115,7 @@ public static class Detection
         }
     }
     
-    public static void KinematicPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_TriggerRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1140,12 +1140,12 @@ public static class Detection
         }    
     }
     
-    public static void KinematicPolygonRigidBody_To_TriggerCapsuleRigidBody()
+    public static void KinematicRigidPolygon_To_TriggerRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void KinematicPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_DynamicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> subStepCollisionsToResolve
@@ -1172,13 +1172,13 @@ public static class Detection
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, subStepCollisionsToResolve, 
                     CollisionResolutionCategory.Kinematic,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }  
     }
 
-    public static void KinematicPolygonRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_DynamicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -1206,19 +1206,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void KinematicPolygonRigidBody_To_SolidCapsuleCollider()
+    public static void KinematicRigidPolygon_To_DynamicColliderCapsule()
     {
         throw new NotImplementedException();        
     }
 
-    public static void KinematicPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -1241,7 +1241,7 @@ public static class Detection
         }          
     } 
 
-    public static void KinematicPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1267,12 +1267,12 @@ public static class Detection
     }
 
 
-    public static void KinematicPolygonRigidBody_To_KinematicCapsuleCollider()
+    public static void KinematicRigidPolygon_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void KinematicPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -1295,7 +1295,7 @@ public static class Detection
         }        
     }
 
-    public static void KinematicPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidPolygon_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1320,7 +1320,7 @@ public static class Detection
         }
     }
 
-    public static void KinematicPolygonRigidBody_To_TriggerCapsuleCollider()
+    public static void KinematicRigidPolygon_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     } 
@@ -1337,7 +1337,7 @@ public static class Detection
 
 
 
-    public static void KinematicCircleRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_KinematicRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -1360,12 +1360,12 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_KinematicCapsuleRigidBody()
+    public static void KinematicRigidCircle_To_KinematicRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_TriggerRigidPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1390,7 +1390,7 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_TriggerRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -1413,12 +1413,12 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerCapsuleRigidBody()
+    public static void KinematicRigidCircle_To_TriggerRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void KinematicCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_DynamicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -1446,14 +1446,14 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void KinematicCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_DynamicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -1478,19 +1478,19 @@ public static class Detection
             if (collided)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void KinematicCircleRigidBody_To_SolidCapsuleCollider()
+    public static void KinematicRigidCircle_To_DynamicColliderCapsule()
     {
         throw new NotImplementedException();        
     }
 
-    public static void KinematicCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1515,7 +1515,7 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -1538,12 +1538,12 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_KinematicCapsuleCollider()
+    public static void KinematicRigidCircle_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1568,7 +1568,7 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicRigidCircle_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -1591,7 +1591,7 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleRigidBody_To_TriggerCapsuleCollider()
+    public static void KinematicRigidCircle_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -1607,7 +1607,7 @@ public static class Detection
 
 
 
-    public static void TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidPolygon_To_TriggerRigidPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -1630,7 +1630,7 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidPolygon_To_TriggerRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1655,12 +1655,12 @@ public static class Detection
         }
     }
 
-    public static void TriggerCapsuleRigidBody()
+    public static void TriggerRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void TriggerPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidPolygon_To_DynamicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -1683,7 +1683,7 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonRigidBody_To_SolidCircleCollider (OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidPolygon_To_DynamicColliderCircle (OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1708,12 +1708,12 @@ public static class Detection
         }
     }
 
-    public static void TriggerPolygonRigidBody_To_SolidCapsuleCollider()
+    public static void TriggerRigidPolygon_To_DynamicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void TriggerPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidPolygon_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -1736,7 +1736,7 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidPolygon_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1761,12 +1761,12 @@ public static class Detection
         }
     }
 
-    public static void TriggerPolygonRigidBody_To_KinematicCapsuleCollider()
+    public static void TriggerRigidPolygon_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void TriggerPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidPolygon_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -1789,7 +1789,7 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidPolygon_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1814,7 +1814,7 @@ public static class Detection
         }
     }
 
-    public static void TriggerPolygonRigidBody_To_TriggerCapsuleCollider()
+    public static void TriggerRigidPolygon_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -1831,7 +1831,7 @@ public static class Detection
 
 
 
-    public static void TriggerCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidCircle_To_TriggerRigidCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -1854,12 +1854,12 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_TriggerCapsuleRigidBody()
+    public static void TriggerRigidCircle_To_TriggerRigidCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void TriggerCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidCircle_To_DynamicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1884,7 +1884,7 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidCircle_To_DynamicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -1907,12 +1907,12 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_SolidCapsuleCollider()
+    public static void TriggerRigidCircle_To_DynamicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void TriggerCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidCircle_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1937,7 +1937,7 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidCircle_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -1960,12 +1960,12 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_KinematicCapsuleCollider()
+    public static void TriggerRigidCircle_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void TriggerCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidCircle_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -1990,7 +1990,7 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerRigidCircle_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -2013,7 +2013,7 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleRigidBody_To_TriggerCapsuleCollider()
+    public static void TriggerRigidCircle_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -2023,7 +2023,7 @@ public static class Detection
 
     /******************
     
-        Solid Polygon Collider.
+        Dynamic Polygon Collider.
     
     *******************/
 
@@ -2031,7 +2031,7 @@ public static class Detection
 
 
 
-    public static void SolidPolygonCollider_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderPolygon_To_DynamicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -2057,14 +2057,14 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }
     }
 
-    public static void SolidPolygonCollider_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderPolygon_To_DynamicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -2092,19 +2092,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }
     }
 
-    public static void SolidPolygonCollider_To_SolidCapsuleCollider()
+    public static void DynamicColliderPolygon_To_DynamicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderPolygon_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -2130,14 +2130,14 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void SolidPolygonCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderPolygon_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -2165,19 +2165,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void SolidPolygonCollider_To_KinematicCapsuleCollider()
+    public static void DynamicColliderPolygon_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderPolygon_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -2200,7 +2200,7 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderPolygon_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -2225,7 +2225,7 @@ public static class Detection
         }
     }
 
-    public static void SolidPolygonCollider_To_TriggerCapsuleCollider()
+    public static void DynamicColliderPolygon_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -2235,14 +2235,14 @@ public static class Detection
 
     /******************
     
-        Solid Circle Collider
+        Dynamic Circle Collider
     
     *******************/
 
 
 
 
-    public static void SolidCircleCollider_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderCircle_To_DynamicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -2268,19 +2268,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
-                    CollisionResolutionCategory.Solid
+                    CollisionResolutionCategory.Dynamic,
+                    CollisionResolutionCategory.Dynamic
                 );
             }
         }        
     }
 
-    public static void SolidCircleCollider_To_SolidCapsuleCollider()
+    public static void DynamicColliderCircle_To_DynamicColliderCapsule()
     {
         throw new NotImplementedException(); 
     }
 
-    public static void SolidCircleCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderCircle_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -2308,14 +2308,14 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.BToA, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }
     }
 
-    public static void SolidCircleCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderCircle_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
@@ -2341,19 +2341,19 @@ public static class Detection
             if (collided == true)
             {
                 CategorisedOverlapArray.Append(collisionIndices.AToB, colliderCollisionsToResolve, 
-                    CollisionResolutionCategory.Solid,
+                    CollisionResolutionCategory.Dynamic,
                     CollisionResolutionCategory.Kinematic
                 );
             }
         }        
     }
 
-    public static void SolidCircleCollider_To_KinematicCapsuleCollider()
+    public static void DynamicColliderCircle_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void SolidCircleCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderCircle_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -2378,7 +2378,7 @@ public static class Detection
         }
     }
 
-    public static void SolidCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void DynamicColliderCircle_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -2401,7 +2401,7 @@ public static class Detection
         }        
     }
 
-    public static void SolidCircleCollider_To_TriggerCapsuleCollider()
+    public static void DynamicColliderCircle_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -2412,7 +2412,7 @@ public static class Detection
     
     *******************/
 
-    public static void KinematicPolygonCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicColliderPolygon_To_KinematicColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -2435,7 +2435,7 @@ public static class Detection
         }        
     }
 
-    public static void KinematicPolygonCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicColliderPolygon_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -2460,12 +2460,12 @@ public static class Detection
         }
     }
 
-    public static void KinematicPolygonCollider_To_KinematicCapsuleCollider()
+    public static void KinematicColliderPolygon_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void KinematicPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicColliderPolygon_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -2488,7 +2488,7 @@ public static class Detection
         }        
     }
 
-    public static void KinematicPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicColliderPolygon_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -2513,7 +2513,7 @@ public static class Detection
         }
     }
 
-    public static void KinematicPolygonCollider_To_TriggerCapsuleCollider()
+    public static void KinematicColliderPolygon_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -2530,7 +2530,7 @@ public static class Detection
 
 
 
-    public static void KinematicCircleCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicColliderCircle_To_KinematicColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -2553,12 +2553,12 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleCollider_To_KinematicCapsuleCollider()
+    public static void KinematicColliderCircle_To_KinematicColliderCapsule()
     {
         throw new NotImplementedException();
     }
 
-    public static void KinematicCircleCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicColliderCircle_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -2583,7 +2583,7 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void KinematicColliderCircle_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -2606,7 +2606,7 @@ public static class Detection
         }
     }
 
-    public static void KinematicCircleCollider_To_TriggerCapsuleCollider()
+    public static void KinematicColliderCircle_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -2623,7 +2623,7 @@ public static class Detection
 
 
 
-    public static void TriggerPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerColliderPolygon_To_TriggerColliderPolygon(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
@@ -2646,7 +2646,7 @@ public static class Detection
         }        
     }
 
-    public static void TriggerPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerColliderPolygon_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
@@ -2671,7 +2671,7 @@ public static class Detection
         }
     }
 
-    public static void TriggerPolygonCollider_To_TriggerCapsuleCollider()
+    public static void TriggerColliderPolygon_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();
     }
@@ -2688,7 +2688,7 @@ public static class Detection
 
 
 
-    public static void TriggerCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
+    public static void TriggerColliderCircle_To_TriggerColliderCircle(OverlapInfo info, Span<int> bvhIndices, 
         CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
@@ -2711,7 +2711,7 @@ public static class Detection
         }
     }
 
-    public static void TriggerCircleCollider_To_TriggerCapsuleCollider()
+    public static void TriggerColliderCircle_To_TriggerColliderCapsule()
     {
         throw new NotImplementedException();        
     }

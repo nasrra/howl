@@ -4,24 +4,10 @@ namespace Howl.Physics;
 
 public class CollisionCallbacks<T> where T : allows ref struct
 {
-    /// <summary>
-    ///     The <c>OnEnter</c> callbacks for a physics body.
-    /// </summary>
     public StackArray<CollisionCallback<T>>[] OnEnterCallbacks;
-
-    /// <summary>
-    ///     The <c>OnSustain</c> callbacks for a physics body.
-    /// </summary>
     public StackArray<CollisionCallback<T>>[] OnSustainCallbacks;
-
-    /// <summary>
-    ///     The <c>OnExitCallbacks</c> for a physics body.
-    /// </summary>
     public StackArray<CollisionCallback<T>>[] OnExitCallbacks;
 
-    /// <summary>
-    ///     Creates a new collision callback
-    /// </summary>
     /// <param name="maxPhysicsBodyCount">the maximum amount of physics bodies.</param>
     /// <param name="maxCallbacks">the maximum amount of callbacks that a physics body can have.</param>
     public CollisionCallbacks(int maxPhysicsBodyCount, int maxCallbacks)
@@ -61,7 +47,7 @@ public static class CollisionCallbacks
     }
 
     /// <summary>
-    ///     Clears a stack of <c>OnEnter</c> callbacks at a given index.
+    ///     Clears a stack of <c>OnEnter</c> callbacks stored at a given index.
     /// </summary>
     /// <param name="callbacks">the callback collection that contains the stack to clear.</param>
     /// <param name="index">the index of the stack to clear.</param>
@@ -82,7 +68,7 @@ public static class CollisionCallbacks
     }
 
     /// <summary>
-    ///     Clears a stack of <c>OnSustain</c> callbacks at a given index.
+    ///     Clears a stack of <c>OnSustain</c> callbacks stored at a given index.
     /// </summary>
     /// <param name="callbacks">the callback collection that contains the stack to clear.</param>
     /// <param name="index">the index of the stack to clear.</param>
@@ -103,7 +89,7 @@ public static class CollisionCallbacks
     }
 
     /// <summary>
-    ///     Clears a stack of <c>OnExit</c> callbacks at a given index.
+    ///     Clears a stack of <c>OnExit</c> callbacks stored at a given index.
     /// </summary>
     /// <param name="callbacks">the callback collection that contains the stack to clear.</param>
     /// <param name="index">the index of the stack to clear.</param>
