@@ -296,7 +296,7 @@ public static class PhysicsNew
         public Soa_Vector2 LinearVelocities;
 
         /// <summary>
-        ///     The centroids of all shapes.
+        ///     The centroids of all shapes; in global-space.
         /// </summary>
         /// <remarks>
         ///    <para>Remarks:</para>
@@ -305,13 +305,13 @@ public static class PhysicsNew
         public Soa_Vector2 Centroids;
 
         /// <summary>
-        ///     The center of masses of all bodies.
+        ///     The center of masses of all bodies; relative to their global position.
         /// </summary>
         /// <remarks>
         ///    <para>Remarks:</para>
         ///    <para>Elements are accessed via <c>entityIndex</c>.</para>
         /// </remarks>
-        public Soa_Vector2 CenterOfMasses;
+        public Soa_Vector2 LocalCentersOfMass;
 
         /// <summary>
         ///     The Axis Aligned Bounding Boxes of all shapes.
@@ -657,7 +657,7 @@ public static class PhysicsNew
                 Active = new bool[maxEntities];
                 ShapeCollisionDisplacements = new(maxEntities);
                 GravityAffected = new bool[maxEntities];
-                CenterOfMasses = new(maxEntities);
+                LocalCentersOfMass = new(maxEntities);
             }
 
             {   // Utility.
@@ -938,6 +938,7 @@ public static class PhysicsNew
         float[] globalScalesY = globalTransforms.Scales.Y;
         float[] globalCosines = globalTransforms.Cosines;
         float[] globalSines = globalTransforms.Sines;
+        float[] globalRotationRadians = globalTransforms.RotationRadians;
         float[] masses = state.Masses;
         float[] inverseMasses = state.InverseMasses;
         float[] rotationalInertia = state.RotationalInertia;
@@ -960,8 +961,10 @@ public static class PhysicsNew
         float[] forcesX = state.Forces.X;
         float[] forcesY = state.Forces.Y;
         float[] angularVelocities = state.AngularVelocities;
-        float[] displacementsX = state.ShapeCollisionDisplacements.X;
-        float[] displacementsY = state.ShapeCollisionDisplacements.Y;
+        float[] collisionDisplacementsX = state.ShapeCollisionDisplacements.X;
+        float[] collisionDisplacementsY = state.ShapeCollisionDisplacements.Y;
+        float[] localCentersOfMassX = state.LocalCentersOfMass.X;
+        float[] localCentersOfMassY = state.LocalCentersOfMass.Y;
         float gravity = state.Gravity;
         float gravityDirectionX = state.GravityDirection.X;
         float gravityDirectionY = state.GravityDirection.Y;
@@ -984,17 +987,6 @@ public static class PhysicsNew
         // scale delta time by the substeps.
         deltaTime /= (float)subSteps;
         
-        {   // Integrate Body Properties.
-            
-            state.IntegrateBodyPropertiesStopwatch.Restart();
-
-            IntegrateBodyProperties(activeBodies, nodes, globalScalesX, globalScalesY, masses, inverseMasses, rotationalInertia, inverseRotationalInertia, 
-                densities, baseRadii, worldRadii, baseWidths, baseHeights, shapes, categories
-            );
-
-            state.IntegrateBodyPropertiesStopwatch.Stop();
-        }
-
         {   // Prepare Substep Collisions
             
             CollisionManifold.PrepareForNextStep(collisions);
@@ -1022,21 +1014,21 @@ public static class PhysicsNew
             {                
             
                 CategorisedLeafOverlaps.ClearCounts(overlaps);
-                overlaps.CategoryLengths[PhysicsBody.Category.SolidCircleCollider]       = state.SolidCircleColliderCount;
-                overlaps.CategoryLengths[PhysicsBody.Category.TriggerCircleCollider]     = state.TriggerCircleColliderCount;
-                overlaps.CategoryLengths[PhysicsBody.Category.KinematicCircleCollider]   = state.KinematicCircleColliderCount;
+                overlaps.CategoryLengths[Shape.Category.SolidCircleCollider]       = state.SolidCircleColliderCount;
+                overlaps.CategoryLengths[Shape.Category.TriggerCircleCollider]     = state.TriggerCircleColliderCount;
+                overlaps.CategoryLengths[Shape.Category.KinematicCircleCollider]   = state.KinematicCircleColliderCount;
                 
-                overlaps.CategoryLengths[PhysicsBody.Category.SolidCircleRigidBody]      = state.SolidCircleRigidBodyCount;
-                overlaps.CategoryLengths[PhysicsBody.Category.TriggerCircleRigidBody]    = state.TriggerCircleRigidBodyCount;
-                overlaps.CategoryLengths[PhysicsBody.Category.KinematicCircleRigidBody]  = state.KinematicCircleRigidBodyCount;
+                overlaps.CategoryLengths[Shape.Category.SolidCircleRigidBody]      = state.SolidCircleRigidBodyCount;
+                overlaps.CategoryLengths[Shape.Category.TriggerCircleRigidBody]    = state.TriggerCircleRigidBodyCount;
+                overlaps.CategoryLengths[Shape.Category.KinematicCircleRigidBody]  = state.KinematicCircleRigidBodyCount;
 
-                overlaps.CategoryLengths[PhysicsBody.Category.SolidPolygonCollider]      = state.SolidPolygonColliderCount;
-                overlaps.CategoryLengths[PhysicsBody.Category.TriggerPolygonCollider]    = state.TriggerPolygonColliderCount;
-                overlaps.CategoryLengths[PhysicsBody.Category.KinematicPolygonCollider]  = state.KinematicPolygonColliderCount;
+                overlaps.CategoryLengths[Shape.Category.SolidPolygonCollider]      = state.SolidPolygonColliderCount;
+                overlaps.CategoryLengths[Shape.Category.TriggerPolygonCollider]    = state.TriggerPolygonColliderCount;
+                overlaps.CategoryLengths[Shape.Category.KinematicPolygonCollider]  = state.KinematicPolygonColliderCount;
                 
-                overlaps.CategoryLengths[PhysicsBody.Category.SolidPolygonRigidBody]     = state.SolidPolygonRigidBodyCount;
-                overlaps.CategoryLengths[PhysicsBody.Category.TriggerPolygonRigidBody]   = state.TriggerPolygonRigidBodyCount;
-                overlaps.CategoryLengths[PhysicsBody.Category.KinematicPolygonRigidBody] = state.KinematicPolygonRigidBodyCount;
+                overlaps.CategoryLengths[Shape.Category.SolidPolygonRigidBody]     = state.SolidPolygonRigidBodyCount;
+                overlaps.CategoryLengths[Shape.Category.TriggerPolygonRigidBody]   = state.TriggerPolygonRigidBodyCount;
+                overlaps.CategoryLengths[Shape.Category.KinematicPolygonRigidBody] = state.KinematicPolygonRigidBodyCount;
                 
                 CategorisedLeafOverlaps.BuildChunks(overlaps);
             }
@@ -1058,106 +1050,106 @@ public static class PhysicsNew
         // == retrieve overlap info.
 
         // solid polygon rigidbody.        
-        OverlapInfo overlaps_SolPolRig_To_SolPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.SolidPolygonRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_SolCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.SolidCircleRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.KinematicPolygonRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.KinematicCircleRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.TriggerPolygonRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.TriggerCircleRigidBody);
-        OverlapInfo overlaps_SolPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.SolidPolygonCollider);
-        OverlapInfo overlaps_SolPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.SolidCircleCollider);
-        OverlapInfo overlaps_SolPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_SolPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_SolPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_SolPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonRigidBody, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_SolPolRig_To_SolPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.SolidPolygonRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_SolCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.SolidCircleRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.KinematicPolygonRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.KinematicCircleRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.TriggerPolygonRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.TriggerCircleRigidBody);
+        OverlapInfo overlaps_SolPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.SolidPolygonCollider);
+        OverlapInfo overlaps_SolPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.SolidCircleCollider);
+        OverlapInfo overlaps_SolPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_SolPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_SolPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_SolPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonRigidBody, Shape.Category.TriggerCircleCollider);
         
         // solid circle rigid body.
-        OverlapInfo overlaps_SolCirRig_To_SolCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.SolidCircleRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.KinematicPolygonRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.KinematicCircleRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.TriggerPolygonRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.TriggerCircleRigidBody);
-        OverlapInfo overlaps_SolCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.SolidPolygonCollider);
-        OverlapInfo overlaps_SolCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.SolidCircleCollider);
-        OverlapInfo overlaps_SolCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_SolCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_SolCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_SolCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleRigidBody, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_SolCirRig_To_SolCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.SolidCircleRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.KinematicPolygonRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.KinematicCircleRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.TriggerPolygonRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.TriggerCircleRigidBody);
+        OverlapInfo overlaps_SolCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.SolidPolygonCollider);
+        OverlapInfo overlaps_SolCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.SolidCircleCollider);
+        OverlapInfo overlaps_SolCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_SolCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_SolCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_SolCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleRigidBody, Shape.Category.TriggerCircleCollider);
 
         // kinematic polygon rigid body.
-        OverlapInfo overlaps_KinPolRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.KinematicPolygonRigidBody);
-        OverlapInfo overlaps_KinPolRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.KinematicCircleRigidBody);
-        OverlapInfo overlaps_KinPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.TriggerPolygonRigidBody);
-        OverlapInfo overlaps_KinPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.TriggerCircleRigidBody);
-        OverlapInfo overlaps_KinPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.SolidPolygonCollider);
-        OverlapInfo overlaps_KinPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.SolidCircleCollider);
-        OverlapInfo overlaps_KinPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_KinPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_KinPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_KinPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonRigidBody, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_KinPolRig_To_KinPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.KinematicPolygonRigidBody);
+        OverlapInfo overlaps_KinPolRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.KinematicCircleRigidBody);
+        OverlapInfo overlaps_KinPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.TriggerPolygonRigidBody);
+        OverlapInfo overlaps_KinPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.TriggerCircleRigidBody);
+        OverlapInfo overlaps_KinPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.SolidPolygonCollider);
+        OverlapInfo overlaps_KinPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.SolidCircleCollider);
+        OverlapInfo overlaps_KinPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_KinPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_KinPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_KinPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonRigidBody, Shape.Category.TriggerCircleCollider);
         
         // kinematic circle rigid body.
-        OverlapInfo overlaps_KinCirRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.KinematicCircleRigidBody);
-        OverlapInfo overlaps_KinCirRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.TriggerPolygonRigidBody);
-        OverlapInfo overlaps_KinCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.TriggerCircleRigidBody);
-        OverlapInfo overlaps_KinCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.SolidPolygonCollider);
-        OverlapInfo overlaps_KinCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.SolidCircleCollider);
-        OverlapInfo overlaps_KinCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_KinCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_KinCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_KinCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleRigidBody, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_KinCirRig_To_KinCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.KinematicCircleRigidBody);
+        OverlapInfo overlaps_KinCirRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.TriggerPolygonRigidBody);
+        OverlapInfo overlaps_KinCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.TriggerCircleRigidBody);
+        OverlapInfo overlaps_KinCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.SolidPolygonCollider);
+        OverlapInfo overlaps_KinCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.SolidCircleCollider);
+        OverlapInfo overlaps_KinCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_KinCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_KinCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_KinCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleRigidBody, Shape.Category.TriggerCircleCollider);
         
         // trigger polygon rigid body.
-        OverlapInfo overlaps_TriPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonRigidBody, PhysicsBody.Category.TriggerPolygonRigidBody);    
-        OverlapInfo overlaps_TriPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonRigidBody, PhysicsBody.Category.TriggerCircleRigidBody);
-        OverlapInfo overlaps_TriPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonRigidBody, PhysicsBody.Category.SolidPolygonCollider);
-        OverlapInfo overlaps_TriPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonRigidBody, PhysicsBody.Category.SolidCircleCollider);
-        OverlapInfo overlaps_TriPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonRigidBody, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_TriPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonRigidBody, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_TriPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonRigidBody, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_TriPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonRigidBody, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_TriPolRig_To_TriPolRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonRigidBody, Shape.Category.TriggerPolygonRigidBody);    
+        OverlapInfo overlaps_TriPolRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonRigidBody, Shape.Category.TriggerCircleRigidBody);
+        OverlapInfo overlaps_TriPolRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonRigidBody, Shape.Category.SolidPolygonCollider);
+        OverlapInfo overlaps_TriPolRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonRigidBody, Shape.Category.SolidCircleCollider);
+        OverlapInfo overlaps_TriPolRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonRigidBody, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_TriPolRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonRigidBody, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_TriPolRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonRigidBody, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_TriPolRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonRigidBody, Shape.Category.TriggerCircleCollider);
         
         // trigger circle rigidbody.
-        OverlapInfo overlaps_TriCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerCircleRigidBody, PhysicsBody.Category.TriggerCircleRigidBody);
-        OverlapInfo overlaps_TriCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerCircleRigidBody, PhysicsBody.Category.SolidPolygonCollider);
-        OverlapInfo overlaps_TriCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerCircleRigidBody, PhysicsBody.Category.SolidCircleCollider);
-        OverlapInfo overlaps_TriCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerCircleRigidBody, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_TriCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerCircleRigidBody, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_TriCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerCircleRigidBody, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_TriCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerCircleRigidBody, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_TriCirRig_To_TriCirRig = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerCircleRigidBody, Shape.Category.TriggerCircleRigidBody);
+        OverlapInfo overlaps_TriCirRig_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerCircleRigidBody, Shape.Category.SolidPolygonCollider);
+        OverlapInfo overlaps_TriCirRig_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerCircleRigidBody, Shape.Category.SolidCircleCollider);
+        OverlapInfo overlaps_TriCirRig_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerCircleRigidBody, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_TriCirRig_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerCircleRigidBody, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_TriCirRig_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerCircleRigidBody, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_TriCirRig_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerCircleRigidBody, Shape.Category.TriggerCircleCollider);
         
         // solid polygon collider.
-        OverlapInfo overlaps_SolPolCol_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonCollider, PhysicsBody.Category.SolidPolygonCollider);
-        OverlapInfo overlaps_SolPolCol_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonCollider, PhysicsBody.Category.SolidCircleCollider);
-        OverlapInfo overlaps_SolPolCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonCollider, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_SolPolCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonCollider, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_SolPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonCollider, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_SolPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidPolygonCollider, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_SolPolCol_To_SolPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonCollider, Shape.Category.SolidPolygonCollider);
+        OverlapInfo overlaps_SolPolCol_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonCollider, Shape.Category.SolidCircleCollider);
+        OverlapInfo overlaps_SolPolCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonCollider, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_SolPolCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonCollider, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_SolPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonCollider, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_SolPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidPolygonCollider, Shape.Category.TriggerCircleCollider);
         
         // solid circle collider.
-        OverlapInfo overlaps_SolCirCol_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleCollider, PhysicsBody.Category.SolidCircleCollider);
-        OverlapInfo overlaps_SolCirCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleCollider, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_SolCirCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleCollider, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_SolCirCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleCollider, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_SolCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.SolidCircleCollider, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_SolCirCol_To_SolCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleCollider, Shape.Category.SolidCircleCollider);
+        OverlapInfo overlaps_SolCirCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleCollider, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_SolCirCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleCollider, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_SolCirCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleCollider, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_SolCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.SolidCircleCollider, Shape.Category.TriggerCircleCollider);
         
         // kinematic polygon collider.
-        OverlapInfo overlaps_KinPolCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonCollider, PhysicsBody.Category.KinematicPolygonCollider);
-        OverlapInfo overlaps_KinPolCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonCollider, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_KinPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonCollider, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_KinPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicPolygonCollider, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_KinPolCol_To_KinPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonCollider, Shape.Category.KinematicPolygonCollider);
+        OverlapInfo overlaps_KinPolCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonCollider, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_KinPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonCollider, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_KinPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicPolygonCollider, Shape.Category.TriggerCircleCollider);
         
         // kinematic circle collider.
-        OverlapInfo overlaps_KinCirCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleCollider, PhysicsBody.Category.KinematicCircleCollider);
-        OverlapInfo overlaps_KinCirCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleCollider, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_KinCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.KinematicCircleCollider, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_KinCirCol_To_KinCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleCollider, Shape.Category.KinematicCircleCollider);
+        OverlapInfo overlaps_KinCirCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleCollider, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_KinCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinematicCircleCollider, Shape.Category.TriggerCircleCollider);
         
         // trigger polygon collider.
-        OverlapInfo overlaps_TriPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonCollider, PhysicsBody.Category.TriggerPolygonCollider);
-        OverlapInfo overlaps_TriPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerPolygonCollider, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_TriPolCol_To_TriPolCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonCollider, Shape.Category.TriggerPolygonCollider);
+        OverlapInfo overlaps_TriPolCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerPolygonCollider, Shape.Category.TriggerCircleCollider);
         
         // trigger circle collider.
-        OverlapInfo overlaps_TriCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, PhysicsBody.Category.TriggerCircleCollider, PhysicsBody.Category.TriggerCircleCollider);
+        OverlapInfo overlaps_TriCirCol_To_TriCirCol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriggerCircleCollider, Shape.Category.TriggerCircleCollider);
 
         for(int i = 0; i < subSteps; i++)
         {
@@ -1170,14 +1162,15 @@ public static class PhysicsNew
             // RigidBody Movement Step.
             state.RigidBodyMovementStepStopwatch.Restart();
             BodyMovementStep(activeBodies, nodes, localTransforms, globalTransforms, linearVelocitiesX, linearVelocitiesY, 
-                forcesX, forcesY, masses, angularVelocities, displacementsX, displacementsY, categories, gravityAffected, gravityDirectionX, 
-                gravityDirectionY, gravity, deltaTime, MovementStepConfig.Full
+                forcesX, forcesY, masses, angularVelocities, collisionDisplacementsX, collisionDisplacementsY, localCentersOfMassX, localCentersOfMassY, 
+                globalRotationRadians, categories, gravityAffected, gravityDirectionX, gravityDirectionY, gravity, deltaTime, 
+                MovementStepConfig.Full
             );
             state.RigidBodyMovementStepStopwatch.Stop();
 
             // transform physics bodies
             state.TransformPhysicsBodiesStopwatch.Restart();
-            TransformShapeVertices(activeBodies, nodes, worldVertices, localVertices, shapes, globalScalesX, globalScalesY, 
+            TransformAllShapesVertices(activeBodies, nodes, worldVertices, localVertices, shapes, globalScalesX, globalScalesY, 
                 globalPositionsX, globalPositionsY, globalSines, globalCosines, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, 
                 centroidsX, centroidsY, baseRadii, worldRadii
             );
@@ -1187,95 +1180,95 @@ public static class PhysicsNew
             // Find collisions.
             state.FindCollisionsStopwatch.Restart();
                         
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonRigidBody(    overlaps_SolPolRig_To_SolPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_SolidCircleRigidBody(     overlaps_SolPolRig_To_SolCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonRigidBody(overlaps_SolPolRig_To_KinPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_KinematicCircleRigidBody( overlaps_SolPolRig_To_KinCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_SolPolRig_To_TriPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_SolPolRig_To_TriCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonCollider(     overlaps_SolPolRig_To_SolPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_SolidCircleCollider(      overlaps_SolPolRig_To_SolCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonCollider( overlaps_SolPolRig_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_KinematicCircleCollider(  overlaps_SolPolRig_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_SolPolRig_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.SolidPolygonRigidBody_To_TriggerCircleCollider(    overlaps_SolPolRig_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonRigidBody(    overlaps_SolPolRig_To_SolPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_SolidCircleRigidBody(     overlaps_SolPolRig_To_SolCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonRigidBody(overlaps_SolPolRig_To_KinPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_KinematicCircleRigidBody( overlaps_SolPolRig_To_KinCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_SolPolRig_To_TriPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_SolPolRig_To_TriCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_SolidPolygonCollider(     overlaps_SolPolRig_To_SolPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_SolidCircleCollider(      overlaps_SolPolRig_To_SolCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_KinematicPolygonCollider( overlaps_SolPolRig_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_KinematicCircleCollider(  overlaps_SolPolRig_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_SolPolRig_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.SolidPolygonRigidBody_To_TriggerCircleCollider(    overlaps_SolPolRig_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
 
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_SolidCircleRigidBody(      overlaps_SolCirRig_To_SolCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_KinematicPolygonRigidBody( overlaps_SolCirRig_To_KinPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_KinematicCircleRigidBody(  overlaps_SolCirRig_To_KinCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_TriggerPolygonRigidBody(   overlaps_SolCirRig_To_TriPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_SolCirRig_To_TriCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_SolidPolygonCollider(      overlaps_SolCirRig_To_SolPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_SolidCircleCollider(       overlaps_SolCirRig_To_SolCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_KinematicPolygonCollider(  overlaps_SolCirRig_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_KinematicCircleCollider(   overlaps_SolCirRig_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_TriggerPolygonCollider(    overlaps_SolCirRig_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.SolidCircleRigidBody_To_TriggerCircleCollider(     overlaps_SolCirRig_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_SolidCircleRigidBody(      overlaps_SolCirRig_To_SolCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_KinematicPolygonRigidBody( overlaps_SolCirRig_To_KinPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_KinematicCircleRigidBody(  overlaps_SolCirRig_To_KinCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_TriggerPolygonRigidBody(   overlaps_SolCirRig_To_TriPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_SolCirRig_To_TriCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_SolidPolygonCollider(      overlaps_SolCirRig_To_SolPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_SolidCircleCollider(       overlaps_SolCirRig_To_SolCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_KinematicPolygonCollider(  overlaps_SolCirRig_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_KinematicCircleCollider(   overlaps_SolCirRig_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_TriggerPolygonCollider(    overlaps_SolCirRig_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.SolidCircleRigidBody_To_TriggerCircleCollider(     overlaps_SolCirRig_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
 
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(overlaps_KinPolRig_To_KinPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);            
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_KinematicCircleRigidBody( overlaps_KinPolRig_To_KinCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_KinPolRig_To_TriPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_KinPolRig_To_TriCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_SolidPolygonCollider(     overlaps_KinPolRig_To_SolPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_SolidCircleCollider(      overlaps_KinPolRig_To_SolCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_KinematicPolygonCollider( overlaps_KinPolRig_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_KinematicCircleCollider(  overlaps_KinPolRig_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_KinPolRig_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_TriggerCircleCollider(    overlaps_KinPolRig_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(overlaps_KinPolRig_To_KinPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);            
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_KinematicCircleRigidBody( overlaps_KinPolRig_To_KinCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_KinPolRig_To_TriPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_KinPolRig_To_TriCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_SolidPolygonCollider(     overlaps_KinPolRig_To_SolPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_SolidCircleCollider(      overlaps_KinPolRig_To_SolCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_KinematicPolygonCollider( overlaps_KinPolRig_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_KinematicCircleCollider(  overlaps_KinPolRig_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_KinPolRig_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.KinematicPolygonRigidBody_To_TriggerCircleCollider(    overlaps_KinPolRig_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
 
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_KinematicCircleRigidBody(  overlaps_KinCirRig_To_KinCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_TriggerPolygonRigidBody(   overlaps_KinCirRig_To_TriPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_KinCirRig_To_TriCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_SolidPolygonCollider(      overlaps_KinCirRig_To_SolPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_SolidCircleCollider(       overlaps_KinCirRig_To_SolCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_KinematicPolygonCollider(  overlaps_KinCirRig_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_KinematicCircleCollider(   overlaps_KinCirRig_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_TriggerPolygonCollider(    overlaps_KinCirRig_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.KinematicCircleRigidBody_To_TriggerCircleCollider(     overlaps_KinCirRig_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_KinematicCircleRigidBody(  overlaps_KinCirRig_To_KinCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_TriggerPolygonRigidBody(   overlaps_KinCirRig_To_TriPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_KinCirRig_To_TriCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_SolidPolygonCollider(      overlaps_KinCirRig_To_SolPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_SolidCircleCollider(       overlaps_KinCirRig_To_SolCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_KinematicPolygonCollider(  overlaps_KinCirRig_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_KinematicCircleCollider(   overlaps_KinCirRig_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_TriggerPolygonCollider(    overlaps_KinCirRig_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleRigidBody_To_TriggerCircleCollider(     overlaps_KinCirRig_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
         
-            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_TriPolRig_To_TriPolRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_TriPolRig_To_TriCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_SolidPolygonCollider(     overlaps_TriPolRig_To_SolPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_SolidCircleCollider(      overlaps_TriPolRig_To_SolCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_KinematicPolygonCollider( overlaps_TriPolRig_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_KinematicCircleCollider(  overlaps_TriPolRig_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_TriPolRig_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_TriggerCircleCollider(    overlaps_TriPolRig_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(  overlaps_TriPolRig_To_TriPolRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_TriggerCircleRigidBody(   overlaps_TriPolRig_To_TriCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_SolidPolygonCollider(     overlaps_TriPolRig_To_SolPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_SolidCircleCollider(      overlaps_TriPolRig_To_SolCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_KinematicPolygonCollider( overlaps_TriPolRig_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_KinematicCircleCollider(  overlaps_TriPolRig_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_TriggerPolygonCollider(   overlaps_TriPolRig_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.TriggerPolygonRigidBody_To_TriggerCircleCollider(    overlaps_TriPolRig_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
 
-            Physics.Collisions.Detection.TriggerCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_TriCirRig_To_TriCirRig, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
-            Physics.Collisions.Detection.TriggerCircleRigidBody_To_SolidPolygonCollider(      overlaps_TriCirRig_To_SolPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.TriggerCircleRigidBody_To_SolidCircleCollider(       overlaps_TriCirRig_To_SolCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
-            Physics.Collisions.Detection.TriggerCircleRigidBody_To_KinematicPolygonCollider(  overlaps_TriCirRig_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.TriggerCircleRigidBody_To_KinematicCircleCollider(   overlaps_TriCirRig_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
-            Physics.Collisions.Detection.TriggerCircleRigidBody_To_TriggerPolygonCollider(    overlaps_TriCirRig_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.TriggerCircleRigidBody_To_TriggerCircleCollider(     overlaps_TriCirRig_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.TriggerCircleRigidBody_To_TriggerCircleRigidBody(    overlaps_TriCirRig_To_TriCirRig, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.TriggerCircleRigidBody_To_SolidPolygonCollider(      overlaps_TriCirRig_To_SolPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.TriggerCircleRigidBody_To_SolidCircleCollider(       overlaps_TriCirRig_To_SolCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.TriggerCircleRigidBody_To_KinematicPolygonCollider(  overlaps_TriCirRig_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.TriggerCircleRigidBody_To_KinematicCircleCollider(   overlaps_TriCirRig_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.TriggerCircleRigidBody_To_TriggerPolygonCollider(    overlaps_TriCirRig_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.TriggerCircleRigidBody_To_TriggerCircleCollider(     overlaps_TriCirRig_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
 
-            Physics.Collisions.Detection.SolidPolygonCollider_To_SolidPolygonCollider(     overlaps_SolPolCol_To_SolPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonCollider_To_SolidCircleCollider(      overlaps_SolPolCol_To_SolCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonCollider_To_KinematicPolygonCollider( overlaps_SolPolCol_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonCollider_To_KinematicCircleCollider(  overlaps_SolPolCol_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidPolygonCollider_To_TriggerPolygonCollider(   overlaps_SolPolCol_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.SolidPolygonCollider_To_TriggerCircleCollider(    overlaps_SolPolCol_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.SolidPolygonCollider_To_SolidPolygonCollider(     overlaps_SolPolCol_To_SolPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonCollider_To_SolidCircleCollider(      overlaps_SolPolCol_To_SolCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonCollider_To_KinematicPolygonCollider( overlaps_SolPolCol_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonCollider_To_KinematicCircleCollider(  overlaps_SolPolCol_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidPolygonCollider_To_TriggerPolygonCollider(   overlaps_SolPolCol_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.SolidPolygonCollider_To_TriggerCircleCollider(    overlaps_SolPolCol_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
 
-            Physics.Collisions.Detection.SolidCircleCollider_To_SolidCircleCollider(       overlaps_SolCirCol_To_SolCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleCollider_To_KinematicPolygonCollider(  overlaps_SolCirCol_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleCollider_To_KinematicCircleCollider(   overlaps_SolCirCol_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
-            Physics.Collisions.Detection.SolidCircleCollider_To_TriggerPolygonCollider(    overlaps_SolCirCol_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.SolidCircleCollider_To_TriggerCircleCollider(     overlaps_SolCirCol_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.SolidCircleCollider_To_SolidCircleCollider(       overlaps_SolCirCol_To_SolCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleCollider_To_KinematicPolygonCollider(  overlaps_SolCirCol_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleCollider_To_KinematicCircleCollider(   overlaps_SolCirCol_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii, shapeCollisionsToResolve);
+            Physics.Collisions.Detection.SolidCircleCollider_To_TriggerPolygonCollider(    overlaps_SolCirCol_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.SolidCircleCollider_To_TriggerCircleCollider(     overlaps_SolCirCol_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
         
-            Physics.Collisions.Detection.KinematicPolygonCollider_To_KinematicPolygonCollider( overlaps_KinPolCol_To_KinPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.KinematicPolygonCollider_To_KinematicCircleCollider(  overlaps_KinPolCol_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.KinematicPolygonCollider_To_TriggerPolygonCollider(   overlaps_KinPolCol_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.KinematicPolygonCollider_To_TriggerCircleCollider(    overlaps_KinPolCol_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicPolygonCollider_To_KinematicPolygonCollider( overlaps_KinPolCol_To_KinPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.KinematicPolygonCollider_To_KinematicCircleCollider(  overlaps_KinPolCol_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicPolygonCollider_To_TriggerPolygonCollider(   overlaps_KinPolCol_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.KinematicPolygonCollider_To_TriggerCircleCollider(    overlaps_KinPolCol_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
         
-            Physics.Collisions.Detection.KinematicCircleCollider_To_KinematicCircleCollider(  overlaps_KinCirCol_To_KinCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
-            Physics.Collisions.Detection.KinematicCircleCollider_To_TriggerPolygonCollider(   overlaps_KinCirCol_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
-            Physics.Collisions.Detection.KinematicCircleCollider_To_TriggerCircleCollider(    overlaps_KinCirCol_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleCollider_To_KinematicCircleCollider(  overlaps_KinCirCol_To_KinCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleCollider_To_TriggerPolygonCollider(   overlaps_KinCirCol_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.KinematicCircleCollider_To_TriggerCircleCollider(    overlaps_KinCirCol_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
 
-            Physics.Collisions.Detection.TriggerPolygonCollider_To_TriggerPolygonCollider(  overlaps_TriPolCol_To_TriPolCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
-            Physics.Collisions.Detection.TriggerPolygonCollider_To_TriggerCircleCollider(   overlaps_TriPolCol_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
+            Physics.Collisions.Detection.TriggerPolygonCollider_To_TriggerPolygonCollider(  overlaps_TriPolCol_To_TriPolCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices);
+            Physics.Collisions.Detection.TriggerPolygonCollider_To_TriggerCircleCollider(   overlaps_TriPolCol_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldVertices, worldRadii);
 
-            Physics.Collisions.Detection.TriggerCircleCollider_To_TriggerCircleCollider(overlaps_TriCirCol_To_TriCirCol, bvhLeafIndices, collisions, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
+            Physics.Collisions.Detection.TriggerCircleCollider_To_TriggerCircleCollider(overlaps_TriCirCol_To_TriCirCol, bvhLeafIndices, collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, worldRadii);
 
             state.FindCollisionsStopwatch.Stop();
 
@@ -1283,18 +1276,21 @@ public static class PhysicsNew
             // NOTE: ordering matters here, make sure to this is above rigidbody collision resolution.
             state.ColliderCollisionResolutionStopwatch.Restart();
             ResolveColliderCollisions(nodes, shapeCollisionsToResolve, collisionDepths, collisionNormalsX, collisionNormalsY, 
-                displacementsX, displacementsY, collisionsStride
+                collisionDisplacementsX, collisionDisplacementsY, collisionsStride
             );
             state.ColliderCollisionResolutionStopwatch.Stop();
 
             // Resolve RigidBody Collisions.
             // NOTE: ordering matters here, make sure this is below collision resolution.
             state.RigidBodyCollisionResolutionStepStopwatch.Restart();
-            ResolveRigidShapeCollisions(rigidShapeCollisionsToResolve, nodes, collisionNormalsX, collisionNormalsY, centroidsX, centroidsY, 
-                collisionFirstContactPointsX, collisionFirstContactPointsY, collisionSecondContactPointsX, collisionSecondContactPointsY, 
-                linearVelocitiesX, linearVelocitiesY, restitutions, kineticFrictions, staticFrictions, angularVelocities, masses, inverseMasses, 
-                inverseRotationalInertia, collisionTwoContactPoints, rotationalResponses, contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, 
-                impulsesX, impulsesY, collisionsStride
+            ResolveRigidShapeCollisions(rigidShapeCollisionsToResolve, nodes,
+                collisionNormalsX, collisionNormalsY, collisionFirstContactPointsX, collisionFirstContactPointsY,
+                globalPositionsX, globalPositionsY, localCentersOfMassX, localCentersOfMassY, 
+                collisionSecondContactPointsX, collisionSecondContactPointsY, linearVelocitiesX, linearVelocitiesY, 
+                restitutions, kineticFrictions, staticFrictions, angularVelocities, masses, inverseMasses, inverseRotationalInertia, 
+                collisionTwoContactPoints, rotationalResponses, contactPointsX, contactPointsY, distsAX, distsAY, 
+                distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, 
+                collisionsStride
             );
             state.RigidBodyCollisionResolutionStepStopwatch.Stop();
 
@@ -1314,7 +1310,7 @@ public static class PhysicsNew
         // sub-step iteration does not transform the bodies
         // at the end of it's loop; meaning the final collision
         // resolution wouldn't be applied.
-        TransformShapeVertices(activeBodies, nodes, worldVertices, localVertices, shapes, globalScalesX, globalScalesY, 
+        TransformAllShapesVertices(activeBodies, nodes, worldVertices, localVertices, shapes, globalScalesX, globalScalesY, 
             globalPositionsX, globalPositionsY, globalSines, globalCosines, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, 
             centroidsX, centroidsY, baseRadii, worldRadii
         );
@@ -1329,8 +1325,9 @@ public static class PhysicsNew
     /// </remarks>
     public static void BodyMovementStep(SwapBackArray<int> activeBodies, IntrusiveList.Node[] nodes, 
         Soa_Transform localTransforms, Soa_Transform globalTransforms, float[] linearVelocitiesX, float[] linearVelocitiesY, 
-        float[] forcesX, float[] forcesY, float[] masses, float[] angularVelocities, float[] collisionDisplacementsX, float[] collisionDisplacementsY, 
-        int[] categories, bool[] gravityAffected, float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime, MovementStepConfig config
+        float[] forcesX, float[] forcesY, float[] masses, float[] angularVelocities, float[] collisionDisplacementsX, 
+        float[] collisionDisplacementsY, float[] localCentersOfMassX, float[] localCentersOfMassY, float[] rotationRadians, int[] categories, 
+        bool[] gravityAffected, float gravityDirectionX, float gravityDirectionY, float gravity, float deltaTime, MovementStepConfig config
     )
     {   
         float gravityLinearForceX = gravityDirectionX * gravity * deltaTime;
@@ -1365,20 +1362,30 @@ public static class PhysicsNew
                 // acceleration = force / mass.
                 if(mass > 0)
                 {
-                    if (forcesX[bodyIndex] > 0)
-                    {
-                        linearVelocityX += forcesX[bodyIndex] / mass * deltaTime;
-                    }
-                    if (forcesY[bodyIndex] > 0)
-                    {
-                        linearVelocityY += forcesY[bodyIndex] / mass * deltaTime;
-                    }
+                    linearVelocityX += forcesX[bodyIndex] / mass * deltaTime;
+                    linearVelocityY += forcesY[bodyIndex] / mass * deltaTime;
                 }
 
-                // move and rotate body.
-                Math.Math.RotorMultiply(bodySine, bodyCosine, angularVelocities[i] * deltaTime, 
+                // get the local center of mass of the body.
+                float localComX = localCentersOfMassX[bodyIndex];
+                float localComY = localCentersOfMassY[bodyIndex];
+
+                // calculate the world position of the center of mass before rotation.
+                float worldComX = bodyPosX + (localComX * bodyCosine - localComY * bodySine);
+                float worldComY = bodyPosY + (localComX * bodySine + localComY * bodyCosine);
+
+                // rotate the body by the anfular velocity.
+                Math.Math.RotorMultiply(bodySine, bodyCosine, angularVelocities[bodyIndex] * deltaTime, 
                     ref bodySine, ref bodyCosine
                 );
+                rotationRadians[bodyIndex] = MathF.Atan2(bodySine, bodyCosine);
+
+                // reverse the calculation using the new rotation values.
+                // keeping the center of mass as the point of rotation rather than the body's global position.
+                bodyPosX = worldComX - (localComX * bodyCosine - localComY * bodySine);
+                bodyPosY = worldComY - (localComX * bodySine + localComY * bodyCosine);
+
+                // apply the linear velocity translation.
                 bodyPosX += linearVelocityX * deltaTime;
                 bodyPosY += linearVelocityY * deltaTime;         
             }
@@ -1423,21 +1430,14 @@ public static class PhysicsNew
     /// <remarks>
     ///     All arrays must be of the same length and elements should be vertivally accessible via <c>physicsBodyIndex</c>. 
     /// </remarks>
-    public static void TransformShapeVertices(SwapBackArray<int> activeBodies, IntrusiveList.Node[] nodes, FsSoa_Vector2 worldVertices, 
-        FsSoa_Vector2 localVertices, Shape.Rigid.ShapeType[] shapes, float[] scalesX, float[] scalesY, float[] positionsX, float[] positionsY, float[] sines, 
-        float[] cosines, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, float[] centroidsX, float[] centroidsY, 
-        float[] localRadii, float[] worldRadii
+    public static void TransformAllShapesVertices(SwapBackArray<int> activeBodies, IntrusiveList.Node[] nodes, FsSoa_Vector2 worldVertices, 
+        FsSoa_Vector2 localVertices, Shape.Rigid.ShapeType[] shapes, float[] globalScalesX, float[] globalScalesY, float[] globalPositionsX, 
+        float[] globalPositionsY, float[] globalSines, float[] globalCosines, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, 
+        float[] maxAabbsY, float[] centroidsX, float[] centroidsY, float[] localRadii, float[] globalRadii
     )
     {
         FsSoa_Vector2.ClearAppendCounts(worldVertices);
-        float[] localVertsX = localVertices.X;
-        float[] localVertsY = localVertices.Y;
-        Span<float> polygonX = default;
-        Span<float> polygonY = default;
         int length = activeBodies.Count;
-
-        float x;
-        float y;
 
         for(int i = 1; i < length; i++) // start at one to avoid Nil.
         {
@@ -1454,69 +1454,10 @@ public static class PhysicsNew
                 int shapeIndex = bodyFirstShapeIndex;
                 while (true)
                 {
-                    Shape.Rigid.ShapeType shapeType = shapes[shapeIndex];
-                    ref float scaleX = ref scalesX[shapeIndex];
-                    ref float scaleY = ref scalesY[shapeIndex];
-
-                    switch (shapeType)
-                    {
-                        case Shape.Rigid.ShapeType.Rectangle:
-                            int vertexCount = localVertices.AppendCounts[shapeIndex];
-                            int startIndex = FixedStrideArray.GetElementIndex(shapeIndex, localVertices.Stride, 0);                        
-                            for(int vertex = 0; vertex < vertexCount; vertex++){
-                                int currentIndex = vertex + startIndex;
-
-                                // transform the base/un-transformed vertice.
-                                Math.Math.TransformVector(localVertsX[currentIndex], localVertsY[currentIndex], scaleX, scaleY,
-                                    cosines[shapeIndex], sines[shapeIndex], positionsX[shapeIndex], positionsY[shapeIndex], 
-                                    out x, out y
-                                );
-
-                                // store the newly transformed vertex into the world vertices array.
-                                // (TODO): this will need to be changed so that you can append directly to an entry element index
-                                // if you already know the element index. Create a new unsafe function for it.
-                                FsSoa_Vector2.Append(worldVertices, shapeIndex, x, y);
-                            }
-
-                            // set the new centroid.
-                            PhysicsBody.GetPolygonVerticesUnsafe(worldVertices, shapeIndex, ref polygonX, ref polygonY);
-
-                            ShapeUtils.CalculateCentroid(polygonX, polygonY, ref centroidsX[shapeIndex], ref centroidsY[shapeIndex]);
-
-                            // set the new min and max vectors.
-                            Math.Math.GetMinMaxVectors(polygonX, polygonY, out minAabbsX[shapeIndex], out minAabbsY[shapeIndex], 
-                                out maxAabbsX[shapeIndex], out maxAabbsY[shapeIndex]
-                            );
-                        break;
-
-                        case Shape.Rigid.ShapeType.Circle:
-                            int vertexIndex = FixedStrideArray.GetElementIndex(shapeIndex, worldVertices.Stride, 0);
-                            Math.Math.TransformVector(localVertsX[vertexIndex], localVertsY[vertexIndex],scaleX, scaleY, 
-                                cosines[shapeIndex], sines[shapeIndex], positionsX[shapeIndex], positionsY[shapeIndex], 
-                                out x, out y
-                            );
-
-                            // store the newly transformed vertex into the world vertices array.
-                            // (TODO): this will need to be changed so that you can append directly to an entry element index
-                            // if you already know the element index. Create a new unsafe function for it.
-                            FsSoa_Vector2.Append(worldVertices, shapeIndex, x, y);
-
-                            // set the new centroid.
-                            centroidsX[shapeIndex] = x;
-                            centroidsY[shapeIndex] = y;
-
-                            worldRadii[shapeIndex] = Circle.ScaleRadius(localRadii[shapeIndex], scaleX, scaleY);
-
-                            // set the new min and max vectors. 
-                            Circle.GetMinMaxVectors(x, y, worldRadii[shapeIndex], 
-                                out minAabbsX[shapeIndex], out minAabbsY[shapeIndex], out maxAabbsX[shapeIndex], out maxAabbsY[shapeIndex]
-                            );
-                        break;
-                        
-                        default:
-                            System.Diagnostics.Debug.Assert(false, "shape not implemented.");
-                        break;
-                    }
+                    TransformShapeVertices(worldVertices, localVertices, globalPositionsX, globalPositionsY, globalScalesX, globalScalesY, 
+                        globalCosines, globalSines, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, localRadii, globalRadii, centroidsX, 
+                        centroidsY, shapes, shapeIndex
+                    );
 
                     shapeIndex = nodes[shapeIndex].NextSibling;
                     if(shapeIndex == bodyFirstShapeIndex)
@@ -1529,114 +1470,65 @@ public static class PhysicsNew
     }
 
     /// <summary>
-    /// Calculates world-space dimensions and rigidbody data for physics bodies.
+    ///
     /// </summary>
     /// <remarks>
-    ///     All spans must be indexed by a integer <c>physicsBodyIndex</c>:
+    ///    <para>Remarks:</para>
+    ///    <para><paramref name="vertsX"/> and <paramref name="vertsY"/> are empty scratch buffers to write the gathered verts of the shape to.</para>
     /// </remarks>
-    /// <param name="startIndex">the <c>physicsBodyIndex</c> to start at.</param>    
-    public static void IntegrateBodyProperties(SwapBackArray<int> activeBodies, IntrusiveList.Node[] nodes, Span<float> scalesX, 
-        Span<float> scalesY, Span<float> masses, Span<float> inverseMasses, Span<float> rotationalInertia, Span<float> inverseRotationalInertia, 
-        Span<float> densities, Span<float> localRadii, Span<float> worldRadii, Span<float> localWidths, Span<float> localHeights, 
-        Shape.Rigid.ShapeType[] shapes, int[] categories
+    public static void TransformShapeVertices(FsSoa_Vector2 worldVertices, FsSoa_Vector2 localVertices, float[] globalPositionsX, 
+        float[] globalPositionsY, float[] globalScalesX, float[] globalScalesY, float[] globalCosines, float[] globalSines, 
+        float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, float[] localRadii, float[] globalRadii, 
+        float[] centroidsX, float[] centroidsY, Shape.Rigid.ShapeType[] shapes, int shapeIndex
     )
     {
-        float width;
-        float height;
-        float radius;
-        float scaleX;
-        float scaleY;
-        float mass;
-        float inertia;
+        Shape.Rigid.ShapeType shapeType = shapes[shapeIndex];
+        ref float scaleX = ref globalScalesX[shapeIndex];
+        ref float scaleY = ref globalScalesY[shapeIndex];
+        Span<float> vertsX = default; 
+        Span<float> vertsY = default;
 
-        int count = activeBodies.Count;
+        int vertexCount = localVertices.AppendCounts[shapeIndex];
+        int startIndex = FixedStrideArray.GetElementIndex(shapeIndex, localVertices.Stride, 0);                        
+        for(int vertex = 0; vertex < vertexCount; vertex++){
+            int currentIndex = vertex + startIndex;
 
-        for(int i = 1; i < count; i++) // skip nil element
+            // transform the base/un-transformed vertice.
+            Math.Math.TransformVector(localVertices.X[currentIndex], localVertices.Y[currentIndex], scaleX, scaleY,
+                globalCosines[shapeIndex], globalSines[shapeIndex], globalPositionsX[shapeIndex], globalPositionsY[shapeIndex], 
+                out float x, out float y
+            );
+
+            // store the newly transformed vertex into the world vertices array.
+            // (TODO): this will need to be changed so that you can append directly to an entry element index
+            // if you already know the element index. Create a new unsafe function for it.
+            FsSoa_Vector2.Append(worldVertices, shapeIndex, x, y);
+        }
+
+        // set the new centroid.
+        Shape.GetVerticesUnsafe(worldVertices, shapeIndex, ref vertsX, ref vertsY);
+        ShapeUtils.CalculateCentroid(vertsX, vertsY, ref centroidsX[shapeIndex], ref centroidsY[shapeIndex]);
+
+        switch (shapeType)
         {
-            int bodyIndex = activeBodies[i];
+            case Shape.Rigid.ShapeType.Rectangle:
+                // set the new min and max vectors.
+                Math.Math.GetMinMaxVectors(vertsX, vertsY, out minAabbsX[shapeIndex], out minAabbsY[shapeIndex], 
+                    out maxAabbsX[shapeIndex], out maxAabbsY[shapeIndex]
+                );
+            break;
 
-            ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
-            int bodyFirstShape = bodyNode.FirstChild;
-
-            if(bodyFirstShape == 0)
-            {
-                continue;
-            }
-            else
-            {
-                int shapeIndex = bodyFirstShape;
-                while (true)
-                {
-                    ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
-                    ref Shape.Rigid.ShapeType shapeType = ref shapes[shapeIndex];
-                    scaleX = scalesX[shapeIndex];
-                    scaleY = scalesY[shapeIndex];
-                    ref int category = ref categories[shapeIndex];
-
-                    switch (shapeType)
-                    {
-                        case Shape.Rigid.ShapeType.Rectangle:
-                            height = localHeights[shapeIndex] * scaleY;
-                            width = localWidths[shapeIndex] * scaleX;
-
-                            if(category >= Shape.Category.KinematicPolygonRigidBody)
-                            {
-                                mass = Shape.Rectangle.Rigid.CalculateMass(width, height, densities[shapeIndex]); 
-                                masses[shapeIndex] = mass;
-                                inverseMasses[shapeIndex] = mass == 0? 0 : 1f/mass;
-
-                                inertia = Shape.Rectangle.Rigid.CalculateRotationalInertia(width, height, mass);
-                                rotationalInertia[shapeIndex] = inertia;
-                                inverseRotationalInertia[shapeIndex] = inertia == 0? 0 : 1f/inertia;
-                            }
-                            else
-                            {
-                                // non rigidbodies and kinematics should behave like kinematics 
-                                // when colliding with rigidbodies. which iswhy these are being set to zero. 
-                                inverseMasses[shapeIndex] = 0;
-                                rotationalInertia[shapeIndex] = 0;
-                                inverseRotationalInertia[shapeIndex] = 0;                        
-                            }
-
-                        break;
-
-                        case Shape.Rigid.ShapeType.Circle:
-                            radius = Circle.ScaleRadius(localRadii[shapeIndex], scaleX, scaleY);
-                            worldRadii[shapeIndex] = radius;
-
-                            if(category >= Shape.Category.KinematicPolygonRigidBody)
-                            {
-                                mass = Shape.Circle.Rigid.CalculateMass(radius, densities[shapeIndex]); 
-                                masses[shapeIndex] = mass;
-                                inverseMasses[shapeIndex] = mass == 0? 0 : 1f/mass;
-
-                                inertia = Shape.Circle.Rigid.CalculateRotationalInertia(radius, mass);
-                                rotationalInertia[shapeIndex] = inertia;
-                                inverseRotationalInertia[shapeIndex] = inertia == 0? 0f : 1f/inertia;                        
-                            }
-                            else
-                            {
-                                // non rigidbodies and kinematics should behave like kinematics 
-                                // when colliding with rigidbodies. which iswhy these are being set to zero. 
-                                inverseMasses[shapeIndex] = 0;
-                                rotationalInertia[shapeIndex] = 0;
-                                inverseRotationalInertia[shapeIndex] = 0;                        
-                            }
-
-                        break;
-
-                        default:
-                            System.Diagnostics.Debug.Assert(false, "not implemented");
-                        break;
-                    }
-
-                    shapeIndex = shapeNode.NextSibling;
-                    if(shapeIndex == bodyFirstShape)
-                    {
-                        break;
-                    }
-                }
-            }                
+            case Shape.Rigid.ShapeType.Circle:
+                globalRadii[shapeIndex] = Circle.ScaleRadius(localRadii[shapeIndex], scaleX, scaleY);
+                // set the new min and max vectors. 
+                Circle.GetMinMaxVectors(vertsX[0], vertsY[0], globalRadii[shapeIndex], 
+                    out minAabbsX[shapeIndex], out minAabbsY[shapeIndex], out maxAabbsX[shapeIndex], out maxAabbsY[shapeIndex]
+                );
+            break;
+            
+            default:
+                System.Diagnostics.Debug.Assert(false, "shape not implemented.");
+            break;
         }
     }
 
@@ -1693,7 +1585,9 @@ public static class PhysicsNew
 
                 // insert into the bvh.
                 bvhLeafIndices[
-                    Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidsX[shapeIndex], centroidsY[shapeIndex], bvhCategories[shapeIndex])
+                    Soa_Leaf.Append(bvh.Leaves, minX, minY, maxX, maxY, centroidsX[shapeIndex], centroidsY[shapeIndex], 
+                        bvhCategories[shapeIndex]
+                    )
                 ] = shapeIndex;
 
                 shapeIndex = shapeNode.NextSibling;
@@ -1790,8 +1684,8 @@ public static class PhysicsNew
     ///     <para>Remarks:</para>
     ///     <para>Elements accesible by <c>collisionIndex</c>:</para>
     ///     <list type="bullet">
-    ///         <item><paramref name="normalsX"/></item>
-    ///         <item><paramref name="normalsY"/></item>
+    ///         <item><paramref name="collisionNormalsX"/></item>
+    ///         <item><paramref name="collisionNormalsY"/></item>
     ///         <item><paramref name="firstContactPointsX"/></item>
     ///         <item><paramref name="firstContactPointsY"/></item>
     ///         <item><paramref name="secondContactPointsX"/></item>
@@ -1826,7 +1720,8 @@ public static class PhysicsNew
     /// <param name="impulsesY">scratch buffer</param>
     /// <param name="collisionsStride">the stride of elements in a collision entry.</param>
     public static void ResolveRigidShapeCollisions(CategorisedOverlapArray<int> collisionsToResolve, IntrusiveList.Node[] nodes,
-        float[] normalsX, float[] normalsY, float[] centroidsX, float[] centroidsY,float[] firstContactPointsX, float[] firstContactPointsY, 
+        float[] collisionNormalsX, float[] collisionNormalsY, float[] firstContactPointsX, float[] firstContactPointsY,
+        float[] globalPositionsX, float[] globalPositionsY, float[] localCentersOfMassX, float[] localCentersOfMassY, 
         float[] secondContactPointsX, float[] secondContactPointsY, float[] linearVelocitiesX, float[] linearVelocitiesY, 
         float[] restitutions, float[] kineticFrictions, float[] staticFrictions, float[] angularVelocities,
         float[] masses, float[] inverseMasses, float[] inverseRotationalInertia, bool[] twoContactPoints, bool[] rotationalResponses,
@@ -1842,11 +1737,11 @@ public static class PhysicsNew
             collisionsToResolve, CollisionResolutionCategory.Solid, CollisionResolutionCategory.Solid
         );
 
-        ResolveRigidBodyCollisions(collisions, nodes, normalsX, normalsY, centroidsX, centroidsY, firstContactPointsX, firstContactPointsY, 
+        ResolveRigidBodyCollisions(collisions, nodes, collisionNormalsX, collisionNormalsY, firstContactPointsX, firstContactPointsY, 
             secondContactPointsX, secondContactPointsY, linearVelocitiesX, linearVelocitiesY, restitutions, kineticFrictions, 
-            staticFrictions, angularVelocities, masses, inverseMasses, inverseRotationalInertia, twoContactPoints, rotationalResponses,
-            contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, 
-            collisionsStride, otherIsKinematic 
+            staticFrictions, angularVelocities, masses, inverseMasses, inverseRotationalInertia, localCentersOfMassX, 
+            localCentersOfMassY, globalPositionsX, globalPositionsY, twoContactPoints, rotationalResponses, contactPointsX, 
+            contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, collisionsStride, otherIsKinematic
         );
 
         collisions = CategorisedOverlapArray.GetOverlaps(
@@ -1855,20 +1750,21 @@ public static class PhysicsNew
 
         otherIsKinematic = true;
 
-        ResolveRigidBodyCollisions(collisions, nodes, normalsX, normalsY, centroidsX, centroidsY, firstContactPointsX, firstContactPointsY, 
+        ResolveRigidBodyCollisions(collisions, nodes, collisionNormalsX, collisionNormalsY, firstContactPointsX, firstContactPointsY, 
             secondContactPointsX, secondContactPointsY, linearVelocitiesX, linearVelocitiesY, restitutions, kineticFrictions, 
-            staticFrictions, angularVelocities, masses, inverseMasses, inverseRotationalInertia, twoContactPoints, rotationalResponses,
-            contactPointsX, contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, 
-            collisionsStride, otherIsKinematic 
+            staticFrictions, angularVelocities, masses, inverseMasses, inverseRotationalInertia, localCentersOfMassX, 
+            localCentersOfMassY, globalPositionsX, globalPositionsY, twoContactPoints, rotationalResponses, contactPointsX, 
+            contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, collisionsStride, otherIsKinematic
         );
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void ResolveRigidBodyCollisions(Span<int> collisionsToResolve, IntrusiveList.Node[] nodes, 
-        float[] normalsX, float[] normalsY, float[] centroidsX, float[] centroidsY,float[] firstContactPointsX, float[] firstContactPointsY, 
+        float[] normalsX, float[] normalsY, float[] firstContactPointsX, float[] firstContactPointsY, 
         float[] secondContactPointsX, float[] secondContactPointsY, float[] linearVelocitiesX, float[] linearVelocitiesY, 
         float[] restitutions, float[] kineticFrictions, float[] staticFrictions, float[] angularVelocities,
-        float[] masses, float[] inverseMasses, float[] inverseRotationalInertia, bool[] twoContactPoints, bool[] rotationalResponses,
+        float[] masses, float[] inverseMasses, float[] inverseRotationalInertia, float[] localCentersOfMassX, float[] localCentersOfMassY,
+        float[] globalPositionsX, float[] globalPositionsY, bool[] twoContactPoints, bool[] rotationalResponses,
         Span<float> contactPointsX, Span<float> contactPointsY, Span<float> distsAX, Span<float> distsAY, 
         Span<float> distsBX, Span<float> distsBY, Span<float> impulseMagnitudes, Span<float> impulsesX, Span<float> impulsesY, 
         int collisionsStride, bool otherIsKinematic
@@ -1881,35 +1777,49 @@ public static class PhysicsNew
         for(int i = 0; i < collisionsToResolve.Length; i++)
         {
             int collisionIndex = collisionsToResolve[i];
-            int ownerIndex = collisionIndex / collisionsStride; // int div truncates the remainder, always giving the owner index.
-            int otherIndex = collisionIndex % collisionsStride;
+            int ownerShapeIndex = collisionIndex / collisionsStride; // int div truncates the remainder, always giving the owner index.
+            int otherShapeIndex = collisionIndex % collisionsStride;
+            int ownerBodyIndex = nodes[ownerShapeIndex].Parent;
+            int otherBodyIndex = nodes[otherShapeIndex].Parent;
 
             ref float normalX = ref normalsX[collisionIndex];
             ref float normalY = ref normalsY[collisionIndex];
-            ref float ownerCentroidX = ref centroidsX[ownerIndex];
-            ref float ownerCentroidY = ref centroidsY[ownerIndex];
-            ref float ownerRestitution = ref restitutions[ownerIndex];
-            ref float ownerAngularVelocity = ref angularVelocities[ownerIndex];
-            ref float ownerLinearVelocityX = ref linearVelocitiesX[ownerIndex];
-            ref float ownerLinearVelocityY = ref linearVelocitiesY[ownerIndex];
-            ref float ownerInverseMass = ref inverseMasses[ownerIndex];
-            ref float ownerInverseRotationalInertia = ref inverseRotationalInertia[ownerIndex];
-            ref float ownerStaticFriction = ref staticFrictions[ownerIndex];
-            ref float ownerKineticFriction = ref kineticFrictions[ownerIndex];
-            ref float ownerMass = ref masses[ownerIndex];
-            ref float otherCentroidX = ref centroidsX[otherIndex];
-            ref float otherCentroidY = ref centroidsY[otherIndex];
-            ref float otherRestitution = ref restitutions[otherIndex];
-            ref float otherAngularVelocity = ref angularVelocities[otherIndex];
-            ref float otherLinearVelocityX = ref linearVelocitiesX[otherIndex];
-            ref float otherLinearVelocityY = ref linearVelocitiesY[otherIndex];
-            ref float otherInverseMass = ref inverseMasses[otherIndex];
-            ref float otherInverseRotationalInertia = ref inverseRotationalInertia[otherIndex];
-            ref float otherStaticFriction = ref staticFrictions[otherIndex];
-            ref float otherKineticFriction = ref kineticFrictions[otherIndex];
-            ref float otherMass = ref masses[otherIndex];
-            ref bool ownerRotationalResponse = ref rotationalResponses[ownerIndex];
-            ref bool otherRotationalResponse = ref rotationalResponses[otherIndex];
+            
+            float ownerShapeCentroidX = globalPositionsX[ownerBodyIndex] + localCentersOfMassX[ownerBodyIndex];
+            float otherShapeCentroidX = globalPositionsX[otherBodyIndex] + localCentersOfMassX[otherBodyIndex];
+            
+            float ownerShapeCentroidY = globalPositionsY[ownerBodyIndex] + localCentersOfMassY[ownerBodyIndex];
+            float otherShapeCentroidY = globalPositionsY[otherBodyIndex] + localCentersOfMassY[otherBodyIndex];
+            
+            ref float ownerShapeRestitution = ref restitutions[ownerShapeIndex];
+            ref float otherShapeRestitution = ref restitutions[otherShapeIndex];
+            
+            ref float ownerBodyAngVel = ref angularVelocities[ownerBodyIndex];
+            ref float otherBodyAngVel = ref angularVelocities[otherBodyIndex];
+            
+            ref float ownerBodyLinVelX = ref linearVelocitiesX[ownerBodyIndex];
+            ref float otherBodyLinVelX = ref linearVelocitiesX[otherBodyIndex];
+            
+            ref float ownerBodyLinVelY = ref linearVelocitiesY[ownerBodyIndex];
+            ref float otherBodyLinVelY = ref linearVelocitiesY[otherBodyIndex];
+            
+            ref float ownerBodyInvMass = ref inverseMasses[ownerBodyIndex];
+            ref float otherBodyInvMass = ref inverseMasses[otherBodyIndex];
+            
+            ref float ownerBodyInvRotInertia = ref inverseRotationalInertia[ownerBodyIndex];
+            ref float otherBodyInvRotInertia = ref inverseRotationalInertia[otherBodyIndex];
+            
+            ref float ownerShapeStaticFriction = ref staticFrictions[ownerShapeIndex];
+            ref float otherShapeStaticFriction = ref staticFrictions[otherShapeIndex];
+            
+            ref float ownerShapeKineticFriction = ref kineticFrictions[ownerShapeIndex];
+            ref float otherShapeKineticFriction = ref kineticFrictions[otherShapeIndex];
+            
+            ref float ownerBodyMass = ref masses[ownerBodyIndex];
+            ref float otherBodyMass = ref masses[otherBodyIndex];
+
+            ref bool ownerShapeRotationalResponse = ref rotationalResponses[ownerShapeIndex];
+            ref bool otherShapeRotationalResponse = ref rotationalResponses[otherShapeIndex];
 
             revNormalX = normalX * -1;
             revNormalY = normalY * -1;
@@ -1938,49 +1848,49 @@ public static class PhysicsNew
                 contactPointsY[0] = firstContactPointsY[collisionIndex];
             }
 
-            if(ownerRotationalResponse || otherRotationalResponse)
+            if(ownerShapeRotationalResponse || otherShapeRotationalResponse)
             {
-                ResolveRigidBodyCollision_Rotational(impulseMagnitudes, contactPointsX,
+                ResolveRigidShapeCollision_Rotational(impulseMagnitudes, contactPointsX,
                     impulsesX, impulsesY, distsAX, distsAY, distsBX, distsBY,
-                    contactPointsY, ref ownerLinearVelocityX, ref otherLinearVelocityX, ref ownerLinearVelocityY, 
-                    ref otherLinearVelocityY, ref revNormalX, ref revNormalY, ref ownerRestitution, ref otherRestitution,
-                    ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY, ref otherCentroidY, ref ownerInverseMass, 
-                    ref otherInverseMass, ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerInverseRotationalInertia, 
-                    ref otherInverseRotationalInertia, ref ownerRotationalResponse, ref otherRotationalResponse, contactPointsCount, 
+                    contactPointsY, ref ownerBodyLinVelX, ref otherBodyLinVelX, ref ownerBodyLinVelY, 
+                    ref otherBodyLinVelY, ref revNormalX, ref revNormalY, ref ownerShapeRestitution, ref otherShapeRestitution,
+                    ref ownerShapeCentroidX, ref otherShapeCentroidX, ref ownerShapeCentroidY, ref otherShapeCentroidY, ref ownerBodyInvMass, 
+                    ref otherBodyInvMass, ref ownerBodyAngVel, ref otherBodyAngVel, ref ownerBodyInvRotInertia, 
+                    ref otherBodyInvRotInertia, ref ownerShapeRotationalResponse, ref otherShapeRotationalResponse, contactPointsCount, 
                     otherIsKinematic
                 );
             }
             else
             {
-                ResolveRigidBodyCollision_Basic(impulseMagnitudes, ref ownerLinearVelocityX, 
-                    ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, ref revNormalX, 
-                    ref revNormalY, ref ownerRestitution, ref otherRestitution, ref ownerInverseMass, ref otherInverseMass,
-                    ref ownerMass, ref otherMass, contactPointsCount, otherIsKinematic
+                ResolveRigidBodyCollision_Basic(impulseMagnitudes, ref ownerBodyLinVelX, 
+                    ref otherBodyLinVelX, ref ownerBodyLinVelX, ref otherBodyLinVelY, ref revNormalX, 
+                    ref revNormalY, ref ownerShapeRestitution, ref otherShapeRestitution, ref ownerBodyInvMass, ref otherBodyInvMass,
+                    ref ownerBodyMass, ref otherBodyMass, contactPointsCount, otherIsKinematic
                 );
             }
 
             ResolveRigidBodyFrictionCollision(impulseMagnitudes, contactPointsX, impulsesX, impulsesY, distsAX, distsAY, distsBX, distsBY,
-                contactPointsY, ref ownerLinearVelocityX, ref otherLinearVelocityX, ref ownerLinearVelocityY, ref otherLinearVelocityY, 
-                ref revNormalX, ref revNormalY, ref ownerStaticFriction, ref otherStaticFriction, ref ownerKineticFriction, 
-                ref otherKineticFriction, ref ownerCentroidX, ref otherCentroidX, ref ownerCentroidY, ref otherCentroidY, 
-                ref ownerInverseMass, ref ownerInverseRotationalInertia, ref otherInverseRotationalInertia, ref otherInverseMass, 
-                ref ownerAngularVelocity, ref otherAngularVelocity, ref ownerRotationalResponse, ref otherRotationalResponse, 
+                contactPointsY, ref ownerBodyLinVelX, ref otherBodyLinVelX, ref ownerBodyLinVelY, ref otherBodyLinVelY, 
+                ref revNormalX, ref revNormalY, ref ownerShapeStaticFriction, ref otherShapeStaticFriction, ref ownerShapeKineticFriction, 
+                ref otherShapeKineticFriction, ref ownerShapeCentroidX, ref otherShapeCentroidX, ref ownerShapeCentroidY, ref otherShapeCentroidY, 
+                ref ownerBodyInvMass, ref ownerBodyInvRotInertia, ref otherBodyInvRotInertia, ref otherBodyInvMass, 
+                ref ownerBodyAngVel, ref otherBodyAngVel, ref ownerShapeRotationalResponse, ref otherShapeRotationalResponse, 
                 contactPointsCount, otherIsKinematic
             );
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ResolveRigidBodyCollision_Basic(Span<float> impulseMagnitudes, ref float ownerLinearVelocityX, 
-        ref float otherLinearVelocityX, ref float ownerLinearVelocityY, ref float otherLinearVelocityY, ref float revNormalX, 
-        ref float revNormalY, ref float ownerRestitution, ref float otherRestitution, ref float ownerInverseMass, ref float otherInverseMass,
-        ref float ownerMass, ref float otherMass, int contactPointsCount, bool otherIsKinematic
+    public static void ResolveRigidBodyCollision_Basic(Span<float> impulseMagnitudes, ref float ownerBodyLinVelX, 
+        ref float otherBodyLinVelX, ref float ownerBodyLinVelY, ref float otherBodyLinVelY, ref float revNormalX, 
+        ref float revNormalY, ref float ownerShapeRestitution, ref float otherShapeRestitution, ref float ownerBodyInvMass, 
+        ref float otherBodyInvMass, ref float ownerBodyMass, ref float otherBodyMass, int contactPointsCount, bool otherShapeIsKinematic
     )
     {
         for(int j = 0; j < contactPointsCount; j++)
         {                    
-            float relativeVelocityX = otherLinearVelocityX - ownerLinearVelocityX;
-            float relativeVelocityY = otherLinearVelocityY - ownerLinearVelocityY;
+            float relativeVelocityX = otherBodyLinVelX - ownerBodyLinVelX;
+            float relativeVelocityY = otherBodyLinVelY - ownerBodyLinVelY;
 
             // the magnitude of the relative velocity relative to the normal
             float magnitude = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
@@ -1990,11 +1900,11 @@ public static class PhysicsNew
                 continue;
             }
 
-            float restitution = MathF.Min(ownerRestitution, otherRestitution);
+            float restitution = MathF.Min(ownerShapeRestitution, otherShapeRestitution);
 
             // magnitude of the impulse
             float impulseMagnitude = -(1f + restitution) * magnitude;
-            impulseMagnitude /= ownerInverseMass + otherInverseMass;
+            impulseMagnitude /= ownerBodyInvMass + otherBodyInvMass;
             
             // divide by the contact point count to ensure that impulse is evenly spread 
             // across all contact points.
@@ -2009,35 +1919,35 @@ public static class PhysicsNew
         for(int j = 0; j < contactPointsCount; j++)
         {                    
             float mag = impulseMagnitudes[j];
-            impulseForceX = -(mag / ownerMass * revNormalX);
-            impulseForceY = -(mag / ownerMass * revNormalY);
-            ownerLinearVelocityX += impulseForceX;
-            ownerLinearVelocityY += impulseForceY;
+            impulseForceX = -(mag / ownerBodyMass * revNormalX);
+            impulseForceY = -(mag / ownerBodyMass * revNormalY);
+            ownerBodyLinVelX += impulseForceX;
+            ownerBodyLinVelY += impulseForceY;
 
-            if(otherIsKinematic)
+            if(otherShapeIsKinematic)
             {
                 continue;
             }
 
-            impulseForceX = mag / otherMass * revNormalX;
-            impulseForceY = mag / otherMass * revNormalY;
-            otherLinearVelocityX += impulseForceX;
-            otherLinearVelocityY += impulseForceY;
+            impulseForceX = mag / otherBodyMass * revNormalX;
+            impulseForceY = mag / otherBodyMass * revNormalY;
+            otherBodyLinVelX += impulseForceX;
+            otherBodyLinVelY += impulseForceY;
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ResolveRigidBodyCollision_Rotational(Span<float> impulseMagnitudes, Span<float> contactPointsX,
+    public static void ResolveRigidShapeCollision_Rotational(Span<float> impulseMagnitudes, Span<float> contactPointsX,
         Span<float> impulsesX, Span<float> impulsesY, Span<float> distsAX, Span<float> distsAY, Span<float> distsBX, Span<float> distsBY,
-        Span<float> contactPointsY, ref float ownerLinearVelocityX, ref float otherLinearVelocityX, ref float ownerLinearVelocityY, 
-        ref float otherLinearVelocityY, ref float revNormalX, ref float revNormalY, ref float ownerRestitution, ref float otherRestitution,
-        ref float ownerCentroidX, ref float otherCentroidX, ref float ownerCentroidY, ref float otherCentroidY, ref float ownerInverseMass, 
-        ref float otherInverseMass, ref float ownerAngularVelocity, ref float otherAngularVelocity, ref float ownerInverseRotationalInertia, 
-        ref float otherInverseRotationalInertia, ref bool ownerRotationalResponse, ref bool otherRotationalResponse, int contactPointsCount, 
-        bool otherIsKinematic
+        Span<float> contactPointsY, ref float ownerBodyLinVelX, ref float otherBodyLinVelX, ref float ownerBodyLinVelY, 
+        ref float otherBodyLinVelY, ref float revNormalX, ref float revNormalY, ref float ownerShapeRestitution, 
+        ref float otherShapeRestitution, ref float ownerShapeCentroidX, ref float otherShapeCentroidX, ref float ownerShapeCentroidY, 
+        ref float otherShapeCentroidY, ref float ownerBodyInvMass, ref float otherBodyInvMass, ref float ownerBodyAngVel, 
+        ref float otherBodyAngVel, ref float ownerBodyInvRotInertia, ref float otherBodyInvRotInertia, ref bool ownerRotationalResponse, 
+        ref bool otherRotationalResponse, int contactPointsCount, bool otherShapeIsKinematic
     )
     {
-        float restitution = MathF.Min(ownerRestitution, otherRestitution);
+        float restitution = MathF.Min(ownerShapeRestitution, otherShapeRestitution);
                 
         for(int j = 0; j < contactPointsCount; j++)
         {
@@ -2045,23 +1955,23 @@ public static class PhysicsNew
             float contactPointY = contactPointsY[j];
 
             // get the angular velocity to travel in.
-            distsAX[j] = contactPointX - ownerCentroidX;
-            distsAY[j] = contactPointY - ownerCentroidY;
-            distsBX[j] = contactPointX - otherCentroidX;
-            distsBY[j] = contactPointY - otherCentroidY;            
+            distsAX[j] = contactPointX - ownerShapeCentroidX;
+            distsAY[j] = contactPointY - ownerShapeCentroidY;
+            distsBX[j] = contactPointX - otherShapeCentroidX;
+            distsBY[j] = contactPointY - otherShapeCentroidY;            
             
             float perpendicularAX = -distsAY[j];
             float perpendicularAY = distsAX[j];
             float perpendicularBX = -distsBY[j];
             float perpendicularBY = distsBX[j];
 
-            float angularVelocityAX = perpendicularAX * ownerAngularVelocity;
-            float angularVelocityAY = perpendicularAY * ownerAngularVelocity;
-            float angularVelocityBX = perpendicularBX * otherAngularVelocity;
-            float angularVelocityBY = perpendicularBY * otherAngularVelocity;
+            float angularVelocityAX = perpendicularAX * ownerBodyAngVel;
+            float angularVelocityAY = perpendicularAY * ownerBodyAngVel;
+            float angularVelocityBX = perpendicularBX * otherBodyAngVel;
+            float angularVelocityBY = perpendicularBY * otherBodyAngVel;
 
-            float relativeVelocityX = (otherLinearVelocityX + angularVelocityBX) - (ownerLinearVelocityX + angularVelocityAX);
-            float relativeVelocityY = (otherLinearVelocityY + angularVelocityBY) - (ownerLinearVelocityY + angularVelocityAY);
+            float relativeVelocityX = (otherBodyLinVelX + angularVelocityBX) - (ownerBodyLinVelX + angularVelocityAX);
+            float relativeVelocityY = (otherBodyLinVelY + angularVelocityBY) - (ownerBodyLinVelY + angularVelocityAY);
             
             // the magnitude of the relative velocity relative to the normal
             float magnitude = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
@@ -2074,9 +1984,9 @@ public static class PhysicsNew
             // calculate the denominator.
             float perpADotNormal = Math.Math.Dot(perpendicularAX, perpendicularAY, revNormalX, revNormalY);
             float perpBDotNormal = Math.Math.Dot(perpendicularBX, perpendicularBY, revNormalX, revNormalY);
-            float denominator = ownerInverseMass + otherInverseMass + 
-                (perpADotNormal * perpADotNormal) * ownerInverseRotationalInertia +
-                (perpBDotNormal * perpBDotNormal) * otherInverseRotationalInertia;
+            float denominator = ownerBodyInvMass + otherBodyInvMass + 
+                (perpADotNormal * perpADotNormal) * ownerBodyInvRotInertia +
+                (perpBDotNormal * perpBDotNormal) * otherBodyInvRotInertia;
 
             // magnitude of the impulse
             float impulseMagnitude = -(1f + restitution) * magnitude;
@@ -2091,53 +2001,53 @@ public static class PhysicsNew
             impulsesX[j] = impulseMagnitude * revNormalX;
             impulsesY[j] = impulseMagnitude * revNormalY;
 
-
-            // keep these outside the for loop so they dont allocate each time.
-            float impulseX;
-            float impulseY;
-            float distAX;
-            float distAY;
-            float distBX;
-            float distBY;
-
-            for(int i = 0; i < contactPointsCount; i++)
-            {                
-                impulseX = impulsesX[i];
-                impulseY = impulsesY[i];
-
-                // cross producting the dist and impulse gives a value indicating
-                // how much angular velocity - in radians - is needed to be applied based on the impulse direction.
-                // this is because cross producting two directions that are parallel to eachother, results in zero.
-                // which means that there should be no rotation if the collision is head on.
-                // but if the closer the two directions come to being perpendicular to one another,
-                // the larger the angular impulse will be, causing the body to rotate.
-
-                ownerLinearVelocityX += -impulseX * ownerInverseMass;
-                ownerLinearVelocityY += -impulseY * ownerInverseMass;
-
-                if(ownerRotationalResponse)
-                {
-                    distAX = distsAX[i];
-                    distAY = distsAY[i];
-                    ownerAngularVelocity += -Math.Math.Cross(distAX, distAY, impulseX, impulseY) * ownerInverseRotationalInertia;
-                }
-
-                if (otherIsKinematic)
-                {
-                    continue;
-                }
-
-                otherLinearVelocityX += impulseX * otherInverseMass;
-                otherLinearVelocityY += impulseY * otherInverseMass;
-
-                if(otherRotationalResponse)
-                {
-                    distBX = distsBX[i];
-                    distBY = distsBY[i];
-                    otherAngularVelocity += Math.Math.Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
-                }
-            }        
         }
+
+        // keep these outside the for loop so they dont allocate each time.
+        float impulseX;
+        float impulseY;
+        float distAX;
+        float distAY;
+        float distBX;
+        float distBY;
+
+        for(int i = 0; i < contactPointsCount; i++)
+        {                
+            impulseX = impulsesX[i];
+            impulseY = impulsesY[i];
+
+            // cross producting the dist and impulse gives a value indicating
+            // how much angular velocity - in radians - is needed to be applied based on the impulse direction.
+            // this is because cross producting two directions that are parallel to eachother, results in zero.
+            // which means that there should be no rotation if the collision is head on.
+            // but if the closer the two directions come to being perpendicular to one another,
+            // the larger the angular impulse will be, causing the body to rotate.
+
+            ownerBodyLinVelX += -impulseX * ownerBodyInvMass;
+            ownerBodyLinVelY += -impulseY * ownerBodyInvMass;
+
+            if(ownerRotationalResponse)
+            {
+                distAX = distsAX[i];
+                distAY = distsAY[i];
+                ownerBodyAngVel += -Math.Math.Cross(distAX, distAY, impulseX, impulseY) * ownerBodyInvRotInertia;
+            }
+
+            if (otherShapeIsKinematic)
+            {
+                continue;
+            }
+
+            otherBodyLinVelX += impulseX * otherBodyInvMass;
+            otherBodyLinVelY += impulseY * otherBodyInvMass;
+
+            if(otherRotationalResponse)
+            {
+                distBX = distsBX[i];
+                distBY = distsBY[i];
+                otherBodyAngVel += Math.Math.Cross(distBX, distBY, impulseX, impulseY) * otherBodyInvRotInertia;
+            }
+        }        
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -2520,42 +2430,101 @@ public static class PhysicsNew
             state.Forces.Y[entityIndex] = 0;
         }
 
-        // /// <summary>
-        // ///     Calculates the inverse/mass, inverse/rotational inertia, and center of mass for a rigidbody. 
-        // /// </summary>
-        // /// <remarks>
-        // ///    <para>Remarks:</para>
-        // ///    <para></para>
-        // /// </remarks>
-        // public static void IntegrateShapePropertiesUnsafe(State state, int bodyIndex)
-        // {
-        //     // fallback to the global position if there are not valid rigid shapes associated with the body.
-        //     float centerOfMassX = state.GlobalTransforms.Positions.X[bodyIndex];
-        //     float centerOfMassY = state.GlobalTransforms.Positions.Y[bodyIndex];
+        /// <summary>
+        ///     Calculates the inverse/mass, inverse/rotational inertia, and center of mass for a rigidbody. 
+        /// </summary>
+        /// <remarks>
+        ///    <para>Remarks:</para>
+        ///    <para></para>
+        /// </remarks>
+        public static void IntegrateShapePropertiesUnsafe(State state, int bodyIndex)
+        {
+            // fallback to the global position if there are not valid rigid shapes associated with the body.
+            float centerOfMassX = 0;
+            float centerOfMassY = 0;
+            float totalMass = 0;
+            float totalInverseMass = 0;
+            float totalRotationalInertia = 0;
+            float totalInverseRotationalInertia = 0;
 
-        //     IntrusiveList.Node[] nodes = state.BodyHierarchy.Nodes;
+            IntrusiveList.Node[] nodes = state.BodyHierarchy.Nodes;
 
-        //     ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
-        //     int firstShapeIndex = bodyNode.FirstChild;
+            ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
+            int firstShapeIndex = bodyNode.FirstChild;
 
-        //     if(firstShapeIndex == 0)
-        //     {
-        //         return;
-        //     }
+            if(firstShapeIndex == 0)
+            {
+                goto WriteData;
+            }
 
-        //     int shapeIndex = firstShapeIndex;
-        //     centerOfMassX = 0;
-        //     centerOfMassY = 0;
-        //     float totalMass = 0;
-        //     while (true)
-        //     {
-        //         int mass = state.Masses[shapeIndex];
-        //         centerOfMassX += mass * 
-        //         totalMass += mass;
+            {   // calculate center of mass & total mass.
+                
+                int shapeIndex = firstShapeIndex;
+                centerOfMassX = 0;
+                centerOfMassY = 0;
+                while (true)
+                {
+                    float mass = state.Masses[shapeIndex];
+                    centerOfMassX += mass * state.Centroids.X[shapeIndex];
+                    centerOfMassY += mass * state.Centroids.Y[shapeIndex]; 
+                    totalMass += mass;
 
-        //         ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
-        //     } 
-        // }
+                    ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
+                    int nextShapeIndex = shapeNode.NextSibling;
+                    if(nextShapeIndex == firstShapeIndex)
+                    {
+                        // center of mass in world space.
+                        // note: use world-sapce coordinates first as shape centroids are in world space.
+                        centerOfMassX /= totalMass;
+                        centerOfMassY /= totalMass;
+
+                        totalInverseMass = 1f/totalMass; 
+                        
+                        break;
+                    }
+
+                    shapeIndex = nextShapeIndex; 
+                } 
+            }
+
+            {   // calculate total rotational inertia.
+                
+                int shapeIndex = firstShapeIndex;
+                while (true)
+                {
+                    float distSqrd = Math.Math.DistanceSquared(state.Centroids.X[shapeIndex], state.Centroids.Y[shapeIndex], 
+                        centerOfMassX, centerOfMassY
+                    );
+
+                    totalRotationalInertia += state.RotationalInertia[shapeIndex] + (state.Masses[shapeIndex] * distSqrd); 
+
+                    ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
+                    int nextShapeIndex = shapeNode.NextSibling;
+                    if(nextShapeIndex == firstShapeIndex)
+                    {
+                        // move center of mass into local space.
+                        centerOfMassX -= state.GlobalTransforms.Positions.X[shapeIndex];
+                        centerOfMassY -= state.GlobalTransforms.Positions.Y[shapeIndex];
+
+                        totalInverseRotationalInertia = 1f/totalRotationalInertia;
+
+                        break;
+                    }
+
+                    shapeIndex = nextShapeIndex;
+                }
+            }
+
+            WriteData:
+            {   
+                state.Masses[bodyIndex] = totalMass;
+                state.InverseMasses[bodyIndex] = totalInverseMass;
+                state.LocalCentersOfMass.X[bodyIndex] = centerOfMassX;
+                state.LocalCentersOfMass.Y[bodyIndex] = centerOfMassY;
+                state.RotationalInertia[bodyIndex] = totalRotationalInertia;
+                state.InverseRotationalInertia[bodyIndex] = totalInverseRotationalInertia;
+            }
+        }
     }
 
 
@@ -3227,18 +3196,37 @@ public static class PhysicsNew
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public static void PrepareCollisionShapeAllocation(State state, Transform transform, Span<float> localVertsX,
-            Span<float> localVertsY, ColliderBehaviour colliderBehaviour, int shapeIndex, int bodyIndex, bool IsRigidBody, Rigid.ShapeType shape
+        public static void PrepareCollisionShapeAllocation(State state, ColliderBehaviour colliderBehaviour, int shapeIndex, int bodyIndex, 
+            Rigid.ShapeType shape, bool IsRigid
         )
         {
+            state.EntityTypes[shapeIndex] = EntityType.Shape;
+
             // clear any garbage data from previous allocations.
             FsSoa_Vector2.ClearEntryAppendCount(state.BaseVertices, shapeIndex);
 
+            // set this so that the previous position isnt garbage from previous steps.
+            state.PreviousStepPositions.X[bodyIndex] = state.GlobalTransforms.Positions.X[bodyIndex];
+            state.PreviousStepPositions.Y[bodyIndex] = state.GlobalTransforms.Positions.Y[bodyIndex];
+
             // set the new data.
             SetActiveUnsafe(state, shapeIndex, true);
-            int category = SetCategory(state, shape, colliderBehaviour, IsRigidBody, shapeIndex);            
+            int category = SetCategory(state, shape, colliderBehaviour, IsRigid, shapeIndex);            
             IncrementCategoryCounter(state, category);
-            
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static void FinaliseCollisionShapeAllocation(State state, Span<float> shapeBaseVertsX,
+            Span<float> shapeBaseVertsY, Transform transform, int shapeIndex, int bodyIndex, bool IsRigid)
+        {        
+            // note:
+            // order matters here (from top to bottom):
+            // - set transform data
+            // - set vertce data
+            // - transform vertice data (getting centroid as well).
+            // - add shape to tree.
+            // - integrate the now intialised shape into the body (if it is a rigid shape.)
+
             Soa_Transform globalTransforms = state.GlobalTransforms;
             
             Transform globalTransform = Transform.TransformRelative(transform, globalTransforms.Positions.X[bodyIndex], 
@@ -3249,21 +3237,23 @@ public static class PhysicsNew
             SetLocalTransformUnsafe(state, shapeIndex, transform);
             SetGlobalTransformUnsafe(state, shapeIndex, globalTransform);
 
-            for(int i = 0; i < localVertsX.Length; i++)
+            for(int i = 0; i < shapeBaseVertsX.Length; i++)
             {
-                FsSoa_Vector2.Append(state.BaseVertices, shapeIndex, localVertsX[i], localVertsY[i]);
+                FsSoa_Vector2.Append(state.BaseVertices, shapeIndex, shapeBaseVertsX[i], shapeBaseVertsY[i]);
             }
 
-            IntrusiveList.AddToTree(state.BodyHierarchy, shapeIndex, bodyIndex);
-            state.EntityTypes[shapeIndex] = EntityType.Shape;
-        }
+            TransformShapeVertices(state.WorldVertices, state.BaseVertices, globalTransforms.Positions.X, globalTransforms.Positions.Y, 
+                globalTransforms.Scales.X, globalTransforms.Scales.Y, globalTransforms.Cosines, globalTransforms.Sines, 
+                state.Aabbs.MinX, state.Aabbs.MinY, state.Aabbs.MaxX, state.Aabbs.MaxY, state.BaseRadii, state.WorldRadii, 
+                state.Centroids.X, state.Centroids.Y, state.ShapeTypes, shapeIndex
+            );
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public static void FinaliseCollisionShapeAllocation(State state, int bodyIndex)
-        {        
-            // set this so that the previous position isnt garbage from previous steps.
-            state.PreviousStepPositions.X[bodyIndex] = state.GlobalTransforms.Positions.X[bodyIndex];
-            state.PreviousStepPositions.Y[bodyIndex] = state.GlobalTransforms.Positions.Y[bodyIndex];
+            IntrusiveList.AddToTree(state.BodyHierarchy, shapeIndex, bodyIndex);
+
+            if (IsRigid)
+            {
+                Body.IntegrateShapePropertiesUnsafe(state, bodyIndex);
+            }
         }
 
 
@@ -3302,9 +3292,7 @@ public static class PhysicsNew
                     int shapeIndex = GenId.GetIndex(colliderId);
                     int bodyIndex = GenId.GetIndex(bodyId);
 
-                    PrepareCollisionShapeAllocation(state, transform, [shape.X], [shape.Y], colliderBehaviour, shapeIndex, 
-                        bodyIndex, false, Shape.Rigid.ShapeType.Circle
-                    );
+                    PrepareCollisionShapeAllocation(state, colliderBehaviour, shapeIndex, bodyIndex, Shape.Rigid.ShapeType.Circle, false);
                     
                     { // Set specific data.
 
@@ -3314,7 +3302,9 @@ public static class PhysicsNew
                         state.BaseRadii[shapeIndex] = shape.Radius;
                     }
 
-                    FinaliseCollisionShapeAllocation(state, shapeIndex);
+                    FinaliseCollisionShapeAllocation(state, [shape.X], [shape.Y], transform, shapeIndex, bodyIndex, 
+                        false
+                    );
                 
                     return GenIdResult.Ok;
                 }
@@ -3343,9 +3333,7 @@ public static class PhysicsNew
                     int shapeIndex = GenId.GetIndex(genId);
                     int bodyIndex = GenId.GetIndex(bodyId);
 
-                    PrepareCollisionShapeAllocation(state, transform, [shape.X], [shape.Y], colliderBehaviour, shapeIndex, bodyIndex, 
-                        true, Shape.Rigid.ShapeType.Circle
-                    );
+                    PrepareCollisionShapeAllocation(state, colliderBehaviour, shapeIndex, bodyIndex, Shape.Rigid.ShapeType.Circle, true);
 
                     {   // Set specific data. 
                         
@@ -3354,9 +3342,13 @@ public static class PhysicsNew
                             material.Density, material.Restitution, shapeIndex
                         );
                         state.BaseRadii[shapeIndex] = shape.Radius;
+
+                        IntegrateProperties(state, transform.Scale.X, transform.Scale.Y, shape.Radius, shapeIndex);
                     }
 
-                    FinaliseCollisionShapeAllocation(state, shapeIndex);
+                    FinaliseCollisionShapeAllocation(state, [shape.X], [shape.Y], transform, shapeIndex, bodyIndex, 
+                        true
+                    );
 
                     return GenIdResult.Ok;
                 }
@@ -3388,13 +3380,22 @@ public static class PhysicsNew
                 {
                     return density * Math.Shapes.Circle.GetArea(radius);
                 }
-            }
 
-            public static void GetVerticesUnsafe(FsSoa_Vector2 vertices, int physicsBodyIndex, ref float xOutput, ref float yOutput)
-            {
-                int vertexIndex = FixedStrideArray.GetElementIndex(physicsBodyIndex, vertices.Stride, 0);
-                xOutput = vertices.X[vertexIndex];
-                yOutput = vertices.Y[vertexIndex];
+                public static void IntegrateProperties(State state, float scaleX, float scaleY, float baseRadii,
+                    int shapeIndex
+                )
+                {
+                    float radius = Math.Shapes.Circle.ScaleRadius(baseRadii, scaleX, scaleY);
+                    state.WorldRadii[shapeIndex] = radius;
+
+                    float mass = CalculateMass(radius, state.PhysicsMaterials.Density[shapeIndex]); 
+                    state.Masses[shapeIndex] = mass;
+                    state.InverseMasses[shapeIndex] = mass == 0? 0 : 1f/mass;
+
+                    float inertia = CalculateRotationalInertia(radius, mass);
+                    state.RotationalInertia[shapeIndex] = inertia;
+                    state.InverseRotationalInertia[shapeIndex] = inertia == 0? 0f : 1f/inertia;                        
+                }
             }
         }
 
@@ -3437,10 +3438,7 @@ public static class PhysicsNew
                     int shapeIndex = GenId.GetIndex(genId);
                     int bodyIndex = GenId.GetIndex(bodyId);
 
-                    PrepareCollisionShapeAllocation(state, transform, PolygonRectangle.VerticesXAsSpan(polyRect), 
-                        PolygonRectangle.VerticesYAsSpan(polyRect), colliderBehaviour, shapeIndex, bodyIndex, false, 
-                        Shape.Rigid.ShapeType.Rectangle
-                    );
+                    PrepareCollisionShapeAllocation(state, colliderBehaviour, shapeIndex, bodyIndex, Shape.Rigid.ShapeType.Rectangle, false);
 
                     {   // set specific data.
                         
@@ -3453,7 +3451,9 @@ public static class PhysicsNew
                         state.InverseMasses[shapeIndex] = 0;
                     }
 
-                    FinaliseCollisionShapeAllocation(state, shapeIndex);
+                    FinaliseCollisionShapeAllocation(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), 
+                        transform, shapeIndex, bodyIndex, false
+                    );
 
                     return GenIdResult.Ok;
                 }
@@ -3483,9 +3483,7 @@ public static class PhysicsNew
                     int shapeIndex = GenId.GetIndex(genId);
                     int bodyIndex = GenId.GetIndex(bodyId);
 
-                    PrepareCollisionShapeAllocation(state, transform, PolygonRectangle.VerticesXAsSpan(polyRect), 
-                        PolygonRectangle.VerticesYAsSpan(polyRect), colliderBehaviour, shapeIndex, bodyIndex, true, Shape.Rigid.ShapeType.Rectangle
-                    );
+                    PrepareCollisionShapeAllocation(state, colliderBehaviour, shapeIndex, bodyIndex, Shape.Rigid.ShapeType.Rectangle, true);
 
                     {   // specific data.
                         
@@ -3495,9 +3493,13 @@ public static class PhysicsNew
                         Soa_PhysicsMaterial.Insert(state.PhysicsMaterials, material.StaticFriction, material.KineticFriction, 
                             material.Density, material.Restitution, shapeIndex
                         );
+                        IntegrateProperties(state, transform.Scale.X, transform.Scale.Y, shape.Height, shape.Width, shapeIndex);
                     }
 
-                    FinaliseCollisionShapeAllocation(state, shapeIndex);
+                    FinaliseCollisionShapeAllocation(state, PolygonRectangle.VerticesXAsSpan(polyRect), PolygonRectangle.VerticesYAsSpan(polyRect), 
+                        transform, shapeIndex, bodyIndex, true
+                    );
+
                     return GenIdResult.Ok;
                 }
 
@@ -3528,15 +3530,35 @@ public static class PhysicsNew
                 {
                     return PhysicsSystem.VectorRectangleRotationalInertia * mass * ((width * width) + (height * height));
                 }
+
+                public static void IntegrateProperties(State state, float scaleX, float scaleY, float baseHeight, float baseWidth,
+                    int shapeIndex
+                )
+                {
+                    IntrusiveList.Node[] nodes = state.BodyHierarchy.Nodes;
+                    ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
+
+                    float height = baseHeight * scaleY;
+                    float width = baseWidth * scaleX;
+
+                    float mass = CalculateMass(width, height, state.PhysicsMaterials.Density[shapeIndex]); 
+                    state.Masses[shapeIndex] = mass;
+                    state.InverseMasses[shapeIndex] = mass == 0? 0 : 1f/mass;
+
+                    float inertia = CalculateRotationalInertia(width, height, mass);
+                    state.RotationalInertia[shapeIndex] = inertia;
+                    state.InverseRotationalInertia[shapeIndex] = inertia == 0? 0 : 1f/inertia;
+                }
             }
 
-            public static void GetVerticesUnsafe(FsSoa_Vector2 vertices, int bodyIndex, ref Span<float> xOutput, ref Span<float> yOutput)
-            {
-                int startIndex = FixedStrideArray.GetElementIndex(bodyIndex, vertices.Stride, 0);
-                int appendCount = vertices.AppendCounts[bodyIndex];
-                xOutput = vertices.X.AsSpan().Slice(startIndex, appendCount);
-                yOutput = vertices.Y.AsSpan().Slice(startIndex, appendCount);
-            }
+        }
+
+        public static void GetVerticesUnsafe(FsSoa_Vector2 vertices, int bodyIndex, ref Span<float> xOutput, ref Span<float> yOutput)
+        {
+            int startIndex = FixedStrideArray.GetElementIndex(bodyIndex, vertices.Stride, 0);
+            int appendCount = vertices.AppendCounts[bodyIndex];
+            xOutput = vertices.X.AsSpan().Slice(startIndex, appendCount);
+            yOutput = vertices.Y.AsSpan().Slice(startIndex, appendCount);
         }
     }
 
@@ -3558,6 +3580,10 @@ public static class PhysicsNew
         DrawShapes(howl, state.CollisionManifoldState, state.WorldVertices, state.Centroids.X, state.Centroids.Y, state.WorldRadii, 
             state.Categories, state.EntityTypes, state.Active
         );
+
+        // DrawAabbs(howl, state.Active, state.Aabbs.MinX, state.Aabbs.MinY, state.Aabbs.MaxX, state.Aabbs.MaxY, AABBColour);
+        // BoundingVolumeHierarchy.DrawBranches(howl, state.Bvh, Colour.Yellow);
+        // BoundingVolumeHierarchy.DrawLeaves(howl, state.Bvh, Colour.Yellow);
     }
 
     public static void DrawGlobalPositions(HowlAppState howl, bool[] active, float[] globalPositionsX, float[] globalPositionsY)
@@ -3608,7 +3634,7 @@ public static class PhysicsNew
 
                 if (Shape.Category.IsPolygon(category))
                 {
-                    Shape.Rectangle.GetVerticesUnsafe(vertices, i, ref polyVertsX, ref polyVertsY);
+                    Shape.GetVerticesUnsafe(vertices, i, ref polyVertsX, ref polyVertsY);
                     Debug.DrawWirePoly(howl, polyVertsX, polyVertsY, colour, DrawSpace.World);
                 }
                 else if (Shape.Category.IsCircle(category))
@@ -3616,6 +3642,23 @@ public static class PhysicsNew
                     Circle shape = new(centroidsX[i], centroidsY[i], radii[i]);
                     Debug.DrawWireCircle(howl, shape, colour, DrawSpace.World);
                 }
+            }
+        }
+    }
+
+    public static void DrawAabbs(HowlAppState app, bool[] active, float[] aabbsMinX, float[] aabbsMinY, float[] aabbsMaxX, float[] aabbsMaxY, 
+        Colour colour
+    )
+    {
+        for(int i = 1; i < active.Length; i++) // start at one to skip Nil.
+        {
+            if (active[i])
+            {                
+                float minX = aabbsMinX[i];
+                float minY = aabbsMinY[i];
+                float maxX = aabbsMaxX[i];
+                float maxY = aabbsMaxY[i];
+                Debug.DrawWirePoly(app, [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], colour, DrawSpace.World);
             }
         }
     }

@@ -134,6 +134,7 @@ public static class ShapeUtils
             cX = x[0];
             cY = y[0];
         }
+
     }
 
     /// <summary>

@@ -529,8 +529,7 @@ public static class Math
 
         // --- NAN PROTECTION ---
         // Define a tiny epsilon to avoid division by zero.        
-        float epsilon = 1e-10f;
-        if (epsilon > invLen)
+        if (float.IsNaN(invLen) || 1e-10f > invLen)
         {
             return;
         }

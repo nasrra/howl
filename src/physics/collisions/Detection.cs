@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
+using Howl.DataStructures;
 using Howl.DataStructures.Bvh;
 using Howl.Math;
 using Howl.Math.Shapes;
@@ -194,6 +195,22 @@ public static class Detection
         return default;
     }
 
+    public static bool BroadPhase(IntrusiveList.Node[] nodes, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY,
+        int shapeIndexA, int shapeIndexB
+    )
+    {
+        // skip if the two shapes are apart of the same body.
+        if(nodes[shapeIndexA].Parent == nodes[shapeIndexB].Parent)
+        {
+            return false;
+        }
+
+        return Aabb.Intersect(
+            minAabbsX[shapeIndexA], minAabbsX[shapeIndexB], minAabbsY[shapeIndexA], minAabbsY[shapeIndexB], 
+            maxAabbsX[shapeIndexA], maxAabbsX[shapeIndexB], maxAabbsY[shapeIndexA], maxAabbsY[shapeIndexB]
+        );
+    }
+
 
 
 
@@ -207,7 +224,7 @@ public static class Detection
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SolidPolygonRigidBody_To_SolidPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, CollisionManifoldState collisions, 
+    public static void SolidPolygonRigidBody_To_SolidPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, CollisionManifoldState collisions, IntrusiveList.Node[] nodes, 
         float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY,
         FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
@@ -219,13 +236,8 @@ public static class Detection
             // get the owner and other data.
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
-        
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
 
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -250,7 +262,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_SolidCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, float[] maxAabbsX, float[] maxAabbsY, 
         FsSoa_Vector2 vertices, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
     {
@@ -262,12 +274,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -299,7 +306,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
         CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
@@ -312,12 +319,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -342,7 +344,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
@@ -355,12 +357,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -392,7 +389,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -404,12 +401,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
 
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -420,7 +412,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -432,12 +424,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -455,7 +442,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
     {
@@ -467,12 +454,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -492,7 +474,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -505,12 +487,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -537,7 +514,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve 
     )
     {
@@ -549,12 +526,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -574,7 +546,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -587,12 +559,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -619,7 +586,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices 
     )
     {
@@ -631,12 +598,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -647,7 +609,7 @@ public static class Detection
     }
 
     public static void SolidPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -659,12 +621,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -692,7 +649,7 @@ public static class Detection
 
 
     public static void SolidCircleRigidBody_To_SolidCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
         CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
@@ -705,12 +662,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -740,7 +692,7 @@ public static class Detection
     }
 
     public static void SolidCircleRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
@@ -753,12 +705,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -785,7 +732,7 @@ public static class Detection
     }
 
     public static void SolidCircleRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
     )
@@ -798,12 +745,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -833,7 +775,7 @@ public static class Detection
     }
 
     public static void SolidCircleRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -845,12 +787,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -863,7 +800,7 @@ public static class Detection
     }
     
     public static void SolidCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -875,12 +812,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -896,7 +828,7 @@ public static class Detection
     } 
 
     public static void SolidCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -909,12 +841,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -936,7 +863,7 @@ public static class Detection
     }
 
     public static void SolidCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -949,12 +876,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -979,7 +901,7 @@ public static class Detection
     }
 
     public static void SolidCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -992,12 +914,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1019,7 +936,7 @@ public static class Detection
     }
 
     public static void SolidCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -1032,12 +949,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1062,7 +974,7 @@ public static class Detection
     }
 
     public static void SolidCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1074,12 +986,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1092,7 +999,7 @@ public static class Detection
     }
 
     public static void SolidCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -1104,12 +1011,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1137,7 +1039,7 @@ public static class Detection
 
 
     public static void KinematicPolygonRigidBody_To_KinematicPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices 
     )
     {
@@ -1149,12 +1051,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1165,7 +1062,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1177,12 +1074,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1201,7 +1093,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices 
     )
     {
@@ -1213,12 +1105,7 @@ public static class Detection
             int otherIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int ownerIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1229,7 +1116,7 @@ public static class Detection
     }
     
     public static void KinematicPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1241,12 +1128,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1264,7 +1146,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> subStepCollisionsToResolve
     )
@@ -1277,12 +1159,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1302,7 +1179,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -1315,12 +1192,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1347,7 +1219,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -1359,12 +1231,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1375,7 +1242,7 @@ public static class Detection
     } 
 
     public static void KinematicPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1387,12 +1254,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1411,7 +1273,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -1423,12 +1285,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1439,7 +1296,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1451,12 +1308,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1486,7 +1338,7 @@ public static class Detection
 
 
     public static void KinematicCircleRigidBody_To_KinematicCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -1498,12 +1350,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1519,7 +1366,7 @@ public static class Detection
     }
 
     public static void KinematicCircleRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1531,12 +1378,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1549,7 +1391,7 @@ public static class Detection
     }
 
     public static void KinematicCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -1561,12 +1403,7 @@ public static class Detection
             int otherIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int ownerIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1582,7 +1419,7 @@ public static class Detection
     }
 
     public static void KinematicCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -1595,12 +1432,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1622,7 +1454,7 @@ public static class Detection
     }
 
     public static void KinematicCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -1635,12 +1467,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1664,7 +1491,7 @@ public static class Detection
     }
 
     public static void KinematicCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1676,12 +1503,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1694,7 +1516,7 @@ public static class Detection
     }
 
     public static void KinematicCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -1706,12 +1528,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1727,7 +1544,7 @@ public static class Detection
     }
 
     public static void KinematicCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1739,12 +1556,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1757,7 +1569,7 @@ public static class Detection
     }
 
     public static void KinematicCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -1769,12 +1581,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1801,7 +1608,7 @@ public static class Detection
 
 
     public static void TriggerPolygonRigidBody_To_TriggerPolygonRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -1813,12 +1620,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1829,7 +1631,7 @@ public static class Detection
     }
 
     public static void TriggerPolygonRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1841,12 +1643,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1864,7 +1661,7 @@ public static class Detection
     }
 
     public static void TriggerPolygonRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -1876,12 +1673,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1892,7 +1684,7 @@ public static class Detection
     }
 
     public static void TriggerPolygonRigidBody_To_SolidCircleCollider (OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1904,12 +1696,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1927,7 +1714,7 @@ public static class Detection
     }
 
     public static void TriggerPolygonRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -1939,12 +1726,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -1955,7 +1737,7 @@ public static class Detection
     }
 
     public static void TriggerPolygonRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -1967,12 +1749,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -1990,7 +1767,7 @@ public static class Detection
     }
 
     public static void TriggerPolygonRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -2002,12 +1779,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2018,7 +1790,7 @@ public static class Detection
     }
 
     public static void TriggerPolygonRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2030,12 +1802,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2065,7 +1832,7 @@ public static class Detection
 
 
     public static void TriggerCircleRigidBody_To_TriggerCircleRigidBody(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -2077,12 +1844,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2098,7 +1860,7 @@ public static class Detection
     }
 
     public static void TriggerCircleRigidBody_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2110,12 +1872,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2128,7 +1885,7 @@ public static class Detection
     }
 
     public static void TriggerCircleRigidBody_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -2140,12 +1897,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2161,7 +1913,7 @@ public static class Detection
     }
 
     public static void TriggerCircleRigidBody_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2173,12 +1925,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2191,7 +1938,7 @@ public static class Detection
     }
 
     public static void TriggerCircleRigidBody_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -2203,12 +1950,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2224,7 +1966,7 @@ public static class Detection
     }
 
     public static void TriggerCircleRigidBody_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2236,12 +1978,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2254,7 +1991,7 @@ public static class Detection
     }
 
     public static void TriggerCircleRigidBody_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -2266,12 +2003,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2300,7 +2032,7 @@ public static class Detection
 
 
     public static void SolidPolygonCollider_To_SolidPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -2313,12 +2045,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
 
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2338,7 +2065,7 @@ public static class Detection
     }
 
     public static void SolidPolygonCollider_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -2351,12 +2078,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2383,7 +2105,7 @@ public static class Detection
     }
 
     public static void SolidPolygonCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -2396,12 +2118,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
 
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2421,7 +2138,7 @@ public static class Detection
     }
 
     public static void SolidPolygonCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -2434,12 +2151,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2466,7 +2178,7 @@ public static class Detection
     }
 
     public static void SolidPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -2478,12 +2190,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
 
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2494,7 +2201,7 @@ public static class Detection
     }
 
     public static void SolidPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2506,12 +2213,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2541,7 +2243,7 @@ public static class Detection
 
 
     public static void SolidCircleCollider_To_SolidCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -2554,12 +2256,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2584,7 +2281,7 @@ public static class Detection
     }
 
     public static void SolidCircleCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii,
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -2597,12 +2294,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2624,7 +2316,7 @@ public static class Detection
     }
 
     public static void SolidCircleCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii, 
         CategorisedOverlapArray<int> colliderCollisionsToResolve
     )
@@ -2637,12 +2329,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2667,7 +2354,7 @@ public static class Detection
     }
 
     public static void SolidCircleCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2679,12 +2366,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2697,7 +2379,7 @@ public static class Detection
     }
 
     public static void SolidCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -2709,12 +2391,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2736,7 +2413,7 @@ public static class Detection
     *******************/
 
     public static void KinematicPolygonCollider_To_KinematicPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -2748,12 +2425,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2764,7 +2436,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2776,12 +2448,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2799,7 +2466,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -2811,12 +2478,7 @@ public static class Detection
             int otherIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int ownerIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2827,7 +2489,7 @@ public static class Detection
     }
 
     public static void KinematicPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2839,12 +2501,7 @@ public static class Detection
             int circIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int polyIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2874,7 +2531,7 @@ public static class Detection
 
 
     public static void KinematicCircleCollider_To_KinematicCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -2886,12 +2543,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2907,7 +2559,7 @@ public static class Detection
     }
 
     public static void KinematicCircleCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -2919,12 +2571,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -2937,7 +2584,7 @@ public static class Detection
     }
 
     public static void KinematicCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -2949,12 +2596,7 @@ public static class Detection
             int otherIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int ownerIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -2982,7 +2624,7 @@ public static class Detection
 
 
     public static void TriggerPolygonCollider_To_TriggerPolygonCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices
     )
     {
@@ -2994,12 +2636,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
             
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
@@ -3010,7 +2647,7 @@ public static class Detection
     }
 
     public static void TriggerPolygonCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, FsSoa_Vector2 vertices, Span<float> radii
     )
     {
@@ -3022,12 +2659,7 @@ public static class Detection
             int polyIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int circIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[polyIndex], minAabbsX[circIndex], minAabbsY[polyIndex], minAabbsY[circIndex], 
-                maxAabbsX[polyIndex], maxAabbsX[circIndex], maxAabbsY[polyIndex], maxAabbsY[circIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, polyIndex, circIndex) == false)
             {
                 continue;
             }
@@ -3057,7 +2689,7 @@ public static class Detection
 
 
     public static void TriggerCircleCollider_To_TriggerCircleCollider(OverlapInfo info, Span<int> bvhIndices, 
-        CollisionManifoldState collisions, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
+        CollisionManifoldState collisions, IntrusiveList.Node[] nodes, float[] centroidsX, float[] centroidsY, float[] minAabbsX, float[] minAabbsY, 
         float[] maxAabbsX, float[] maxAabbsY, Span<float> radii
     )
     {
@@ -3069,12 +2701,7 @@ public static class Detection
             int ownerIndex = bvhIndices[info.OwnerLeafIndices[i]];
             int otherIndex = bvhIndices[info.OtherLeafIndices[i]];
         
-            bool broadPhasePassed = Aabb.Intersect(
-                minAabbsX[ownerIndex], minAabbsX[otherIndex], minAabbsY[ownerIndex], minAabbsY[otherIndex], 
-                maxAabbsX[ownerIndex], maxAabbsX[otherIndex], maxAabbsY[ownerIndex], maxAabbsY[otherIndex]
-            ); 
-
-            if (broadPhasePassed == false)
+            if(BroadPhase(nodes, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, ownerIndex, otherIndex) == false)
             {
                 continue;
             }
