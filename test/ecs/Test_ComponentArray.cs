@@ -29,13 +29,13 @@ public class Test_ComponentArray
         {
             ComponentArray<float> nums = new(length);
             
-            EntityRegistry entities = new(length);
+            GenIdAllocator entities = new(length);
             GenId placeholderGenId = default;
 
             // allocate entities.
             for(int i = 1; i < length; i++)
             {
-                EntityRegistry.Allocate(entities, ref placeholderGenId);
+                GenIdAllocator.Allocate(entities, ref placeholderGenId);
             }
 
             for(int i = 1; i < length; i++)
@@ -66,13 +66,13 @@ public class Test_ComponentArray
         for(int length = start; length < start+8; length++)
         {
             ComponentArray<float> nums = new(length);
-            EntityRegistry entities = new(length);
+            GenIdAllocator entities = new(length);
             GenId genId = default;
 
             // allocate entities.
             for(int i = 1; i < length; i++)
             {
-                EntityRegistry.Allocate(entities, ref genId);
+                GenIdAllocator.Allocate(entities, ref genId);
             }
 
             // allocate entries.
@@ -110,12 +110,12 @@ public class Test_ComponentArray
         int maxEntities = 12;
         float component = 0;
         ComponentArray<float> nums = new(maxEntities);
-        EntityRegistry entities = new(maxEntities);
+        GenIdAllocator entities = new(maxEntities);
         bool isValid = default;
 
         GenId validId = default;
         GenId staleId = new(10,13);
-        EntityRegistry.Allocate(entities, ref validId);
+        GenIdAllocator.Allocate(entities, ref validId);
 
         // fail cases.
         ComponentArray.GetData(nums, staleId, ref isValid);
@@ -137,14 +137,14 @@ public class Test_ComponentArray
         for(int length = start; length < 8; length++)
         {
             ComponentArray<float> nums = new(length);
-            EntityRegistry entities = new(length);
+            GenIdAllocator entities = new(length);
 
             GenId placeholderGenId = default;
 
             // allocate entities.
             for(int i = 1; i < length; i++)
             {
-                EntityRegistry.Allocate(entities, ref placeholderGenId);
+                GenIdAllocator.Allocate(entities, ref placeholderGenId);
             }
 
             for(int i = 1; i < length; i++)
@@ -216,7 +216,7 @@ public class Test_ComponentArray
         for(int length = start; length < start+9; length++)
         {
             ComponentArray<float> nums = new(length);
-            EntityRegistry entities = new EntityRegistry(length);
+            GenIdAllocator entities = new GenIdAllocator(length);
 
             
             for(int i = 1; i < length; i++)

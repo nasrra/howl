@@ -261,10 +261,10 @@ public static class ComponentArray
     ///             <see cref="GenIdResult.StaleGenId"/>
     ///         </item>
     /// </returns>
-    public static GenIdResult SetActive<T>(this ComponentArray<T> array, EntityRegistry entities, GenId genId)
+    public static GenIdResult SetActive<T>(this ComponentArray<T> array, GenIdAllocator entities, GenId genId)
     {
 
-        if(EntityRegistry.IsGenIdStale(entities, genId))
+        if(GenIdAllocator.IsGenIdStale(entities, genId))
         {
             return GenIdResult.StaleGenId;
         }
@@ -351,9 +351,9 @@ public static class ComponentArray
     ///         </item>
     ///     </list>
     /// </returns>
-    public static GenIdResult SetInactive<T>(this ComponentArray<T> array, EntityRegistry entities, GenId genId)
+    public static GenIdResult SetInactive<T>(this ComponentArray<T> array, GenIdAllocator entities, GenId genId)
     {
-        if(EntityRegistry.IsGenIdStale(entities, genId))
+        if(GenIdAllocator.IsGenIdStale(entities, genId))
         {
             return GenIdResult.StaleGenId;
         }

@@ -9,7 +9,7 @@ public static class Assert_EntityRegistry
     /// </summary>
     /// <param name="length">the expected length of the backing arrays.</param>
     /// <param name="registry">the entity registry instance.</param>
-    public static void LengthEqual(int length, EntityRegistry registry)
+    public static void LengthEqual(int length, GenIdAllocator registry)
     {
         Assert.Equal(length, registry.GenIds.Length);
         Assert_StackArray.LengthEqual(length, registry.FreeSlots);
@@ -20,7 +20,7 @@ public static class Assert_EntityRegistry
     ///     Asserts that a entity registry instance is disposed.
     /// </summary>
     /// <param name="registry">the entity registry instance to assert.</param>
-    public static void Disposed(EntityRegistry registry)
+    public static void Disposed(GenIdAllocator registry)
     {
         Assert.Null(registry.GenIds);
         Assert.Null(registry.FreeSlots);

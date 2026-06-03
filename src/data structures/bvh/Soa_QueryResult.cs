@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using Howl.Ecs;
 using Howl.Math.Shapes;
 
 namespace Howl.DataStructures.Bvh;

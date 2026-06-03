@@ -5,9 +5,9 @@ public class Test_EntityRegistry
     [Fact]
     public void Constructor_Test()
     {
-        for(int length = EntityRegistry.MinEntityCount; length < EntityRegistry.MinEntityCount + 12; length++)
+        for(int length = GenIdAllocator.MinGenIdCount; length < GenIdAllocator.MinGenIdCount + 12; length++)
         {
-            EntityRegistry registry = new(length);
+            GenIdAllocator registry = new(length);
             Assert_EntityRegistry.LengthEqual(length, registry);
         }
     }
@@ -15,11 +15,11 @@ public class Test_EntityRegistry
     [Fact]
     public void Allocate_Test()
     {
-        for(int length = EntityRegistry.MinEntityCount; length < EntityRegistry.MinEntityCount + 12; length++)
+        for(int length = GenIdAllocator.MinGenIdCount; length < GenIdAllocator.MinGenIdCount + 12; length++)
         {
             int nilAdjustedLength = length - 1;
             GenId genId = default;
-            EntityRegistry registry = new(length);
+            GenIdAllocator registry = new(length);
 
             // successful allocation test.
             for(int i = 0; i < nilAdjustedLength; i++)
@@ -27,7 +27,7 @@ public class Test_EntityRegistry
                 int value = i;
 
                 // allocation should be successful.
-                Assert.Equal(GenIdResult.Ok, EntityRegistry.Allocate(registry, ref genId));
+                Assert.Equal(GenIdResult.Ok, GenIdAllocator.Allocate(registry, ref genId));
 
                 // increment by one as there is a Nil in the collection.
                 int entityIndex = i+1;
@@ -42,7 +42,7 @@ public class Test_EntityRegistry
 
             // memory limit reached test.
             GenId previousGenId = genId;
-            Assert.Equal(GenIdResult.MemoryLimitHit, EntityRegistry.Allocate(registry, ref genId));
+            Assert.Equal(GenIdResult.MemoryLimitHit, GenIdAllocator.Allocate(registry, ref genId));
             
             // gen id should not have been written to.
             Assert.Equal(previousGenId, genId);
@@ -53,18 +53,18 @@ public class Test_EntityRegistry
     public void Deallocate_Test()
     {
         // == deallocate then immediaately allocate. == 
-        for(int length = EntityRegistry.MinEntityCount; length < EntityRegistry.MinEntityCount + 12; length++)
+        for(int length = GenIdAllocator.MinGenIdCount; length < GenIdAllocator.MinGenIdCount + 12; length++)
         {
             int nilAdjustedLength = length - 1;
 
             // setup test dataset.
-            EntityRegistry registry = new(length);
+            GenIdAllocator registry = new(length);
             GenId genId = default;
 
             // allocate entries.
             for(int i = 0; i < nilAdjustedLength; i++)
             {
-                EntityRegistry.Allocate(registry, ref genId);
+                GenIdAllocator.Allocate(registry, ref genId);
             }
 
             for(int generation = 0; generation < 6; generation++)
@@ -76,7 +76,7 @@ public class Test_EntityRegistry
                 {
                     // deallocate should be successful.
                     GenId deallocatedId = new(j, generation);
-                    Assert.Equal(GenIdResult.Ok, EntityRegistry.Deallocate(registry, deallocatedId));
+                    Assert.Equal(GenIdResult.Ok, GenIdAllocator.Deallocate(registry, deallocatedId));
                     Assert.False(registry.Allocated[j]);
 
                     // ensure that the slot has been put back into the free slots pool for later reuse.
@@ -85,7 +85,7 @@ public class Test_EntityRegistry
 
                     // allocate into the newly freed slot.
                     GenId allocatedId = default;
-                    Assert.Equal(GenIdResult.Ok, EntityRegistry.Allocate(registry, ref allocatedId));
+                    Assert.Equal(GenIdResult.Ok, GenIdAllocator.Allocate(registry, ref allocatedId));
 
                     // ensure generational increment.
                     Assert.Equal(nextGeneration, GenId.GetGeneration(allocatedId));
@@ -102,17 +102,17 @@ public class Test_EntityRegistry
         }
 
         // == deallocate all then allocate all. ==
-        for(int length = EntityRegistry.MinEntityCount; length < EntityRegistry.MinEntityCount + 12; length++)
+        for(int length = GenIdAllocator.MinGenIdCount; length < GenIdAllocator.MinGenIdCount + 12; length++)
         {
             // setup test dataset.
             int totalAllocations = length-1;
-            EntityRegistry registry = new(length);
+            GenIdAllocator registry = new(length);
             GenId genId = default;
 
             // allocate entries.
             for(int i = 0; i < totalAllocations; i++)
             {
-                EntityRegistry.Allocate(registry, ref genId);
+                GenIdAllocator.Allocate(registry, ref genId);
             }            
 
             for(int generation = 0; generation < 6; generation++)
@@ -124,7 +124,7 @@ public class Test_EntityRegistry
                 {
                     // deallocate should be successful.
                     GenId deallocatedId = new(j, generation);
-                    Assert.Equal(GenIdResult.Ok, EntityRegistry.Deallocate(registry, deallocatedId));
+                    Assert.Equal(GenIdResult.Ok, GenIdAllocator.Deallocate(registry, deallocatedId));
                     Assert.False(registry.Allocated[j]);
 
                     // ensure that the slot has been put back into the free slots pool for later reuse.
@@ -136,7 +136,7 @@ public class Test_EntityRegistry
                 {
                     // allocate into the newly freed slot.
                     GenId allocatedId = default;
-                    Assert.Equal(GenIdResult.Ok, EntityRegistry.Allocate(registry, ref allocatedId));
+                    Assert.Equal(GenIdResult.Ok, GenIdAllocator.Allocate(registry, ref allocatedId));
 
                     // ensure generational increment.
                     Assert.Equal(nextGeneration, GenId.GetGeneration(allocatedId));
@@ -156,11 +156,11 @@ public class Test_EntityRegistry
     [Fact]
     public void Disposal_Test()
     {
-        for(int length = EntityRegistry.MinEntityCount; length < EntityRegistry.MinEntityCount + 12; length++)
+        for(int length = GenIdAllocator.MinGenIdCount; length < GenIdAllocator.MinGenIdCount + 12; length++)
         {
-            EntityRegistry registry = new(length);
+            GenIdAllocator registry = new(length);
             Assert.False(registry.Disposed);
-            EntityRegistry.Dispose(registry);
+            GenIdAllocator.Dispose(registry);
             Assert_EntityRegistry.Disposed(registry);
         }   
     }

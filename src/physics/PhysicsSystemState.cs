@@ -349,7 +349,7 @@ public sealed class PhysicsSystemState
     /// <summary>
     ///     The gen-id allocator for all phsyics bodies.
     /// </summary>
-    public EntityRegistry Entities;
+    public GenIdAllocator Entities;
 
     /// <summary>
     ///     Gets the bounding volume hierarchy for a collision system.

@@ -30,7 +30,7 @@ public static class LevelManager
     /// <param name="app">the howl application instance to parse into.</param>
     /// <param name="levelIdentifier">the name of the level.</param>
     /// <returns>true, if the level was successfully loaded; otherwise false.</returns>
-    public static bool LoadLevel(HowlAppState app, EntityRegistry entities, ComponentArray<Sprite> sprites, ComponentArray<Transform> transforms, string levelIdentifier)
+    public static bool LoadLevel(HowlAppState app, GenIdAllocator entities, ComponentArray<Sprite> sprites, ComponentArray<Transform> transforms, string levelIdentifier)
     {
         return LdtkParser.LoadLevel(app, app.LdtkParserState, entities, sprites, transforms, levelIdentifier);
     }

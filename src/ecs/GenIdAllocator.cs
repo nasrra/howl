@@ -1,9 +1,9 @@
 using System;
 
-public class EntityRegistry : IDisposable
+public class GenIdAllocator : IDisposable
 {
-    public const int MaxEntityCount = GenId.UniqueIndicesCount;
-    public const int MinEntityCount = 2;
+    public const int MaxGenIdCount = GenId.UniqueIndicesCount;
+    public const int MinGenIdCount = 2;
 
     /// <summary>
     /// The GenIds of all entities.
@@ -39,26 +39,26 @@ public class EntityRegistry : IDisposable
     ///     Creates a new EntityRegistry instance.
     /// </summary>
     /// <remarks>
-    ///     <c><paramref name="maxEntityCount"/></c> will be clamped between the <c><see cref="MinEntityCount"/></c> and <c><see cref="MaxEntityCount"/></c>
+    ///     <c><paramref name="maxIdCount"/></c> will be clamped between the <c><see cref="MinGenIdCount"/></c> and <c><see cref="MaxGenIdCount"/></c>
     /// </remarks>
-    /// <param name="maxEntityCount">the total amount of entities this registry can store.</param>
-    public EntityRegistry(int maxEntityCount)
+    /// <param name="maxIdCount">the total amount of entities this registry can store.</param>
+    public GenIdAllocator(int maxIdCount)
     {
-        System.Diagnostics.Debug.Assert(maxEntityCount >= MinEntityCount && maxEntityCount <= MaxEntityCount, 
-            "maxEntityCount '{maxEntityCount}' is not between minimum '{MinEntityCount}' and maximum value '{MaxEntityCount}'"
+        System.Diagnostics.Debug.Assert(maxIdCount >= MinGenIdCount && maxIdCount <= MaxGenIdCount, 
+            "maxIdCount '{maxEntityCount}' is not between minimum '{MinEntityCount}' and maximum value '{MaxEntityCount}'"
         );
-        maxEntityCount = Howl.Math.Math.Clamp(maxEntityCount, MinEntityCount, MaxEntityCount);
-        GenIds = new GenId[maxEntityCount];
+        maxIdCount = Howl.Math.Math.Clamp(maxIdCount, MinGenIdCount, MaxGenIdCount);
+        GenIds = new GenId[maxIdCount];
 
         // set the indexes for the gen ids.
-        for(int i = 1; i < maxEntityCount; i++)
+        for(int i = 1; i < maxIdCount; i++)
         {
             GenIds[i] = new(i, 0);
         }
  
-        Allocated = new bool[maxEntityCount];
+        Allocated = new bool[maxIdCount];
 
-        FreeSlots = new(maxEntityCount);
+        FreeSlots = new(maxIdCount);
 
         // append entry 1 as the next free slot available; not zero as zero is Nil.
         StackArray.Push(FreeSlots, 1);
@@ -79,7 +79,7 @@ public class EntityRegistry : IDisposable
     ///         </item>
     ///     </list>
     /// </returns>
-    public static GenIdResult Allocate(EntityRegistry registry, ref GenId genId)
+    public static GenIdResult Allocate(GenIdAllocator registry, ref GenId genId)
     {
         if(registry.FreeSlots.Count == 0)
         {
@@ -123,7 +123,7 @@ public class EntityRegistry : IDisposable
     ///         </item>
     ///     </list>
     /// </returns>    
-    public static GenIdResult Deallocate(EntityRegistry registry, GenId genId)
+    public static GenIdResult Deallocate(GenIdAllocator registry, GenId genId)
     {
         int index = GenId.GetIndex(genId);
 
@@ -145,7 +145,7 @@ public class EntityRegistry : IDisposable
     ///    <para>Remarks:</para>
     ///    <para>stale gen id checks are not enforced; the entity index will always run through the deallocation procedure.</para>
     /// </remarks>
-    public static void DeallocateUnsafe(EntityRegistry registry, int entityIndex)
+    public static void DeallocateUnsafe(GenIdAllocator registry, int entityIndex)
     {        
         // increment the generation so that any gen indices pointing to this data are invalidated (making them stale pointers).
         registry.GenIds[entityIndex] = GenId.IncrementGeneration(registry.GenIds[entityIndex]);
@@ -155,7 +155,7 @@ public class EntityRegistry : IDisposable
         StackArray.Push(registry.FreeSlots, entityIndex);
     }
 
-    public static void DeallocateAll(EntityRegistry registry)
+    public static void DeallocateAll(GenIdAllocator registry)
     {
         for(int i = 0; i < registry.GenIds.Length; i++)
         {
@@ -172,7 +172,7 @@ public class EntityRegistry : IDisposable
     /// <param name="registry">the entity registry instance to query.</param>
     /// <param name="genId">the specified gen id.</param>
     /// <returns>true, if the gen id is stale; otherwise false</returns>
-    public static bool IsGenIdStale(EntityRegistry registry, GenId genId)
+    public static bool IsGenIdStale(GenIdAllocator registry, GenId genId)
     {
         return registry.GenIds[GenId.GetIndex(genId)] != genId;
     }
@@ -194,7 +194,7 @@ public class EntityRegistry : IDisposable
         Dispose(this);
     }
 
-    public static void Dispose(EntityRegistry registry)
+    public static void Dispose(GenIdAllocator registry)
     {
         if (registry.Disposed)
         {
@@ -213,7 +213,7 @@ public class EntityRegistry : IDisposable
         GC.SuppressFinalize(registry);
     }
 
-    ~EntityRegistry()
+    ~GenIdAllocator()
     {
         Dispose(this);
     }

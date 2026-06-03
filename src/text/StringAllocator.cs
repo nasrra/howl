@@ -37,6 +37,28 @@ public static class StringAllocator{
         return true;
     }
 
+    public static bool Allocate(StringAllocatorState state, ReadOnlySpan<char> characters, ref int stringIndex)
+    {
+        if(characters.Length > state.MaxCharacterCount)
+        {
+            Debug.LogError($"Cannot set string '{characters}' as length is greater than max characters '{state.MaxCharacterCount}'.");
+            return false;            
+        }
+
+        if(state.MaxStringCount <= state.AllocatedStringCount+1)
+        {
+            Debug.LogError($"Cannot allocate string '{characters}' as the maximum number of allocated strings has been reached.");
+            return false;
+        }
+
+        stringIndex = state.FreeStringIndices.Pop();
+        SetCharsUnsafe(state, characters, stringIndex);
+        state.Allocated[stringIndex] = true;
+        state.AllocatedStringCount++;
+
+        return true;
+    }
+
     /// <summary>
     ///     Sets the characters of an allocated string.
     /// </summary>
@@ -74,6 +96,19 @@ public static class StringAllocator{
     /// <param name="stringIndex">the index of the string to set.</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     public static void SetCharsUnsafe(StringAllocatorState state, Span<char> characters, int stringIndex)
+    {        
+        int startIndex = GetFirstCharIndex(state, stringIndex);
+
+        for(int i = 0; i < characters.Length; i++)
+        {
+            state.Characters[startIndex+i] = characters[i];
+        }
+
+        state.TerminatorIndices[stringIndex] = startIndex + characters.Length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    public static void SetCharsUnsafe(StringAllocatorState state, ReadOnlySpan<char> characters, int stringIndex)
     {        
         int startIndex = GetFirstCharIndex(state, stringIndex);
 

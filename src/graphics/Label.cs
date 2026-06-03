@@ -30,20 +30,11 @@ public struct Label
     /// </summary>
     public DrawSpace DrawSpace;
 
-    /// <summary>
-    ///     Constructs a Text.
-    /// </summary>
-    /// <param name="colour">the colour used when drawing.</param>
-    /// <param name="offset">the offset when drawing.</param>
-    /// <param name="stringId">the string id to this text's characters in a string allocator instance.</param>
-    /// <param name="fontId">the id of the font in a font manager instance to use when drawing.</param>
-    /// <param name="drawSpace">the space to draw in.</param>
-    public Label(Colour colour, Vector2 offset, StringId stringId, int fontId, DrawSpace drawSpace)
+    public static void Initialise(ref Label label, Colour colour, Vector2 offset, int fontId, DrawSpace drawSpace)
     {
-        Colour = colour;
-        Offset = offset;
-        StringId = stringId;
-        FontId = fontId;
-        DrawSpace = drawSpace;
+        label.Colour = colour;
+        label.Offset = offset;
+        label.FontId = fontId;
+        label.DrawSpace = drawSpace;
     }
 }

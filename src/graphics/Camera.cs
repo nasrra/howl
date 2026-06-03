@@ -1,4 +1,3 @@
-using Howl.Ecs;
 using Howl.Math;
 
 namespace Howl.Graphics;

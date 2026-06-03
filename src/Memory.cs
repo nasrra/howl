@@ -31,17 +31,19 @@ public unsafe static class Memory
     }
 
     public static void 
-    IntialiseArena(ref State state, ref Arena arena, nuint capacity)
+    InitialiseArena(ref State state, ref Arena arena, nuint capacity)
     {
-        state.Offset += capacity;
-        System.Diagnostics.Debug.Assert(state.Offset <= state.Capacity, "Memory Limit Exceeded.");
+        nuint newOffset = state.Offset + capacity;
+        System.Diagnostics.Debug.Assert(newOffset <= state.Capacity, "Memory Limit Exceeded.");
         arena.StartPtr = state.Buffer + state.Offset;
         arena.Capacity = capacity;
+        state.Offset = newOffset;
     }
 
-    public static HArray<T>
-    PushArray<T>(ref Arena arena, int length) where T : unmanaged
-    {
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static T*
+    PushArrayRaw<T>(ref Arena arena, int length) where T : unmanaged
+    {        
         /**
         NOTE: gemini wrote this, dont know why it is needed so i commented it out,
         honestly doesnt make any sense lol,        
@@ -52,15 +54,14 @@ public unsafe static class Memory
         **/
 
         nuint sizeNeeded = (nuint)length * (nuint)sizeof(T);
-        arena.Used += sizeNeeded;
-        System.Diagnostics.Debug.Assert(arena.Used <= arena.Capacity, "Memory Limit Exceeded.");
+        nuint newUsed = arena.Used + sizeNeeded;
+        System.Diagnostics.Debug.Assert(newUsed <= arena.Capacity, "Memory Limit Exceeded.");
         T* ptr = (T*)(arena.StartPtr + arena.Used);
-        
-        HArray<T> array = default;
-        HArray<T>.Intialise(ref array, ptr, length);
-        return array;
+        arena.Used = newUsed;
+        return ptr;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static ref T
     PushStruct<T>(ref Arena arena) where T : unmanaged
     {
@@ -92,6 +93,7 @@ public unsafe static class Memory
         return Megabytes(value) * 1024;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void 
     Free(ref State state)
     {

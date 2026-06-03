@@ -348,4 +348,9 @@ public static class Debug
             outputResolutionHeight, thickness, scaleThickness
         );
     }
+
+    public static void Assert(bool assert, string msg)
+    {
+        System.Diagnostics.Debug.Assert(assert, msg);
+    }
 }

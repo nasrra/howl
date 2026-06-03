@@ -1,7 +1,7 @@
 using System;
-using Howl.Ecs;
 using Howl.Generic;
 using Howl.Math;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.Graphics;
 
@@ -12,9 +12,9 @@ public static class CameraSystem
     /// </summary>
     /// <param name="cameras">the cameras to update.</param>
     /// <param name="outputResolutionAspectRatio">the output resolution aspect ratio.</param>
-    public static void UpdateProjectionMatrices(ComponentArray<Camera> cameras, float outputResolutionAspectRatio)
+    public static void UpdateProjectionMatrices(ref ComponentArray<Camera> cameras, float outputResolutionAspectRatio)
     {
-        for(int i = 1; i < cameras.Active.Count; i++)
+        for(int i = 0; i < cameras.Active.Count; i++)
         {
             ref Camera camera = ref ComponentArray.GetDataUnsafe(cameras, cameras.Active[i]);
             camera.UpdateProjectionMatrix(outputResolutionAspectRatio);

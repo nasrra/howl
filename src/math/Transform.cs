@@ -1,5 +1,5 @@
-using System;
 using System.Runtime.CompilerServices;
+using Howl.DataStructures;
 
 namespace Howl.Math;
 
@@ -10,7 +10,7 @@ namespace Howl.Math;
 /// </summary>
 public struct Transform
 {
-    public static Transform Identity = new Transform(new Vector2(0,0), new Vector2(1,1), 0);
+    public static Transform Identity = new(){Position = Vector2.Zero, Scale = Vector2.One, RotationRadians = 0, Cosine = 1, Sine = 0};
 
     /// <summary>
     ///     the position.
@@ -78,57 +78,34 @@ public struct Transform
     /// </remarks>
     public float Cosine;
 
-    /// <summary>
-    /// Constructs a Transform.
-    /// </summary>
-    /// <param name="position">The positional x and y-coordinate values.</param>
-    /// <param name="scale">The horizontal (x) and vertical (y) scaling values.</param>
-    /// <param name="rotation">The rotation - in radians.</param>
-    public Transform(Vector2 position, Vector2 scale, float rotation)
-    : this(position.X, position.Y, scale.X, scale.Y, rotation, MathF.Sin(rotation), MathF.Cos(rotation)){}
-
-    /// <summary>
-    /// Constructs a Transform.
-    /// </summary>
-    /// <param name="position">The positional x and y-coordinate values.</param>
-    /// <param name="scale">The horizontal (x) and vertical (y) scaling values.</param>
-    /// <param name="rotation">The rotation - in radians.</param>
-    public Transform(Vector2Int position, Vector2 scale, float rotation)
-    : this(position.X, position.Y, scale.X, scale.Y, rotation, MathF.Sin(rotation), MathF.Cos(rotation)){}   
-
-    /// <summary>
-    /// Constructs a Transform.
-    /// </summary>
-    /// <param name="position">The positional x and y-coordinate values.</param>
-    /// <param name="scale">The horizontal (x) and vertical (y) scaling values.</param>
-    /// <param name="rotation">The rotation - in radians.</param>
-    public Transform(Vector2 position, float scale, float rotation)
-    : this(position.X, position.Y, scale, scale, rotation, MathF.Sin(rotation), MathF.Cos(rotation)){}
-    
-    /// <summary>
-    /// Constructs a Transform.
-    /// </summary>
-    /// <param name="positionX">the x-component of the positional vector.</param>
-    /// <param name="positionY">the y-component of the positional vector.</param>
-    /// <param name="scaleX">the x-component of the scaling vector.</param>
-    /// <param name="scaleY">the y-component of the scaling vector.</param>
-    /// <param name="rotation">the rotational value - in radians.</param>
-    /// <param name="sin">the sin of the rotation.</param>
-    /// <param name="cos">the cos of the rotation.</param>
-    public Transform(float positionX, float positionY, float scaleX, float scaleY, float rotation, float sin, float cos)
+    public static void Initialise(ref Transform transform, float positionX, float positionY, float scaleX, float scaleY, float rotation)
     {
-        Position.X = positionX;
-        Position.Y = positionY;
-        Scale.X = scaleX;
-        Scale.Y = scaleY;
-        RotationRadians = rotation;
-        Sine = sin;
-        Cosine = cos;
+        transform.Position.X = positionX;
+        transform.Position.Y = positionY;
+        transform.Scale.X = scaleX;
+        transform.Scale.Y = scaleY;
+        transform.RotationRadians = rotation;
+        transform.Cosine = System.MathF.Cos(rotation);
+        transform.Sine = System.MathF.Sin(rotation);
+    }
 
-        if(float.IsNaN(Cosine) || float.IsNaN(Sine))
-        {
-            System.Diagnostics.Debug.Assert(false);
-        }
+    public static void Initialise(ref Transform transform, Vector2 position, Vector2 scale, float rotation)
+    {
+        transform.Position = position;
+        transform.Scale = scale;
+        transform.RotationRadians = rotation;
+        transform.Cosine = System.MathF.Cos(rotation);
+        transform.Sine = System.MathF.Sin(rotation);        
+    }
+
+    public static void Initialise(ref Transform transform, Vector2 position, float scale, float rotation)
+    {
+        transform.Position = position;
+        transform.Scale.X = scale;
+        transform.Scale.Y = scale;
+        transform.RotationRadians = rotation;
+        transform.Cosine = System.MathF.Cos(rotation);
+        transform.Sine = System.MathF.Sin(rotation);
     }
 
     /// <summary>
@@ -172,8 +149,8 @@ public struct Transform
     public static void Rotate(ref Transform transform, float radians)
     {
         transform.RotationRadians += radians;
-        transform.Sine = MathF.Sin(transform.RotationRadians);
-        transform.Cosine = MathF.Cos(transform.RotationRadians);
+        transform.Sine = System.MathF.Sin(transform.RotationRadians);
+        transform.Cosine = System.MathF.Cos(transform.RotationRadians);
     }
 
     /// <summary>

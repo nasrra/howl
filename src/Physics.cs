@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics;
 using Howl.Collections;
 using Howl.DataStructures;
 using Howl.DataStructures.Bvh;
@@ -9,7 +8,6 @@ using Howl.Graphics;
 using Howl.Math;
 using Howl.Math.Shapes;
 using Howl.Physics;
-using Howl.Systems;
 
 namespace Howl;
 
@@ -837,7 +835,7 @@ public static class PhysicsNew
         /// <summary>
         ///     The gen-id allocator for all phsyics bodies.
         /// </summary>
-        public EntityRegistry Entities;
+        public GenIdAllocator Entities;
 
         /// <remarks>
         ///    <para>Remarks:</para>
@@ -1032,7 +1030,7 @@ public static class PhysicsNew
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static GenIdResult SetActive(State state, GenId entityId, bool isActive)
     {
-        if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+        if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
         {
             return GenIdResult.StaleGenId;
         }
@@ -1061,7 +1059,7 @@ public static class PhysicsNew
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool IsActive(State state, GenId entityId, ref GenIdResult resultOutput)
     {
-        if (EntityRegistry.IsGenIdStale(state.Entities, entityId))
+        if (GenIdAllocator.IsGenIdStale(state.Entities, entityId))
         {
             resultOutput = GenIdResult.StaleGenId;
             return false;
@@ -1091,7 +1089,7 @@ public static class PhysicsNew
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static GenIdResult SetLocalTransform(State state, GenId genId, Transform transform)
     {
-        if(EntityRegistry.IsGenIdStale(state.Entities, genId))
+        if(GenIdAllocator.IsGenIdStale(state.Entities, genId))
         {
             return GenIdResult.StaleGenId;
         }
@@ -1139,7 +1137,7 @@ public static class PhysicsNew
 
     public static Vector2 GetLinearVelocity(State state, GenId entityId, ref GenIdResult resultOutput)
     {
-        if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+        if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
         {
             resultOutput = GenIdResult.StaleGenId;
             return default;
@@ -2631,7 +2629,7 @@ public static class PhysicsNew
     {
         public static GenIdResult Allocate(State state, Transform globalTransform, bool gravityAffected, ref GenId entityId)
         {
-            GenIdResult result = EntityRegistry.Allocate(state.Entities, ref entityId);
+            GenIdResult result = GenIdAllocator.Allocate(state.Entities, ref entityId);
 
             if(result != GenIdResult.Ok)
             {
@@ -2658,7 +2656,7 @@ public static class PhysicsNew
 
         public static GenIdResult Deallocate(State state, GenId genId)
         {
-            if (EntityRegistry.IsGenIdStale(state.Entities, genId))
+            if (GenIdAllocator.IsGenIdStale(state.Entities, genId))
             {
                 return GenIdResult.StaleGenId;
             }
@@ -2680,7 +2678,7 @@ public static class PhysicsNew
         /// </remarks>
         public static void DeallocateUnsafe(State state, int entityIndex)
         {            
-            EntityRegistry.DeallocateUnsafe(state.Entities, entityIndex);
+            GenIdAllocator.DeallocateUnsafe(state.Entities, entityIndex);
             
             // deallocate all shapes.
             // note the reverse order and starting deallocation at the last child.
@@ -2752,7 +2750,7 @@ public static class PhysicsNew
 
         public static GenIdResult ImpulseForce(State state, Vector2 force, GenId entityId)
         {
-            if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+            if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
             {
                 return GenIdResult.StaleGenId;
             }
@@ -3236,7 +3234,7 @@ public static class PhysicsNew
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static ref float GetStaticFriction(State state, GenId entityId, ref GenIdResult resultOutput)
             {
-                if (EntityRegistry.IsGenIdStale(state.Entities, entityId))
+                if (GenIdAllocator.IsGenIdStale(state.Entities, entityId))
                 {
                     resultOutput = GenIdResult.StaleGenId;
                     
@@ -3281,7 +3279,7 @@ public static class PhysicsNew
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static ref float GetKineticFriction(State state, GenId entityId, ref GenIdResult resultOutput)
             {
-                if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+                if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
                 {
                     resultOutput = GenIdResult.StaleGenId;
 
@@ -3323,7 +3321,7 @@ public static class PhysicsNew
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static ref float GetDensity(State state, GenId entityId, ref GenIdResult resultOutput)
             {
-                if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+                if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
                 {
                     resultOutput = GenIdResult.StaleGenId;
 
@@ -3365,7 +3363,7 @@ public static class PhysicsNew
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static ref float GetRestitution(State state, GenId entityId, ref GenIdResult resultOutput)
             {
-                if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+                if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
                 {
                     resultOutput = GenIdResult.StaleGenId;
 
@@ -3407,7 +3405,7 @@ public static class PhysicsNew
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static GenIdResult SetRotationalResponse(State state, GenId entityId, bool enabled)
             {
-                if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+                if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
                 {
                     return GenIdResult.StaleGenId;
                 }
@@ -3437,7 +3435,7 @@ public static class PhysicsNew
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static bool UsesRotationalResponse(State state, GenId entityId, ref GenIdResult resultOutput)
             {
-                if (EntityRegistry.IsGenIdStale(state.Entities, entityId))
+                if (GenIdAllocator.IsGenIdStale(state.Entities, entityId))
                 {
                     resultOutput = GenIdResult.StaleGenId;
                     return false;
@@ -3468,7 +3466,7 @@ public static class PhysicsNew
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static GenIdResult SetRigidBody(State state, GenId entityId, bool enabled)
             {
-                if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+                if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
                 {
                     return GenIdResult.StaleGenId;
                 }
@@ -3497,7 +3495,7 @@ public static class PhysicsNew
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static bool IsRigidBody(State state, GenId entityId, ref GenIdResult resultOutput)
             {
-                if(EntityRegistry.IsGenIdStale(state.Entities, entityId))
+                if(GenIdAllocator.IsGenIdStale(state.Entities, entityId))
                 {
                     resultOutput = GenIdResult.StaleGenId;
                     return false;
@@ -3660,13 +3658,13 @@ public static class PhysicsNew
                     Shape.Behaviour colliderBehaviour, GenId bodyId, ref GenId colliderId
                 )
                 {
-                    GenIdResult result = EntityRegistry.Allocate(state.Entities, ref colliderId); 
+                    GenIdResult result = GenIdAllocator.Allocate(state.Entities, ref colliderId); 
                     if(result != GenIdResult.Ok)
                     {
                         return result;
                     }
                     
-                    if (EntityRegistry.IsGenIdStale(state.Entities, bodyId))
+                    if (GenIdAllocator.IsGenIdStale(state.Entities, bodyId))
                     {
                         Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return GenIdResult.StaleGenId;
@@ -3701,13 +3699,13 @@ public static class PhysicsNew
                 )
                 {
 
-                    GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
+                    GenIdResult result = GenIdAllocator.Allocate(state.Entities, ref genId);
                     if(result != GenIdResult.Ok)
                     {
                         return result;
                     }
 
-                    if (EntityRegistry.IsGenIdStale(state.Entities, bodyId))
+                    if (GenIdAllocator.IsGenIdStale(state.Entities, bodyId))
                     {
                         Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return GenIdResult.StaleGenId;
@@ -3804,7 +3802,7 @@ public static class PhysicsNew
                 )
                 {
 
-                    GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
+                    GenIdResult result = GenIdAllocator.Allocate(state.Entities, ref genId);
                     if(result != GenIdResult.Ok)
                     {
                         return result;
@@ -3812,7 +3810,7 @@ public static class PhysicsNew
 
                     PolygonRectangle polyRect = new(shape);
 
-                    if (EntityRegistry.IsGenIdStale(state.Entities, bodyId))
+                    if (GenIdAllocator.IsGenIdStale(state.Entities, bodyId))
                     {
                         Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return GenIdResult.StaleGenId;
@@ -3849,7 +3847,7 @@ public static class PhysicsNew
                     Material material, Shape.Behaviour colliderBehaviour, bool rotationalResponse, GenId bodyId, ref GenId genId
                 )
                 {
-                    GenIdResult result = EntityRegistry.Allocate(state.Entities, ref genId);
+                    GenIdResult result = GenIdAllocator.Allocate(state.Entities, ref genId);
                     if(result != GenIdResult.Ok)
                     {
                         return result;
@@ -3857,7 +3855,7 @@ public static class PhysicsNew
 
                     PolygonRectangle polyRect = new(shape);
                     
-                    if (EntityRegistry.IsGenIdStale(state.Entities, bodyId))
+                    if (GenIdAllocator.IsGenIdStale(state.Entities, bodyId))
                     {
                         Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return GenIdResult.StaleGenId;
@@ -3946,7 +3944,7 @@ public static class PhysicsNew
 
         public static GenIdResult Deallocate(State state, GenId genId, bool recalculateBodyCenterOfMass)
         {
-            if (EntityRegistry.IsGenIdStale(state.Entities, genId))
+            if (GenIdAllocator.IsGenIdStale(state.Entities, genId))
             {
                 return GenIdResult.StaleGenId;
             }
@@ -3970,7 +3968,7 @@ public static class PhysicsNew
         /// </remarks>
         public static void DeallocateUnsafe(State state, int entityIndex, bool recalculateBodyCenterOfMass = true)
         {   
-            EntityRegistry.DeallocateUnsafe(state.Entities, entityIndex);         
+            GenIdAllocator.DeallocateUnsafe(state.Entities, entityIndex);         
             DecrementCategoryCounter(state, state.Categories[entityIndex]);
             SetActiveUnsafe(state, entityIndex, false);
             int bodyIndex = state.BodyHierarchy.Nodes[entityIndex].Parent;

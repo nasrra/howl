@@ -110,7 +110,7 @@ public static class LdtkParser
     /// <param name="transforms">the transforms to write to.</param>
     /// <param name="levelIdentifier">the identifier string given to the level in the LDTK project.</param>
     /// <returns>true, if the level was successfully loaded; otherwise false.</returns>
-    public static unsafe bool LoadLevel(HowlAppState app, LdtkParserState state, EntityRegistry entities, ComponentArray<Sprite> sprites, ComponentArray<Transform> transforms, string levelIdentifier)
+    public static unsafe bool LoadLevel(HowlAppState app, LdtkParserState state, GenIdAllocator entities, ComponentArray<Sprite> sprites, ComponentArray<Transform> transforms, string levelIdentifier)
     {
         System.Diagnostics.Debug.Assert(state.Project!=null, $"Cannot load level '{levelIdentifier}' without a loaded project file.");
 
@@ -150,7 +150,7 @@ public static class LdtkParser
         return true;
     }
 
-    public static void ParseAutoTiles(HowlAppState app, EntityRegistry entities, ComponentArray<Sprite> sprites, ComponentArray<Transform> transforms, Dto_AutoLayerTile[] tiles, string projectDirectory, string tilesetRelPath, 
+    public static void ParseAutoTiles(HowlAppState app, GenIdAllocator entities, ComponentArray<Sprite> sprites, ComponentArray<Transform> transforms, Dto_AutoLayerTile[] tiles, string projectDirectory, string tilesetRelPath, 
         int cellSize, int pixelsPerUnit
     )
     {
@@ -161,7 +161,7 @@ public static class LdtkParser
         {
             string tileMapFilePath = PathUtils.FlattenPath(projectDirectory, tilesetRelPath);
 
-            if(EntityRegistry.Allocate(entities, ref genId) == GenIdResult.Ok)
+            if(GenIdAllocator.Allocate(entities, ref genId) == GenIdResult.Ok)
             {
                 Dto_AutoLayerTile tile = tiles[tileIndex];
 
@@ -178,7 +178,8 @@ public static class LdtkParser
                 Vector2 position = new Vector2(tile.Px[0], -tile.Px[1]) * unitFactored;
                 Vector2 scale = Vector2.One * unitFactored;
 
-                Transform transform = new Transform(position, scale, 0);
+                Transform transform = default;
+                Transform.Initialise(ref transform, position, scale, 0);
                 ComponentArray.Allocate(transforms,  genId, transform);                
             }
         }                

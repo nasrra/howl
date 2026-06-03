@@ -1,3 +1,4 @@
+
 using System;
 using Howl.Collections;
 
@@ -114,6 +115,24 @@ public static class StringRegistry
     /// <param name="stringId">output for the id of the newly allocated string.</param>
     /// <returns>true, if the string was successfully allocated; otherwise false.</returns>
     public static bool AllocateString(StringRegistryState state, Span<char> characters, int allocatorLength, ref StringId stringId)
+    {
+        StringAllocatorState allocator = state.StringAllocators[allocatorLength]; 
+        if(allocator == null)
+        {
+            Debug.LogError( $"Cannot allocate string '{characters}', the requested string allocator at index '{stringId.AllocatorIndex}' has not been intialised.");
+            return false;
+        }
+        
+        // attempt to allocate the string.
+        int stringIndex = 0;
+        bool valid = StringAllocator.Allocate(allocator, characters, ref stringIndex);
+        
+        stringId = new(stringIndex, allocatorLength);
+
+        return valid;
+    }
+
+    public static bool AllocateString(StringRegistryState state, ReadOnlySpan<char> characters, int allocatorLength, ref StringId stringId)
     {
         StringAllocatorState allocator = state.StringAllocators[allocatorLength]; 
         if(allocator == null)

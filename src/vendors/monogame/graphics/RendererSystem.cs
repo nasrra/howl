@@ -1,4 +1,3 @@
-using System;
 using Howl.Graphics;
 using Howl.Vendors.MonoGame.Math.Shapes;
 using Howl.Vendors.MonoGame.Math;
@@ -7,7 +6,7 @@ using Howl.Math;
 using Microsoft.Xna.Framework;
 using Howl.Vendors.MonoGame.FontStashSharp;
 using Howl.Text;
-using Howl.Collections;
+using Howl.Unmanaged.Collections;
 using System.Runtime.CompilerServices;
 
 namespace Howl.Vendors.MonoGame.Graphics;
@@ -17,8 +16,9 @@ public static class RendererSystem
     /// <summary>
     ///     Performs a draw step for a monogame app state.
     /// </summary>
-    public static void Draw(MonoGameAppState monoGame, StringRegistryState strings, SwapBackArray<GenId> activeSprites, SwapBackArray<GenId> activeLabels, 
-        Transform[] transforms, Sprite[] sprites, Label[] labels, Camera worldCamera, Camera screenCamera
+    public static void Draw(MonoGameAppState monoGame, StringRegistryState strings, SwapBackArray<int> activeSprites, 
+        SwapBackArray<int> activeLabels, Array<Transform> transforms, Array<Sprite> sprites, Array<Label> labels, 
+        Camera worldCamera, Camera screenCamera
     )
     {
         monoGame.GraphicsDevice.SetRenderTarget(monoGame.FinalRenderTarget);                    
@@ -51,8 +51,8 @@ public static class RendererSystem
     /// <summary>
     ///     Draws all sprites to the currently bound render target.
     /// </summary>
-    private static void DrawSprites(MonoGameAppState app, SwapBackArray<GenId> activeSprites, 
-        Transform[] transforms, Sprite[] sprites, ref Camera camera, DrawSpace drawSpace
+    private static void DrawSprites(MonoGameAppState app, SwapBackArray<int> activeSprites, 
+        Array<Transform> transforms, Array<Sprite> sprites, ref Camera camera, DrawSpace drawSpace
     )
     {
         // update effects to use the new projection matrix.        
@@ -68,7 +68,7 @@ public static class RendererSystem
         // draw sprites in relation to it.
         for(int i = 1; i < activeSprites.Count; i++)
         {
-            int index = GenId.GetIndex(activeSprites[i]);
+            int index = activeSprites[i];
             ref Sprite sprite = ref sprites[index];
             if(sprite.DrawSpace != drawSpace)
             {
@@ -173,7 +173,7 @@ public static class RendererSystem
         }
         else
         {
-            throw new ArgumentException($"BackBuffer resolution cannot be set to ({width}, {height}), values must be above zero and lower than or equal to int.MaxValue");            
+            throw new System.ArgumentException($"BackBuffer resolution cannot be set to ({width}, {height}), values must be above zero and lower than or equal to int.MaxValue");            
         }
     }
 
@@ -220,8 +220,8 @@ public static class RendererSystem
     /// <summary>
     ///     Draws all texts to the currently bound render target.
     /// </summary>
-    public static void DrawLabels(MonoGameAppState state, StringRegistryState strings, SwapBackArray<GenId> activeLabels, Transform[] transforms, 
-        Label[] labels, ref Camera camera, DrawSpace drawSpace
+    public static void DrawLabels(MonoGameAppState state, StringRegistryState strings, SwapBackArray<int> activeLabels, 
+        Array<Transform> transforms, Array<Label> labels, ref Camera camera, DrawSpace drawSpace
     )
     {
         state.SpriteBatch.Begin(
@@ -237,7 +237,7 @@ public static class RendererSystem
         int count = activeLabels.Count;
         for(int i = 1; i < count; i++)
         {
-            int index = GenId.GetIndex(activeLabels[i]);
+            int index = activeLabels[i];
             
             ref Label label = ref labels[index];
             if(label.DrawSpace != drawSpace)
@@ -247,7 +247,7 @@ public static class RendererSystem
 
             ref Transform transform = ref transforms[index];
             
-            Span<char> chars = StringRegistry.GetString(strings, label.StringId, ref isValid);
+            System.Span<char> chars = StringRegistry.GetString(strings, label.StringId, ref isValid);
             DrawLabel(state, ref camera, ref transform, ref label, chars);            
         }
 
@@ -258,7 +258,7 @@ public static class RendererSystem
     ///     Draws text to the currently bound render target.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void DrawLabel(MonoGameAppState state, ref Camera camera, ref Transform transform, ref Label label, Span<char> chars)
+    public static void DrawLabel(MonoGameAppState state, ref Camera camera, ref Transform transform, ref Label label, System.Span<char> chars)
     {
         Font font = state.FontManagerState.Fonts[label.FontId];
 
