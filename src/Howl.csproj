@@ -31,12 +31,14 @@
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <Version>$(VersionNumber)</Version>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
 <!-- PreRelease -->
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release' AND '$(PreRelease)' == 'true'">
     <Version>$(VersionNumber)-$(BuildTimestamp)pr</Version>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <ItemGroup>

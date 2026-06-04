@@ -870,7 +870,7 @@ public static class Physics
         public bool DrawBvhBranches;
         public bool DrawCollisionInformation;
         public bool DrawLinearVelocities;
-        public bool DrawCentroids;
+        public bool DrawCentroidsUnrotated;
         public bool DrawLeaves;
 
 
@@ -1632,25 +1632,36 @@ public static class Physics
                     linearVelocityY += forcesY[bodyIndex] / mass * deltaTime;
                 }
 
-                // calculate the global position of the center of mass before rotation.
-                float localComX = localCentersOfMassX[bodyIndex];
-                float localComY = localCentersOfMassY[bodyIndex];
-                float globalComX = 0;
-                float globalComY = 0;
-                Body.CalculateGlobalCenterOfMass(bodyPosX, bodyPosY, bodySine, bodyCosine, localComX, localComY, 
-                    ref globalComX, ref globalComY
-                );
+                {   // rotate body around center of mass.
 
-                // rotate the body by the anfular velocity.
-                Math.Math.RotorMultiply(bodySine, bodyCosine, angularVelocities[bodyIndex] * deltaTime, 
-                    ref bodySine, ref bodyCosine
-                );
-                rotationRadians[bodyIndex] = System.MathF.Atan2(bodySine, bodyCosine);
+                    // apply the rotation.
+                    float rotAmount = angularVelocities[bodyIndex] * deltaTime;
+                    Math.Math.RotorMultiply(bodySine, bodyCosine, rotAmount, 
+                        ref bodySine, ref bodyCosine
+                    );
+                    rotationRadians[bodyIndex] = System.MathF.Atan2(bodySine, bodyCosine);
 
-                // reverse the calculation using the new rotation values.
-                // keeping the center of mass as the point of rotation rather than the body's global position.
-                bodyPosX = globalComX - (localComX * bodyCosine - localComY * bodySine);
-                bodyPosY = globalComY - (localComX * bodySine + localComY * bodyCosine);
+                    // offset the body in relation to the center of mass.
+
+                    float rotCosine = System.MathF.Cos(rotAmount);
+                    float rotSine = System.MathF.Sin(rotAmount);
+                    float localComX = localCentersOfMassX[bodyIndex];
+                    float localComY = localCentersOfMassY[bodyIndex];
+
+                    float globalComX = localComX + bodyPosX;
+                    float globalComY = localComY + bodyPosY;
+
+                    // translate to origin.              
+                    float tempX = bodyPosX - globalComX;
+                    float tempY = bodyPosY - globalComY;
+            
+                    float rotatedX = tempX * rotCosine - tempY * rotSine;
+                    float rotatedY = tempX * rotSine + tempY * rotCosine;
+
+                    bodyPosX = rotatedX + globalComX;
+                    bodyPosY = rotatedY + globalComY;
+                }
+
 
                 // apply the linear velocity translation.
                 bodyPosX += linearVelocityX * deltaTime;
@@ -2755,6 +2766,9 @@ public static class Physics
             float totalRotationalInertia = 0;
             float totalInverseRotationalInertia = 0;
 
+            float bodyGlobalPosX = state.GlobalTransforms.Positions.X[bodyIndex];
+            float bodyGlobalPosY = state.GlobalTransforms.Positions.Y[bodyIndex];
+
             ref Array<IntrusiveList.Node> nodes = ref state.BodyHierarchy.Nodes;
 
             ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
@@ -2773,8 +2787,8 @@ public static class Physics
                 while (true)
                 {
                     float mass = state.Masses[shapeIndex];
-                    centerOfMassX += mass * state.Centroids.X[shapeIndex];
-                    centerOfMassY += mass * state.Centroids.Y[shapeIndex]; 
+                    centerOfMassX -= mass * (bodyGlobalPosX - state.Centroids.X[shapeIndex]);
+                    centerOfMassY -= mass * (bodyGlobalPosY - state.Centroids.Y[shapeIndex]); 
                     totalMass += mass;
 
                     ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
@@ -2798,6 +2812,11 @@ public static class Physics
             {   // calculate total rotational inertia.
                 
                 int shapeIndex = firstShapeIndex;
+
+                // move center of mass into global space.
+                centerOfMassX += bodyGlobalPosX;
+                centerOfMassY += bodyGlobalPosY;
+                
                 while (true)
                 {
                     float distSqrd = Math.Math.DistanceSquared(state.Centroids.X[shapeIndex], state.Centroids.Y[shapeIndex], 
@@ -2810,12 +2829,11 @@ public static class Physics
                     int nextShapeIndex = shapeNode.NextSibling;
                     if(nextShapeIndex == firstShapeIndex)
                     {
-                        // move center of mass into local space.
-                        centerOfMassX -= state.GlobalTransforms.Positions.X[shapeIndex];
-                        centerOfMassY -= state.GlobalTransforms.Positions.Y[shapeIndex];
+                        // move center of mass back into local space.
+                        centerOfMassX -= bodyGlobalPosX;
+                        centerOfMassY -= bodyGlobalPosY;
 
                         totalInverseRotationalInertia = 1f/totalRotationalInertia;
-
                         break;
                     }
 
@@ -2832,20 +2850,6 @@ public static class Physics
                 state.RotationalInertia[bodyIndex] = totalRotationalInertia;
                 state.InverseRotationalInertia[bodyIndex] = totalInverseRotationalInertia;
             }
-        }
-
-        /// <summary>
-        ///     Projects a local center of mass onto a global body transform.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public static void CalculateGlobalCenterOfMass(float bodyGlobalPositionX, float bodyGlobalPositionY,
-            float bodyGlobalSine, float bodyGlobalCosine, float localCenterOfMassX, float localCenterOfMassY,
-            ref float globalCenterOfMassXOutput, ref float globalCenterOfMassYOutput
-        )
-        {
-            // calculate the global position of the center of mass before rotation.
-            globalCenterOfMassXOutput = bodyGlobalPositionX + (localCenterOfMassX * bodyGlobalCosine - localCenterOfMassY * bodyGlobalSine);
-            globalCenterOfMassYOutput = bodyGlobalPositionY + (localCenterOfMassX * bodyGlobalSine + localCenterOfMassY * bodyGlobalCosine);
         }
     }
 
@@ -4068,7 +4072,7 @@ public static class Physics
             );
         }
 
-        if (state.DrawCentroids)
+        if (state.DrawCentroidsUnrotated)
         {
             DrawCentroids(howl, state.Centroids, state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes);
         }
@@ -4102,9 +4106,13 @@ public static class Physics
             DrawCollisionInformation(howl, state.CollisionManifold);
         }
 
-        DrawCentersOfMass(howl, state.BodyHierarchy.RootIndices, state.GlobalTransforms.Positions.X, state.GlobalTransforms.Positions.Y,
-            state.GlobalTransforms.Sines, state.GlobalTransforms.Cosines, state.LocalCentersOfMass.X, state.LocalCentersOfMass.Y
-        );
+        if (state.DrawCentroidsUnrotated)
+        {            
+            DrawCentersOfMassUnRotated(howl, state.BodyHierarchy.RootIndices, state.GlobalTransforms.Positions.X, state.GlobalTransforms.Positions.Y,
+                state.GlobalTransforms.Sines, state.GlobalTransforms.Cosines, state.LocalCentersOfMass.X, state.LocalCentersOfMass.Y
+            );
+        }
+
     }
 
     public static void DrawGlobalPositions(HowlAppState howl, SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, 
@@ -4140,7 +4148,7 @@ public static class Physics
         }
     }
 
-    public static void DrawCentersOfMass(HowlAppState howl, SwapBackArray<int> activeBodies, 
+    public static void DrawCentersOfMassUnRotated(HowlAppState howl, SwapBackArray<int> activeBodies, 
         Array<float> globalPositionsX, Array<float> globalPositionsY, Array<float> globalSines, Array<float> globalCosines, 
         Array<float> localCentersOfMassX, Array<float> localCentersOfMassY
     )
@@ -4149,15 +4157,8 @@ public static class Physics
         {
             int bodyIndex = activeBodies[i];
 
-            float comX = 0;
-            float comY = 0;
-
-            Body.CalculateGlobalCenterOfMass(globalPositionsX[bodyIndex], globalPositionsY[bodyIndex],
-                globalSines[bodyIndex], globalCosines[bodyIndex], localCentersOfMassX[bodyIndex], localCentersOfMassY[bodyIndex],
-                ref comX, ref comY
-            );
-
-            Debug.DrawWireCircle(howl, new Circle(comX, comY, 0.1f), CenterOfMassColour, DrawSpace.World);
+            Debug.DrawWireCircle(howl, new Circle(globalPositionsX[bodyIndex] + localCentersOfMassX[bodyIndex], 
+            globalPositionsY[bodyIndex] + localCentersOfMassY[bodyIndex], 0.1f), CenterOfMassColour, DrawSpace.World);
         }
     }
 
