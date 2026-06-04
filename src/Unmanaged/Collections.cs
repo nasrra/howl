@@ -6,6 +6,7 @@ public unsafe struct Array<T> where T : unmanaged
 {
     public T* Pointer;
     public int Length;
+    public bool IsInitialised;
 
     public ref T this[int index]
     {
@@ -22,16 +23,32 @@ public unsafe struct Array<T> where T : unmanaged
 
 public unsafe static class Array
 {
-    public static void Initialise<T>(ref Array<T> array, T* pointer, int length) where T : unmanaged
+    public static bool Initialise<T>(ref Array<T> array, T* pointer, int length) where T : unmanaged
     {
+        if (array.IsInitialised)
+        {
+            Debug.Panic("already initialised.");
+            return false;
+        }
+        array.IsInitialised = true;
         array.Pointer = pointer;
         array.Length = length;
+        return true;
     }
 
-    public static void Initialise<T>(ref Array<T> array, ref Memory.Arena arena, int length) where T : unmanaged
+    public static bool Initialise<T>(ref Array<T> array, ref Memory.Arena arena, int length) where T : unmanaged
     {
+        if (array.IsInitialised)
+        {
+            Debug.Panic("already initialised.");
+            return false;
+        }
+        array.IsInitialised = true;
         T* ptr = Memory.PushArrayRaw<T>(ref arena, length);
-        Initialise(ref array, ptr, length);    
+        array.IsInitialised = true;
+        array.Pointer = ptr;
+        array.Length = length;
+        return true;            
     }
 
 
@@ -41,6 +58,15 @@ public unsafe static class Array
         return new System.Span<T>(array.Pointer, array.Length);
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static System.Span<T> AsSpan<T>(Array<T> array, int startIndex, int length) where T : unmanaged
+    {
+        Debug.Assert(array.Pointer + startIndex + length < array.Pointer + array.Length,
+            "Index out of range."
+        );
+        return new System.Span<T>(array.Pointer+startIndex, length);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static System.ReadOnlySpan<T> AsReadOnlySpan<T>(Array<T> array) where T : unmanaged
     {
@@ -53,6 +79,7 @@ public unsafe struct SwapBackArray<T> where T : unmanaged
     public T* Pointer;
     public int Length;
     public int Count;
+    public bool IsInitialised;
 
     public ref T this[int index]
     {
@@ -67,16 +94,32 @@ public unsafe struct SwapBackArray<T> where T : unmanaged
 
 public unsafe static class SwapBackArray
 {
-    public static void Initialise<T>(ref SwapBackArray<T> array, T* pointer, int length) where T : unmanaged
+    public static bool Initialise<T>(ref SwapBackArray<T> array, T* pointer, int length) where T : unmanaged
     {
+        if (array.IsInitialised)
+        {
+            Debug.Panic("already initialised.");
+            return false;
+        }
+        array.IsInitialised = true;
         array.Pointer = pointer;
         array.Length = length;
+        return true;
     }
 
-    public static void Initialise<T>(ref SwapBackArray<T> array, ref Memory.Arena arena, int length) where T : unmanaged
+    public static bool Initialise<T>(ref SwapBackArray<T> array, ref Memory.Arena arena, int length) where T : unmanaged
     {
+        if (array.IsInitialised)
+        {
+            Debug.Panic("already initialised.");
+            return false;
+        }
+        array.IsInitialised = true;
         T* ptr = Memory.PushArrayRaw<T>(ref arena, length);
-        Initialise(ref array, ptr, length);    
+        array.IsInitialised = true;
+        array.Pointer = ptr;
+        array.Length = length;
+        return true;            
     }
     
     /// <summary>
@@ -153,6 +196,7 @@ public unsafe struct StackArray<T> where T : unmanaged
     public T* Pointer;
     public int Length;
     public int Count;
+    public bool IsInitialised;
 
     public ref T this[int index]
     {
@@ -167,16 +211,32 @@ public unsafe struct StackArray<T> where T : unmanaged
 
 public unsafe static class StackArray
 {
-    public static void Initialise<T>(ref StackArray<T> array, T* pointer, int length) where T : unmanaged
+    public static bool Initialise<T>(ref StackArray<T> array, T* pointer, int length) where T : unmanaged
     {
+        if (array.IsInitialised)
+        {
+            Debug.Panic("already initialised.");
+            return false;
+        }
+        array.IsInitialised = true;
         array.Pointer = pointer;
         array.Length = length;
+        return true;
     }
 
-    public static void Initialise<T>(ref StackArray<T> array, ref Memory.Arena arena, int length) where T : unmanaged
+    public static bool Initialise<T>(ref StackArray<T> array, ref Memory.Arena arena, int length) where T : unmanaged
     {
+        if (array.IsInitialised)
+        {
+            Debug.Panic("already initialised.");
+            return false;
+        }
+        array.IsInitialised = true;
         T* ptr = Memory.PushArrayRaw<T>(ref arena, length);
-        Initialise(ref array, ptr, length);    
+        array.IsInitialised = true;
+        array.Pointer = ptr;
+        array.Length = length;
+        return true;            
     }
     
 
@@ -266,6 +326,8 @@ public struct ComponentArray<T> where T : unmanaged
     ///     The length of all backing arrays of this instnace.
     /// </summary>
     public int Length;
+
+    public bool IsInitialised;
 }
 
 public static class ComponentArray
@@ -273,19 +335,21 @@ public static class ComponentArray
     public const int MinLength = 2;
     public const int MaxLength = int.MaxValue;
 
-    public static void Intialise<T>(ref ComponentArray<T> array, ref Memory.Arena arena, int length) where T : unmanaged
+    public static bool Intialise<T>(ref ComponentArray<T> array, ref Memory.Arena arena, int length) where T : unmanaged
     {
-        Debug.Assert(length <= MaxLength && length >= MinLength, 
-            $"Component Array length '{length}' is not between '{MinLength}' and '{MaxLength}'."
-        );
-        
+        if (array.IsInitialised)
+        {
+            Debug.Panic($"Component Array length '{length}' is not between '{MinLength}' and '{MaxLength}'.");
+            return false;
+        }
+        array.IsInitialised = true;
         length = Math.Math.Clamp(length, MinLength, MaxLength);
-
         Array.Initialise(ref array.Sparse, ref arena, length);
         Array.Initialise(ref array.Allocated, ref arena, length);
         SwapBackArray.Initialise(ref array.Active, ref arena, length);
         Array.Initialise(ref array.DenseIndices, ref arena, length);
         array.Length = length;
+        return true;
     }
 
     public static bool Allocate<T>(ref ComponentArray<T> array, int index, T value) where T : unmanaged 

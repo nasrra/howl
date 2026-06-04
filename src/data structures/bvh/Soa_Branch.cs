@@ -1,45 +1,45 @@
-using System;
 using Howl.Math.Shapes;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.DataStructures.Bvh;
 
-public class Soa_Branch : IDisposable
+public struct Soa_Branch
 {
     /// <summary>
-    /// The Axis-Aligned Bounding-Boxes of all branches.
+    ///     The Axis-Aligned Bounding-Boxes of all branches.
     /// </summary>
     public Soa_Aabb Aabbs;
 
     /// <summary>
-    /// The left leaf indices of all branches.
+    ///     The left leaf indices of all branches.
     /// </summary>
-    public int[] LeftLeafIndices;
+    public Array<int> LeftLeafIndices;
 
     /// <summary>
-    /// The right leaf indices of all branches.
+    ///     The right leaf indices of all branches.
     /// </summary>
-    public int[] RightLeafIndices;
+    public Array<int> RightLeafIndices;
 
     /// <summary>
-    /// The number of child branches (including the branch itself) of all branches.
+    ///     The number of child branches (including the branch itself) of all branches.
     /// </summary>
     /// <remarks>
-    /// E.g a branch that has three 4 children will have a subtree size of 5; as the subtree size counts the branch as well.
+    ///     E.g a branch that has three 4 children will have a subtree size of 5; as the subtree size counts the branch as well.
     /// </remarks>
-    public int[] SubtreeSizes;
+    public Array<int> SubtreeSizes;
 
     /// <summary>
-    /// The amount of leaves attatched of all branches.
+    ///     The amount of leaves attatched of all branches.
     /// </summary>
     /// <remarks>
-    /// Specifically, the amount of immediate leaves attatched to a branch; not counting children or parents.
+    ///     Specifically, the amount of immediate leaves attatched to a branch; not counting children or parents.
     /// </remarks>
-    public int[] LeafCounts;
+    public Array<int> LeafCounts;
 
     /// <summary>
     /// The indices for the parent branch of all branches.
     /// </summary>
-    public int[] ParentIndices;
+    public Array<int> ParentIndices;
 
     /// <summary>
     /// The count of allocated entries from appending.
@@ -51,24 +51,26 @@ public class Soa_Branch : IDisposable
     /// </summary>
     public int Length;
 
-    /// <summary>
-    /// Whether or not this instance has been disposed.
-    /// </summary>
-    public bool Disposed;
+    public bool IsInitialised;
 
-    /// <summary>
-    /// Creates a new soa branch instance.
-    /// </summary>
-    /// <param name="length">the length of the backing arrays.</param>
-    public Soa_Branch(int length)
+    public static bool Initialise(ref Soa_Branch soa, ref Memory.Arena arena, int length)
     {
-        Aabbs = new(length);
-        LeftLeafIndices = new int[length];
-        RightLeafIndices = new int[length];
-        SubtreeSizes = new int[length];
-        LeafCounts = new int[length];
-        ParentIndices = new int[length];
-        Length = length;
+        if (soa.IsInitialised)
+        {
+            Debug.Panic("Already Initialised.");
+            return false;
+        }
+
+        Soa_Aabb.Initialise(ref soa.Aabbs, ref arena, length);
+        Array.Initialise(ref soa.LeftLeafIndices, ref arena, length);
+        Array.Initialise(ref soa.RightLeafIndices, ref arena, length);
+        Array.Initialise(ref soa.SubtreeSizes, ref arena, length);
+        Array.Initialise(ref soa.LeafCounts, ref arena, length);
+        Array.Initialise(ref soa.ParentIndices, ref arena, length);
+        soa.Length = length;
+
+        soa.IsInitialised = true;
+        return true;
     }
 
     /// <summary>
@@ -84,11 +86,11 @@ public class Soa_Branch : IDisposable
     /// <param name="subtreeSize">the subtree size.</param>
     /// <param name="leafCount">the amount of leaves attached to the branch.</param>
     /// <param name="parentIndex">the index within this soa instance of the branch that this branch is a child of.</param>
-    public static void Append(Soa_Branch soa, float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex, 
+    public static void Append(ref Soa_Branch soa, float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex, 
         int subtreeSize, int leafCount, int parentIndex
     )
     {
-        Insert(soa, soa.AppendCount, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex);
+        Insert(ref soa, soa.AppendCount, minX, minY, maxX, maxY, leftLeafIndex, rightLeafIndex, subtreeSize, leafCount, parentIndex);
         soa.AppendCount++;
     }
 
@@ -106,7 +108,7 @@ public class Soa_Branch : IDisposable
     /// <param name="subtreeSize">the subtree size.</param>
     /// <param name="leafCount">the amount of leaves attached to the branch.</param>
     /// <param name="parentIndex">the index within this soa instance of the branch that this branch is a child of.</param>
-    public static void Insert(Soa_Branch soa, int insertIndex, float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex, 
+    public static void Insert(ref Soa_Branch soa, int insertIndex, float minX, float minY, float maxX, float maxY, int leftLeafIndex, int rightLeafIndex, 
         int subtreeSize, int leafCount, int parentIndex
     )
     {
@@ -125,51 +127,8 @@ public class Soa_Branch : IDisposable
     /// Sets a soa's <c>AppendCount</c> to zero.
     /// </summary>
     /// <param name="soa">the soa instance to clear.</param>
-    public static void ResetCount(Soa_Branch soa)
+    public static void ResetCount(ref Soa_Branch soa)
     {
         soa.AppendCount = 0;
     }
-
-
-
-
-    /*******************
-    
-        Disposal.
-    
-    ********************/
-
-
-
-
-    public void Dispose()
-    {
-        Dispose(this);
-    }
-
-    public static void Dispose(Soa_Branch soa)
-    {
-        if(soa.Disposed)
-            return;
-        
-        soa.Disposed = true;
-
-        Soa_Aabb.Dispose(soa.Aabbs);
-        soa.Aabbs = null;
-        soa.LeftLeafIndices = null;
-        soa.RightLeafIndices = null;
-        soa.SubtreeSizes = null;
-        soa.LeafCounts = null;
-        soa.ParentIndices = null;
-        soa.AppendCount = 0;
-        soa.Length = 0;
-
-        GC.SuppressFinalize(soa);
-    }
-
-    ~Soa_Branch()
-    {
-        Dispose(this);
-    }
-
 }

@@ -1,4 +1,7 @@
 using System;
+using Howl.Collections;
+
+namespace Howl.Ecs;
 
 public class GenIdAllocator : IDisposable
 {

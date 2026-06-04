@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Howl.Vendors.MonoGame.Graphics;
 using Howl.Vendors.MonoGame.Math;
 using Microsoft.Xna.Framework;
+using Howl.Collections;
 
 namespace Howl.Vendors.MonoGame;
 

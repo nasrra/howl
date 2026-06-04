@@ -1,6 +1,8 @@
 using System;
 using Microsoft.Xna.Framework.Graphics;
 
+using Howl.Collections;
+
 namespace Howl.Vendors.MonoGame;
 
 public class DebugDrawState

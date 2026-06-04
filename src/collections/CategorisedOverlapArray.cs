@@ -1,9 +1,8 @@
-using System;
 using System.Runtime.CompilerServices;
 
-namespace Howl.Collections;
+namespace Howl.Unmanaged.Collections;
 
-public class CategorisedOverlapArray<T>
+public struct CategorisedOverlapArray<T> where T : unmanaged
 {
     /// <summary>
     ///     The amount of elements within a category.
@@ -11,7 +10,7 @@ public class CategorisedOverlapArray<T>
     /// <remarks>
     ///     Remarks: Elements should be accessed by <c>categoryIndex</c>.
     /// </remarks>
-    public int[] CategoryLengths;
+    public Array<int> CategoryLengths;
 
     /// <summary>
     ///     The starting indices for a sub category within the <c>overlap arrays</c>.
@@ -32,7 +31,7 @@ public class CategorisedOverlapArray<T>
     ///         <item>index = [2], entry = 0, sub categories = 0</item>
     ///     </list>
     /// </remarks>
-    public int[] SubCategoryStartIndices;
+    public Array<int> SubCategoryStartIndices;
 
     /// <summary>
     ///     The count of valid elements after a sub category's start index within the <c>Data</c> array.
@@ -53,7 +52,7 @@ public class CategorisedOverlapArray<T>
     ///         <item>index = [2], entry = 0, sub categories = 0</item>
     ///     </list>
     /// </remarks>
-    public int[] SubCategoryCounts;
+    public Array<int> SubCategoryCounts;
 
     /// <summary>
     ///     The triangular sum of the amount of categories the overlap data can be filtered into..
@@ -75,7 +74,9 @@ public class CategorisedOverlapArray<T>
     ///     var element = myElements[index];
     ///     </code>
     /// </remarks>
-    public T[] Data;
+    public Array<T> Data;
+
+    public bool IsInitialised;
 
     /// <summary>
     ///     Creates a new categorised array instance.
@@ -84,27 +85,39 @@ public class CategorisedOverlapArray<T>
     /// <param name="maxElements">the maximum amount of elements that this instance can hold.</param>
     public CategorisedOverlapArray(int categoryCount, int maxEntries)
     {
-        CategoriesTriangularSum = Math.Math.CalculateTriangularSum(categoryCount);
-
-        CategoryLengths = new int[categoryCount];
-
-        SubCategoryStartIndices = new int [CategoriesTriangularSum];
-        SubCategoryCounts = new int [CategoriesTriangularSum];
-
-        Data = new T[maxEntries];
     }
 }
 
 public static class CategorisedOverlapArray
 {
+    public static bool Initialise<T>(ref CategorisedOverlapArray<T> array, ref Memory.Arena arena, int categoryCount, int maxEntries) where T : unmanaged
+    {
+        if (array.IsInitialised)
+        {
+            Debug.Panic("Already Initialised");
+            return false;
+        }
+        array.IsInitialised = true;
+
+        array.CategoriesTriangularSum = Math.Math.CalculateTriangularSum(categoryCount);
+
+        Array.Initialise(ref array.CategoryLengths, ref arena, categoryCount);
+        Array.Initialise(ref array.SubCategoryStartIndices, ref arena, array.CategoriesTriangularSum);
+        Array.Initialise(ref array.SubCategoryCounts, ref arena, array.CategoriesTriangularSum);
+        Array.Initialise(ref array.Data, ref arena, maxEntries);
+
+        return true;
+
+    }
+
     /// <summary>
     ///     Calculates the starting indices for each sub category to write to in the data array's. 
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="array">the array instance to build the chunks for.</param>
-    public static void BuildChunks<T>(this CategorisedOverlapArray<T> array)
+    public static void BuildChunks<T>(ref CategorisedOverlapArray<T> array) where T : unmanaged
     {
-        BuildChunks(array.CategoryLengths, array.SubCategoryStartIndices, array.MaxElements);
+        BuildChunks(ref array.CategoryLengths, ref array.SubCategoryStartIndices, array.MaxElements);
     }
 
     /// <summary>
@@ -113,7 +126,7 @@ public static class CategorisedOverlapArray
     /// <param name="categoryLengths"></param>
     /// <param name="subCategoryStartIndices"></param>
     /// <param name="maxElements"></param>
-    public static void BuildChunks(Span<int> categoryLengths, Span<int> subCategoryStartIndices, int maxElements)
+    public static void BuildChunks(ref Array<int> categoryLengths, ref Array<int> subCategoryStartIndices, int maxElements)
     {
         // get the amount of categories this state instance can filter into.
         int categoryAmount = categoryLengths.Length;
@@ -195,10 +208,10 @@ public static class CategorisedOverlapArray
     /// <param name="categoryA"></param>
     /// <param name="categoryB"></param>
     /// <returns>true, if the data was successfuly appended; otherwise false.</returns>
-    public static bool Append<T>(this T data, CategorisedOverlapArray<T> array, int categoryA, int categoryB)
+    public static bool Append<T>(ref CategorisedOverlapArray<T> array, T data, int categoryA, int categoryB) where T : unmanaged
     {
         int writeIndex = 0;
-        if(IncrementSubCategoryCount(array.CategoryLengths, array.SubCategoryCounts, array.SubCategoryStartIndices, 
+        if(IncrementSubCategoryCount(ref array.CategoryLengths, ref array.SubCategoryCounts, ref array.SubCategoryStartIndices, 
             array.CategoriesTriangularSum, categoryA, categoryB, ref writeIndex
         ))
         {
@@ -215,16 +228,10 @@ public static class CategorisedOverlapArray
     /// <summary>
     ///     Increments count of elements in a sub category.
     /// </summary>
-    /// <param name="categoryLengths"></param>
-    /// <param name="subCategoryCounts"></param>
-    /// <param name="subCategoryStartIndices"></param>
-    /// <param name="categoriesTriangularSum"></param>
-    /// <param name="categoryA"></param>
-    /// <param name="categoryB"></param>
     /// <param name="writeIndex">output for the index that should now be written to with valid data.</param>
     /// <returns>true, if the count was incremented; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IncrementSubCategoryCount(Span<int> categoryLengths, Span<int> subCategoryCounts, Span<int> subCategoryStartIndices, 
+    public static bool IncrementSubCategoryCount(ref Array<int> categoryLengths, ref Array<int> subCategoryCounts, ref Array<int> subCategoryStartIndices, 
         int categoriesTriangularSum, int categoryA, int categoryB, ref int writeIndex
     )
     {
@@ -249,12 +256,12 @@ public static class CategorisedOverlapArray
     /// <param name="categoryA"></param>
     /// <param name="categoryB"></param>
     /// <returns>the data that overlaps between two categories.</returns>
-    public static Span<T> GetOverlaps<T>(this CategorisedOverlapArray<T> array, int categoryA, int categoryB)
+    public static System.Span<T> GetOverlaps<T>(CategorisedOverlapArray<T> array, int categoryA, int categoryB) where T : unmanaged
     {
         int elementIndex = GetElementIndex(categoryA, categoryB, array.CategoriesTriangularSum);
         int startIndex = array.SubCategoryStartIndices[elementIndex];
         int count = array.SubCategoryCounts[elementIndex];
-        return array.Data.AsSpan(startIndex, count);
+        return Array.AsSpan(array.Data, startIndex, count);
     }
 
     /// <summary>
@@ -263,21 +270,11 @@ public static class CategorisedOverlapArray
     /// <typeparam name="T"></typeparam>
     /// <param name="array">the array instance to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ClearCounts<T>(this CategorisedOverlapArray<T> array)
+    public static void ClearCounts<T>(ref CategorisedOverlapArray<T> array) where T : unmanaged
     {
-        ClearCounts(array.SubCategoryCounts);
-    }
-
-    /// <summary>
-    ///     Sets the count values in a <c>SubCategoryCounts</c> array to zero. 
-    /// </summary>
-    /// <param name="counts">the array instance to clear.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ClearCounts(Span<int> counts)
-    {
-        for(int i = 0; i < counts.Length; i++)
+        for(int i = 0; i < array.SubCategoryCounts.Length; i++)
         {
-            counts[i] = 0;
+            array.SubCategoryCounts[i] = 0;
         }
     }
 }

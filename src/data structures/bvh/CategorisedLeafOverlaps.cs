@@ -1,12 +1,11 @@
 
-using System;
 using System.Runtime.CompilerServices;
-using Howl.Collections;
 using Howl.DataStructures.Bvh;
+using Howl.Unmanaged.Collections;
 
 namespace Howl;
 
-public class CategorisedLeafOverlaps
+public struct CategorisedLeafOverlaps
 {
 
     /// <summary>
@@ -15,7 +14,7 @@ public class CategorisedLeafOverlaps
     /// <remarks>
     ///     Remarks: Elements should be accessed by <c>categoryIndex</c>.
     /// </remarks>
-    public int[] CategoryLengths;
+    public Array<int> CategoryLengths;
 
     /// <summary>
     ///     The starting indices for a sub category within the <c>overlap arrays</c>.
@@ -36,7 +35,7 @@ public class CategorisedLeafOverlaps
     ///         <item>index = [2], entry = 0, sub categories = 0</item>
     ///     </list>
     /// </remarks>
-    public int[] SubCategoryStartIndices;
+    public Array<int> SubCategoryStartIndices;
 
     /// <summary>
     ///     The count of valid overlap elements after a sub category's start index within the <c>overlap arrays</c>.
@@ -57,7 +56,7 @@ public class CategorisedLeafOverlaps
     ///         <item>index = [2], entry = 0, sub categories = 0</item>
     ///     </list>
     /// </remarks>
-    public int[] SubCategoryCounts;
+    public Array<int> SubCategoryCounts;
 
     /// <summary>
     ///     The indices of the <c>owner</c> leaf of a given overlap.
@@ -70,7 +69,7 @@ public class CategorisedLeafOverlaps
     ///     var element = myElements[index];
     ///     </code>
     /// </remarks>
-    public int[] OwnerLeafIndices;
+    public Array<int> OwnerLeafIndices;
 
     /// <summary>
     ///     The indices of the <c>other</c> leaf of a given overlap.
@@ -83,7 +82,7 @@ public class CategorisedLeafOverlaps
     ///     var element = myElements[index];
     ///     </code>
     /// </remarks>
-    public int[] OtherLeafIndices;
+    public Array<int> OtherLeafIndices;
     
     /// <summary>
     ///     The triangular sum of the amount of categories the overlap data can be filtered into..
@@ -95,22 +94,28 @@ public class CategorisedLeafOverlaps
     /// </summary>
     public int MaxOverlaps;
 
-    /// <summary>
-    ///     Creates a new state instance.
-    /// </summary>
+    public bool IsInitialised;
+
     /// <param name="categoryCount">the amount of categories the overlap data can be filtered into.</param>
     /// <param name="maxOverlaps">the maximum amount of overlap data that this instance can hold.</param>
-    public CategorisedLeafOverlaps(int categoryCount, int maxOverlaps)
+    public static bool Initialise(ref CategorisedLeafOverlaps overlaps, ref Memory.Arena arena, int categoryCount, int maxOverlaps)
     {
-        CategoriesTriangularSum = Math.Math.CalculateTriangularSum(categoryCount);
+        if (overlaps.IsInitialised)
+        {
+            Debug.Panic("Already Initialised");
+            return false;
+        }
 
-        CategoryLengths = new int[categoryCount];
+        overlaps.CategoriesTriangularSum = Math.Math.CalculateTriangularSum(categoryCount);
 
-        SubCategoryStartIndices = new int [CategoriesTriangularSum];
-        SubCategoryCounts = new int [CategoriesTriangularSum];
+        Array.Initialise(ref overlaps.CategoryLengths, ref arena, categoryCount);
+        Array.Initialise(ref overlaps.SubCategoryStartIndices, ref arena, overlaps.CategoriesTriangularSum);
+        Array.Initialise(ref overlaps.SubCategoryCounts, ref arena, overlaps.CategoriesTriangularSum);
+        Array.Initialise(ref overlaps.OwnerLeafIndices, ref arena, maxOverlaps);
+        Array.Initialise(ref overlaps.OtherLeafIndices, ref arena, maxOverlaps);
 
-        OwnerLeafIndices = new int[maxOverlaps];
-        OtherLeafIndices = new int[maxOverlaps];
+        overlaps.IsInitialised = true;
+        return true;
     }
 
     /// <summary>
@@ -119,7 +124,7 @@ public class CategorisedLeafOverlaps
     /// <param name="state"></param>
     public static void BuildChunks(CategorisedLeafOverlaps state)
     {
-        CategorisedOverlapArray.BuildChunks(state.CategoryLengths, state.SubCategoryStartIndices, state.MaxOverlaps);        
+        CategorisedOverlapArray.BuildChunks(ref state.CategoryLengths, ref state.SubCategoryStartIndices, state.MaxOverlaps);        
     }
 
     /// <summary>
@@ -136,8 +141,8 @@ public class CategorisedLeafOverlaps
     )
     {
         int writeIndex = 0;
-        if(CategorisedOverlapArray.IncrementSubCategoryCount(overlaps.CategoryLengths, overlaps.SubCategoryCounts, overlaps.SubCategoryStartIndices, 
-            overlaps.CategoriesTriangularSum, ownerCategory, otherCategory, ref writeIndex
+        if(CategorisedOverlapArray.IncrementSubCategoryCount(ref overlaps.CategoryLengths, ref overlaps.SubCategoryCounts, 
+            ref overlaps.SubCategoryStartIndices, overlaps.CategoriesTriangularSum, ownerCategory, otherCategory, ref writeIndex
         ))
         {
             // write the data to the index.
@@ -156,9 +161,12 @@ public class CategorisedLeafOverlaps
     /// </summary>
     /// <param name="overlaps">the instance to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ClearCounts(CategorisedLeafOverlaps overlaps)
+    public static void ClearCounts(ref CategorisedLeafOverlaps overlaps)
     {
-        CategorisedOverlapArray.ClearCounts(overlaps.SubCategoryCounts);   
+        for(int i = 0; i < overlaps.SubCategoryCounts.Length; i++)
+        {
+            overlaps.SubCategoryCounts[i] = 0;
+        }
     }
 
     /// <summary>
@@ -173,8 +181,8 @@ public class CategorisedLeafOverlaps
         int elementIndex = CategorisedOverlapArray.GetElementIndex(categoryA, categoryB, overlaps.CategoriesTriangularSum);
         int startIndex = overlaps.SubCategoryStartIndices[elementIndex];
         int count = overlaps.SubCategoryCounts[elementIndex];
-        Span<int> ownerIndices = overlaps.OwnerLeafIndices.AsSpan(startIndex, count);
-        Span<int> otherIndices = overlaps.OtherLeafIndices.AsSpan(startIndex, count);
+        System.Span<int> ownerIndices = Array.AsSpan(overlaps.OwnerLeafIndices, startIndex, count);
+        System.Span<int> otherIndices = Array.AsSpan(overlaps.OtherLeafIndices, startIndex, count);
         return new OverlapInfo(ownerIndices, otherIndices, count);
     }
 }

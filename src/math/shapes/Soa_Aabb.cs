@@ -1,30 +1,30 @@
-using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
+using Howl.Unmanaged.Collections;
+using System.Numerics;
 
 namespace Howl.Math.Shapes;
 
-public class Soa_Aabb : IDisposable
+public struct Soa_Aabb
 {
     /// <summary>
-    /// The x-components of the minimum vertex.
+    ///     The x-components of the minimum vertex.
     /// </summary>
-    public float[] MinX;
+    public Array<float> MinX;
 
     /// <summary>
-    /// the y-components of the minimum vertex.
+    ///     the y-components of the minimum vertex.
     /// </summary>
-    public float[] MinY;
+    public Array<float> MinY;
     
     /// <summary>
     /// the x-components of the maximum vertex.
     /// </summary>
-    public float[] MaxX;
+    public Array<float> MaxX;
 
     /// <summary>
-    /// The y-components of the maximum vertex.
+    ///     The y-components of the maximum vertex.
     /// </summary>
-    public float[] MaxY;
+    public Array<float> MaxY;
 
     /// <summary>
     /// The count of allocated entries from appending.
@@ -36,22 +36,24 @@ public class Soa_Aabb : IDisposable
     /// </summary>
     public int Length;
 
-    /// <summary>
-    /// Whether or not this instance has been disposed.
-    /// </summary>
-    public bool Disposed;
+    public bool IsIntialised;
 
-    /// <summary>
-    /// Creates a new Structure-Of-Array's Axis-Aligned Bounding-Box.
-    /// </summary>
-    /// <param name="length">the capacity of the backing arrays.</param>
-    public Soa_Aabb(int length)
+    public static bool Initialise(ref Soa_Aabb soa, ref Memory.Arena arena, int length)
     {
-        MinX = new float[length];
-        MinY = new float[length];
-        MaxX = new float[length];
-        MaxY = new float[length];
-        Length = length;
+        if (soa.IsIntialised)
+        {
+            Debug.Panic("Already Intialised.");
+            return false;
+        }
+
+        Array.Initialise(ref soa.MinX, ref arena, length);
+        Array.Initialise(ref soa.MinY, ref arena, length);
+        Array.Initialise(ref soa.MaxX, ref arena, length);
+        Array.Initialise(ref soa.MaxY, ref arena, length);
+        soa.Length = length;
+
+        soa.IsIntialised = true;
+        return true;
     }
 
     /// <summary>
@@ -64,7 +66,7 @@ public class Soa_Aabb : IDisposable
     /// <param name="maxX">the x-component of the maximum vertex.</param>
     /// <param name="maxY">the y-component of the maximum vertex.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Insert(Soa_Aabb soa, int insertIndex, float minX, float minY, float maxX, float maxY)
+    public static void Insert(ref Soa_Aabb soa, int insertIndex, float minX, float minY, float maxX, float maxY)
     {
         soa.MinX[insertIndex] = minX;
         soa.MinY[insertIndex] = minY;
@@ -80,9 +82,9 @@ public class Soa_Aabb : IDisposable
     /// <param name="minY">the y-component of the minimum vertex.</param>
     /// <param name="maxX">the x-component of the maximum vertex.</param>
     /// <param name="maxY">the y-component of the maximum vertex.</param>
-    public static void Append(Soa_Aabb soa, float minX, float minY, float maxX, float maxY)
+    public static void Append(ref Soa_Aabb soa, float minX, float minY, float maxX, float maxY)
     {
-        Insert(soa, soa.AppendCount, minX, minY, maxX, maxY);
+        Insert(ref soa, soa.AppendCount, minX, minY, maxX, maxY);
         soa.AppendCount++;
     }
 
@@ -91,7 +93,7 @@ public class Soa_Aabb : IDisposable
     /// </summary>
     /// <param name="soa">the soa instance to reset.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ResetCount(Soa_Aabb soa)
+    public static void ResetCount(ref  Soa_Aabb soa)
     {
         soa.AppendCount = 0;
     }
@@ -107,12 +109,12 @@ public class Soa_Aabb : IDisposable
     /// <param name="y">output span for calculated the y-component of the centroid vectors.</param>
     /// <param name="startIndex">the entry index in the soa aabb to start at.</param>
     /// <param name="length">the amount of aabb's to get the centroid of from the starting index.</param>
-    public static void CalculateCentroids_Sisd(Soa_Aabb soa, Span<float> x, Span<float> y, int startIndex, int length)
+    public static void CalculateCentroids_Sisd(ref Soa_Aabb soa, System.Span<float> x, System.Span<float> y, int startIndex, int length)
     {
-        Span<float> minX = soa.MinX;
-        Span<float> minY = soa.MinY;
-        Span<float> maxX = soa.MaxX;
-        Span<float> maxY = soa.MaxY;
+        System.Span<float> minX = Array.AsSpan(soa.MinX);
+        System.Span<float> minY = Array.AsSpan(soa.MinY);
+        System.Span<float> maxX = Array.AsSpan(soa.MaxX);
+        System.Span<float> maxY = Array.AsSpan(soa.MaxY);
 
         for(int i = startIndex; i < length; i++)
         {
@@ -132,12 +134,14 @@ public class Soa_Aabb : IDisposable
     /// <param name="startIndex">the entry index in the soa aabb to start at.</param>
     /// <param name="length">the amount of aabb's to get the centroid of from the starting index.</param>
     /// <param name="tailindex">output for the index the simd operation stopped at.</param>
-    public static void CalculateCentroids_Simd(Soa_Aabb soa, Span<float> x, Span<float> y, int startIndex, int length, ref int tailindex)
+    public static void CalculateCentroids_Simd(ref Soa_Aabb soa, System.Span<float> x, System.Span<float> y, int startIndex, int length, 
+        ref int tailindex
+    )
     {
-        Span<float> minX = soa.MinX;
-        Span<float> minY = soa.MinY;
-        Span<float> maxX = soa.MaxX;
-        Span<float> maxY = soa.MaxY;
+        System.Span<float> minX = Array.AsSpan(soa.MinX);
+        System.Span<float> minY = Array.AsSpan(soa.MinY);
+        System.Span<float> maxX = Array.AsSpan(soa.MaxX);
+        System.Span<float> maxY = Array.AsSpan(soa.MaxY);
 
         int simdSize = System.Numerics.Vector<float>.Count;
         int i = startIndex; 
@@ -166,54 +170,15 @@ public class Soa_Aabb : IDisposable
     /// <param name="y">output span for calculated the y-component of the centroid vectors.</param>
     /// <param name="startIndex">the entry index in the soa aabb to start at.</param>
     /// <param name="length">the amount of aabb's to get the centroid of from the starting index.</param>
-    public static void CalculateCentroids(Soa_Aabb soa, Span<float> x, Span<float> y, int startIndex, int length)
+    public static void CalculateCentroids(ref Soa_Aabb soa, System.Span<float> x, System.Span<float> y, int startIndex, int length)
     {
         int simdTailIndex = 0;
 
         // perform simd.
-        CalculateCentroids_Simd(soa, x, y, startIndex, length, ref simdTailIndex);
+        CalculateCentroids_Simd(ref soa, x, y, startIndex, length, ref simdTailIndex);
         
         // fallback to sisd.
-        CalculateCentroids_Sisd(soa, x, y, simdTailIndex, length);
+        CalculateCentroids_Sisd(ref soa, x, y, simdTailIndex, length);
     }
 
-
-
-
-    /*******************
-    
-        Disposal.
-    
-    ********************/
-
-
-
-
-    public void Dispose()
-    {
-        Dispose(this);
-    }
-
-    public static void Dispose(Soa_Aabb soa)
-    {
-        if(soa.Disposed)
-            return;
-        
-        soa.Disposed = true;
-
-        soa.MinX = null;
-        soa.MinY = null;
-        soa.MaxX = null;
-        soa.MaxY = null;
-        
-        soa.AppendCount = 0;
-        soa.Length = 0;
-
-        GC.SuppressFinalize(soa);
-    }
-
-    ~Soa_Aabb()
-    {
-        Dispose(this);
-    }
 }

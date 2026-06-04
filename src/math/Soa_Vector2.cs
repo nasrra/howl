@@ -1,127 +1,64 @@
-
-using System;
 using System.Runtime.CompilerServices;
-using Howl.Collections;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.Math;
 
-public class Soa_Vector2 : IDisposable
+public struct Soa_Vector2
 {
-    /// <summary>
-    ///     Gets and sets the x-coordinate values.
-    /// </summary>
-    public float[] X;
+    public Array<float> X;
+    public Array<float> Y;
 
     /// <summary>
-    ///     Gets and sets the y-coordinate values.
-    /// </summary>
-    public float[] Y;
-
-    /// <summary>
-    /// The count of allocated entries from appending.
+    ///     The count of allocated entries from appending.
     /// </summary>
     public int AppendCount;
 
     /// <summary>
-    /// The length of all the backing arrays of this instance.
+    ///     The length of all the backing arrays of this instance.
     /// </summary>
     public int Length;
 
-    /// <summary>
-    /// Whether or not this instance has been disposed.
-    /// </summary>
-    public bool Disposed;
+    public bool IsIntialised; 
 
-    /// <summary>
-    /// Creates a new SoaVector2 instance.
-    /// </summary>
-    /// <param name="length">the length of the backing arrays.</param>
-    public Soa_Vector2(int length)
+    public static bool Initialise(ref Soa_Vector2 soa, ref Memory.Arena arena, int length)
     {
-        X = new float[length];
-        Y = new float[length];
-        Length = length;
+        if (soa.IsIntialised)
+        {
+            Debug.Assert(false, "Already initialised.");
+            return false;
+        }
+        soa.IsIntialised = true;
+        soa.Length = length;
+        Array.Initialise(ref soa.X, ref arena, length);
+        Array.Initialise(ref soa.Y, ref arena, length);
+        return true;
     }
 
     /// <summary>
-    /// Inserts an entry into a soa instance.
+    ///     Inserts elements into a soa instance.
     /// </summary>
-    /// <param name="soa">the soa instance.</param>
-    /// <param name="insertIndex">the index in the soa to insert into.</param>
-    /// <param name="x">the x-component of the vector to append.</param>
-    /// <param name="y">the y-component of the vector to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Insert(Soa_Vector2 soa, int insertIndex, float x, float y)
+    public static void Insert(ref Soa_Vector2 soa, int insertIndex, float x, float y)
     {
         soa.X[insertIndex] = x;
         soa.Y[insertIndex] = y;
     }
 
     /// <summary>
-    /// Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
+    ///     Appends an entry into a soa at the soa instance's <c>AppendCount</c> index.
     /// </summary>
-    /// <param name="soa">the soa instance to append to.</param>
-    /// <param name="x">the x-component of the vector to append.</param>
-    /// <param name="y">the y-component of the vector to append.</param>
-    public static void Append(Soa_Vector2 soa, float x, float y)
+    public static void Append(ref Soa_Vector2 soa, float x, float y)
     {
-        Insert(soa, soa.AppendCount, x,y);
+        Insert(ref soa, soa.AppendCount, x, y);
         soa.AppendCount++;
     }
 
     /// <summary>
-    /// Sets a soa instance's <c>AppendCount</c> to zero.
+    ///     Sets a soa instance's <c>AppendCount</c> to zero.
     /// </summary>
     /// <param name="soa">the soa instance to reset.</param>
-    public static void ResetCount(Soa_Vector2 soa)
+    public static void ResetCount(ref Soa_Vector2 soa)
     {
         soa.AppendCount = 0;
-    }
-
-    /// <summary>
-    ///     Enforces a <c>Nil</c> entry for all underling arrays of a soa instance.
-    /// </summary>
-    /// <param name="soa">the soa instance.</param>
-    public static void EnforceNil(Soa_Vector2 soa)
-    {
-        Nil.Enforce(soa.X);
-        Nil.Enforce(soa.Y);
-    }
-
-
-
-
-    /*******************
-    
-        Disposal.
-    
-    ********************/
-
-
-
-
-    public void Dispose()
-    {
-        Dispose(this);
-    }
-
-    public static void Dispose(Soa_Vector2 soa)
-    {
-        if (soa.Disposed)
-        {
-            return;
-        }
-
-        soa.Disposed = true;
-        soa.X = null;
-        soa.Y = null;
-        soa.Length = 0;
-        
-        GC.SuppressFinalize(soa);
-    }
-
-    ~Soa_Vector2()
-    {
-        Dispose(this);
     }
 }

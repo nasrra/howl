@@ -1,7 +1,15 @@
-using System;
 using System.Runtime.CompilerServices;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.Algorithms.Sorting;
+
+/******************
+
+    NOTE:
+    the procedures of in this file will need to eventually swap away
+    from using spans in favour of custom arrays.
+
+*******************/
 
 /// <summary>
 /// The 'under-the-hood' sorting algorithms for radix sort.
@@ -22,26 +30,26 @@ public static class RadixSort
 
 
     /// <summary>
-    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in ascending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 32-bit integers in four 8-bit (1 byte) passes .
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="values"/></item>
     /// <item><paramref name="tempValues"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of uints to be sorted. Contains the final sorted values.</param>
-    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of uints to be sorted. Contains the final sorted values.</param>
+    /// <param name="tempValues">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Ascend(Span<uint> values, Span<uint> tempValues, Span<int> byteCount, int length)
+    public static void Ascend(System.Span<uint> values, System.Span<uint> tempValues, System.Span<int> byteCount, int length)
     {
         // Use pointers or references to swap which buffer is "source" and "destination"
-        Span<uint> src = values;
-        Span<uint> dst = tempValues;
+        System.Span<uint> src = values;
+        System.Span<uint> dst = tempValues;
 
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -84,7 +92,7 @@ public static class RadixSort
             // Pass 2: val -> tmp
             // Pass 3: tmp -> val
             // Because we swapped 4 times (a 32-bit uint is an even number), the final result 
-            // is already back in the 'values' span! No CopyTo needed.
+            // is already back in the 'values' System.Span! No CopyTo needed.
             var swap = src;
             src = dst;
             dst = swap;
@@ -92,11 +100,11 @@ public static class RadixSort
     }
 
     /// <summary>
-    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in ascending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 32-bit integers in four 8-bit (1 byte) passes .
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
@@ -104,19 +112,19 @@ public static class RadixSort
     /// <item><paramref name="tempValues"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of uints to be sorted. Contains the final sorted values.</param>
-    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
-    /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of uints to be sorted. Contains the final sorted values.</param>
+    /// <param name="tempValues">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
+    /// <param name="tempIndices">temporary System.Span for reordering indices during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void IndexedAscend(Span<uint> values, Span<uint> tempValues, Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int length)
+    public static void IndexedAscend(System.Span<uint> values, System.Span<uint> tempValues, System.Span<int> indices, System.Span<int> tempIndices, System.Span<int> byteCount, int length)
     {
         // Use pointers or references to swap which buffer is "source" and "destination"
-        Span<uint> srcValues = values;
-        Span<uint> dstValues = tempValues;
-        Span<int> srcIndices = indices;
-        Span<int> dstIndices = tempIndices;
+        System.Span<uint> srcValues = values;
+        System.Span<uint> dstValues = tempValues;
+        System.Span<int> srcIndices = indices;
+        System.Span<int> dstIndices = tempIndices;
 
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -161,7 +169,7 @@ public static class RadixSort
             // Pass 2: val -> tmp
             // Pass 3: tmp -> val
             // Because we swapped 4 times (a 32-bit uint is an even number), the final result 
-            // is already back in the 'values' span! No CopyTo needed.
+            // is already back in the 'values' System.Span! No CopyTo needed.
             var valueSwap = srcValues;
             srcValues = dstValues;
             dstValues = valueSwap;
@@ -172,11 +180,11 @@ public static class RadixSort
     }
 
     /// <summary>
-    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in ascending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
@@ -185,30 +193,30 @@ public static class RadixSort
     /// <item><paramref name="translated"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
-    /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="tempValues">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
+    /// <param name="tempIndices">temporary System.Span for reordering indices during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void IndexedAscend(Span<uint> values, Span<uint> tempValues, Span<int> indices, Span<int> tempIndices, Span<int> byteCount, 
+    public static void IndexedAscend(System.Span<uint> values, System.Span<uint> tempValues, System.Span<int> indices, System.Span<int> tempIndices, System.Span<int> byteCount, 
         int start, int length
     )
     {
-        Span<uint> valuesSlice = values.Slice(start, length);
-        Span<uint> tempValuesSlice = tempValues.Slice(start, length);
-        Span<int> indicesSlice = indices.Slice(start, length);
-        Span<int> tempIndicesSlice = tempIndices.Slice(start, length);
+        System.Span<uint> valuesSlice = values.Slice(start, length);
+        System.Span<uint> tempValuesSlice = tempValues.Slice(start, length);
+        System.Span<int> indicesSlice = indices.Slice(start, length);
+        System.Span<int> tempIndicesSlice = tempIndices.Slice(start, length);
         IndexedAscend(valuesSlice, tempValuesSlice, indicesSlice, tempIndicesSlice, byteCount, length);
     }
 
-    public static void IndexedAscend(Span<uint> values, Span<int> indices, RadixSortBuffer buffer, int start, int length
+    public static void IndexedAscend(System.Span<uint> values, System.Span<int> indices, ref RadixSortBuffer buffer, int start, int length
     )
     {
-        IndexedAscend(values, buffer.TempValues, indices, buffer.TempIndices, buffer.ByteCount, start, length);
+        IndexedAscend(values, Array.AsSpan(buffer.TempValues), indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount), start, length);
     }
     
 
@@ -225,26 +233,26 @@ public static class RadixSort
 
 
     /// <summary>
-    /// Sorts a span of uints in descending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in descending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 32-bit integers in four 8-bit (1 byte) passes .
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="values"/></item>
     /// <item><paramref name="temp"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of uints to be sorted. Contains the final sorted values.</param>
-    /// <param name="temp">temporary span for reordering values during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of uints to be sorted. Contains the final sorted values.</param>
+    /// <param name="temp">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Descend(Span<uint> values, Span<uint> temp, Span<int> byteCount, int length)
+    public static void Descend(System.Span<uint> values, System.Span<uint> temp, System.Span<int> byteCount, int length)
     {
         // Use pointers or references to swap which buffer is "source" and "destination"
-        Span<uint> src = values;
-        Span<uint> dst = temp;
+        System.Span<uint> src = values;
+        System.Span<uint> dst = temp;
 
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -287,7 +295,7 @@ public static class RadixSort
             // Pass 2: val -> tmp
             // Pass 3: tmp -> val
             // Because we swapped 4 times (a 32-bit uint is an even number), the final result 
-            // is already back in the 'values' span! No CopyTo needed.
+            // is already back in the 'values' System.Span! No CopyTo needed.
             var swap = src;
             src = dst;
             dst = swap;
@@ -295,11 +303,11 @@ public static class RadixSort
     }
 
     /// <summary>
-    /// Sorts a span of uints in descending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in descending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 32-bit integers in four 8-bit (1 byte) passes .
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
@@ -307,19 +315,19 @@ public static class RadixSort
     /// <item><paramref name="tempValues"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of uints to be sorted. Contains the final sorted values.</param>
-    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
-    /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of uints to be sorted. Contains the final sorted values.</param>
+    /// <param name="tempValues">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
+    /// <param name="tempIndices">temporary System.Span for reordering indices during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="length">the total number of elements to process.</param>
-    public static void IndexedDescend(Span<uint> values, Span<uint> tempValues, Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int length)
+    public static void IndexedDescend(System.Span<uint> values, System.Span<uint> tempValues, System.Span<int> indices, System.Span<int> tempIndices, System.Span<int> byteCount, int length)
     {
         // Use pointers or references to swap which buffer is "source" and "destination"
-        Span<uint> srcValues = values;
-        Span<uint> dstValues = tempValues;
-        Span<int> srcIndices = indices;
-        Span<int> dstIndices = tempIndices;
+        System.Span<uint> srcValues = values;
+        System.Span<uint> dstValues = tempValues;
+        System.Span<int> srcIndices = indices;
+        System.Span<int> dstIndices = tempIndices;
 
         // perform the radix sort on the units (LSD approach)
         // Use 8-bit chunks (buckets of 256) for efficiency.
@@ -364,7 +372,7 @@ public static class RadixSort
             // Pass 2: val -> tmp
             // Pass 3: tmp -> val
             // Because we swapped 4 times (a 32-bit uint is an even number), the final result 
-            // is already back in the 'values' span! No CopyTo needed.
+            // is already back in the 'values' System.Span! No CopyTo needed.
             var valueSwap = srcValues;
             srcValues = dstValues;
             dstValues = valueSwap;

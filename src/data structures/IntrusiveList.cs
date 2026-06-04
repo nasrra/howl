@@ -1,10 +1,9 @@
-using System;
 using System.Runtime.CompilerServices;
-using Howl.Collections;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.DataStructures;
 
-public static class IntrusiveList
+public struct IntrusiveList
 {
     public const int MinLength = 1;
     public const int MaxLength = int.MaxValue;
@@ -76,38 +75,38 @@ public static class IntrusiveList
         }
     }
 
-    public class State
+    public Array<Node> Nodes;
+
+    /// <remarks>
+    ///     Remarks: contains a <c>Nil</c> element.
+    /// </remarks>
+    public SwapBackArray<int> RootIndices;
+
+    public bool IsInitialised;
+
+    public static bool Initialise(ref IntrusiveList list, ref Memory.Arena arena, int length)
     {
-        public Node[] Nodes;
-
-        /// <remarks>
-        ///     Remarks: contains a <c>Nil</c> element.
-        /// </remarks>
-        public SwapBackArray<int> RootIndices;
-
-        public bool Disposed;
-
-        public State(int length)
+        if (list.IsInitialised)
         {
-            System.Diagnostics.Debug.Assert(length >= MinLength, 
-                $"IntrusiveListState must have a length greater than '{length}'."
-            );
-
-            length = Math.Math.Clamp(length, MinLength, MaxLength);
-
-            Nodes = new Node[length];
-            RootIndices = new(length);
-
-            // append the Nil.
-            RootIndices.Append(0);
+            Debug.Panic("Already Initialised.");
+            return false;
         }
 
-        ~State()
-        {
-            Dispose(this);
-        }
+        Debug.Assert(length >= MinLength, 
+            $"IntrusiveListState must have a length greater than '{length}'."
+        );
+
+        length = Math.Math.Clamp(length, MinLength, MaxLength);
+
+        Array.Initialise(ref list.Nodes, ref arena, length);
+        SwapBackArray.Initialise(ref list.RootIndices, ref arena, length);
+
+        SwapBackArray.Append(ref list.RootIndices, 0);
+
+        list.IsInitialised=true;
+        return true;
     }
-    
+
     /// <summary>
     ///     Adds a root node to the tree.
     /// </summary>
@@ -115,7 +114,7 @@ public static class IntrusiveList
     ///
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool AddToTree(State state, int nodeIndex)
+    public static bool AddToTree(ref IntrusiveList list, int nodeIndex)
     {
         // node cannot be the Nil.
         if(nodeIndex == 0)
@@ -124,9 +123,7 @@ public static class IntrusiveList
             return false;
         }
 
-        Node[] nodes = state.Nodes;
-        ref Node node = ref nodes[nodeIndex];
-        SwapBackArray<int> roots = state.RootIndices;
+        ref Node node = ref list.Nodes[nodeIndex];
 
         if (node.InTree)
         {
@@ -134,7 +131,7 @@ public static class IntrusiveList
         }
 
         // the node is a root.
-        node.RootDenseIndex = SwapBackArray.Append(roots, nodeIndex);
+        node.RootDenseIndex = SwapBackArray.Append(ref list.RootIndices, nodeIndex);
 
         // node has no other siblings.
         node.NextSibling = nodeIndex;
@@ -154,7 +151,7 @@ public static class IntrusiveList
     /// <returns>
     ///     true, if successfully added to the tree; otherwise false if already added.
     /// </returns>
-    public static bool AddToTree(State state, int nodeIndex, int parentIndex)
+    public static bool AddToTree(ref IntrusiveList list, int nodeIndex, int parentIndex)
     {
         // node cannot be the Nil.
         if(nodeIndex == 0)
@@ -166,10 +163,10 @@ public static class IntrusiveList
         // add as a root if parent index is zero.
         if(parentIndex == 0)
         {
-            AddToTree(state, nodeIndex);
+            AddToTree(ref list, nodeIndex);
         }
 
-        Node[] nodes = state.Nodes;
+        ref Array<Node> nodes = ref list.Nodes;
         ref Node node = ref nodes[nodeIndex];
 
         if (node.InTree)
@@ -215,13 +212,10 @@ public static class IntrusiveList
         return true;
     }
 
-    /// <summary>
-    ///
-    /// </summary>
     /// <returns>
     ///     true, if successfully removed from the tree; otherwise false if already removed.
     /// </returns>
-    public static bool RemoveFromTree(State state, int nodeIndex)
+    public static bool RemoveFromTree(ref IntrusiveList list, int nodeIndex)
     {
         // node cannot be the Nil.
         if(nodeIndex == 0)
@@ -230,8 +224,8 @@ public static class IntrusiveList
             return false;
         }
 
-        Node[] nodes = state.Nodes;
-        SwapBackArray<int> roots = state.RootIndices;
+        ref Array<Node> nodes = ref list.Nodes;
+        ref SwapBackArray<int> roots = ref list.RootIndices;
         ref Node node = ref nodes[nodeIndex];
 
         if (node.InTree == false)
@@ -325,7 +319,7 @@ public static class IntrusiveList
             // performing the dense index swap as well.
             ref Node lastRoot = ref nodes[roots[roots.Count-1]];
             lastRoot.RootDenseIndex = node.RootDenseIndex;
-            SwapBackArray.RemoveAt(roots, node.RootDenseIndex);
+            SwapBackArray.RemoveAt(ref roots, node.RootDenseIndex);
             node.RootDenseIndex = 0;
 
             if (firstChildIndex != 0)
@@ -339,7 +333,7 @@ public static class IntrusiveList
                     child.Parent = 0;
 
                     // add children to root stack array.
-                    child.RootDenseIndex = SwapBackArray.Append(roots, currentSiblingIndex);
+                    child.RootDenseIndex = SwapBackArray.Append(ref roots, currentSiblingIndex);
 
                     // children are now roots, so they should no longer be associated with thier siblings.
                     int nextSiblingIndex = child.NextSibling;
@@ -373,20 +367,5 @@ public static class IntrusiveList
         End:
         node.InTree = false;
         return true;
-    }
-
-    public static void Dispose(State state)
-    {
-        if (state.Disposed)
-        {
-            return;
-        }
-
-        state.Disposed = true;
-
-        state.Nodes = null;
-        state.RootIndices = null;
-
-        GC.SuppressFinalize(state);
     }
 }

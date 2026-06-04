@@ -14,22 +14,30 @@
     <BuildTimestamp>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</BuildTimestamp>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <Version Condition="'$(Configuration)' == 'Debug'">
-      $(VersionNumber)-$(BuildTimestamp)d
-    </Version>
+<!-- Debug -->
 
-    <Version Condition="'$(Configuration)' == 'Release' AND '$(PreRelease)' == 'true'">
-      $(VersionNumber)-$(BuildTimestamp)r
-      <!-- $(VersionNumber) -->
-    </Version>
-
-    <Version Condition="'$(Configuration)' == 'Release' AND '$(PreRelease)' != 'true'">
-      $(VersionNumber)
-    </Version>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <Version>$(VersionNumber)-$(BuildTimestamp)d</Version>
   </PropertyGroup>
 
+<!-- Optimised Debug -->
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' AND '$(OptimisedDebug)' == 'true'">
+    <Version>$(VersionNumber)-$(BuildTimestamp)od</Version>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+<!-- Release -->
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Version>$(VersionNumber)</Version>
+  </PropertyGroup>
+
+<!-- PreRelease -->
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' AND '$(PreRelease)' == 'true'">
+    <Version>$(VersionNumber)-$(BuildTimestamp)pr</Version>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />

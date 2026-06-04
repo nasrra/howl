@@ -14,7 +14,7 @@ public static class Assert_FsSoa_Vector2
     public static void LengthEqual(int stride, int maxEntries, FsSoa_Vector2 soa)
     {
         int dataLength = stride * maxEntries;
-        Assert.Equal(stride, soa.Stride);
+        Assert.Equal(stride, soa.EntryStride);
         Assert.Equal(maxEntries, soa.MaxEntries);
         Assert.Equal(dataLength, soa.X.Length);
         Assert.Equal(dataLength, soa.Y.Length);
@@ -30,7 +30,7 @@ public static class Assert_FsSoa_Vector2
     /// <param name="soa">the soa instance containing the elements.</param>
     public static void ElementEqual(float x, float y, int entryElementIndex, int entryIndex, FsSoa_Vector2 soa)
     {
-        int index = FixedStrideArray.GetElementIndex(entryIndex, soa.Stride, entryElementIndex);
+        int index = FixedStrideArray.GetElementIndex(entryIndex, soa.EntryStride, entryElementIndex);
         Assert.Equal(x, soa.X[index]);
         Assert.Equal(y, soa.Y[index]);
     }
@@ -51,7 +51,7 @@ public static class Assert_FsSoa_Vector2
         
         for(int i = 0; i < appendCount; i++)
         {
-            int elementIndex = FixedStrideArray.GetElementIndex(entryIndex, soa.Stride, i);
+            int elementIndex = FixedStrideArray.GetElementIndex(entryIndex, soa.EntryStride, i);
             Assert.Equal(x[i], soa.X[elementIndex]);
             Assert.Equal(y[i], soa.Y[elementIndex]);
         }
@@ -67,7 +67,7 @@ public static class Assert_FsSoa_Vector2
         Assert.Null(soa.X);
         Assert.Null(soa.Y);
         Assert.Null(soa.AppendCounts);
-        Assert.Equal(0, soa.Stride);
+        Assert.Equal(0, soa.EntryStride);
         Assert.Equal(0, soa.MaxEntries);
     }
 }

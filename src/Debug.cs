@@ -353,4 +353,9 @@ public static class Debug
     {
         System.Diagnostics.Debug.Assert(assert, msg);
     }
+
+    public static void Panic(string msg = default)
+    {
+        System.Diagnostics.Debug.Assert(false, msg);        
+    }
 }

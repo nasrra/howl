@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
 
+namespace Howl.Collections;
+
 public class StackArray<T>
 {
     /// <summary>

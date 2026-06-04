@@ -1,11 +1,11 @@
-using System;
 using System.Runtime.CompilerServices;
 using Howl.Math;
 using Howl.Math.Shapes;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.DataStructures.Bvh;
 
-public class Soa_Leaf : IDisposable
+public struct Soa_Leaf
 {
     /// <summary>
     ///     The Axis-Aligned Bounding-Boxes.
@@ -20,7 +20,7 @@ public class Soa_Leaf : IDisposable
     /// <summary>
     ///     The user-defined categories of the leaves (used to filter overlap results).
     /// </summary>
-    public int[] Categories;
+    public Array<int> Categories;
 
     /// <summary>
     ///     Gets the indices of branches that leaves are parented to.
@@ -28,7 +28,7 @@ public class Soa_Leaf : IDisposable
     /// <remarks>
     ///     Elements in this array should be valid after a Bounding Volume Hierarchy has been constructed.
     /// </remarks>
-    public int[] BranchIndices;
+    public Array<int> BranchIndices;
 
     /// <summary>
     ///     The count of allocated entries from appending.
@@ -40,22 +40,24 @@ public class Soa_Leaf : IDisposable
     /// </summary>
     public int Length;
 
-    /// <summary>
-    ///     Whether or not this instance has been disposed.
-    /// </summary>
-    public bool Disposed;
+    public bool IsInitialised;
 
-    /// <summary>
-    ///     Creates a new soa instance.
-    /// </summary>
-    /// <param name="length">the length of the backing arrays.</param>
-    public Soa_Leaf(int length)
+    public static bool Initialise(ref Soa_Leaf soa, ref Memory.Arena arena, int length)
     {
-        Aabbs = new(length);
-        Centroids = new(length);
-        BranchIndices = new int[length];
-        Categories = new int[length];
-        Length = length;
+        if (soa.IsInitialised)
+        {
+            Debug.Panic("Already Initialised.");
+            return false;
+        }
+
+        Soa_Aabb.Initialise(ref soa.Aabbs, ref arena, length);
+        Soa_Vector2.Initialise(ref soa.Centroids, ref arena, length);
+        Array.Initialise(ref soa.BranchIndices, ref arena, length);
+        Array.Initialise(ref soa.Categories, ref arena, length);
+        soa.Length = length;
+
+        soa.IsInitialised = true;
+        return true;
     }
 
     /// <summary>
@@ -71,10 +73,10 @@ public class Soa_Leaf : IDisposable
     /// <param name="category">the category of the leaf.</param>
     /// <returns>the index the entry was appended to in the backing arrays.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static int Append(Soa_Leaf soa, float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int category)
+    public static int Append(ref Soa_Leaf soa, float minX, float minY, float maxX, float maxY, float centroidX, float centroidY, int category)
     {
-        Soa_Aabb.Append(soa.Aabbs, minX, minY, maxX, maxY);
-        Soa_Vector2.Append(soa.Centroids, centroidX, centroidY);
+        Soa_Aabb.Append(ref soa.Aabbs, minX, minY, maxX, maxY);
+        Soa_Vector2.Append(ref soa.Centroids, centroidX, centroidY);
         soa.Categories[soa.AppendCount] = category;
         soa.AppendCount++;
         return soa.AppendCount-1;
@@ -85,10 +87,10 @@ public class Soa_Leaf : IDisposable
     /// </summary>
     /// <param name="soa">the soa instance to reset.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ResetCount(Soa_Leaf soa)
+    public static void ResetCount(ref Soa_Leaf soa)
     {
-        Soa_Aabb.ResetCount(soa.Aabbs);
-        Soa_Vector2.ResetCount(soa.Centroids);
+        Soa_Aabb.ResetCount(ref soa.Aabbs);
+        Soa_Vector2.ResetCount(ref soa.Centroids);
         soa.AppendCount = 0;
     }
 
@@ -109,10 +111,10 @@ public class Soa_Leaf : IDisposable
     {
         // hoisting of invariance.
         Soa_Aabb aabbs = leaves.Aabbs;
-        Span<float> aabbsMinX = aabbs.MinX;
-        Span<float> aabbsMinY = aabbs.MinY;
-        Span<float> aabbsMaxX = aabbs.MaxX;
-        Span<float> aabbsMaxY = aabbs.MaxY;
+        System.Span<float> aabbsMinX = Array.AsSpan(aabbs.MinX);
+        System.Span<float> aabbsMinY = Array.AsSpan(aabbs.MinY);
+        System.Span<float> aabbsMaxX = Array.AsSpan(aabbs.MaxX);
+        System.Span<float> aabbsMaxY = Array.AsSpan(aabbs.MaxY);
 
         return Aabb.Intersect(aabbsMinX[leafIndex], minX, aabbsMinY[leafIndex], minY, aabbsMaxX[leafIndex], maxX, aabbsMaxY[leafIndex], maxY);
     }
@@ -131,55 +133,11 @@ public class Soa_Leaf : IDisposable
     {
         // hoisting of invariance.
         Soa_Aabb aabbs = leaves.Aabbs;
-        Span<float> aabbsMinX = aabbs.MinX;
-        Span<float> aabbsMinY = aabbs.MinY;
-        Span<float> aabbsMaxX = aabbs.MaxX;
-        Span<float> aabbsMaxY = aabbs.MaxY;
+        System.Span<float> aabbsMinX = Array.AsSpan(aabbs.MinX);
+        System.Span<float> aabbsMinY = Array.AsSpan(aabbs.MinY);
+        System.Span<float> aabbsMaxX = Array.AsSpan(aabbs.MaxX);
+        System.Span<float> aabbsMaxY = Array.AsSpan(aabbs.MaxY);
 
         return Aabb.LineIntersect(aabbsMinX[leafIndex], aabbsMinY[leafIndex], aabbsMaxX[leafIndex], aabbsMaxY[leafIndex], startX, startY, endX, endY);        
-    }
-
-
-
-    /*******************
-    
-        Disposal.
-    
-    ********************/
-
-
-
-
-    public void Dispose()
-    {
-        Dispose(this);
-    }
-
-    public static void Dispose(Soa_Leaf soa)
-    {
-        if(soa.Disposed)
-            return;
-
-        soa.Disposed = true;
-        
-        Soa_Aabb.Dispose(soa.Aabbs);
-        soa.Aabbs = null;
-        
-        Soa_Vector2.Dispose(soa.Centroids);
-        soa.Centroids = null;
-
-        soa.BranchIndices = null;
-                                        
-        soa.Length = 0;
-        soa.AppendCount = 0;
-
-        soa.Categories = null;
-
-        GC.SuppressFinalize(soa);
-    }
-
-    ~Soa_Leaf()
-    {
-        Dispose(this);
     }
 }

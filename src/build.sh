@@ -7,6 +7,7 @@ BUILD_TYPE=$1
 declare -A BUILD_TYPE_DIRECTORY
 BUILD_TYPE_DIRECTORY=(
     ["Debug"]="bin/Debug/"
+    ["OptDebug"]="bin/Debug/"
     ["PreRelease"]="bin/Release/"
     ["Release"]="bin/Release/"
 )
@@ -14,6 +15,7 @@ BUILD_TYPE_DIRECTORY=(
 declare -A BUILD_TYPE_COMMAND
 BUILD_TYPE_COMMAND=(
     ["Debug"]="dotnet pack -c Debug"
+    ["OptDebug"]="dotnet pack -c Debug -p:OptimisedDebug=true"
     ["PreRelease"]="dotnet pack -c Release -p:PreRelease=true"
     ["Release"]="dotnet pack -c Release"
 )

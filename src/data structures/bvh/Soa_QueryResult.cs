@@ -1,10 +1,10 @@
-using System;
 using System.Runtime.CompilerServices;
 using Howl.Math.Shapes;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.DataStructures.Bvh;
 
-public class Soa_QueryResult : IDisposable
+public struct Soa_QueryResult
 {
     /// <summary>
     ///     The index of the <c>owner</c> leaves of a query result.
@@ -12,7 +12,7 @@ public class Soa_QueryResult : IDisposable
     /// <remarks>
     ///     Use a <c>queryResult</c> integer to access elements.
     /// </remarks>
-    public int[] OwnerLeafIndices;
+    public Array<int> OwnerLeafIndices;
 
     /// <summary>
     ///     The index of the <c>other</c> leaves of a query result.
@@ -20,7 +20,7 @@ public class Soa_QueryResult : IDisposable
     /// <remarks>
     ///     Use a <c>queryResult</c> integer to access elements.
     /// </remarks>
-    public int[] OtherLeafIndices;
+    public Array<int> OtherLeafIndices;
 
     /// <summary>
     ///     The index of the <c>owner</c> leaves of a query result.
@@ -48,23 +48,23 @@ public class Soa_QueryResult : IDisposable
     /// </summary>
     public int Length;
 
-    /// <summary>
-    ///     Whether or not this instance has been disposed.
-    /// </summary>
-    public bool Disposed;
+    public bool IsInitialised;
 
-    /// <summary>
-    ///     Creates a soa instance.
-    /// </summary>
-    /// <param name="length">the length of the backing arrays.</param>
-    public Soa_QueryResult(int length)
+    public static bool Initialise(ref Soa_QueryResult soa, ref Memory.Arena arena, int length)
     {
-        OwnerLeafIndices = new int[length];
-        OtherLeafIndices = new int[length];
-        OwnerAabbs = new(length);
-        OtherAabbs = new(length);
-        AppendCount = 0;
-        Length = length;
+        if (soa.IsInitialised)
+        {
+            Debug.Panic("Already Initialised!");
+            return false;
+        }
+
+        Array.Initialise(ref soa.OwnerLeafIndices, ref arena, length);
+        Array.Initialise(ref soa.OtherLeafIndices, ref arena, length);
+        Soa_Aabb.Initialise(ref soa.OwnerAabbs, ref arena, length);
+        Soa_Aabb.Initialise(ref soa.OtherAabbs, ref arena, length);
+        soa.Length = length;
+        soa.IsInitialised = true;
+        return true;
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ public class Soa_QueryResult : IDisposable
     /// <param name="otherMaxX">the x-compoent of the <c>other</c> aabb's maximum vertex.</param>
     /// <param name="otherMaxY">the y-compoent of the <c>other</c> aabb's maximum vertex.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Append(Soa_QueryResult soa, int ownerLeafIndex, float ownerMinX, float ownerMinY, float ownerMaxX, 
+    public static void Append(ref Soa_QueryResult soa, int ownerLeafIndex, float ownerMinX, float ownerMinY, float ownerMaxX, 
         float ownerMaxY, int otherLeafIndex, float otherMinX, float otherMinY, float otherMaxX, float otherMaxY
     )
     {
@@ -108,52 +108,8 @@ public class Soa_QueryResult : IDisposable
     /// </summary>
     /// <param name="soa">the soa to clear.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Clear(Soa_QueryResult soa)
+    public static void Clear(ref Soa_QueryResult soa)
     {
         soa.AppendCount = 0; 
-    }
-
-
-
-
-    /*******************
-    
-        Disposal.
-    
-    ********************/
-
-
-
-
-    public void Dispose()
-    {
-        throw new NotImplementedException();
-    }
-
-    public static void Dispose(Soa_QueryResult soa)
-    {
-        if(soa.Disposed)
-            return;
-        
-        soa.Disposed = true;
-
-        soa.OwnerLeafIndices = null;
-        soa.OtherLeafIndices = null;
-
-        Soa_Aabb.Dispose(soa.OwnerAabbs);
-        soa.OwnerAabbs = null;
-        
-        Soa_Aabb.Dispose(soa.OtherAabbs);
-        soa.OtherAabbs = null;
-
-        soa.AppendCount = 0;
-        soa.Length = 0;
-
-        GC.SuppressFinalize(soa);
-    }
-
-    ~Soa_QueryResult()
-    {
-        Dispose(this);
     }
 }

@@ -1,7 +1,15 @@
-using System;
 using System.Runtime.CompilerServices;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.Algorithms.Sorting;
+
+/******************
+
+    NOTE:
+    All the functions in the class should eventually shift away
+    from using System.System.Spans and instead use custom Arrays.
+
+*******************/
 
 /// <summary>
 /// Radix sorting porocedures for floating-point numbers.
@@ -57,14 +65,14 @@ public static class RadixSortF
     }
 
     /// <summary>
-    /// Converts a span of floating point numbers to sortable uint representations.
+    /// Converts a System.Span of floating point numbers to sortable uint representations.
     /// </summary>
     /// <remarks>
-    /// The '<paramref name="input"/>' and '<paramref name="output"/>' spans must be of equal length.
+    /// The '<paramref name="input"/>' and '<paramref name="output"/>' System.Spans must be of equal length.
     /// </remarks>
     /// <param name="input">the input floating-point values to convert into their sortable uint representations.</param>
     /// <param name="output">output for the newly converted sortable uint values.</param>
-    public static void ToSortableUint_Sisd(Span<float> input, Span<uint> output, int start)
+    public static void ToSortableUint_Sisd(System.Span<float> input, System.Span<uint> output, int start)
     {
         for(int i = start; i < input.Length; i++)
         {
@@ -72,7 +80,7 @@ public static class RadixSortF
         }
     }
 
-    public static void ToSortableUint_Simd(Span<float> input, Span<uint> output, ref int tailIndex)
+    public static void ToSortableUint_Simd(System.Span<float> input, System.Span<uint> output, ref int tailIndex)
     {
         int simdSize = System.Numerics.Vector<float>.Count;
 
@@ -104,7 +112,7 @@ public static class RadixSortF
         tailIndex = i;
     }
 
-    public static void ToSortableUint(Span<float> input, Span<uint> output)
+    public static void ToSortableUint(System.Span<float> input, System.Span<uint> output)
     {
         int tailIndex = 0;
         ToSortableUint_Simd(input, output, ref tailIndex);
@@ -144,14 +152,14 @@ public static class RadixSortF
     }
 
     /// <summary>
-    /// Converts a span of sortable uints back into their floating-point representations.
+    /// Converts a System.Span of sortable uints back into their floating-point representations.
     /// </summary>
     /// <remarks>
-    /// The '<paramref name="input"/>' and '<paramref name="output"/>' spans must be of equal length.
+    /// The '<paramref name="input"/>' and '<paramref name="output"/>' System.Spans must be of equal length.
     /// </remarks>
     /// <param name="input">the sortable uints to convert into their floating-point representations.</param>
     /// <param name="output">output for the newly converted floating-point values.</param>
-    public static void FromSortableUint(Span<uint> input, Span<float> output)
+    public static void FromSortableUint(System.Span<uint> input, System.Span<float> output)
     {
         for(int i = 0; i < input.Length; i++)
         {
@@ -173,21 +181,21 @@ public static class RadixSortF
 
 
     /// <summary>
-    /// Sorts a span of floating point values in ascending order using Radix Sort.
+    /// Sorts a System.Span of floating point values in ascending order using Radix Sort.
     /// </summary>
     /// <remarks>
-    /// Spans must be of equal length:
+    /// System.Spans must be of equal length:
     /// <list type="bullet">
     /// <item><paramref name="values"/></item>
     /// <item><paramref name="translated"/></item>
     /// <item><paramref name="temp"/></item>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="temp">temporary span for reordering values during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. this System.Span will contain the sorted result.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="temp">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Ascend(Span<float> values, Span<uint> translated, Span<uint> temp, Span<int> byteCount)
+    public static void Ascend(System.Span<float> values, System.Span<uint> translated, System.Span<uint> temp, System.Span<int> byteCount)
     {
         ToSortableUint(values, translated);
         RadixSort.Ascend(translated, temp, byteCount, translated.Length);
@@ -195,64 +203,64 @@ public static class RadixSortF
     }
 
     /// <summary>
-    /// Sorts a span of floating point values in ascending order using Radix Sort.
+    /// Sorts a System.Span of floating point values in ascending order using Radix Sort.
     /// </summary>
     /// <remarks>
-    /// Spans must be of equal length:
+    /// System.Spans must be of equal length:
     /// <list type="bullet">
     /// <item><paramref name="values"/></item>
     /// <item><paramref name="translated"/></item>
     /// <item><paramref name="temp"/></item>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="temp">temporary span for reordering values during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. this System.Span will contain the sorted result.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="temp">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
-    public static void Ascend(Span<float> values, Span<uint> translated, Span<uint> temp, Span<int> byteCount, int start, int length)
+    public static void Ascend(System.Span<float> values, System.Span<uint> translated, System.Span<uint> temp, System.Span<int> byteCount, int start, int length)
     {
-        Span<float> valuesSlice = values.Slice(start, length);
-        Span<uint> transSlice = translated.Slice(start, length);
-        Span<uint> tempSlice = temp.Slice(start, length);        
+        System.Span<float> valuesSlice = values.Slice(start, length);
+        System.Span<uint> transSlice = translated.Slice(start, length);
+        System.Span<uint> tempSlice = temp.Slice(start, length);        
         Ascend(valuesSlice, transSlice, tempSlice, byteCount);
     }
     
     /// <summary>
-    /// Sorts a span of floating point values in ascending order using Radix Sort.
+    /// Sorts a System.Span of floating point values in ascending order using Radix Sort.
     /// </summary>
     /// <remarks>
-    /// The length of the '<paramref name="buffer"/>' and '<paramref name="values"/>' span should be the same.
+    /// The length of the '<paramref name="buffer"/>' and '<paramref name="values"/>' System.Span should be the same.
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
+    /// <param name="values">the System.Span of floats to be sorted. this System.Span will contain the sorted result.</param>
     /// <param name="buffer">A radix sort buffer </param>
-    public static void Ascend(Span<float> values, RadixSortBuffer buffer)
+    public static void Ascend(System.Span<float> values, ref RadixSortBuffer buffer)
     {
-        Ascend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount);
+        Ascend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), Array.AsSpan(buffer.ByteCount));
     }
 
     /// <summary>
-    /// Sorts a span of floating point values in ascending order using Radix Sort.
+    /// Sorts a System.Span of floating point values in ascending order using Radix Sort.
     /// </summary>
     /// <remarks>
-    /// The length of the '<paramref name="buffer"/>' and '<paramref name="values"/>' span should be the same.
+    /// The length of the '<paramref name="buffer"/>' and '<paramref name="values"/>' System.Span should be the same.
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
+    /// <param name="values">the System.Span of floats to be sorted. this System.Span will contain the sorted result.</param>
     /// <param name="buffer">A radix sort buffer </param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
-    public static void Ascend(Span<float> values, RadixSortBuffer buffer, int start, int length)
+    public static void Ascend(System.Span<float> values, ref RadixSortBuffer buffer, int start, int length)
     {
-        Ascend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount, start, length);
+        Ascend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), Array.AsSpan(buffer.ByteCount), start, length);
     }
 
     /// <summary>
-    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in ascending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
@@ -261,15 +269,15 @@ public static class RadixSortF
     /// <item><paramref name="translated"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
-    /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="tempValues">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
+    /// <param name="tempIndices">temporary System.Span for reordering indices during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void IndexedAscend(Span<float> values, Span<uint> translated, Span<uint> tempValues, 
-        Span<int> indices, Span<int> tempIndices, Span<int> byteCount
+    public static void IndexedAscend(System.Span<float> values, System.Span<uint> translated, System.Span<uint> tempValues, 
+        System.Span<int> indices, System.Span<int> tempIndices, System.Span<int> byteCount
     )
     {
         ToSortableUint(values, translated);
@@ -278,11 +286,11 @@ public static class RadixSortF
     }
 
     /// <summary>
-    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in ascending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
@@ -291,70 +299,70 @@ public static class RadixSortF
     /// <item><paramref name="translated"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
-    /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="tempValues">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
+    /// <param name="tempIndices">temporary System.Span for reordering indices during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void IndexedAscend(Span<float> values, Span<uint> translated, Span<uint> tempValues, 
-        Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int start, int length
+    public static void IndexedAscend(System.Span<float> values, System.Span<uint> translated, System.Span<uint> tempValues, 
+        System.Span<int> indices, System.Span<int> tempIndices, System.Span<int> byteCount, int start, int length
     )
     {
-        Span<float> valuesSlice = values.Slice(start, length);
-        Span<uint> transSlice = translated.Slice(start, length);
-        Span<uint> tempValuesSlice = tempValues.Slice(start, length);
-        Span<int> indicesSlice = indices.Slice(start, length);
-        Span<int> tempIndicesSlice = tempIndices.Slice(start, length);
+        System.Span<float> valuesSlice = values.Slice(start, length);
+        System.Span<uint> transSlice = translated.Slice(start, length);
+        System.Span<uint> tempValuesSlice = tempValues.Slice(start, length);
+        System.Span<int> indicesSlice = indices.Slice(start, length);
+        System.Span<int> tempIndicesSlice = tempIndices.Slice(start, length);
         IndexedAscend(valuesSlice, transSlice, tempValuesSlice, indicesSlice, tempIndicesSlice, byteCount);
     }
 
     /// <summary>
-    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in ascending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans and buffers must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans and buffers must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="indices"/></item> 
     /// <item><paramref name="buffer"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
     /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
-    public static void IndexedAscend(Span<float> values, Span<int> indices, RadixSortBuffer buffer, int start, int length)
+    public static void IndexedAscend(System.Span<float> values, System.Span<int> indices, ref RadixSortBuffer buffer, int start, int length)
     {
-        IndexedAscend(values, buffer.TranslatedValues, buffer.TempValues, 
-            indices, buffer.TempIndices, buffer.ByteCount, start, length
+        IndexedAscend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), 
+            indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount), start, length
         );
     }
 
     /// <summary>
-    /// Sorts a span of uints in ascending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in ascending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans and buffers must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans and buffers must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="indices"/></item> 
     /// <item><paramref name="buffer"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
     /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
-    public static void IndexedAscend(Span<float> values, Span<int> indices, RadixSortBuffer buffer)
+    public static void IndexedAscend(System.Span<float> values, System.Span<int> indices, ref RadixSortBuffer buffer)
     {
-        IndexedAscend(values, buffer.TranslatedValues, buffer.TempValues, 
-            indices, buffer.TempIndices, buffer.ByteCount
+        IndexedAscend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), 
+            indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount)
         );
     }
 
@@ -371,21 +379,21 @@ public static class RadixSortF
 
 
     /// <summary>
-    /// Sorts a span of floating point values in descending order using Radix Sort.
+    /// Sorts a System.Span of floating point values in descending order using Radix Sort.
     /// </summary>
     /// <remarks>
-    /// Spans must be of equal length:
+    /// System.Spans must be of equal length:
     /// <list type="bullet">
     /// <item><paramref name="values"/></item>
     /// <item><paramref name="translated"/></item>
     /// <item><paramref name="temp"/></item>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="temp">temporary span for reordering values during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. this System.Span will contain the sorted result.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="temp">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Descend(Span<float> values, Span<uint> translated, Span<uint> temp, Span<int> byteCount)
+    public static void Descend(System.Span<float> values, System.Span<uint> translated, System.Span<uint> temp, System.Span<int> byteCount)
     {
         ToSortableUint(values, translated);
         RadixSort.Descend(translated, temp, byteCount, translated.Length);
@@ -393,64 +401,64 @@ public static class RadixSortF
     }
 
     /// <summary>
-    /// Sorts a span of floating point values in descending order using Radix Sort.
+    /// Sorts a System.Span of floating point values in descending order using Radix Sort.
     /// </summary>
     /// <remarks>
-    /// Spans must be of equal length:
+    /// System.Spans must be of equal length:
     /// <list type="bullet">
     /// <item><paramref name="values"/></item>
     /// <item><paramref name="translated"/></item>
     /// <item><paramref name="temp"/></item>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="temp">temporary span for reordering values during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. this System.Span will contain the sorted result.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="temp">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
-    public static void Descend(Span<float> values, Span<uint> translated, Span<uint> temp, Span<int> byteCount, int start, int length)
+    public static void Descend(System.Span<float> values, System.Span<uint> translated, System.Span<uint> temp, System.Span<int> byteCount, int start, int length)
     {
-        Span<float> valuesSlice = values.Slice(start, length);
-        Span<uint> transSlice = translated.Slice(start, length);
-        Span<uint> tempSlice = temp.Slice(start, length);        
+        System.Span<float> valuesSlice = values.Slice(start, length);
+        System.Span<uint> transSlice = translated.Slice(start, length);
+        System.Span<uint> tempSlice = temp.Slice(start, length);        
         Descend(valuesSlice, transSlice, tempSlice, byteCount);
     }
 
     /// <summary>
-    /// Sorts a span of floating point values in descending order using Radix Sort.
+    /// Sorts a System.Span of floating point values in descending order using Radix Sort.
     /// </summary>
     /// <remarks>
-    /// The length of the '<paramref name="buffer"/>' and '<paramref name="values"/>' span should be the same.
+    /// The length of the '<paramref name="buffer"/>' and '<paramref name="values"/>' System.Span should be the same.
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
+    /// <param name="values">the System.Span of floats to be sorted. this System.Span will contain the sorted result.</param>
     /// <param name="buffer">A radix sort buffer </param>
-    public static void Descend(Span<float> values, RadixSortBuffer buffer)
+    public static void Descend(System.Span<float> values, ref RadixSortBuffer buffer)
     {
-        Descend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount);
+        Descend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), Array.AsSpan(buffer.ByteCount));
     }
 
     /// <summary>
-    /// Sorts a span of floating point values in descending order using Radix Sort.
+    /// Sorts a System.Span of floating point values in descending order using Radix Sort.
     /// </summary>
     /// <remarks>
-    /// The length of the '<paramref name="buffer"/>' and '<paramref name="values"/>' span should be the same.
+    /// The length of the '<paramref name="buffer"/>' and '<paramref name="values"/>' System.Span should be the same.
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. this span will contain the sorted result.</param>
+    /// <param name="values">the System.Span of floats to be sorted. this System.Span will contain the sorted result.</param>
     /// <param name="buffer">A radix sort buffer </param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
-    public static void Descend(Span<float> values, RadixSortBuffer buffer, int start, int length)
+    public static void Descend(System.Span<float> values, ref RadixSortBuffer buffer, int start, int length)
     {
-        Descend(values, buffer.TranslatedValues, buffer.TempValues, buffer.ByteCount, start, length);
+        Descend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), Array.AsSpan(buffer.ByteCount), start, length);
     }
 
     /// <summary>
-    /// Sorts a span of uints in descending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in descending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
@@ -459,15 +467,15 @@ public static class RadixSortF
     /// <item><paramref name="translated"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
-    /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="tempValues">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
+    /// <param name="tempIndices">temporary System.Span for reordering indices during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void IndexedDescend(Span<float> values, Span<uint> translated, Span<uint> tempValues, 
-        Span<int> indices, Span<int> tempIndices, Span<int> byteCount
+    public static void IndexedDescend(System.Span<float> values, System.Span<uint> translated, System.Span<uint> tempValues, 
+        System.Span<int> indices, System.Span<int> tempIndices, System.Span<int> byteCount
     )
     {
         ToSortableUint(values, translated);
@@ -476,11 +484,11 @@ public static class RadixSortF
     }
 
     /// <summary>
-    /// Sorts a span of uints in descending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in descending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="tempIndices"/></item>
@@ -489,70 +497,70 @@ public static class RadixSortF
     /// <item><paramref name="translated"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="translated">a span to contain the floating-point to uint converted values for sorting.</param>
-    /// <param name="tempValues">temporary span for reordering values during each pass.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
-    /// <param name="tempIndices">temporary span for reordering indices during each pass.</param>
-    /// <param name="byteCount">a histogram span, must be at least 256 elements long.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="translated">a System.Span to contain the floating-point to uint converted values for sorting.</param>
+    /// <param name="tempValues">temporary System.Span for reordering values during each pass.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
+    /// <param name="tempIndices">temporary System.Span for reordering indices during each pass.</param>
+    /// <param name="byteCount">a histogram System.Span, must be at least 256 elements long.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void IndexedDescend(Span<float> values, Span<uint> translated, Span<uint> tempValues, 
-        Span<int> indices, Span<int> tempIndices, Span<int> byteCount, int start, int length
+    public static void IndexedDescend(System.Span<float> values, System.Span<uint> translated, System.Span<uint> tempValues, 
+        System.Span<int> indices, System.Span<int> tempIndices, System.Span<int> byteCount, int start, int length
     )
     {
-        Span<float> valuesSlice = values.Slice(start, length);
-        Span<uint> transSlice = translated.Slice(start, length);
-        Span<uint> tempValuesSlice = tempValues.Slice(start, length);        
-        Span<int> indicesSlice = indices.Slice(start, length);
-        Span<int> tempIndicesSlice = tempIndices.Slice(start, length);
+        System.Span<float> valuesSlice = values.Slice(start, length);
+        System.Span<uint> transSlice = translated.Slice(start, length);
+        System.Span<uint> tempValuesSlice = tempValues.Slice(start, length);        
+        System.Span<int> indicesSlice = indices.Slice(start, length);
+        System.Span<int> tempIndicesSlice = tempIndices.Slice(start, length);
         IndexedDescend(valuesSlice, transSlice, tempValuesSlice, indicesSlice, tempIndicesSlice, byteCount);
     }
 
     /// <summary>
-    /// Sorts a span of uints in descending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in descending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans and buffers must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans and buffers must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="indices"/></item> 
     /// <item><paramref name="buffer"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
     /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
     /// <param name="start">the index of the first element to process.</param>
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
-    public static void IndexedDescend(Span<float> values, Span<int> indices, RadixSortBuffer buffer, int start, int length)
+    public static void IndexedDescend(System.Span<float> values, System.Span<int> indices, ref RadixSortBuffer buffer, int start, int length)
     {
-        IndexedDescend(values, buffer.TranslatedValues, buffer.TempValues, 
-            indices, buffer.TempIndices, buffer.ByteCount, start, length
+        IndexedDescend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), 
+            indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount), start, length
         );
     }
 
     /// <summary>
-    /// Sorts a span of uints in descending order using the Radix Sort Algorithm.
+    /// Sorts a System.Span of uints in descending order using the Radix Sort Algorithm.
     /// </summary>
     /// <remarks>
     /// This implementation processes 8-bit chunks (bytes) per 'step', requiring 4 'steps' for a 32-bit integer.
-    /// The following spans and buffers must have a length at least equal to <paramref name="length"/>:
+    /// The following System.Spans and buffers must have a length at least equal to <paramref name="length"/>:
     /// <list type="bullet">
     /// <item><paramref name="indices"/></item>
     /// <item><paramref name="indices"/></item> 
     /// <item><paramref name="buffer"/></item> 
     /// </list>
     /// </remarks>
-    /// <param name="values">the span of floats to be sorted. Contains the final sorted values.</param>
-    /// <param name="indices">the associated index span to be reordered alongside the values.</param>
+    /// <param name="values">the System.Span of floats to be sorted. Contains the final sorted values.</param>
+    /// <param name="indices">the associated index System.Span to be reordered alongside the values.</param>
     /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
-    public static void IndexedDescend(Span<float> values, Span<int> indices, RadixSortBuffer buffer)
+    public static void IndexedDescend(System.Span<float> values, System.Span<int> indices, ref RadixSortBuffer buffer)
     {
-        IndexedDescend(values, buffer.TranslatedValues, buffer.TempValues, 
-            indices, buffer.TempIndices, buffer.ByteCount
+        IndexedDescend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), 
+            indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount)
         );
     }
 }

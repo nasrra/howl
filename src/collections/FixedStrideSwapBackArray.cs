@@ -1,5 +1,7 @@
+using System;
 using System.Runtime.CompilerServices;
 using Howl.Collections;
+using Howl.Unmanaged.Collections;
 
 public static class FixedStrideSwapBackArray
 {
@@ -14,7 +16,7 @@ public static class FixedStrideSwapBackArray
     /// <param name="entryIndex">the index of the entry to append to.</param>
     /// <returns>true, if the value was successfully appended; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Append<T>(this T value, T[] destination, int[] counts, int stride, int entryIndex)
+    public static bool Append<T>(ref Array<T> destination, ref Array<int> counts, int stride, int entryIndex, T value) where T : unmanaged
     {
         ref int count = ref counts[entryIndex];
         int next = count + 1;;
@@ -39,7 +41,7 @@ public static class FixedStrideSwapBackArray
     /// <param name="elementIndex">the index - relative to the entry - of the element to remove.</param>
     /// <returns>true, if the value was successfully removed; otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool RemoveAt<T>(this T[] values, int[] counts, int stride, int entryIndex, int elementIndex)
+    public static bool RemoveAt<T>(ref Array<T> values, ref Array<int> counts, int stride, int entryIndex, int elementIndex) where T : unmanaged
     {
         ref int count = ref counts[entryIndex];
         
@@ -54,18 +56,5 @@ public static class FixedStrideSwapBackArray
         values[FixedStrideArray.GetElementIndex(entryIndex, stride, elementIndex)] = values[FixedStrideArray.GetElementIndex(entryIndex, stride, count)];
         
         return true;
-    }
-
-    /// <summary>
-    ///     Sets all elements to zero.
-    /// </summary>
-    /// <param name="counts">the count array to clear.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void ClearCounts(int[] counts)
-    {
-        for(int i = 0; i < counts.Length; i++)
-        {
-            counts[i] = 0;
-        }
     }
 }

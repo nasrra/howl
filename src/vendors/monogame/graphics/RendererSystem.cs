@@ -116,12 +116,13 @@ public static class RendererSystem
     /// </summary>
     private static void DrawPrimitives(MonoGameAppState app)
     {
+
         DebugDrawState state = app.DebugDrawState;
         if(state.PrimitiveIndices.Count == 0 || state.PrimitiveVertices.Count == 0)
         {
             return;
         }
-
+        
         if(app.GraphicsDevice == null)
         {
             return;
