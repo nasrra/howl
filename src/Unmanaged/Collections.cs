@@ -497,3 +497,98 @@ public static class ComponentArray
         return ref array.Sparse[index];
     }
 }
+
+public unsafe struct Buffer<T> where T : unmanaged
+{
+    public T* Pointer;
+    public int Length;
+    public int Count;
+    public bool IsInitialised;
+
+    public ref T this[int index]
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        get
+        {
+            Debug.Assert(index >= 0 && index < Length, 
+                $"Index: '{index}' is Out Of Bounds; Array Length: '{Length}' ."
+            );
+            return ref Pointer[index];
+        } 
+    }
+}    
+
+public unsafe static class Buffer
+{
+    public static bool Initialise<T>(ref Buffer<T> buffer, T* pointer, int length) where T : unmanaged
+    {
+        if (buffer.IsInitialised)
+        {
+            Debug.Panic("Already Initialised.");
+            return false;
+        }
+        buffer.IsInitialised = true;
+        buffer.Pointer = pointer;
+        buffer.Length = length;
+        return true;
+    }
+
+    public static bool Initialise<T>(ref Buffer<T> buffer, ref Memory.Arena arena, int length) where T : unmanaged
+    {
+        if (buffer.IsInitialised)
+        {
+            Debug.Panic("already initialised.");
+            return false;
+        }
+        buffer.IsInitialised = true;
+        T* ptr = Memory.PushArrayRaw<T>(ref arena, length);
+        buffer.IsInitialised = true;
+        buffer.Pointer = ptr;
+        buffer.Length = length;
+        return true;            
+    }
+
+    public static bool Append<T>(ref Buffer<T> buffer, T value) where T : unmanaged
+    {
+        if(buffer.Count >= buffer.Length)
+        {
+            Debug.Panic("Memory Limit Hit.");
+            return false;
+        }
+
+        buffer[buffer.Count] = value;
+        buffer.Count++;
+        return true;
+    }
+
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>This only sets the buffer internal count value to zero.</para>
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Clear<T>(ref Buffer<T> buffer) where T : unmanaged
+    {
+        buffer.Count = 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static System.Span<T> AsSpan<T>(Buffer<T> buffer) where T : unmanaged
+    {
+        return new System.Span<T>(buffer.Pointer, buffer.Count);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static System.Span<T> AsSpan<T>(Buffer<T> buffer, int startIndex, int length) where T : unmanaged
+    {
+        Debug.Assert(buffer.Pointer + startIndex + length < buffer.Pointer + buffer.Length,
+            "Index out of range."
+        );
+        return new System.Span<T>(buffer.Pointer+startIndex, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static System.ReadOnlySpan<T> AsReadOnlySpan<T>(Buffer<T> buffer) where T : unmanaged
+    {
+        return new System.ReadOnlySpan<T>(buffer.Pointer, buffer.Count);
+    }
+}

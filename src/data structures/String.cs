@@ -1,4 +1,6 @@
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using Howl.Unmanaged.Collections;
 
@@ -21,12 +23,43 @@ public unsafe struct String
         }
     }
 
-    public static void Initialise(ref Memory.Arena arena, ref String str, int length)
+    public static bool Initialise(ref Memory.Arena arena, ref String str, int length)
     {
-        System.Diagnostics.Debug.Assert(str.IsInitialised == false, "String already intialised.");
-        str.IsInitialised = true;
+        if (str.IsInitialised)
+        {
+            Debug.Panic("Already Initialised");
+            return false;
+        }
         str.Length = length;
         str.Pointer = Memory.PushArrayRaw<char>(ref arena, length);
+        str.IsInitialised = true;
+        return true;
+    }
+
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>This function is intended for a howl string to point to a const System.String.</para>
+    ///    <para>If not, ensure that the lifetime of the System.String isnt completed before this.</para>
+    /// </remarks>
+    public static bool Initialise(ref String destination, string source)
+    {
+        if (destination.IsInitialised)
+        {
+            Debug.Panic("Already Initialised");
+            return false;
+        }
+
+        int length = source.Length;
+        destination.Length = length;
+        destination.Count = length;
+
+        fixed (char* p = source)
+        {
+            destination.Pointer = p;
+        }
+
+        destination.IsInitialised = true;
+        return true;
     }
 
     /******************
@@ -236,23 +269,25 @@ public unsafe struct String
         return Encoding.UTF8.GetByteCount(str.Pointer, str.Count);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Array<byte> GetBytesUTF8(String str, ref Memory.Arena transientArena)
-    {
-        int byteCount = Encoding.UTF8.GetByteCount(str.Pointer, str.Count);
-        Array<byte> array = default;
-        Array.Initialise(ref array, ref transientArena, byteCount); 
-        Encoding.UTF8.GetBytes(str.Pointer, str.Count, array.Pointer, byteCount);
-        return array;
-    }
-
     /// <returns>the amount of bytes written to the destination array.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static int GetBytesUTF8(String source, ref Array<byte> destination)
+    public static int GetBytesUTF8(String source, ref Buffer<byte> destination)
     {
         int byteCount = Encoding.UTF8.GetByteCount(source.Pointer, source.Count);
+        
+        Debug.Assert(byteCount < destination.Length, "Array does not have enough space!");
+
         Encoding.UTF8.GetBytes(source.Pointer, source.Count, destination.Pointer, byteCount);
+        destination.Count = byteCount;
+
         return byteCount;
+    }
+
+    public static int GetBytesUTF8(String source, byte* destination)
+    {
+        int byteCount = Encoding.UTF8.GetByteCount(source.Pointer, source.Count);
+        Encoding.UTF8.GetBytes(source.Pointer, source.Count, destination, byteCount);
+        return byteCount;        
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
