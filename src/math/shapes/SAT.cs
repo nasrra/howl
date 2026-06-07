@@ -227,62 +227,72 @@ public static class SAT
 
     /*******************
     
-        Polygon Rectangle.
-    
-    ********************/
-
-
-
-
-    /// <summary>
-    /// Checks for intersection between two rectangles.
-    /// </summary>
-    /// <param name="lhs">The left-hand side rectangle.</param>
-    /// <param name="rhs">The right-hand side rectangle.</param>
-    /// <param name="lhsCentroid">the centroid of the left-hand side rectangle.</param>
-    /// <param name="rhsCentroid">the centroid of the right-hand side rectangle.</param>
-    /// <param name="normal">The normal of the intersection in relation to the right-hand side rectangle.</param>
-    /// <param name="depth">The depth of the intersection in relation to the right-hand side rectangle.</param>
-    /// <returns>true, if there is an intersection; otherwise false.</returns>
-    /// <exception cref="ArgumentException"></exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(
-        in PolygonRectangle lhs, 
-        in PolygonRectangle rhs, 
-        Vector2 lhsCentroid, 
-        Vector2 rhsCentroid, 
-        out Vector2 normal, 
-        out float depth
-    )   
-    {
-        bool intersects = PolygonsIntersect(
-            VerticesXAsSpan(lhs),
-            VerticesYAsSpan(lhs),
-            VerticesXAsSpan(rhs),
-            VerticesYAsSpan(rhs),
-            lhsCentroid.X, 
-            lhsCentroid.Y, 
-            rhsCentroid.X, 
-            rhsCentroid.Y, 
-            out float normalX, 
-            out float normalY, 
-            out depth
-        );
-        normal = new Vector2(normalX, normalY);
-        return intersects;
-    }
-
-
-
-
-    /*******************
-    
         Polygons.
     
     ********************/
 
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool PolygonIntersectsPoint(Span<float> polygonVerticesX, Span<float> polygonVerticesY, 
+        float pointX, float pointY, ref float normalX, ref float normalY, ref float depth
+    )
+    {
+        depth = float.MaxValue;
+        normalX = 0;
+        normalY = 0;
 
+        float minMagSqrd = float.MaxValue;
+        float minDepthSqrd = float.MaxValue;
+        float minAxisDepth = float.MaxValue;
+        float minAxisX = float.MaxValue;
+        float minAxisY = float.MaxValue;
+
+        float minEdgeA = float.MaxValue;
+        float maxEdgeA = float.MinValue;
+
+        for(int i = 0; i < polygonVerticesX.Length; i++)
+        {
+            int vBIndex = (i + 1 == polygonVerticesX.Length) ? 0 : i + 1;
+
+            // calc the perpendicular edge.
+            float axisX = -(polygonVerticesY[vBIndex] - polygonVerticesY[i]);
+            float axisY = polygonVerticesX[vBIndex] - polygonVerticesX[i];
+
+            // project using axis.
+            ProjectPolygon_Sisd(polygonVerticesX, polygonVerticesY, axisX, axisY, polygonVerticesX.Length, ref minEdgeA, ref maxEdgeA);        
+            float pointProj = Dot(pointX, pointY, axisX, axisY);
+
+            if(pointProj <= minEdgeA || pointProj >= maxEdgeA)
+            {
+                return false; // Separation found.
+            }
+
+            // Calculate overlap in "scaled space"
+            float axisDepth = Min(pointProj - minEdgeA, maxEdgeA - pointProj);
+
+            // to compare depths correctly, the squared length of the axis is needed.
+            float magSqrd = axisX * axisX + axisY * axisY;
+
+            float axisDepthSqrd = axisDepth * axisDepth;
+
+            // check if this is the minimum translation distance.
+            if(minDepthSqrd * magSqrd > axisDepthSqrd)
+            {
+                minDepthSqrd = axisDepthSqrd / magSqrd; // store relative squared depth.
+                minAxisX = axisX;
+                minAxisY = axisY;
+                minAxisDepth = axisDepth;
+                minMagSqrd = magSqrd;
+            }
+        }
+
+        float mag = MathF.Sqrt(minMagSqrd);
+        depth = minAxisDepth / mag; // Only one sqrt if this is the new minimum translation distance.
+        normalX = minAxisX / mag;
+        normalY = minAxisY / mag;
+
+        return true;
+    }
 
     /// <summary>
     /// Checks for an intersection between two polygons.
@@ -726,46 +736,6 @@ public static class SAT
 
     /*******************
     
-        Rectangle To Circle.
-    
-    ********************/
-
-
-
-    /// <summary>
-    /// Checks whether a rectangle and a circle intersect.
-    /// </summary>
-    /// <param name="rectangle">The rectangle data.</param>
-    /// <param name="circle">The circle data.</param>
-    /// <param name="normal">The normal of the intersection in relation to the circle.</param>
-    /// <param name="depth">The depth of the intersection in relation to the circle.</param>
-    /// <returns>true, if there was an intersection; otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Intersect(in PolygonRectangle rectangle, in Circle circle, Vector2 polgonCenter, Vector2 circleCenter, out Vector2 normal, out float depth)
-    {
-        bool intersects = PolygonAndCircleIntersect(
-            VerticesXAsSpan(rectangle), 
-            VerticesYAsSpan(rectangle), 
-            circle, 
-            polgonCenter.X, 
-            polgonCenter.Y, 
-            circleCenter.X, 
-            circleCenter.Y, 
-            out float normalX, 
-            out float normalY, 
-            out depth
-        );
-
-        normal = new Vector2(normalX, normalY);
-
-        return intersects;
-    }
-
-
-
-
-    /*******************
-    
         Polygon To Circle.
     
     ********************/
@@ -884,7 +854,7 @@ public static class SAT
         
             // project all vertices onto the current edge to find the min and max values
             // of the two rectangles along the edge.
-            ProjectPolygon_Simd(polygonVerticesX, polygonVerticesY, axisX, axisY, polygonVerticesX.Length, ref minA, ref maxA);        
+            ProjectPolygon_Sisd(polygonVerticesX, polygonVerticesY, axisX, axisY, polygonVerticesX.Length, ref minA, ref maxA);        
             ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
 
             if(minA > maxB || minB > maxA)
@@ -913,7 +883,7 @@ public static class SAT
 
         // project all vertices onto the current edge to find the min and max values
         // of the two rectangles along the edge.
-        ProjectPolygon_Simd(polygonVerticesX, polygonVerticesY, axisX, axisY, polygonVerticesX.Length, ref minA, ref maxA);        
+        ProjectPolygon_Sisd(polygonVerticesX, polygonVerticesY, axisX, axisY, polygonVerticesX.Length, ref minA, ref maxA);        
         ProjectCircle(circleX, circleY, circleRadius, axisX, axisY, out minB, out maxB);
     
         if(minA > maxB || minB > maxA)

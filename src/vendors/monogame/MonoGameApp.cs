@@ -249,8 +249,11 @@ public static class MonoGameApp
         FontStashSharp.FontManager.Dispose(app.FontManagerState);
         app.FontManagerState = null;
 
-        DebugDraw.Dispose(app.DebugDrawState);
-        app.DebugDrawState = null;
+        DebugDraw.Dispose(app.WorldSpaceDebugDrawState);
+        app.WorldSpaceDebugDrawState = null;
+
+        DebugDraw.Dispose(app.ScreenSpaceDebugDrawState);
+        app.ScreenSpaceDebugDrawState = null;
 
         TextureManagerState.Dispose(app.TextureManagerState);
         app.TextureManagerState = null;

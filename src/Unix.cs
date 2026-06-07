@@ -42,6 +42,9 @@ public unsafe static class File
     [DllImport(Constants.LibName, SetLastError = true)]
     public static extern int fstat(int fileDescriptor, out MacosStat stat);
 
+    [DllImport(Constants.LibName, SetLastError = true)]
+    public static extern int access(byte* filePath, int mode);
+
     public struct LinuxStat
     {
         public ulong st_dev; // id of device containing the file.
@@ -106,8 +109,7 @@ public unsafe static class File
     
     *******************/
 
-    // 0644: Standard Permissions (Owner: Read/Write, Group: Read, Others: Read)
-    public const int StandardPermissions = 0644;
+    public const int Ok = 0; 
 
     /******************
     
@@ -142,6 +144,23 @@ public unsafe static class File
         Procedures
     
     *******************/
+
+    public static bool Exists(String filePath)
+    {        
+        // allocate file path on the stack (+1 for the required null terminator).
+        int byteCount = String.GetByteCountUTF8(filePath);
+        byte* utf8Path = stackalloc byte[byteCount + 1];
+        String.GetBytesUTF8(filePath, utf8Path);        
+        // CRUCIAL: set the null terminator.
+        utf8Path[byteCount] = 0;
+
+        return Exists(utf8Path);
+    }
+
+    public static bool Exists(byte* utf8Path)
+    {
+        return access(utf8Path, Ok) == 0;
+    }
 
     public static bool Read(String filePath, byte* destination, long destinationLength, OpenFlags openFlags, ref long totalBytesReadOutput)
     {

@@ -58,10 +58,8 @@ public class MonoGameAppState : Game
     /// </summary>
     public EffectManager EffectManager;
 
-    /// <summary>
-    ///     The Debug Draw state.
-    /// </summary>
-    public DebugDrawState DebugDrawState;
+    public DebugDrawState WorldSpaceDebugDrawState;
+    public DebugDrawState ScreenSpaceDebugDrawState;
 
     /// <summary>
     ///     The font manager state.
@@ -137,7 +135,9 @@ public class MonoGameAppState : Game
         
         SpriteBatch = new SpriteBatch(GraphicsDevice);
         EffectManager = new(this);
-        DebugDrawState = new DebugDrawState(debugDrawMaxPolygons*3);
+        int maxDebugVert = debugDrawMaxPolygons*3;
+        WorldSpaceDebugDrawState = new DebugDrawState(maxDebugVert);
+        ScreenSpaceDebugDrawState = new DebugDrawState(maxDebugVert);
 
         RendererSystem.SetBackBufferResolution(this, backBufferWidth, backBufferHeight);
         MonoGameApp.SetFinalRenderTargetResolution(this, outputResolutionWidth, outputResolutionHeight);

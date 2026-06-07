@@ -1,5 +1,5 @@
-using System;
 using System.Runtime.CompilerServices;
+using Howl.Unmanaged.Collections;
 
 namespace Howl.Math.Shapes;
 
@@ -8,66 +8,75 @@ public unsafe struct PolygonRectangle
     /// <summary>
     /// The maximum amount of vertices a PolygonRectangle can store.
     /// </summary>
-    public const int MaxVertices = 4;
+    public const int VerticesLength = 4;
 
-    /// <summary>
-    /// Gets and sets the x-coordinate value for each vertice.
-    /// </summary>
-    public fixed float VerticesX[MaxVertices];
+    public fixed float VerticesX[VerticesLength];
+    public fixed float VerticesY[VerticesLength];
 
-    /// <summary>
-    /// Gets and sets the y-coordinate value for each vertice.
-    /// </summary>
-    public fixed float VerticesY[MaxVertices];
-
-
-    /// <summary>
-    /// Constructs a PolygonRectangle.
-    /// </summary>
-    /// <param name="rectangle">The rectangle to construct from.</param>
-    public PolygonRectangle(in Rectangle rectangle)
-    : this(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height)
-    {}
-
-    /// <summary>
-    /// Constructs a PolygonRectangle.
-    /// </summary>
-    /// <param name="vertices">The vertices to insert into this polygon.</param>
-    /// <exception cref="ArgumentException">thrown when the passed vertices span length is unsupported.</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public PolygonRectangle(ReadOnlySpan<Vector2> vertices)
+    public static void Initialise(ref PolygonRectangle polyRect, Rectangle rect)
     {
-        if(vertices.Length != MaxVertices)
-        {
-            throw new ArgumentException($"PolygonRectangle cannot store '{vertices.Length}' amount of vertices. The amount of vertices length must be '{MaxVertices}'.");
-        }
+        Initialise(ref polyRect, rect.X, rect.Y, rect.Width, rect.Height);
+    }
 
-        fixed(float* xDst = VerticesX)
+    public static void Initialise(ref PolygonRectangle polyRect, Array<Vector2> verts)
+    {
+        Debug.Assert(verts.Length == VerticesLength, $"verts length '{verts.Length}' is not equal to '{VerticesLength}'");
+
+        fixed(float* xDst = polyRect.VerticesX)
         {
-            fixed(float* yDst = VerticesY)
+            fixed(float* yDst = polyRect.VerticesY)
             {
-                for(int i = 0; i < MaxVertices; i++)
+                for(int i = 0; i < VerticesLength; i++)
                 {
-                    xDst[i] = vertices[i].X;
-                    yDst[i] = vertices[i].Y;
+                    xDst[i] = verts[i].X;
+                    yDst[i] = verts[i].Y;
                 }
             }
         }
     }
 
-    /// <summary>
-    /// Constructs a PolygonRectangle.
-    /// </summary>
-    /// <param name="x">The x-coordinate of the origin point.</param>
-    /// <param name="y">The y-coordinate of the origin point.</param>
-    /// <param name="width">The width of this rectangle.</param>
-    /// <param name="height">The height of this rectangle.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public PolygonRectangle(float x, float y, float width, float height)
+    public static void Initialise(ref PolygonRectangle polyRect, Vector2 vert0, Vector2 vert1, Vector2 vert2, Vector2 vert3)
     {
-        fixed(float* xDst = VerticesX)
+        fixed(float* xDst = polyRect.VerticesX)
         {
-            fixed(float* yDst = VerticesY)
+            fixed(float* yDst = polyRect.VerticesY)
+            {
+                xDst[0] = vert0.X;
+                yDst[0] = vert0.Y;
+                xDst[1] = vert1.X;
+                yDst[1] = vert1.Y;
+                xDst[2] = vert2.X;
+                yDst[2] = vert2.Y;
+                xDst[3] = vert3.X;
+                yDst[3] = vert3.Y;
+            }
+        }        
+    }
+
+    public static void Initialise(ref PolygonRectangle polyRect, Array<float> vertsX, Array<float> vertsY)
+    {
+        Debug.Assert(vertsX.Length == VerticesLength, $"vertsX length '{vertsX.Length}' is not equal to '{VerticesLength}'");
+        Debug.Assert(vertsY.Length == VerticesLength, $"vertsY length '{vertsY.Length}' is not equal to '{VerticesLength}'");
+
+        fixed(float* xDst = polyRect.VerticesX)
+        {
+            fixed(float* yDst = polyRect.VerticesY)
+            {
+                for(int i = 0; i < VerticesLength; i++)
+                {
+                    xDst[i] = vertsX[i];
+                    yDst[i] = vertsY[i];
+                }
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Initialise(ref PolygonRectangle polyRect, float x, float y, float width, float height)
+    {
+        fixed(float* xDst = polyRect.VerticesX)
+        {
+            fixed(float* yDst = polyRect.VerticesY)
             {
                 float left = x;
                 float top = y;
@@ -93,51 +102,38 @@ public unsafe struct PolygonRectangle
         }
     }
 
-    /// <summary>
-    /// Gets the x-value of the vertices in a span.
-    /// </summary>
-    /// <param name="polygonRectangle">the polygon rectangle.</param>
-    /// <returns>The span</returns>
-    public static Span<float> VerticesXAsSpan(in PolygonRectangle polygonRectangle)
+    public static System.Span<float> GetVerticesXAsSpan(in PolygonRectangle polygonRectangle)
     {
-        Span<float> span;
+        System.Span<float> span;
         fixed(float* ptr = polygonRectangle.VerticesX)
         {
-            span = new Span<float>(ptr, PolygonRectangle.MaxVertices);
+            span = new System.Span<float>(ptr, VerticesLength);
         }
         return span;
     }
 
-    /// <summary>
-    /// Gets y-value of the vertices in a span.
-    /// </summary>
-    /// <param name="polygonRectangle">the polygon rectangle</param>
-    /// <returns>the span.</returns>
-    public static Span<float> VerticesYAsSpan(in PolygonRectangle polygonRectangle)
+    public static System.Span<float> GetVerticesYAsSpan(in PolygonRectangle polygonRectangle)
     {
-        Span<float> span;
+        System.Span<float> span;
         fixed(float* ptr = polygonRectangle.VerticesY)
         {
-            span = new Span<float>(ptr, PolygonRectangle.MaxVertices);
+            span = new System.Span<float>(ptr, VerticesLength);
         }
         return span;
     }
 
-    /// <summary>
-    /// Constructs a new rectangle by transform the vertices of the specified rectangle.
-    /// </summary>
-    /// <param name="rectangle">The rectangle to transform.</param>
-    /// <param name="transform">The transform data.</param>
-    /// <returns>The resultant rectangle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static PolygonRectangle Transform(in PolygonRectangle rectangle, in Transform transform)
+    public static PolygonRectangle Transform(in PolygonRectangle polyRect, in Transform transform)
     {
-        Span<Vector2> transformedVertices = stackalloc Vector2[PolygonRectangle.MaxVertices];
-        for(int i = 0; i < PolygonRectangle.MaxVertices; i++)
-        {
-            transformedVertices[i] = Vector2.Transform(transform, rectangle.VerticesX[i], rectangle.VerticesY[i]);
-        }
-        return new PolygonRectangle(transformedVertices);
+        PolygonRectangle other = default;
+        Initialise(
+            ref other,
+            Vector2.Transform(transform, polyRect.VerticesX[0], polyRect.VerticesY[0]),
+            Vector2.Transform(transform, polyRect.VerticesX[1], polyRect.VerticesY[1]),
+            Vector2.Transform(transform, polyRect.VerticesX[2], polyRect.VerticesY[2]),
+            Vector2.Transform(transform, polyRect.VerticesX[3], polyRect.VerticesY[3])
+        );
+        return other;
     }
 
     /// <summary>
@@ -146,9 +142,9 @@ public unsafe struct PolygonRectangle
     /// <param name="polygonRectangle">The polygon rectangle.</param>
     /// <returns>The centroid-vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Vector2 Centroid(in PolygonRectangle polygonRectangle)
+    public static Vector2 GetCentroid(in PolygonRectangle polygonRectangle)
     {
-        return ShapeUtils.CalculateCentroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle));
+        return ShapeUtils.CalculateCentroid(GetVerticesXAsSpan(polygonRectangle), GetVerticesYAsSpan(polygonRectangle));
     }
 
     /// <summary>
@@ -158,9 +154,9 @@ public unsafe struct PolygonRectangle
     /// <param name="centroidX">the x-component of the centroid.</param>
     /// <param name="centroidY">the y-component of the centroid.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void Centroid(in PolygonRectangle polygonRectangle, ref float centroidX, ref float centroidY)
+    public static void GetCentroid(in PolygonRectangle polygonRectangle, ref float centroidX, ref float centroidY)
     {
-        ShapeUtils.CalculateCentroid(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), ref centroidX, ref centroidY);
+        ShapeUtils.CalculateCentroid(GetVerticesXAsSpan(polygonRectangle), GetVerticesYAsSpan(polygonRectangle), ref centroidX, ref centroidY);
     }
 
 
@@ -172,7 +168,7 @@ public unsafe struct PolygonRectangle
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static Aabb GetAABB(in PolygonRectangle polygonRectangle)
     {
-        Math.GetMinMaxVectors(VerticesXAsSpan(polygonRectangle), VerticesYAsSpan(polygonRectangle), out float minX, out float minY, out float maxX, out float maxY);
+        Math.GetMinMaxVectors(GetVerticesXAsSpan(polygonRectangle), GetVerticesYAsSpan(polygonRectangle), out float minX, out float minY, out float maxX, out float maxY);
         return new(minX, minY, maxX, maxY);
     }
 
@@ -182,7 +178,7 @@ public unsafe struct PolygonRectangle
     /// <param name="rectangle">the polygon rectangle.</param>
     /// <returns>the width of the rectangle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static float Width(in PolygonRectangle rectangle)
+    public static float GetWidth(in PolygonRectangle rectangle)
     {   
         Vector2 vertexA = new Vector2(rectangle.VerticesX[0], rectangle.VerticesY[0]); 
         Vector2 vertexB = new Vector2(rectangle.VerticesX[1], rectangle.VerticesY[1]); 
@@ -195,7 +191,7 @@ public unsafe struct PolygonRectangle
     /// <param name="rectangle">the polygon rectangle.</param>
     /// <returns>the height of the rectangle.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static float Height(in PolygonRectangle rectangle)
+    public static float GetHeight(in PolygonRectangle rectangle)
     {
         Vector2 vertexA = new Vector2(rectangle.VerticesX[0], rectangle.VerticesY[0]); 
         Vector2 vertexB = new Vector2(rectangle.VerticesX[3], rectangle.VerticesY[3]); 

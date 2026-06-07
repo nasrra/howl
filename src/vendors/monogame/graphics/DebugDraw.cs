@@ -131,17 +131,6 @@ public static class DebugDraw
 
 
 
-    /// <summary>
-    ///     Draws a wireframe rectangle.
-    /// </summary>
-    /// <param name="state">the debug draw state to store the wireframe shape to draw.</param>
-    /// <param name="color">the color used to draw the wireframe.</param>
-    /// <param name="cameraPosition">the position of the camera.</param>
-    /// <param name="cameraZoom">the zoom level of the camera.</param>
-    /// <param name="cameraVerticalFov">the camera vertical fov; how many units/pixels the camera can seen.</param>
-    /// <param name="outputResolutionHeight">the height of the output resolution of the monogame application.</param>
-    /// <param name="thickness">the thickness - in pixels - in relation to the output resolution.</param>
-    /// <param name="scaleThickness">whether or not the line should scale with the camera zoom.</param>
 
     /// <summary>
     ///     Draws a wireframe rectangle.

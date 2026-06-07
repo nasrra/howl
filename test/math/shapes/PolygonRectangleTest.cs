@@ -38,13 +38,13 @@ public class PolygonRectangleTest
 
         rectangle = new PolygonRectangle(-0.5f,0.5f,1,1);
         
-        Span<float> x1 = VerticesXAsSpan(in rectangle);
+        Span<float> x1 = GetVerticesXAsSpan(in rectangle);
         Assert.Equal(-0.5f, x1[0]);
         Assert.Equal(0.5f,  x1[1]);
         Assert.Equal(0.5f,  x1[2]);
         Assert.Equal(-0.5f, x1[3]);
 
-        Span<float> y1 = VerticesYAsSpan(in rectangle);
+        Span<float> y1 = GetVerticesYAsSpan(in rectangle);
         Assert.Equal(0.5f,  y1[0]);
         Assert.Equal(0.5f,  y1[1]);
         Assert.Equal(-0.5f, y1[2]);
@@ -52,13 +52,13 @@ public class PolygonRectangleTest
     
         rectangle = new PolygonRectangle([new Vector2(0,0), new Vector2(1,0), new Vector2(1,-1), new Vector2(0,-1)]);
 
-        Span<float> x2 = VerticesXAsSpan(in rectangle);
+        Span<float> x2 = GetVerticesXAsSpan(in rectangle);
         Assert.Equal(0, x2[0]);
         Assert.Equal(1, x2[1]);
         Assert.Equal(1, x2[2]);
         Assert.Equal(0, x2[3]);
 
-        Span<float> y2 = VerticesYAsSpan(in rectangle);
+        Span<float> y2 = GetVerticesYAsSpan(in rectangle);
         Assert.Equal(0,     y2[0]);
         Assert.Equal(0,     y2[1]);
         Assert.Equal(-1,    y2[2]);
@@ -73,7 +73,7 @@ public class PolygonRectangleTest
 
         rectangle = new PolygonRectangle(-0.5f, 0.5f, 1f, 1f);
         centroid = new Vector2(0, 0);
-        Assert.Equal(centroid, Centroid(rectangle));
+        Assert.Equal(centroid, GetCentroid(rectangle));
         
         rectangle = new PolygonRectangle(
             [
@@ -84,7 +84,7 @@ public class PolygonRectangleTest
             ]
         );
         centroid = new Vector2(0, 5);
-        Assert.Equal(centroid, Centroid(rectangle));
+        Assert.Equal(centroid, GetCentroid(rectangle));
     
         rectangle = new PolygonRectangle(
             [
@@ -95,7 +95,7 @@ public class PolygonRectangleTest
             ]
         );
         centroid = new Vector2(-5, 2.5f);
-        Assert.Equal(centroid, Centroid(rectangle));    
+        Assert.Equal(centroid, GetCentroid(rectangle));    
     }
 
     [Fact]

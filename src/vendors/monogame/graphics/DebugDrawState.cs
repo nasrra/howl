@@ -7,19 +7,15 @@ namespace Howl.Vendors.MonoGame;
 
 public class DebugDrawState
 {
-    /// <summary>
-    ///     The pritive vertex data for drawing.
-    /// </summary>
     /// <remarks>
-    ///     Note: this collection contains a Nil element.
+    ///    <para>Remarks:</para>
+    ///    <para>Contains a <c>Nil</c> element.</para>
     /// </remarks>
     public StackArray<VertexPositionColor> PrimitiveVertices;
-    
-    /// <summary>
-    ///     The primitive vertex indice data for drawing.
-    /// </summary>
+
     /// <remarks>
-    ///     Note: this collection contains a Nil element.
+    ///    <para>Remarks:</para>
+    ///    <para>Contains a <c>Nil</c> element.</para>
     /// </remarks>
     public StackArray<int> PrimitiveIndices;
 

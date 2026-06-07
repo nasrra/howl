@@ -24,12 +24,15 @@ public static class RendererSystem
         monoGame.GraphicsDevice.SetRenderTarget(monoGame.FinalRenderTarget);                    
         monoGame.GraphicsDevice.Clear(worldCamera.ClearColour.ToMonoGame());
         
-        DrawSprites(monoGame, activeSprites, transforms, sprites, ref worldCamera, DrawSpace.World);
-        DrawLabels(monoGame, strings, activeLabels, transforms, labels, ref worldCamera, DrawSpace.World);
-        DrawPrimitives(monoGame);
+        monoGame.EffectManager.UpdateProjectionMatrix(worldCamera.ProjectionMatrix.ToMonoGame());
+        DrawSprites(monoGame, activeSprites, transforms, sprites, worldCamera.Position.X, worldCamera.Position.Y, DrawSpace.World);
+        DrawLabels(monoGame, strings, activeLabels, transforms, labels, worldCamera.Position.X, worldCamera.Position.Y,  DrawSpace.World);
+        DrawPrimitives(monoGame.WorldSpaceDebugDrawState, monoGame.GraphicsDevice, monoGame.EffectManager.PrimitivesEffect);
 
-        DrawSprites(monoGame, activeSprites, transforms, sprites, ref screenCamera, DrawSpace.Screen);
-        DrawLabels(monoGame, strings, activeLabels, transforms, labels, ref screenCamera, DrawSpace.Screen);
+        monoGame.EffectManager.UpdateProjectionMatrix(screenCamera.ProjectionMatrix.ToMonoGame());
+        DrawSprites(monoGame, activeSprites, transforms, sprites, screenCamera.Position.X, screenCamera.Position.Y, DrawSpace.Screen);
+        DrawLabels(monoGame, strings, activeLabels, transforms, labels, screenCamera.Position.X, screenCamera.Position.Y, DrawSpace.Screen);
+        DrawPrimitives(monoGame.ScreenSpaceDebugDrawState, monoGame.GraphicsDevice, monoGame.EffectManager.PrimitivesEffect);
         
         monoGame.GraphicsDevice.SetRenderTarget(null);
 
@@ -52,12 +55,9 @@ public static class RendererSystem
     ///     Draws all sprites to the currently bound render target.
     /// </summary>
     private static void DrawSprites(MonoGameAppState app, SwapBackArray<int> activeSprites, 
-        Array<Transform> transforms, Array<Sprite> sprites, ref Camera camera, DrawSpace drawSpace
+        Array<Transform> spriteTransforms, Array<Sprite> sprites, float cameraPosX, float cameraPosY, DrawSpace drawSpace
     )
     {
-        // update effects to use the new projection matrix.        
-        app.EffectManager.UpdateProjectionMatrix(camera.ProjectionMatrix.ToMonoGame());
-
         app.SpriteBatch.Begin(
             blendState: BlendState.AlphaBlend, 
             samplerState: SamplerState.PointClamp, 
@@ -75,29 +75,24 @@ public static class RendererSystem
                 continue;
             }
 
-            ref Transform transform = ref transforms[index];
-            DrawSprite(app, ref camera, ref transform, ref sprite);
+            ref Transform transform = ref spriteTransforms[index];
+            DrawSprite(app, ref transform, ref sprite, cameraPosX, cameraPosY);
         }
         app.SpriteBatch.End();
     }
 
     /// <summary>
-    /// Draws a sprite to the currently bound render target.
+    ///     Draws a sprite to the currently bound render target.
     /// </summary>
-    /// <param name="app">The renderer state containing drawing context.</param>
-    /// <param name="camera">The camera to use for transforming coordinates.</param>
-    /// <param name="transform">The transformation to apply to the sprite.</param>
-    /// <param name="sprite">The sprite to draw.</param>
-    /// <returns><see cref="GenIndexResult"/></returns>
-    public static void DrawSprite(MonoGameAppState app, ref Camera camera, ref Transform transform, ref Sprite sprite)
+    public static void DrawSprite(MonoGameAppState app, ref Transform spriteTransform, ref Sprite sprite, float cameraPosX, float cameraPosY)
     {   
         // translate by the cameras position.
         // (Note):
         // reverse y-coordinates because monogame
         // sprite batch is y+ = down, Howl is y+ = up.
-        Howl.Math.Vector2 position = transform.Position;
+        Howl.Math.Vector2 position = spriteTransform.Position;
         position.Y *= -1;
-        position -= new Howl.Math.Vector2(camera.Position.X, -camera.Position.Y);
+        position -= new Howl.Math.Vector2(cameraPosX, -cameraPosY);
         
         ref Texture2D texture = ref app.TextureManagerState.Textures[sprite.TextureId];
         if(texture == null)
@@ -105,8 +100,8 @@ public static class RendererSystem
         app.EffectManager.DefaultSpriteEffect.Texture = texture;
 
         app.SpriteBatch.Draw(texture, new(position.X, position.Y), RectangleExtensions.ToMonoGame(sprite.SourceRectangle),
-            sprite.ColourTint.ToMonoGame(), -transform.RotationRadians, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
-            Vector2Extensions.ToMonoGame(sprite.Origin), Vector2Extensions.ToMonoGame(sprite.Scale * transform.Scale), 
+            sprite.ColourTint.ToMonoGame(), -spriteTransform.RotationRadians, // rotate with negative rotation as sprite batch draws in reverse for some reason. 
+            Vector2Extensions.ToMonoGame(sprite.Origin), Vector2Extensions.ToMonoGame(sprite.Scale * spriteTransform.Scale), 
             SpriteEffects.None, sprite.LayerDepth
         );
     }
@@ -114,24 +109,23 @@ public static class RendererSystem
     /// <summary>
     /// Draws all stored primitive shapes to the next frame/screen, clearing the internal primitives cache when drawn for the frame/screen after. 
     /// </summary>
-    private static void DrawPrimitives(MonoGameAppState app)
+    private static void DrawPrimitives(DebugDrawState state, GraphicsDevice gD, BasicEffect effect)
     {
 
-        DebugDrawState state = app.DebugDrawState;
         if(state.PrimitiveIndices.Count == 0 || state.PrimitiveVertices.Count == 0)
         {
             return;
         }
         
-        if(app.GraphicsDevice == null)
+        if(gD == null)
         {
             return;
         }
 
-        foreach(EffectPass pass in app.EffectManager.PrimitivesEffect.CurrentTechnique.Passes)
+        foreach(EffectPass pass in effect.CurrentTechnique.Passes)
         {
             pass.Apply();            
-            app.GraphicsDevice.DrawUserIndexedPrimitives(
+            gD.DrawUserIndexedPrimitives(
                 PrimitiveType.TriangleList,
                 state.PrimitiveVertices.Data,
                 0,
@@ -222,7 +216,7 @@ public static class RendererSystem
     ///     Draws all texts to the currently bound render target.
     /// </summary>
     public static void DrawLabels(MonoGameAppState state, StringRegistryState strings, SwapBackArray<int> activeLabels, 
-        Array<Transform> transforms, Array<Label> labels, ref Camera camera, DrawSpace drawSpace
+        Array<Transform> transforms, Array<Label> labels, float cameraPosX, float cameraPosY, DrawSpace drawSpace
     )
     {
         state.SpriteBatch.Begin(
@@ -249,7 +243,7 @@ public static class RendererSystem
             ref Transform transform = ref transforms[index];
             
             System.Span<char> chars = StringRegistry.GetString(strings, label.StringId, ref isValid);
-            DrawLabel(state, ref camera, ref transform, ref label, chars);            
+            DrawLabel(state, ref transform, ref label, chars, cameraPosX, cameraPosY);            
         }
 
         state.SpriteBatch.End();
@@ -259,7 +253,9 @@ public static class RendererSystem
     ///     Draws text to the currently bound render target.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void DrawLabel(MonoGameAppState state, ref Camera camera, ref Transform transform, ref Label label, System.Span<char> chars)
+    public static void DrawLabel(MonoGameAppState state, ref Transform labelTransform, ref Label label, System.Span<char> chars, 
+        float cameraPosX, float cameraPosY
+    )
     {
         Font font = state.FontManagerState.Fonts[label.FontId];
 
@@ -269,11 +265,18 @@ public static class RendererSystem
             font = state.FontManagerState.Fonts[0];
         }
 
-        Howl.Math.Vector2 position = transform.Position.InvertY() - camera.Position.InvertY();
+        // translate by the cameras position.
+        // (Note):
+        // reverse y-coordinates because monogame
+        // sprite batch is y+ = down, Howl is y+ = up.
+        Howl.Math.Vector2 position = labelTransform.Position;
+        position.Y *= -1;
+        position.X -= cameraPosX;
+        position.Y -= -cameraPosY;
 
         font.SpriteFontBase.DrawText(state.SpriteBatch, chars.ToString(), Vector2Extensions.ToMonoGame(position), 
-            label.Colour.ToMonoGame(), -transform.RotationRadians, Vector2Extensions.ToMonoGame(label.Offset), 
-            Vector2Extensions.ToMonoGame(transform.Scale)
+            label.Colour.ToMonoGame(), -labelTransform.RotationRadians, Vector2Extensions.ToMonoGame(label.Offset), 
+            Vector2Extensions.ToMonoGame(labelTransform.Scale)
         );
     }
 }

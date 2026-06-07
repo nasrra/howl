@@ -678,7 +678,7 @@ public struct BoundingVolumeHierarchy
     {
         for(int i = 0; i < bvh.Branches.AppendCount; i++)
         {
-            Debug.DrawWireRect(
+            Renderer.DrawWireRect(
                 app,
                 new Rectangle(
                     new Vector2(bvh.Branches.Aabbs.MinX[i], bvh.Branches.Aabbs.MinY[i]), 
@@ -695,7 +695,7 @@ public struct BoundingVolumeHierarchy
     {
         for(int i = 0; i < bvh.Leaves.AppendCount; i++)
         {
-            Debug.DrawWireRect(
+            Renderer.DrawWireRect(
                 app,
                 new Rectangle(
                     new Vector2(bvh.Leaves.Aabbs.MinX[i], bvh.Leaves.Aabbs.MinY[i]), 

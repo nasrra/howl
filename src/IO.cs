@@ -21,6 +21,30 @@ public unsafe static class File
         Truncate
     }
 
+    public static bool Exists(string filePath)
+    {
+        String str = default;
+        String.Initialise(ref str, filePath);
+        return Exists(str);
+    }
+
+    public static bool Exists(String filePath)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Debug.Panic("Unsupported Platform!");
+        }
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return Unix.File.Exists(filePath);
+        }
+        else
+        {
+            Debug.Panic("Unsupported Platform!");            
+        }
+        return false;
+    }
+
     public static bool Write(string filePath, Buffer<byte> source, ModeFlag mode)
     {
         String str = default;
@@ -49,7 +73,7 @@ public unsafe static class File
             }
             else
             {
-                Debug.Panic("Unsupported Platform!");            
+                Debug.Panic("Unsupported Platform!");
             }
         }
 
@@ -126,4 +150,19 @@ public unsafe static class File
                 return Unix.File.OpenFlags.Create;
         }
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool ToStringUTF8(Buffer<byte> source, ref String destination)
+    {        
+        int charCount = System.Text.Encoding.UTF8.GetCharCount(source.Pointer, source.Count);
+        if(destination.Length < charCount)
+        {
+            Debug.Panic("Insufficient string length.");
+            return false;
+        }
+        System.Text.Encoding.UTF8.GetChars(source.Pointer, source.Count, destination.Pointer, charCount);
+        destination.Count = charCount;
+        return true;
+    }
+
 }
