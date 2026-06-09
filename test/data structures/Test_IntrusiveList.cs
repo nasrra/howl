@@ -1,5 +1,5 @@
 using Howl.Collections;
-using Howl.DataStructures;
+using Howl.Text;
 
 namespace Howl.Test.DataStructures;
 

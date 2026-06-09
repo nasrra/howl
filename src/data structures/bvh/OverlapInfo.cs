@@ -1,6 +1,6 @@
 using System;
 
-namespace Howl.DataStructures.Bvh;
+namespace Howl.Text.Bvh;
 
 public ref struct OverlapInfo
 {

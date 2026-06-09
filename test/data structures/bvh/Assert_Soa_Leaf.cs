@@ -1,4 +1,4 @@
-using Howl.DataStructures.Bvh;
+using Howl.Text.Bvh;
 using Howl.Test.Ecs;
 using Howl.Test.Math;
 using Howl.Test.Math.Shapes;

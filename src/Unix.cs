@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Howl.DataStructures;
+using Howl.Text;
 using Howl.Unmanaged.Collections;
 
 namespace Howl.Unix;

@@ -11,19 +11,31 @@ namespace Howl.Unmanaged.Ecs
         
         public Array<bool> Allocated;
 
+        /// <remarks>
+        ///    <para>Remarks:</para>
+        ///    <para>Contains a <c>Nil</c> element.</para>
+        /// </remarks>
         public Collections.StackArray<int> FreeSlots;
 
         public int Length;
 
-        public static void Intialise(ref GenIdAllocator allocator, ref Memory.Arena arena, int length)
+        public bool IsInitialised;
+
+        public static bool Initialise(ref GenIdAllocator allocator, ref Memory.Arena arena, int length)
         {
+            if (allocator.IsInitialised)
+            {
+                Debug.Panic("Already Initialised.");
+                return false;
+            }
+
             Debug.Assert(length <= MaxLength && length >= MinLength,
                 $"length '{length}' is not between '{MinLength}' and '{MaxLength}'"
             );
 
             Array.Initialise(ref allocator.GenIds, ref arena, length);
             Array.Initialise(ref allocator.Allocated, ref arena, length);
-            Collections.StackArray.Initialise(ref allocator.FreeSlots, ref arena, length);
+            StackArray.Initialise(ref allocator.FreeSlots, ref arena, length);
 
             // set the indexes for the gen ids.
             for(int i = 1; i < length; i++)
@@ -31,7 +43,10 @@ namespace Howl.Unmanaged.Ecs
                 allocator.GenIds[i] = new(i, 0);
             }
 
-            Collections.StackArray.Push(ref allocator.FreeSlots, 1);
+            StackArray.Push(ref allocator.FreeSlots, 1);
+        
+            allocator.IsInitialised = true;
+            return true;
         }
 
         /// <summary>

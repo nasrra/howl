@@ -181,10 +181,10 @@ public static class Renderer
     ///     Draws.
     /// </summary>
     public static void Draw(ComponentArray<Transform> transforms, ComponentArray<Sprite> sprites, ComponentArray<Label> labels, 
-        StringRegistryState strings, HowlAppState app
+        ref String.Allocator strings, HowlAppState app
     )
     {
-        Vendors.MonoGame.Graphics.RendererSystem.Draw(app.MonoGameAppState, strings, sprites.Active, labels.Active, transforms.Sparse, sprites.Sparse, 
+        Vendors.MonoGame.Graphics.RendererSystem.Draw(app.MonoGameAppState, ref strings, sprites.Active, labels.Active, transforms.Sparse, sprites.Sparse, 
             labels.Sparse, app.WorldCamera, app.ScreenCamera
         );
     }

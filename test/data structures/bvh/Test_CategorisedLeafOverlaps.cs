@@ -1,5 +1,5 @@
 using Howl.Collections;
-using Howl.DataStructures.Bvh;
+using Howl.Text.Bvh;
 using Howl.Physics;
 
 namespace Howl.Test.DataStructures.Bvh;

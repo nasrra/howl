@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Howl.DataStructures;
+using Howl.Text;
 
 namespace Howl;
 
@@ -8,10 +8,24 @@ public unsafe static class Memory
 {
     public struct State
     {
-        public byte* Buffer;
+        public byte* StartPtr;
         public nuint Capacity; 
-        public nuint Offset;
+        public nuint Used;
         public bool IsInitialised;
+    
+        public static bool Initialise(ref State state, nuint capacity)
+        {
+            if (state.IsInitialised)
+            {
+                Debug.Panic("Already Intialised.");
+                return false;
+            }
+
+            state.IsInitialised = true;
+            state.Capacity = capacity;
+            state.StartPtr = (byte*)NativeMemory.Alloc(capacity);            
+            return true;
+        }
     }
 
     public struct Arena
@@ -20,24 +34,71 @@ public unsafe static class Memory
         public nuint Used;
         public nuint Capacity;
         public bool IsInitialised;
-    }
 
-    public static void 
-    InitialiseState(ref State state, nuint capacity)
-    {
-        state.IsInitialised = true;
-        state.Capacity = capacity;
-        state.Buffer = (byte*)NativeMemory.Alloc(capacity);
-    }
+        public static bool Initialise(ref Arena arena, ref State state, nuint capacity)
+        {
+            if (arena.IsInitialised)
+            {
+                Debug.Panic("Already Intialised.");
+                return false;
+            }
+        
+            arena.IsInitialised = true;
+            if(InitialiseRaw(ref arena.StartPtr, ref state, capacity))
+            {                
+                arena.Capacity = capacity;
+                return true;
+            }
 
-    public static void 
-    InitialiseArena(ref State state, ref Arena arena, nuint capacity)
-    {
-        nuint newOffset = state.Offset + capacity;
-        System.Diagnostics.Debug.Assert(newOffset <= state.Capacity, "Memory Limit Exceeded.");
-        arena.StartPtr = state.Buffer + state.Offset;
-        arena.Capacity = capacity;
-        state.Offset = newOffset;
+            return false;
+        }
+        
+        public static bool Initialise(ref Arena childArena, ref Arena parentArena, nuint capacity)
+        {
+            if (childArena.IsInitialised)
+            {
+                Debug.Panic("Already Intialised.");
+                return false;
+            }
+        
+            childArena.IsInitialised = true;
+            if(InitialiseRaw(ref childArena.StartPtr, ref parentArena, capacity))
+            {                
+                childArena.Capacity = capacity;
+                return true;
+            }
+
+            return false;
+        }
+     
+        public static bool InitialiseRaw(ref byte* childArenaPtr, ref Arena parentArena, nuint capacity)
+        {
+            nuint newUsed = parentArena.Used + capacity;
+            if(newUsed > parentArena.Capacity)
+            {
+                Debug.Panic("Memory Limit Exceeded: Requested address space is too large for the remaining Memory Arena.");
+                return false; 
+            }
+
+            childArenaPtr = parentArena.StartPtr + parentArena.Used;
+            parentArena.Used = newUsed;
+            return true;
+        }
+
+        public static bool InitialiseRaw(ref byte* arenaPtr, ref State state, nuint capacity)
+        {
+            nuint newUsed = state.Used + capacity;
+
+            if (newUsed > state.Capacity)
+            {
+                Debug.Panic("Memory Limit Exceeded: Requested address space is too large for the remaining Memory State.");
+                return false;
+            }
+            
+            arenaPtr = state.StartPtr + state.Used;
+            state.Used = newUsed;
+            return true;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -98,7 +159,7 @@ public unsafe static class Memory
     Free(ref State state)
     {
         System.Diagnostics.Debug.Assert(state.IsInitialised);
-        NativeMemory.Free(state.Buffer);
+        NativeMemory.Free(state.StartPtr);
         state.IsInitialised = false;
     }
 }

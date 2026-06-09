@@ -4,7 +4,7 @@ using Howl.Math;
 using Howl.Math.Shapes;
 using Howl.Unmanaged.Collections;
 
-namespace Howl.DataStructures.Bvh;
+namespace Howl.Text.Bvh;
 
 public struct BoundingVolumeHierarchy
 {

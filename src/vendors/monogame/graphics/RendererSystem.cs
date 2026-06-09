@@ -16,7 +16,7 @@ public static class RendererSystem
     /// <summary>
     ///     Performs a draw step for a monogame app state.
     /// </summary>
-    public static void Draw(MonoGameAppState monoGame, StringRegistryState strings, SwapBackArray<int> activeSprites, 
+    public static void Draw(MonoGameAppState monoGame, ref String.Allocator strings, SwapBackArray<int> activeSprites, 
         SwapBackArray<int> activeLabels, Array<Transform> transforms, Array<Sprite> sprites, Array<Label> labels, 
         Camera worldCamera, Camera screenCamera
     )
@@ -215,7 +215,7 @@ public static class RendererSystem
     /// <summary>
     ///     Draws all texts to the currently bound render target.
     /// </summary>
-    public static void DrawLabels(MonoGameAppState state, StringRegistryState strings, SwapBackArray<int> activeLabels, 
+    public static void DrawLabels(MonoGameAppState state, String.Allocator strings, SwapBackArray<int> activeLabels, 
         Array<Transform> transforms, Array<Label> labels, float cameraPosX, float cameraPosY, DrawSpace drawSpace
     )
     {
@@ -226,7 +226,7 @@ public static class RendererSystem
             effect: state.EffectManager.DefaultSpriteEffect
         );
 
-        bool isValid = false;
+        GenIdResult result = default;
 
         // draw labels.
         int count = activeLabels.Count;
@@ -242,8 +242,8 @@ public static class RendererSystem
 
             ref Transform transform = ref transforms[index];
             
-            System.Span<char> chars = StringRegistry.GetString(strings, label.StringId, ref isValid);
-            DrawLabel(state, ref transform, ref label, chars, cameraPosX, cameraPosY);            
+            ref String str = ref String.Allocator.GetString(ref strings, label.StringId, ref result);
+            DrawLabel(state, ref transform, ref label, str, cameraPosX, cameraPosY);            
         }
 
         state.SpriteBatch.End();
@@ -253,7 +253,7 @@ public static class RendererSystem
     ///     Draws text to the currently bound render target.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void DrawLabel(MonoGameAppState state, ref Transform labelTransform, ref Label label, System.Span<char> chars, 
+    public static void DrawLabel(MonoGameAppState state, ref Transform labelTransform, ref Label label, String str, 
         float cameraPosX, float cameraPosY
     )
     {
@@ -274,7 +274,7 @@ public static class RendererSystem
         position.X -= cameraPosX;
         position.Y -= -cameraPosY;
 
-        font.SpriteFontBase.DrawText(state.SpriteBatch, chars.ToString(), Vector2Extensions.ToMonoGame(position), 
+        font.SpriteFontBase.DrawText(state.SpriteBatch, String.ToSystemString(str), Vector2Extensions.ToMonoGame(position), 
             label.Colour.ToMonoGame(), -labelTransform.RotationRadians, Vector2Extensions.ToMonoGame(label.Offset), 
             Vector2Extensions.ToMonoGame(labelTransform.Scale)
         );

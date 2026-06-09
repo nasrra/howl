@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Howl.DataStructures;
+namespace Howl.Text;
 
 public class HString
 {

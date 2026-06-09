@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Howl.DataStructures;
+using Howl.Text;
 using Howl.Unmanaged.Collections;
 
 namespace Howl.IO;

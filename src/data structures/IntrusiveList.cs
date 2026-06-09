@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Howl.Unmanaged.Collections;
 
-namespace Howl.DataStructures;
+namespace Howl.Text;
 
 public struct IntrusiveList
 {

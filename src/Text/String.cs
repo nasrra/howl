@@ -3,8 +3,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Howl.Unmanaged.Collections;
+using Howl.Unmanaged.Ecs;
 
-namespace Howl.DataStructures;
+namespace Howl.Text;
 
 public unsafe struct String
 {
@@ -23,7 +24,7 @@ public unsafe struct String
         }
     }
 
-    public static bool Initialise(ref Memory.Arena arena, ref String str, int length)
+    public static bool Initialise(ref String str, ref Memory.Arena arena, int length)
     {
         if (str.IsInitialised)
         {
@@ -58,6 +59,21 @@ public unsafe struct String
             destination.Pointer = p;
         }
 
+        destination.IsInitialised = true;
+        return true;
+    }
+
+    public static bool Initialise(ref String destination, char* ptr, int count, int length)
+    {
+        if (destination.IsInitialised)
+        {
+            Debug.Panic("Already Initialised");
+            return false;
+        }
+
+        destination.Length = length;
+        destination.Count = count;
+        destination.Pointer = ptr;       
         destination.IsInitialised = true;
         return true;
     }
@@ -353,4 +369,169 @@ public unsafe struct String
 
         return true;
     }
+
+    /******************
+    
+        Arena
+    
+    *******************/
+
+    public struct Allocator
+    {
+        public Array<SubAllocator> SubAllocators;
+        public bool IsInitialised;
+        String FallbackString;
+
+        public static bool Initialise(ref Allocator allocator, ref Memory.Arena arena, string fallbackString, int maxStringLength)
+        {
+            if (allocator.IsInitialised)
+            {
+                Debug.Panic("Already Initialised.");
+                return false;
+            }
+
+            Array.Initialise(ref allocator.SubAllocators, ref arena, maxStringLength + 1);
+            String.Initialise(ref allocator.FallbackString, ref arena, fallbackString.Length);
+            Append(ref allocator.FallbackString, fallbackString);
+            allocator.IsInitialised = true;
+            return true;
+        }
+
+        public static bool InitialiseSubAllocator(ref Allocator allocator, ref Memory.Arena arena, int subAllocatorStringLength, int subAllocatorMaxStrings)
+        {
+            if (allocator.SubAllocators[subAllocatorStringLength].IsInitialised)
+            {
+                Debug.Panic("Already Initialised.");
+                return false;
+            }            
+            SubAllocator.Initialise(ref allocator.SubAllocators[subAllocatorStringLength], ref arena, subAllocatorStringLength, subAllocatorMaxStrings);
+            return true;
+        }
+
+        public static GenIdResult Allocate(ref Allocator allocator, int stringLength, ref StringId stringId)
+        {
+            if (allocator.SubAllocators[stringLength].IsInitialised == false)
+            {
+                Debug.Panic("Sub Allocator not initialised.");
+                return GenIdResult.NotAllocated;
+            }
+
+            GenId genId = default;
+            GenIdResult result = SubAllocator.Allocate(ref allocator.SubAllocators[stringLength], ref genId); 
+            if(result == GenIdResult.Ok)
+            {
+                StringId.Initialise(ref stringId, genId, stringLength);
+            }
+
+            return result;
+        }
+
+        public static GenIdResult Deallocate(ref Allocator allocator, StringId stringId)
+        {
+            if (allocator.SubAllocators[stringId.StringLength].IsInitialised == false)
+            {
+                Debug.Panic("Sub Allocator not initialised.");
+                return GenIdResult.NotAllocated;
+            }
+            return SubAllocator.Deallocate(ref allocator.SubAllocators[stringId.StringLength], stringId.GenId); 
+        }
+
+        public static ref String GetString(ref Allocator allocator, StringId stringId, scoped ref GenIdResult result)
+        {
+            ref SubAllocator sub = ref allocator.SubAllocators[stringId.StringLength];
+            if (sub.IsInitialised == false)
+            {
+                result = GenIdResult.NotAllocated;
+                return ref allocator.FallbackString;
+            }
+
+            ref String str = ref SubAllocator.GetString(ref sub, stringId.GenId, ref result);
+
+            if(result != GenIdResult.Ok)
+            {
+                str = ref allocator.FallbackString;
+            }
+
+            return ref str; 
+        }
+
+        public struct SubAllocator
+        {
+            public GenIdAllocator GenIdAllocator;
+            public Memory.Arena CharArena;
+            public ComponentArray<String> Strings;
+            public bool IsInitialised;
+
+            public static bool Initialise(ref SubAllocator allocator, ref Memory.Arena arena, int stringLength, int maxStrings)
+            {
+                if (allocator.IsInitialised)
+                {
+                    return false;
+                }
+
+                // acquire space for necessary chars.
+                nuint requiredCharSpaceInBytes = (nuint)(maxStrings * stringLength * sizeof(char));
+                Memory.Arena.Initialise(ref allocator.CharArena, ref arena, requiredCharSpaceInBytes);  
+
+                // initialise string and gen ids.                
+                GenIdAllocator.Initialise(ref allocator.GenIdAllocator, ref arena, maxStrings);
+                ComponentArray.Initialise(ref allocator.Strings, ref arena, maxStrings);
+
+                // initialise all strings in the chars arena.
+                for(int i = 0; i < maxStrings; i++)
+                {
+                    String.Initialise(ref allocator.Strings.Sparse[i], ref allocator.CharArena, stringLength);
+                }
+
+                allocator.IsInitialised = true;
+                return true;
+            }
+
+            public static GenIdResult Allocate(ref SubAllocator allocator, ref GenId genId)
+            {
+                GenIdResult result = GenIdAllocator.Allocate(ref allocator.GenIdAllocator, ref genId);
+                if(result == GenIdResult.Ok)
+                {
+                    int index = GenId.GetIndex(genId);
+                    ComponentArray.GetDataUnsafe(allocator.Strings, index).Count = 0;
+                }
+
+                return result; 
+            }
+
+            public static GenIdResult Deallocate(ref SubAllocator allocator, GenId genId)
+            {
+                return GenIdAllocator.Deallocate(ref allocator.GenIdAllocator, genId);                
+            }
+
+            /// <remarks>
+            ///    <para>Remarks:</para>
+            ///    <para>Returns the <c>Nil</c> string in the case that the gen id is stale.</para>
+            /// </remarks>
+            public static ref String GetString(ref SubAllocator allocator, GenId genId, ref GenIdResult result)
+            {
+                if(GenIdAllocator.IsGenIdStale(ref allocator.GenIdAllocator, genId))
+                {
+                    result = GenIdResult.StaleGenId;
+                    return ref allocator.Strings.Sparse[0]; // explicitly get the nil.
+                }
+                result = GenIdResult.Ok;
+                int index = GenId.GetIndex(genId);
+                return ref ComponentArray.GetDataUnsafe(allocator.Strings, index);
+            }
+        }
+    }
+
 }
+
+public struct StringId
+{
+    public GenId GenId;
+    public int StringLength;
+
+    public static void Initialise(ref StringId stringId, GenId stringGenId, int StringLength)
+    {
+        stringId.GenId = stringGenId;
+        stringId.StringLength = StringLength;
+    }
+}    

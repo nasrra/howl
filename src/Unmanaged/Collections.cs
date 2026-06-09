@@ -335,7 +335,7 @@ public static class ComponentArray
     public const int MinLength = 2;
     public const int MaxLength = int.MaxValue;
 
-    public static bool Intialise<T>(ref ComponentArray<T> array, ref Memory.Arena arena, int length) where T : unmanaged
+    public static bool Initialise<T>(ref ComponentArray<T> array, ref Memory.Arena arena, int length) where T : unmanaged
     {
         if (array.IsInitialised)
         {

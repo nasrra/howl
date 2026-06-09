@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using Howl.AssetManagement;
-using Howl.DataStructures;
+using Howl.Text;
 using Howl.Ecs;
 using Howl.Graphics;
 using Howl.LevelManagement.Ldtk;

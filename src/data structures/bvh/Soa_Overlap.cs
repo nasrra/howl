@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Howl.DataStructures.Bvh;
+namespace Howl.Text.Bvh;
 
 /// <summary>
 ///     Data is structured in a SOA format.

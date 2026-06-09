@@ -1,9 +1,9 @@
 using Xunit;
-using Howl.DataStructures.Bvh;
+using Howl.Text.Bvh;
 using Howl.Math;
 using Howl.Test.Math;
 using Howl.Math.Shapes;
-using Howl.DataStructures;
+using Howl.Text;
 using Howl.Ecs;
 using Howl.Test.Physics;
 

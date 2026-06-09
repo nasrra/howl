@@ -405,7 +405,7 @@ public static class Mouse
 
         return new Vector2( 
             (renderTargetPosition.X + cameraPosition.X) / cameraZoom * factor,
-            (renderTargetPosition.Y + cameraPosition.Y) / cameraZoom * factor
+            -((renderTargetPosition.Y + cameraPosition.Y) / cameraZoom * factor) // negative here as screen space uses rasterised coordinates.
         );
     }
 
@@ -435,7 +435,7 @@ public static class Mouse
 
         // bring into the destination resolution coordinate space.
         x *= destResolution.X;
-        y *= destResolution.Y; // negative here as howl renders in y+ = up coordinate space; not y+ is down.
+        y *= destResolution.Y;
 
         return new Vector2((int)x, (int)y);
     }

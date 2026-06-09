@@ -1,6 +1,6 @@
 
 using System.Runtime.CompilerServices;
-using Howl.DataStructures.Bvh;
+using Howl.Text.Bvh;
 using Howl.Unmanaged.Collections;
 
 namespace Howl;

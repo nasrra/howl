@@ -1,4 +1,4 @@
-using Howl.DataStructures.Bvh;
+using Howl.Text.Bvh;
 
 namespace Howl.Test.DataStructures.Bvh;
 

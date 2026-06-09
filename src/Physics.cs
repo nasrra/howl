@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
-using Howl.DataStructures;
-using Howl.DataStructures.Bvh;
+using Howl.Text;
+using Howl.Text.Bvh;
 using Howl.Graphics;
 using Howl.Math;
 using Howl.Math.Shapes;
@@ -924,7 +924,7 @@ public static class Physics
 
             {   // Utility.
                 
-                Howl.Unmanaged.Ecs.GenIdAllocator.Intialise(ref state.GenIdAllocator, ref arena, maxEntities);
+                Howl.Unmanaged.Ecs.GenIdAllocator.Initialise(ref state.GenIdAllocator, ref arena, maxEntities);
                 BoundingVolumeHierarchy.Initialise(ref state.Bvh, ref arena, maxEntities);
                 CategorisedLeafOverlaps.Initialise(ref state.OverlapsScratchBuffer, ref arena, Shape.Category.Count, maxCollisions);
                 Collisions.Manifold.Initialise(ref state.CollisionManifold, ref arena, maxEntities);

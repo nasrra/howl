@@ -1,5 +1,5 @@
 using Xunit;
-using Howl.DataStructures.Bvh;
+using Howl.Text.Bvh;
 using Howl.Math;
 
 namespace Howl.Test.DataStructures.Bvh;

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Howl.DataStructures;
+using Howl.Text;
 using Howl.LevelManagement.Ldtk;
 
 namespace Howl.LevelManagement;
