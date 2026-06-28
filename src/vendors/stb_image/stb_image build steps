@@ -1,0 +1,43 @@
+
+/******************
+
+    DOCUMENTATION:
+
+*******************/
+
+It is  important to note the differences between Windows and Linux.
+
+STB Image on linux and macos work fine with utf8 file paths as the fopen() function
+was updated at the kernel level to handle ut8's.
+
+However; because microsoft is sooo awesome; you have to use wfopen() to open a file with a UTF8 path.
+So make sure when building the windows DLL to do:
+
+    Define this in the header file:
+
+        #define STBI_WINDOWS_UTF8  // <-- CRITICAL FOR WINDOWS UTF-8 SUPPORT
+        #define STB_IMAGE_IMPLEMENTATION
+        #include "stb_image.h"
+
+    OR:
+
+        use the build command flag: /DSTBI_WINDOWS_UTF8=1
+
+/******************
+
+    LINUX
+
+*******************/
+
+Run this command to get a .SO on linux:
+gcc -O3 -shared -fPIC -x c -DSTB_IMAGE_IMPLEMENTATION=1 stb_image.h -o libstb_image.so
+
+
+/******************
+
+    WINDOWS:
+
+*******************/
+
+Run this command to get a .DLL on windows:
+cl /O2 /LD /DSTB_IMAGE_IMPLEMENTATION=1 /DSTBI_WINDOWS_UTF8=1 /Tc stb_image.h /Fe:stb_image.dll

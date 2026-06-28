@@ -5,6 +5,14 @@ using Howl.Unmanaged.Collections;
 
 namespace Howl.IO;
 
+/**
+    TODO:
+
+    add null terminators to custom String utf8 file path conversions, as the custom string is not guaranteed to be
+    null terminated and could lead to nasty headaches later.
+
+**/
+
 public unsafe static class File
 {
     public enum AccessFlag
@@ -45,20 +53,24 @@ public unsafe static class File
         return false;
     }
 
-    public static bool Write(string filePath, Buffer<byte> source, ModeFlag mode)
-    {
-        String str = default;
-        String.Initialise(ref str, filePath);
-        return Write(str, source.Pointer, source.Count, mode);
-    }
+    /******************
+    
+        File Writing.
+    
+    *******************/
 
-    public static bool Write(String filePath, Buffer<byte> source, ModeFlag mode)
+    public static bool Write<T>(string filePath, Buffer<T> source, ModeFlag mode) where T : unmanaged, System.Numerics.INumber<T>
+    {fixed (char* pFilePath = filePath){
+        return Write(pFilePath, filePath.Length, (byte*)source.Pointer, Memory.ArraySizeInBytes<T>(source.Count), mode);
+    }}
+
+    public static bool Write<T>(String filePath, Buffer<T> source, ModeFlag mode) where T : unmanaged, System.Numerics.INumber<T>
     {
-        return Write(filePath, source.Pointer, source.Count, mode);
+        return Write(filePath.Pointer, filePath.Length, (byte*)source.Pointer, Memory.ArraySizeInBytes<T>(source.Count), mode);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Write(String filePath, byte* source, long sourceLength, ModeFlag mode)
+    public static bool Write(char* pFilePath, int filePathLength, byte* pSource, long sourceLength, ModeFlag mode)
     {
         {   // Platform Dispatch.
             
@@ -69,7 +81,7 @@ public unsafe static class File
             else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 Unix.File.OpenFlags openFlags = ToUnixFlag(mode) | ToUnixFlag(AccessFlag.WriteOnly);
-                return Unix.File.Write(filePath, source, sourceLength, openFlags);
+                return Unix.File.Write(pFilePath, filePathLength, pSource, sourceLength, openFlags);
             }
             else
             {
@@ -80,19 +92,52 @@ public unsafe static class File
         return false;
     }
 
-    public static bool Read(string filePath, ref Buffer<byte> destination)
-    {
-        String str = default;
-        String.Initialise(ref str, filePath);
-        return Read(str, ref destination);
+    /******************
+    
+        File Reading.
+    
+    *******************/
+
+    public static bool Read(
+        String filePath, ref Memory.Arena arena
+    ){
+        long totalBytesReadOutput = 0; 
+        bool success = Read(filePath.Pointer, filePath.Count, arena.StartPtr, (int)arena.Capacity, ref totalBytesReadOutput);
+        if(success){
+            arena.Capacity = (nuint)totalBytesReadOutput;
+        }
+        return success;
     }
 
-    public static bool Read(String filePath, ref Buffer<byte> destination)
+    public static bool Read(
+        string filePath, ref Memory.Arena arena
+    ){fixed(char* pFilePath = filePath){
+
+        long totalBytesReadOutput = 0; 
+        bool success = Read(pFilePath, filePath.Length, arena.StartPtr, (int)arena.Capacity, ref totalBytesReadOutput);
+        if(success){
+            arena.Capacity = (nuint)totalBytesReadOutput;
+        }
+        return success;
+    }}
+
+    public static bool Read<T>(string filePath, ref Buffer<T> destination) where T : unmanaged 
+    {fixed(char* pFilePath = filePath){
+        return Read(pFilePath, filePath.Length, ref destination);            
+    }}
+
+    public static bool Read<T>(String filePath, ref Buffer<T> destination) where T : unmanaged
+    {
+        return Read(filePath.Pointer, filePath.Count, ref destination);
+    }
+
+    public static bool Read<T>(char* pFilePath, int filePathLength, ref Buffer<T> destination) where T : unmanaged
     {
         long totalBytesRead = 0;
-        if(Read(filePath, destination.Pointer, destination.Length, ref totalBytesRead))
+        if(Read(pFilePath, filePathLength, (byte*)destination.Pointer, Memory.ArraySizeInBytes<T>(destination.Length), ref totalBytesRead))
         {
-            destination.Count = (int)totalBytesRead;
+            // calculate count relative to the size of T.
+            destination.Count = Memory.ArrayLengthFromBytes<T>(totalBytesRead);
             return true;
         }
         else
@@ -101,7 +146,12 @@ public unsafe static class File
         }
     }
 
-    public static bool Read(String filePath, byte* destination, long destinationLength, ref long totalBytesRead)
+    public static bool Read<T>(string filePath, T* pDestination, int destinationLength, ref long totalBytesReadOutput) where T : unmanaged
+    {fixed(char* pFilePath = filePath)
+        return Read(pFilePath, filePath.Length, (byte*)pDestination, Memory.ArraySizeInBytes<T>(destinationLength), ref totalBytesReadOutput);
+    }
+
+    public static bool Read(char* pFilePath, int filePathLength, byte* destination, int destinationLength, ref long totalBytesReadOutput)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -110,7 +160,7 @@ public unsafe static class File
         else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             Unix.File.OpenFlags openFlags = ToUnixFlag(AccessFlag.ReadOnly);
-            return Unix.File.Read(filePath, destination, destinationLength, openFlags, ref totalBytesRead);
+            return Unix.File.Read(pFilePath, filePathLength, destination, destinationLength, openFlags, ref totalBytesReadOutput);
         }
         else
         {
@@ -118,6 +168,12 @@ public unsafe static class File
         }
         return false;
     }
+
+    /******************
+    
+        Utilities.
+    
+    *******************/
 
     public static Unix.File.OpenFlags ToUnixFlag(AccessFlag flag)
     {

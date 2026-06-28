@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Howl.Unmanaged.Collections;
 
@@ -23,6 +24,7 @@ public unsafe struct Array<T> where T : unmanaged
 
 public unsafe static class Array
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool Initialise<T>(ref Array<T> array, T* pointer, int length) where T : unmanaged
     {
         if (array.IsInitialised)
@@ -35,6 +37,11 @@ public unsafe static class Array
         array.Length = length;
         return true;
     }
+
+    public static bool Initialise<T>(ref Array<T> array, System.Span<T> span) where T: unmanaged
+    {fixed(T* ptr = span){
+        return Initialise(ref array, ptr, span.Length);        
+    }}
 
     public static bool Initialise<T>(ref Array<T> array, ref Memory.Arena arena, int length) where T : unmanaged
     {
@@ -71,7 +78,18 @@ public unsafe static class Array
     public static System.ReadOnlySpan<T> AsReadOnlySpan<T>(Array<T> array) where T : unmanaged
     {
         return new System.ReadOnlySpan<T>(array.Pointer, array.Length);
-    }    
+    }
+
+    public static void ClearZeroed<T>(Array<T> array) where T : unmanaged{
+        NativeMemory.Clear(array.Pointer, (nuint)Memory.ArraySizeInBytes<T>(array.Length));
+    }
+
+    public static void ClearZeroed<T>(
+        Array<T> array, int baseIndex
+    ) where T : unmanaged{
+        Debug.Assert(baseIndex < array.Length, $"Index: '{baseIndex}' is Out Of Bounds; Array Length: '{array.Length}' .");
+        NativeMemory.Clear(array.Pointer+((nuint)(sizeof(T) * baseIndex)), (nuint)(sizeof(T) * (array.Length-baseIndex)));
+    }
 }
 
 public unsafe struct SwapBackArray<T> where T : unmanaged
@@ -548,6 +566,12 @@ public unsafe static class Buffer
         return true;            
     }
 
+
+    public static bool Initialise<T>(ref Buffer<T> buffer, System.Span<T> span) where T: unmanaged
+    {fixed(T* ptr = span){
+        return Initialise(ref buffer, ptr, span.Length);        
+    }}
+
     public static bool Append<T>(ref Buffer<T> buffer, T value) where T : unmanaged
     {
         if(buffer.Count >= buffer.Length)
@@ -569,6 +593,16 @@ public unsafe static class Buffer
     public static void Clear<T>(ref Buffer<T> buffer) where T : unmanaged
     {
         buffer.Count = 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void ClearZeroed<T>(ref Buffer<T> buffer) where T : unmanaged
+    {
+        buffer.Count = 0;
+        for(int i = 0; i < buffer.Length; i++)
+        {
+            buffer[i] = default;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

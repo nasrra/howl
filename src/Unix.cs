@@ -28,10 +28,10 @@ public unsafe static class File
     public static extern int open(byte* filePath, int flags, int accessPermissions);
 
     [DllImport(Constants.LibName, SetLastError = true)]
-    public static extern long read(int fileDescriptor, void* destination, nuint fileSizeInBytes);
+    public static extern nint read(int fileDescriptor, void* destination, nuint fileSizeInBytes);
 
     [DllImport(Constants.LibName, SetLastError = true)]
-    public static extern long write(int fileDescriptor, void* source, nuint sourceSizeInBytes);
+    public static extern nint write(int fileDescriptor, void* source, nuint sourceSizeInBytes);
 
     [DllImport(Constants.LibName, SetLastError = true)]
     public static extern int close(int fileDescriptor);
@@ -157,19 +157,22 @@ public unsafe static class File
         return Exists(utf8Path);
     }
 
-    public static bool Exists(byte* utf8Path)
+    public static bool Exists(
+        byte* utf8Path
+    )
     {
         return access(utf8Path, Ok) == 0;
     }
 
-    public static bool Read(String filePath, byte* destination, long destinationLength, OpenFlags openFlags, ref long totalBytesReadOutput)
+    public static bool Read(
+        char* pFilePath, int filePathLength, byte* destination, long destinationLength, OpenFlags openFlags, ref long totalBytesReadOutput
+    )
     {
         // allocate file path on the stack (+1 for the required null terminator).
-        int byteCount = String.GetByteCountUTF8(filePath);
+        int byteCount = String.GetByteCountUTF8(pFilePath, filePathLength);
+        // Crucial: +1 for the null terminator; C# zeroes stack allocs so the final byte will always be zero ('\0')
         byte* utf8Path = stackalloc byte[byteCount + 1];
-        String.GetBytesUTF8(filePath, utf8Path);        
-        // CRUCIAL: set the null terminator.
-        utf8Path[byteCount] = 0;
+        String.GetBytesUTF8(pFilePath, filePathLength, utf8Path);        
         
         return Read(utf8Path, destination, destinationLength, openFlags, ref totalBytesReadOutput);
     }
@@ -196,7 +199,7 @@ public unsafe static class File
             while(totalBytesRead < fileLength)
             {
                 nuint remaining = (nuint)(fileLength - totalBytesRead);
-                long bytesRead = read(fileDescriptor, destination + totalBytesRead, remaining);
+                nint bytesRead = read(fileDescriptor, destination + totalBytesRead, remaining);
 
                 if(bytesRead <= 0)
                 {
@@ -221,14 +224,13 @@ public unsafe static class File
         return true;
     }
 
-    public static bool Write(String filePath, byte* source, long sourceLength, OpenFlags openFlags)
+    public static bool Write(char* pFilePath, int filePathLength, byte* source, long sourceLength, OpenFlags openFlags)
     {
         // allocate file path on the stack (+1 for the required null terminator).
-        int byteCount = String.GetByteCountUTF8(filePath);
+        int byteCount = String.GetByteCountUTF8(pFilePath, filePathLength);
+        // Crucial: +1 for the null terminator; C# zeroes stack allocs so the final byte will always be zero ('\0')
         byte* utf8Path = stackalloc byte[byteCount + 1];
-        String.GetBytesUTF8(filePath, utf8Path);        
-        // CRUCIAL: set the null terminator.
-        utf8Path[byteCount] = 0;
+        String.GetBytesUTF8(pFilePath, filePathLength, utf8Path);        
         
         return Write(utf8Path, source, sourceLength, openFlags);
     }
@@ -249,7 +251,7 @@ public unsafe static class File
             while(totalBytesWritten < sourceLength)
             {
                 nuint remaining = (nuint)(sourceLength - totalBytesWritten);
-                long bytesWritten = write(fileDescriptor, source + totalBytesWritten, remaining);
+                nint bytesWritten = write(fileDescriptor, source + totalBytesWritten, remaining);
 
                 if(bytesWritten <= 0)
                 {

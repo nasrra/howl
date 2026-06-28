@@ -36,6 +36,11 @@ public struct Vector2
         Y = y;
     }
 
+    public static void Initialise(ref Vector2 vector2, float x, float y){
+        vector2.X = x;
+        vector2.Y = y;
+    }
+
     /// <summary>
     /// Adds the left-hand side vector to the right-hand side.
     /// </summary>

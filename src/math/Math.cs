@@ -239,37 +239,7 @@ public static class Math
     /// <param name="max">the max value.</param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static float Clamp(float value, float min, float max)
-    {
-        if(min > max)
-        {
-            ThrowMinMaxException(min, max);
-        }
-
-        if(value <= min)
-        {
-            return min;
-        }
-        else if(value >= max)
-        {
-            return max;
-        }
-
-        return value;
-    }
-
-    /// <summary>
-    /// Clamps a value between a min and max
-    /// </summary>
-    /// <remarks>
-    /// Note: Min and max are both invlusive.
-    /// </remarks>
-    /// <param name="value">the value to clamp.</param>
-    /// <param name="min">the min value.</param>
-    /// <param name="max">the max value.</param>
-    /// <returns></returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static int Clamp(int value, int min, int max)
+    public static T Clamp<T>(T value, T min, T max) where T : System.Numerics.INumber<T>
     {
         if(min > max)
         {

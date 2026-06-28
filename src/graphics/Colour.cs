@@ -60,4 +60,11 @@ public struct Colour
         B = b;
         A = a;
     }
+
+    public static void Initialise(ref Colour colour, byte r, byte g, byte b, byte a){
+        colour.R = r;
+        colour.G = g;
+        colour.B = b;
+        colour.A = a;
+    }
 }

@@ -282,16 +282,22 @@ public unsafe struct String
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static int GetByteCountUTF8(String str)
     {
-        return Encoding.UTF8.GetByteCount(str.Pointer, str.Count);
+        return GetByteCountUTF8(str.Pointer, str.Count);
     }
 
-    /// <returns>the amount of bytes written to the destination array.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static int GetByteCountUTF8(char* pString, int stringLength)
+    {
+        return Encoding.UTF8.GetByteCount(pString, stringLength);
+    }
+
+    /// <returns>the amount of bytes written to the destination buffer.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static int GetBytesUTF8(String source, ref Buffer<byte> destination)
     {
         int byteCount = Encoding.UTF8.GetByteCount(source.Pointer, source.Count);
         
-        Debug.Assert(byteCount < destination.Length, "Array does not have enough space!");
+        Debug.Assert(byteCount <= destination.Length, "Buffer does not have enough space!");
 
         Encoding.UTF8.GetBytes(source.Pointer, source.Count, destination.Pointer, byteCount);
         destination.Count = byteCount;
@@ -299,10 +305,32 @@ public unsafe struct String
         return byteCount;
     }
 
+    /// <returns>the amount of bytes written to the destination buffer.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static int GetBytesUTF8(string source, ref Buffer<byte> destination)
+    {
+        int byteCount = Encoding.UTF8.GetByteCount(source);
+        
+        Debug.Assert(byteCount < destination.Length, "Buffer does not have enough space!");
+
+        fixed(char* ptr = source)
+        {
+            Encoding.UTF8.GetBytes(ptr, source.Length, destination.Pointer, byteCount);
+        }
+
+        destination.Count = byteCount;
+        return byteCount;        
+    }
+
     public static int GetBytesUTF8(String source, byte* destination)
     {
-        int byteCount = Encoding.UTF8.GetByteCount(source.Pointer, source.Count);
-        Encoding.UTF8.GetBytes(source.Pointer, source.Count, destination, byteCount);
+        return GetBytesUTF8(source.Pointer, source.Length, destination);
+    }
+
+    public static int GetBytesUTF8(char* pSource, int sourceLength, byte* pDestination)
+    {        
+        int byteCount = Encoding.UTF8.GetByteCount(pSource, sourceLength);
+        Encoding.UTF8.GetBytes(pSource, sourceLength, pDestination, byteCount);
         return byteCount;        
     }
 
@@ -449,10 +477,11 @@ public unsafe struct String
 
             if(result != GenIdResult.Ok)
             {
-                str = ref allocator.FallbackString;
+                return ref allocator.FallbackString;
             }
-
+#pragma warning disable // <-- disable warning as C# is dogshit and thinks this isnt okay; even though it is. 
             return ref str; 
+#pragma warning restore
         }
 
         public struct SubAllocator
