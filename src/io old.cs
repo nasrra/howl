@@ -99,25 +99,17 @@ public unsafe static class File
     *******************/
 
     public static bool Read(
-        String filePath, ref Memory.Arena arena
+        String filePath, ref Memory.Arena arena, ref long totalBytesReadOutput
     ){
-        long totalBytesReadOutput = 0; 
-        bool success = Read(filePath.Pointer, filePath.Count, arena.StartPtr, (int)arena.Capacity, ref totalBytesReadOutput);
-        if(success){
-            arena.Capacity = (nuint)totalBytesReadOutput;
-        }
+        bool success = Read(filePath.Pointer, filePath.Count, arena.StartPtr, arena.Capacity, ref totalBytesReadOutput);
         return success;
     }
 
     public static bool Read(
-        string filePath, ref Memory.Arena arena
+        string filePath, ref Memory.Arena arena, ref long totalBytesReadOutput
     ){fixed(char* pFilePath = filePath){
 
-        long totalBytesReadOutput = 0; 
-        bool success = Read(pFilePath, filePath.Length, arena.StartPtr, (int)arena.Capacity, ref totalBytesReadOutput);
-        if(success){
-            arena.Capacity = (nuint)totalBytesReadOutput;
-        }
+        bool success = Read(pFilePath, filePath.Length, arena.StartPtr, arena.Capacity, ref totalBytesReadOutput);
         return success;
     }}
 
@@ -134,7 +126,7 @@ public unsafe static class File
     public static bool Read<T>(char* pFilePath, int filePathLength, ref Buffer<T> destination) where T : unmanaged
     {
         long totalBytesRead = 0;
-        if(Read(pFilePath, filePathLength, (byte*)destination.Pointer, Memory.ArraySizeInBytes<T>(destination.Length), ref totalBytesRead))
+        if(Read(pFilePath, filePathLength, (byte*)destination.Pointer, (nuint)(sizeof(T) * destination.Length), ref totalBytesRead))
         {
             // calculate count relative to the size of T.
             destination.Count = Memory.ArrayLengthFromBytes<T>(totalBytesRead);
@@ -148,10 +140,10 @@ public unsafe static class File
 
     public static bool Read<T>(string filePath, T* pDestination, int destinationLength, ref long totalBytesReadOutput) where T : unmanaged
     {fixed(char* pFilePath = filePath)
-        return Read(pFilePath, filePath.Length, (byte*)pDestination, Memory.ArraySizeInBytes<T>(destinationLength), ref totalBytesReadOutput);
+        return Read(pFilePath, filePath.Length, (byte*)pDestination, (nuint)(sizeof(T) * destinationLength), ref totalBytesReadOutput);
     }
 
-    public static bool Read(char* pFilePath, int filePathLength, byte* destination, int destinationLength, ref long totalBytesReadOutput)
+    public static bool Read(char* pFilePath, int filePathLength, byte* destination, nuint destinationLength, ref long totalBytesReadOutput)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -160,7 +152,7 @@ public unsafe static class File
         else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             Unix.File.OpenFlags openFlags = ToUnixFlag(AccessFlag.ReadOnly);
-            return Unix.File.Read(pFilePath, filePathLength, destination, destinationLength, openFlags, ref totalBytesReadOutput);
+            return Unix.File.Read(pFilePath, filePathLength, destination, (long)destinationLength, openFlags, ref totalBytesReadOutput);
         }
         else
         {

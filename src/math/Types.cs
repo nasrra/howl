@@ -41,22 +41,139 @@ public unsafe struct Matrix3x3{
 }
 
 public struct Vector3{
+    
+    public readonly static Vector3 Right = new(){X = 1, Y = 0, Z = 0};
+    public readonly static Vector3 Up = new(){X = 0, Y = 1, Z = 0};
+    public readonly static Vector3 Forward = new(){X = 0, Y = 0, Z = 1};
+
     public float X;
     public float Y;
     public float Z;
 
-    public static Vector3 operator- (Vector3 lhs, Vector3 rhs){
+    public static Vector3 operator- (
+        Vector3 lhs, Vector3 rhs
+    ){
         lhs.X -= rhs.X;
         lhs.Y -= rhs.Y;
         lhs.Z -= rhs.Z;
         return lhs;
     }
 
-    public static Vector3 operator+ (Vector3 lhs, Vector3 rhs){
+    public static Vector3 operator+ (
+        Vector3 lhs, Vector3 rhs
+    ){
         lhs.X += rhs.X;
         lhs.Y += rhs.Y;
         lhs.Z += rhs.Z;
         return lhs;
+    }
+
+    public static Vector3 operator* (
+        Vector3 lhs, Vector3 rhs
+    ){
+        lhs.X *= rhs.X;
+        lhs.Y *= rhs.Y;
+        lhs.Z *= rhs.Z;
+        return lhs;
+    }
+
+    public static Vector3 operator/ (
+        Vector3 lhs, Vector3 rhs
+    ){
+        lhs.X /= rhs.X;
+        lhs.Y /= rhs.Y;
+        lhs.Z /= rhs.Z;
+        return lhs;
+    }
+
+    public static Vector3 operator+ (
+        Vector3 lhs, Vector2 rhs
+    ){
+        lhs.X += rhs.X;
+        lhs.Y += rhs.Y;
+        return lhs;
+    }
+
+    public static Vector3 operator- (
+        Vector3 lhs, Vector2 rhs
+    ){
+        lhs.X -= rhs.X;
+        lhs.Y -= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector3 operator* (
+        Vector3 lhs, Vector2 rhs
+    ){
+        lhs.X *= rhs.X;
+        lhs.Y *= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector3 operator/ (
+        Vector3 lhs, Vector2 rhs
+    ){
+        lhs.X /= rhs.X;
+        lhs.Y /= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector3 operator+ (
+        Vector3 lhs, Vector2I rhs
+    ){
+        lhs.X += rhs.X;
+        lhs.Y += rhs.Y;
+        return lhs;
+    }
+
+    public static Vector3 operator- (
+        Vector3 lhs, Vector2I rhs
+    ){
+        lhs.X -= rhs.X;
+        lhs.Y -= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector3 operator* (
+        Vector3 lhs, Vector2I rhs
+    ){
+        lhs.X *= rhs.X;
+        lhs.Y *= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector3 operator/ (
+        Vector3 lhs, Vector2I rhs
+    ){
+        lhs.X /= rhs.X;
+        lhs.Y /= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector3 operator*(
+        Vector3 lhs, float rhs
+    ){
+        lhs.X *= rhs;
+        lhs.Y *= rhs;
+        lhs.Z *= rhs;
+        return lhs;
+    }
+
+    public static Vector3 operator/(
+        Vector3 lhs, float rhs
+    ){
+        lhs.X /= rhs;
+        lhs.Y /= rhs;
+        lhs.Z /= rhs;
+        return lhs;
+    }
+
+    public static Vector3 operator-(
+        Vector3 v
+    ){
+        v.X = -v.X;
+        v.Y = -v.Y;
+        return v;
     }
 }
 
@@ -65,17 +182,86 @@ public struct Vector2{
     public float X;
     public float Y;
 
-    public static Vector2 operator+ (Vector2 lhs, Vector2 rhs){
+    public static Vector2 operator+ (
+        Vector2 lhs, Vector2 rhs
+    ){
         lhs.X += rhs.X;
         lhs.Y += rhs.Y;
         return lhs;
     }
 
-    public static Vector2 operator- (Vector2 lhs, Vector2 rhs){
+    public static Vector2 operator- (
+        Vector2 lhs, Vector2 rhs
+    ){
         lhs.X -= rhs.X;
         lhs.Y -= rhs.Y;
         return lhs;
     }
+
+    public static Vector2 operator* (
+        Vector2 lhs, Vector2 rhs
+    ){
+        lhs.X *= rhs.X;
+        lhs.Y *= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector2 operator/ (
+        Vector2 lhs, Vector2 rhs
+    ){
+        lhs.X /= rhs.X;
+        lhs.Y /= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector2 operator+ (
+        Vector2 lhs, Vector3 rhs
+    ){
+        lhs.X += rhs.X;
+        lhs.Y += rhs.Y;
+        return lhs;
+    }
+
+    public static Vector2 operator- (
+        Vector2 lhs, Vector3 rhs
+    ){
+        lhs.X -= rhs.X;
+        lhs.Y -= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector2 operator* (
+        Vector2 lhs, Vector3 rhs
+    ){
+        lhs.X *= rhs.X;
+        lhs.Y *= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector2 operator/ (
+        Vector2 lhs, Vector3 rhs
+    ){
+        lhs.X /= rhs.X;
+        lhs.Y /= rhs.Y;
+        return lhs;
+    }
+
+    public static Vector2 operator*(
+        Vector2 lhs, float rhs
+    ){
+        lhs.X *= rhs;
+        lhs.Y *= rhs;
+        return lhs;
+    }
+
+    public static Vector2 operator/(
+        Vector2 lhs, float rhs
+    ){
+        lhs.X /= rhs;
+        lhs.Y /= rhs;
+        return lhs;
+    }
+
 }
 
 public struct Vector2I{
@@ -125,10 +311,25 @@ public struct Quaternion{
     public float Y;
     public float Z;
     public float W;
+
+    public static readonly Quaternion Identity = new(){W = 1};
 }
 
 public struct Transform{
     public Quaternion Rotation;
     public Vector3 Position;
     public Vector3 Scale;
+}
+
+public struct Rectangle{
+    public float X;
+    public float Y;
+    public float Width;
+    public float Height;
+}
+
+public struct Circle{
+    public float X;
+    public float Y;
+    public float Radius;
 }

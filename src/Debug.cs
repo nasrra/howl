@@ -7,6 +7,8 @@ using Howl.Graphics;
 using Howl.Math;
 using Howl.Vendors;
 
+namespace Howl;
+
 public static class Debug
 {
     /// <summary>

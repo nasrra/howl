@@ -1,9 +1,15 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using N_Howl.N_Math;
+using Howl;
 
 namespace N_Howl.N_Math;
 public unsafe static class Math{
+
+public const float Pi = 3.1415926535897932384626433f;
+public const float Tau = 6.283185307179586f;
+public const float OneSixth = 1.0f / 6.0f;
+public const float OneTwentyFourth = 1.0f / 24.0f;
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 public static float ToRadians(float degrees){
@@ -37,13 +43,38 @@ public static float Dot(Vector3 lhs, Vector3 rhs){
 }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static float LengthSquared(Vector3 vector){
+public static float Abs(
+    float value
+){
+    return value<0? -value : value;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float LengthSquared(
+    Vector3 vector
+){
     return (vector.X * vector.X) + (vector.Y * vector.Y) + (vector.Z * vector.Z);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float Length(
+    Vector3 vector
+){
+    return Sqrt(LengthSquared(vector));
 }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 public static int LengthSquared(Vector2I vector){
     return (vector.X * vector.X) + (vector.Y * vector.Y);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static Vector3 Cross(Vector3 a, Vector3 b){
+    return new(){
+        X = (a.Y * b.Z) - (a.Z * b.Y),
+        Y = (a.Z * b.X) - (a.X * b.Z),
+        Z = (a.X * b.Y) - (a.Y * b.X)
+    };
 }
 
 /// <summary>
@@ -411,5 +442,76 @@ public static Quaternion Normalise(
     float len = (float)Sqrt(q.X * q.X + q.Y * q.Y + q.Z * q.Z + q.W * q.W);
     return new(){X = q.X / len, Y = q.Y / len, Z = q.Z / len, W = q.W / len};
 }
+
+/// <summary>
+///     Creates a rotation quaternion around a normalised axis vector by a given angle in radians.
+/// </summary>
+public static Quaternion CreateFromAxisAngle(
+    Vector3 axis, float angle
+){
+
+    // Half angle calculations required by quaternion space
+    float halfAngle = angle * 0.5f;
+    float sin = Sin(halfAngle);
+    float cos = Cos(halfAngle);
+
+    // Scale the normalized directional axis components by the sine projection
+    return new(){
+        X = axis.X * sin,
+        Y = axis.Y * sin,
+        Z = axis.Z * sin,
+        W = cos
+    };
+}
+
+public static Quaternion GetRotationBetweenPoints(
+    Vector3 pointA, Vector3 pointB
+){
+    // Get the direction vector target pointing from A to B
+    Vector3 delta = new(){
+        X = pointB.X - pointA.X, 
+        Y = pointB.Y - pointA.Y, 
+        Z = pointB.Z - pointA.Z
+    };
+
+    Vector3 direction = Normalise(delta);
+    
+    // Define the default local resting axis (e.g., Vector3(0, 1, 0) if pointing Up)
+    Vector3 startingAxis = Vector3.Up; 
+
+    float dot = Dot(startingAxis, direction);
+
+    // Edge Case Handling: Check if target vectors point directly opposite to prevent a divide-by-zero crash (180 deg)
+    if (dot < -0.99999f)
+    {
+        // Pick an arbitrary perpendicular backup axis to rotate around instead
+        Vector3 perpendicular = Cross(startingAxis, new(){X = 1});
+        if (LengthSquared(perpendicular) < 0.001f)
+        {
+            perpendicular = Cross(startingAxis, new Vector3(){Z = 1});
+        }
+        
+        return CreateFromAxisAngle(Normalise(perpendicular), Pi);
+    }
+    
+    // Edge Case Handling: Vectors already point in the identical direction
+    if (dot > 0.99999f)
+    {
+        return Quaternion.Identity;
+    }
+
+    // Shortest arc computation mapping directly onto the native components
+    Vector3 axis = Cross(startingAxis, direction);
+    
+    Quaternion q = new(){
+        X = axis.X,
+        Y = axis.Y,
+        Z = axis.Z,
+        W = 1.0f + dot // W component maps directly to the cosine length offset prior to normalization
+    };
+
+    return Normalise(q);
+}
+
 
 }
