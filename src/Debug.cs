@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Howl;
-using Howl.Graphics;
 using Howl.Math;
 using Howl.Vendors;
 

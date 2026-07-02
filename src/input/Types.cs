@@ -153,3 +153,47 @@ public enum InputState{
     JustPressed,
     JustReleased   
 }
+
+public enum GamePadId : byte
+{
+    One,
+    Two,
+    Three,
+    Four,
+
+    /// <summary>
+    /// Used to know how many gamepads are available.
+    /// </summary>
+    Count,
+}
+
+public enum GamePadButton : byte
+{
+    // Dpad buttons.
+    DpadNorth,
+    DpadEast,
+    DpadSouth,
+    DpadWest,
+    
+    // Face bnuttons (X,Y,B,A, etc...)
+    FaceNorth,
+    FaceEast,
+    FaceSouth,
+    FaceWest,
+
+    // Shoulders.
+    ShoulderRight,
+    ShoulderLeft,
+
+    // Triggers.
+    TriggerRight,
+    TriggerLeft,
+
+    // Special.
+    Start,
+    Menu,
+
+    // Thumbsticks.
+    LeftThumbstick,
+    RightThumbstick
+}
