@@ -52,12 +52,10 @@ namespace Howl.Unmanaged.Ecs
         /// <summary>
         ///     Allocates an gen id from a allocator instance.
         /// </summary>
-        public static GenIdResult Allocate(ref GenIdAllocator allocator, ref GenId genId)
-        {
-            if(allocator.FreeSlots.Count == 0)
-            {
+        public static bool Allocate(ref GenIdAllocator allocator, ref GenId genId){
+            if(allocator.FreeSlots.Count == 0){
                 Debug.LogError("Memory Limit Hit", stackDepth: 2);
-                return GenIdResult.MemoryLimitHit;
+                return false;
             }
             
             // get the next available slot to allocate in.
@@ -65,11 +63,9 @@ namespace Howl.Unmanaged.Ecs
             
             // check if its neighbour can be allocated as well.
             int nextSlot = slot + 1;
-            if(nextSlot > 0 && nextSlot < allocator.GenIds.Length)
-            {
+            if(nextSlot > 0 && nextSlot < allocator.GenIds.Length){
                 // add to the stack if it is also free.
-                if (allocator.Allocated[nextSlot] == false)
-                {
+                if (allocator.Allocated[nextSlot] == false){
                     Collections.StackArray.Push(ref allocator.FreeSlots, nextSlot);            
                 }
             }
@@ -78,25 +74,22 @@ namespace Howl.Unmanaged.Ecs
             allocator.Allocated[slot] = true;
             genId = allocator.GenIds[slot];
 
-            return GenIdResult.Ok;
+            return true;
         }
 
         /// <summary>
         ///     Deallocates an gen id from a allocator instance.
         /// </summary>
-        public static GenIdResult Deallocate(ref GenIdAllocator allocator, GenId genId)
-        {
+        public static bool Deallocate(ref GenIdAllocator allocator, GenId genId){
             int index = GenId.GetIndex(genId);
 
             // do nothing if the gen index is stale.
-            if(allocator.GenIds[index] != genId)
-            {
-                return GenIdResult.StaleGenId;
+            if(allocator.GenIds[index] != genId){
+                return false;
             }
 
             DeallocateUnsafe(ref allocator, index);
-            
-            return GenIdResult.Ok;
+            return true;
         }
 
         /// <summary>

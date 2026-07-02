@@ -26,7 +26,6 @@ public unsafe static class HowlApp
     ///     The amount of time in miliseconds that each fixed update should move forwards by.
     /// </summary>
     public const float FixedDt = 1f / 60f;
-
     /// <summary>
     ///     The amount of time that has to be store in the fixed update accumulator
     ///     (in milliseconds) before slowing down the game; avoiding the "spiral of death".

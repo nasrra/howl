@@ -1,3 +1,5 @@
+using Howl.Unmanaged.Collections;
+
 namespace N_Howl.N_Math;
 
 public unsafe struct Matrix4x4{
@@ -319,6 +321,16 @@ public struct Transform{
     public Quaternion Rotation;
     public Vector3 Position;
     public Vector3 Scale;
+    public static readonly Transform Identity = new(){Scale = new(){X = 1, Y = 1, Z = 1}}; 
+}
+
+public struct Transform2D{
+    public Vector2 Position;
+    public Vector2 Scale;
+    public float Sine;
+    public float Cosine;
+    public float RotationRadians;
+    public static readonly Transform2D Identity = new(){Scale = new(){X = 1, Y = 1}, Cosine = 1, Sine = 0}; 
 }
 
 public struct Rectangle{
@@ -332,4 +344,153 @@ public struct Circle{
     public float X;
     public float Y;
     public float Radius;
+}
+
+/// <summary>
+///     Fixed-Stride Structure-of-Arrays Vector2.
+/// </summary>
+public struct FsSoa_Vector2{
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>Elements are accessed via <c>entryElementIndex</c>.</para>
+    /// </remarks>
+    public Array<float> X;
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>Elements are accessed via <c>entryElementIndex</c>.</para>
+    /// </remarks>
+    public Array<float> Y;
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>Elements are accessed via <c>entryIndex</c>.</para>
+    /// </remarks>
+    public Array<int> AppendCounts;
+    /// <summary>
+    ///     The fixed stride of each entry.
+    /// </summary>
+    public int EntryStride;
+    /// <summary>
+    ///     The amount of entries this collection can hold.
+    /// </summary>
+    public int MaxEntries;
+    public bool IsIntialised;
+}
+
+public struct Soa_Transform2D{
+    public Soa_Vector2 Positions;
+    public Soa_Vector2 Scales;
+    public Array<float> Sines;
+    public Array<float> Cosines;
+    public Array<float> RotationRadians;
+    public bool IsInitialised;
+}
+
+public struct Soa_Vector2{
+    public Array<float> X;
+    public Array<float> Y;
+    /// <summary>
+    ///     The count of allocated entries from appending.
+    /// </summary>
+    public int AppendCount;
+    /// <summary>
+    ///     The length of all the backing arrays of this instance.
+    /// </summary>
+    public int Length;
+    public bool IsIntialised; 
+}
+
+public struct Soa_Aabb{
+    /// <summary>
+    ///     The x-components of the minimum vertex.
+    /// </summary>
+    public Array<float> MinX;
+    /// <summary>
+    ///     the y-components of the minimum vertex.
+    /// </summary>
+    public Array<float> MinY;
+    /// <summary>
+    /// the x-components of the maximum vertex.
+    /// </summary>
+    public Array<float> MaxX;
+    /// <summary>
+    ///     The y-components of the maximum vertex.
+    /// </summary>
+    public Array<float> MaxY;
+    /// <summary>
+    /// The count of allocated entries from appending.
+    /// </summary>
+    public int AppendCount;
+    /// <summary>
+    /// The length of all the backing arrays of this instance.
+    /// </summary>
+    public int Length;
+    public bool IsIntialised;
+}
+
+public struct Aabb{
+    public float MinX;
+    public float MinY;
+    public float MaxX;
+    public float MaxY;
+
+    public static Aabb operator +(
+        Aabb aabb, Vector2 vector
+    ){
+        aabb.MinX += vector.X;
+        aabb.MinY += vector.Y;
+        aabb.MaxX += vector.X;
+        aabb.MaxY += vector.Y;
+        return aabb;
+    }
+
+    public static Aabb operator -(
+        Aabb aabb, Vector2 vector
+    ){
+        aabb.MinX -= vector.X;
+        aabb.MinY -= vector.Y;
+        aabb.MaxX -= vector.X;
+        aabb.MaxY -= vector.Y;
+        return aabb;
+    }
+
+    public static bool operator ==(
+        Aabb a, Aabb b
+    ){
+        return 
+        a.MinX == b.MinX 
+        && a.MinY == b.MinY
+        && a.MaxX == b.MaxX
+        && a.MaxY == b.MaxY;   
+    }
+
+    public static bool operator !=(
+        Aabb a, Aabb b
+    ){
+        return 
+        a.MinX != b.MinX
+        || a.MinY != b.MinY 
+        || a.MaxX != b.MaxX
+        || a.MaxY != b.MaxY;
+    }
+
+    public override bool Equals(
+        object obj
+    ){
+        return obj is Aabb other && this == other;
+    }
+
+    public override int GetHashCode(
+        
+    ){
+        return base.GetHashCode();
+    }
+}
+
+public unsafe struct PolygonRectangle{
+    /// <summary>
+    /// The maximum amount of vertices a PolygonRectangle can store.
+    /// </summary>
+    public const int VerticesLength = 4;
+    public fixed float VerticesX[VerticesLength];
+    public fixed float VerticesY[VerticesLength];
 }

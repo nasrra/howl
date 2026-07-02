@@ -258,25 +258,25 @@ public static class ComponentArray
     ///         <see cref="GenIdResult.NotAllocated"/>
     ///     </item>
     ///         <item>
-    ///             <see cref="GenIdResult.StaleGenId"/>
+    ///             <see cref="GenIdResult.InvalidGenId"/>
     ///         </item>
     /// </returns>
-    public static GenIdResult SetActive<T>(this ComponentArray<T> array, GenIdAllocator entities, GenId genId)
+    public static bool SetActive<T>(this ComponentArray<T> array, GenIdAllocator entities, GenId genId)
     {
 
         if(GenIdAllocator.IsGenIdStale(entities, genId))
         {
-            return GenIdResult.StaleGenId;
+            return false;
         }
 
         if (array.Allocated[GenId.GetIndex(genId)] == false)
         {
-            return GenIdResult.NotAllocated;
+            return false;
         }
                 
         SetActiveUnsafe(array, genId);
 
-        return GenIdResult.Ok;
+        return true;
     }
 
 
@@ -347,25 +347,25 @@ public static class ComponentArray
     ///             <see cref="GenIdResult.NotAllocated"/>
     ///         </item>
     ///         <item>
-    ///             <see cref="GenIdResult.StaleGenId"/>
+    ///             <see cref="GenIdResult.InvalidGenId"/>
     ///         </item>
     ///     </list>
     /// </returns>
-    public static GenIdResult SetInactive<T>(this ComponentArray<T> array, GenIdAllocator entities, GenId genId)
+    public static bool SetInactive<T>(this ComponentArray<T> array, GenIdAllocator entities, GenId genId)
     {
         if(GenIdAllocator.IsGenIdStale(entities, genId))
         {
-            return GenIdResult.StaleGenId;
+            return false;
         }
 
         if (array.Allocated[GenId.GetIndex(genId)] == false)
         {
-            return GenIdResult.NotAllocated;
+            return false;
         }
         
         SetInactiveUnsafe(array, genId);
 
-        return GenIdResult.Ok;
+        return true;
     }
 
     /// <summary>

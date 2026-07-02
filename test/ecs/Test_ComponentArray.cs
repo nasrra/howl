@@ -172,8 +172,8 @@ public class Test_ComponentArray
                 Assert.Equal(i, nums.Active.Count);
 
                 // fail case.
-                Assert.Equal(GenIdResult.StaleGenId, ComponentArray.SetInactive(nums, entities, staleId));
-                Assert.Equal(GenIdResult.StaleGenId, ComponentArray.SetActive(nums, entities, staleId));
+                Assert.Equal(GenIdResult.InvalidGenId, ComponentArray.SetInactive(nums, entities, staleId));
+                Assert.Equal(GenIdResult.InvalidGenId, ComponentArray.SetActive(nums, entities, staleId));
 
                 // ensure count has not changed.
                 Assert.Equal(i, nums.Active.Count);
@@ -197,8 +197,8 @@ public class Test_ComponentArray
                 Assert.Equal(i+1, nums.Active.Count);
 
                 // fail case.
-                Assert.Equal(GenIdResult.StaleGenId, ComponentArray.SetActive(nums, entities, staleId));
-                Assert.Equal(GenIdResult.StaleGenId, ComponentArray.SetInactive(nums, entities, staleId));
+                Assert.Equal(GenIdResult.InvalidGenId, ComponentArray.SetActive(nums, entities, staleId));
+                Assert.Equal(GenIdResult.InvalidGenId, ComponentArray.SetInactive(nums, entities, staleId));
 
                 // ensure count has not changed.
                 Assert.Equal(i+1, nums.Active.Count);

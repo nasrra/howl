@@ -161,7 +161,7 @@ public static class LdtkParser
         {
             string tileMapFilePath = PathUtils.FlattenPath(projectDirectory, tilesetRelPath);
 
-            if(GenIdAllocator.Allocate(entities, ref genId) == GenIdResult.Ok)
+            if(GenIdAllocator.Allocate(entities, ref genId))
             {
                 Dto_AutoLayerTile tile = tiles[tileIndex];
 

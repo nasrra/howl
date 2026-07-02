@@ -436,46 +436,45 @@ public unsafe struct String
             return true;
         }
 
-        public static GenIdResult Allocate(ref Allocator allocator, int stringLength, ref StringId stringId)
+        public static bool Allocate(ref Allocator allocator, int stringLength, ref StringId stringId)
         {
             if (allocator.SubAllocators[stringLength].IsInitialised == false)
             {
                 Debug.Panic("Sub Allocator not initialised.");
-                return GenIdResult.NotAllocated;
+                return false;
             }
 
             GenId genId = default;
-            GenIdResult result = SubAllocator.Allocate(ref allocator.SubAllocators[stringLength], ref genId); 
-            if(result == GenIdResult.Ok)
-            {
+            if(SubAllocator.Allocate(ref allocator.SubAllocators[stringLength], ref genId)){
                 StringId.Initialise(ref stringId, genId, stringLength);
-            }
+                return true;
+            } 
 
-            return result;
+            return false;
         }
 
-        public static GenIdResult Deallocate(ref Allocator allocator, StringId stringId)
+        public static bool Deallocate(ref Allocator allocator, StringId stringId)
         {
             if (allocator.SubAllocators[stringId.StringLength].IsInitialised == false)
             {
                 Debug.Panic("Sub Allocator not initialised.");
-                return GenIdResult.NotAllocated;
+                return false;
             }
             return SubAllocator.Deallocate(ref allocator.SubAllocators[stringId.StringLength], stringId.GenId); 
         }
 
-        public static ref String GetString(ref Allocator allocator, StringId stringId, scoped ref GenIdResult result)
+        public static ref String GetString(ref Allocator allocator, StringId stringId, scoped ref bool isValidOutput)
         {
             ref SubAllocator sub = ref allocator.SubAllocators[stringId.StringLength];
             if (sub.IsInitialised == false)
             {
-                result = GenIdResult.NotAllocated;
+                isValidOutput = false;
                 return ref allocator.FallbackString;
             }
 
-            ref String str = ref SubAllocator.GetString(ref sub, stringId.GenId, ref result);
+            ref String str = ref SubAllocator.GetString(ref sub, stringId.GenId, ref isValidOutput);
 
-            if(result != GenIdResult.Ok)
+            if(isValidOutput == false)
             {
                 return ref allocator.FallbackString;
             }
@@ -516,19 +515,17 @@ public unsafe struct String
                 return true;
             }
 
-            public static GenIdResult Allocate(ref SubAllocator allocator, ref GenId genId)
+            public static bool Allocate(ref SubAllocator allocator, ref GenId genId)
             {
-                GenIdResult result = GenIdAllocator.Allocate(ref allocator.GenIdAllocator, ref genId);
-                if(result == GenIdResult.Ok)
-                {
+                if(GenIdAllocator.Allocate(ref allocator.GenIdAllocator, ref genId)){
                     int index = GenId.GetIndex(genId);
                     ComponentArray.GetDataUnsafe(allocator.Strings, index).Count = 0;
+                    return true;
                 }
-
-                return result; 
+                return false;
             }
 
-            public static GenIdResult Deallocate(ref SubAllocator allocator, GenId genId)
+            public static bool Deallocate(ref SubAllocator allocator, GenId genId)
             {
                 return GenIdAllocator.Deallocate(ref allocator.GenIdAllocator, genId);                
             }
@@ -537,14 +534,14 @@ public unsafe struct String
             ///    <para>Remarks:</para>
             ///    <para>Returns the <c>Nil</c> string in the case that the gen id is stale.</para>
             /// </remarks>
-            public static ref String GetString(ref SubAllocator allocator, GenId genId, ref GenIdResult result)
+            public static ref String GetString(ref SubAllocator allocator, GenId genId, ref bool isValidOutput)
             {
                 if(GenIdAllocator.IsGenIdStale(ref allocator.GenIdAllocator, genId))
                 {
-                    result = GenIdResult.StaleGenId;
+                    isValidOutput = false;
                     return ref allocator.Strings.Sparse[0]; // explicitly get the nil.
                 }
-                result = GenIdResult.Ok;
+                isValidOutput = true;
                 int index = GenId.GetIndex(genId);
                 return ref ComponentArray.GetDataUnsafe(allocator.Strings, index);
             }

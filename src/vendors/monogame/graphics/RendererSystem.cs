@@ -226,8 +226,6 @@ public static class RendererSystem
             effect: state.EffectManager.DefaultSpriteEffect
         );
 
-        GenIdResult result = default;
-
         // draw labels.
         int count = activeLabels.Count;
         for(int i = 1; i < count; i++)
@@ -241,8 +239,8 @@ public static class RendererSystem
             }
 
             ref Transform transform = ref transforms[index];
-            
-            ref String str = ref String.Allocator.GetString(ref strings, label.StringId, ref result);
+            bool isValidOutput = false;
+            ref String str = ref String.Allocator.GetString(ref strings, label.StringId, ref isValidOutput);
             DrawLabel(state, ref transform, ref label, str, cameraPosX, cameraPosY);            
         }
 

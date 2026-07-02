@@ -141,78 +141,72 @@ public struct Transform
         transform.Scale = scale;
     }
 
-    /// <summary>
-    ///     Rotates a transform.
-    /// </summary>
-    /// <param name="transform">the transform to rotate.</param>
-    /// <param name="radians">the amount in radians to rotate by.</param>
-    public static void Rotate(ref Transform transform, float radians)
-    {
-        transform.RotationRadians += radians;
-        transform.Sine = System.MathF.Sin(transform.RotationRadians);
-        transform.Cosine = System.MathF.Cos(transform.RotationRadians);
-    }
+/// <summary>
+///     Offsets a transform by another.
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static Transform TransformRelative(
+    Transform local, Transform world
+)
+{
+    return TransformRelative(local, world.Position.X, world.Position.Y, world.Scale.X, world.Scale.Y, world.Sine, world.Cosine, world.RotationRadians);
+}
 
-    /// <summary>
-    ///     Offsets a transform by another.
-    /// </summary>
-    /// <param name="local"></param>
-    /// <param name="world"></param>
-    /// <returns>the newly offseted transform.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Transform TransformRelative(Transform local, Transform world)
-    {
-        return TransformRelative(local, world.Position.X, world.Position.Y, world.Scale.X, world.Scale.Y, world.Sine, world.Cosine, world.RotationRadians);
-    }
+/// <summary>
+///     Offsets a transform by another.
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static Transform TransformRelative(
+    Transform local, float worldPosX, float worldPosY, float worldScaleX, 
+    float worldScaleY, float worldSine, float worldCosine, float worldRotationRadians
+)
+{
+    Transform transform = default;
+    
+    TransformRelative(local.Position.X, local.Position.Y, local.Scale.X, local.Scale.Y, local.Sine, local.Cosine, local.RotationRadians, 
+        worldPosX, worldPosY, worldScaleX, worldScaleY, worldSine, worldCosine, worldRotationRadians, ref transform.Position.X, 
+        ref transform.Position.Y, ref transform.Scale.X, ref transform.Scale.Y, ref transform.Sine, ref transform.Cosine, 
+        ref transform.RotationRadians 
+    );
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static Transform TransformRelative(Transform local, float worldPosX, float worldPosY, float worldScaleX, 
-        float worldScaleY, float worldSine, float worldCosine, float worldRotationRadians
-    )
-    {
-        Transform transform = default;
-        
-        TransformRelative(local.Position.X, local.Position.Y, local.Scale.X, local.Scale.Y, local.Sine, local.Cosine, local.RotationRadians, 
-            worldPosX, worldPosY, worldScaleX, worldScaleY, worldSine, worldCosine, worldRotationRadians, ref transform.Position.X, 
-            ref transform.Position.Y, ref transform.Scale.X, ref transform.Scale.Y, ref transform.Sine, ref transform.Cosine, 
-            ref transform.RotationRadians 
-        );
+    return transform;
+}
 
-        return transform;
-    }
+/// <summary>
+///     Offsets a transform by another.
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void TransformRelative(float localPosX, float localPosY, float localScaleX, float localScaleY, float localSine, float localCosine,
+    float localRotationRadians, float worldPosX, float worldPosY, float worldScaleX, float worldScaleY, float worldSine, float worldCosine, 
+    float worldRotationRadians, ref float posXOutput, ref float posYOutput, ref float scaleXOutput, ref float scaleYOutput, ref float sineOutput,
+    ref float cosineOutput, ref float rotationRadiansOutput 
+)
+{
+    // scale the local offset relative to the world.
+    float scaledX = localPosX * worldScaleX;
+    float scaledY = localPosY * worldScaleY;
+    
+    // rotate the local scaled offset around the parents origin.
+    //      Standard 2D rotation matrix formula:
+    //          x' = x * cos - y * sin
+    //          y' = x * sin + y * cos
+    float rotatedX = (scaledX * worldCosine) - (scaledY * worldSine);
+    float rotatedY = (scaledX * worldSine) + (scaledY * worldCosine);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void TransformRelative(float localPosX, float localPosY, float localScaleX, float localScaleY, float localSine, float localCosine,
-        float localRotationRadians, float worldPosX, float worldPosY, float worldScaleX, float worldScaleY, float worldSine, float worldCosine, 
-        float worldRotationRadians, ref float posXOutput, ref float posYOutput, ref float scaleXOutput, ref float scaleYOutput, ref float sineOutput,
-        ref float cosineOutput, ref float rotationRadiansOutput 
-    )
-    {
-        // scale the local offset relative to the world.
-        float scaledX = localPosX * worldScaleX;
-        float scaledY = localPosY * worldScaleY;
-        
-        // rotate the local scaled offset around the parents origin.
-        //      Standard 2D rotation matrix formula:
-        //          x' = x * cos - y * sin
-        //          y' = x * sin + y * cos
-        float rotatedX = (scaledX * worldCosine) - (scaledY * worldSine);
-        float rotatedY = (scaledX * worldSine) + (scaledY * worldCosine);
+    // translate the rotated offset to the world position.
+    posXOutput = rotatedX + worldPosX;
+    posYOutput = rotatedY + worldPosY;
 
-        // translate the rotated offset to the world position.
-        posXOutput = rotatedX + worldPosX;
-        posYOutput = rotatedY + worldPosY;
+    // combine the scale properties
+    scaleXOutput = localScaleX * worldScaleX;
+    scaleYOutput = localScaleY * worldScaleY;
 
-        // combine the scale properties
-        scaleXOutput = localScaleX * worldScaleX;
-        scaleYOutput = localScaleY * worldScaleY;
-
-        // combine the rotation properties.
-        //      Use the trigonometrix identity formulas for combining angles:
-        //          sin(a + b) = sin(a)cos(b) + cos(a)sin(b)
-        //          cos(a + b) = cos(a)cos(b) - sin(a)sin(b)
-        sineOutput = (localSine * worldCosine) + (localCosine * worldSine);
-        cosineOutput = (localCosine * worldCosine) + (localSine * worldSine);
-        rotationRadiansOutput = localRotationRadians + worldRotationRadians;
-    }
+    // combine the rotation properties.
+    //      Use the trigonometrix identity formulas for combining angles:
+    //          sin(a + b) = sin(a)cos(b) + cos(a)sin(b)
+    //          cos(a + b) = cos(a)cos(b) - sin(a)sin(b)
+    sineOutput = (localSine * worldCosine) + (localCosine * worldSine);
+    cosineOutput = (localCosine * worldCosine) + (localSine * worldSine);
+    rotationRadiansOutput = localRotationRadians + worldRotationRadians;
+}
 }

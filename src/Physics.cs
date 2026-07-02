@@ -1,16 +1,15 @@
 using System.Runtime.CompilerServices;
 using Howl.Text;
 using Howl.Text.Bvh;
-using Howl.Graphics;
-using Howl.Math;
-using Howl.Math.Shapes;
 using Howl.Unmanaged.Collections;
 using Howl.Unmanaged.Ecs;
+using N_Howl.N_Math;
+using N_Howl.N_Rendering;
+using N_Howl.N_Graphics;
 
 namespace Howl;
 
-public static class Physics
-{
+public static class Physics{
 
 
 
@@ -45,22 +44,22 @@ public static class Physics
 
 
 
-    public static Colour DynamicShapeColour = Colour.Green;
-    public static Colour PassiveTriggerShapeColour = Colour.LightBlue;
-    public static Colour KinematicShapeColour = Colour.Orange;
-    public static Colour ActiveTriggerShapeColour = Colour.Red;
-    public static Colour AabbColour = Colour.Pink;
-    public static Colour FallbackShapeColour = Colour.White;
-    public static Colour InactivePhysicsBodyColour = Colour.Black;
-    public static Colour BvhLeafAABBColour = Colour.Green;
-    public static Colour BvhBranchAABBColour = Colour.White;
-    public static Colour ContactPointColour = Colour.Red;
-    public static Colour LinearVelocityColour = Colour.White;
-    public static Colour PositionColour = Colour.White;
-    public static Colour CentroidColour = Colour.Yellow;
-    public static Colour CollisionOtherColour = Colour.Blue;
-    public static Colour CollisionNormalColour = Colour.Purple;
-    public static Colour CenterOfMassColour = Colour.Pink;
+    public static int DynamicShapeColour = 2;
+    public static int PassiveTriggerShapeColour = 6;
+    public static int KinematicShapeColour = 5;
+    public static int ActiveTriggerShapeColour = 1;
+    public static int AabbColour = 7;
+    public static int FallbackShapeColour = 8;
+    public static int InactivePhysicsBodyColour = 9;
+    public static int BvhLeafAABBColour = 2;
+    public static int BvhBranchAABBColour = 7;
+    public static int ContactPointColour = 1;
+    public static int LinearVelocityColour = 8;
+    public static int PositionColour = 8;
+    public static int CentroidColour = 4;
+    public static int CollisionOtherColour = 3;
+    public static int CollisionNormalColour = 3;
+    public static int CenterOfMassColour = 5;
 
 
 
@@ -504,7 +503,7 @@ public static class Physics
         ///    <para>Remarks:</para>
         ///    <para>Elements are accessed via <c>entityIndex</c>.</para>
         /// </remarks>
-        public Soa_Transform LocalTransforms;
+        public Soa_Transform2D LocalTransforms;
 
         /// <summary>
         ///     The global-space transforms for all entities.
@@ -513,7 +512,7 @@ public static class Physics
         ///    <para>Remarks:</para>
         ///    <para>Elements are accessed via <c>entityIndex</c>.</para>
         /// </remarks>
-        public Soa_Transform GlobalTransforms;
+        public Soa_Transform2D GlobalTransforms;
 
         /// <summary>
         ///     The positions of entities from the previous step.
@@ -890,17 +889,17 @@ public static class Physics
             int maxCollisions = maxEntities*maxEntities;
 
             {   // Entity Data.
-                FsSoa_Vector2.Initialise(ref state.BaseVertices, ref arena, verticesPerShape, maxEntities);
-                FsSoa_Vector2.Initialise(ref state.GlobalVertices, ref arena, verticesPerShape, maxEntities);
-                Soa_Transform.Initialise(ref state.LocalTransforms, ref arena, maxEntities);
-                Soa_Transform.Initialise(ref state.GlobalTransforms, ref arena, maxEntities);
-                Soa_Vector2.Initialise(ref state.PreviousStepPositions, ref arena, maxEntities);
-                Soa_Vector2.Initialise(ref state.Forces, ref arena, maxEntities);
-                Soa_Vector2.Initialise(ref state.LinearVelocities, ref arena, maxEntities);
-                Soa_Vector2.Initialise(ref state.Centroids, ref arena, maxEntities);
-                Soa_Vector2.Initialise(ref state.ShapeCollisionDisplacements, ref arena, maxEntities);
-                Soa_Vector2.Initialise(ref state.LocalCentersOfMass, ref arena, maxEntities);
-                Soa_Aabb.Initialise(ref state.Aabbs, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.BaseVertices, ref arena, verticesPerShape, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.GlobalVertices, ref arena, verticesPerShape, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.LocalTransforms, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.GlobalTransforms, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.PreviousStepPositions, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.Forces, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.LinearVelocities, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.Centroids, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.ShapeCollisionDisplacements, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.LocalCentersOfMass, ref arena, maxEntities);
+                N_Howl.N_Math.Math.Init(ref state.Aabbs, ref arena, maxEntities);
                 Soa_Material.Initialise(ref state.Materials, ref arena, maxEntities);
                 Array.Initialise(ref state.AngularVelocities, ref arena, maxEntities);
                 Array.Initialise(ref state.Masses, ref arena, maxEntities);
@@ -933,7 +932,7 @@ public static class Physics
                 IntrusiveList.Initialise(ref state.BodyHierarchy, ref arena, maxEntities);
             }
 
-            state.GravityDirection = Vector2.Down;
+            state.GravityDirection = new(){Y = -1};
             state.Gravity = 9.81f;
 
             state.IsInitialised = true;
@@ -972,14 +971,15 @@ public static class Physics
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetActive(ref State state, GenId entityId, bool isActive)
+    public static bool SetActive(ref State state, GenId entityId, bool isActive)
     {
         if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
         {
-            return GenIdResult.StaleGenId;
+            Debug.Assert(false, "Attempted to set an invalid body active.");
+            return false;
         }
         SetActiveUnsafe(ref state, entityId, isActive);
-        return GenIdResult.Ok;
+        return true;
     }
 
     /// <remarks>
@@ -1001,14 +1001,10 @@ public static class Physics
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsActive(ref State state, GenId entityId, ref GenIdResult resultOutput)
-    {
-        if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
-        {
-            resultOutput = GenIdResult.StaleGenId;
+    public static bool IsActive(ref State state, GenId entityId){
+        if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId)){
             return false;
         }
-        resultOutput = GenIdResult.Ok;
         return IsActiveUnsafe(ref state, entityId);
     }
 
@@ -1031,23 +1027,23 @@ public static class Physics
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static GenIdResult SetLocalTransform(ref State state, GenId genId, Transform transform)
+    public static bool SetLocalTransform(ref State state, GenId genId, Transform2D transform)
     {
         if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, genId))
         {
-            return GenIdResult.StaleGenId;
+            Debug.Assert(false, "Attempted to set the local Transform2D of an invalid gen id");
+            return false;
         }
 
         SetLocalTransformUnsafe(ref state, genId, transform);
-
-        return GenIdResult.Ok;
+        return true;
     }
 
     /// <remarks>
     ///    <c>StaleGenId</c> check is not enforced; the retrieved data at the given gen id slot will always mutated. 
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetLocalTransformUnsafe(ref State state, GenId entityId, Transform newTransform)
+    public static void SetLocalTransformUnsafe(ref State state, GenId entityId, Transform2D newTransform)
     {
         SetLocalTransformUnsafe(ref state, GenId.GetIndex(entityId), newTransform);    
     }
@@ -1056,7 +1052,7 @@ public static class Physics
     ///    <c>StaleGenId</c> check is not enforced; the retrieved data at the given gen id slot will always mutated. 
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static void SetLocalTransformUnsafe(ref State state, int entityIndex, Transform newTransform)
+    public static void SetLocalTransformUnsafe(ref State state, int entityIndex, Transform2D newTransform)
     {
         state.LocalTransforms.Positions.X[entityIndex] = newTransform.Position.X;
         state.LocalTransforms.Positions.Y[entityIndex] = newTransform.Position.Y;
@@ -1069,7 +1065,7 @@ public static class Physics
     /// <remarks>
     ///    <c>StaleGenId</c> check is not enforced; the retrieved data at the given gen id slot will always mutated. 
     /// </remarks>
-    public static void SetGlobalTransformUnsafe(ref State state, int entityIndex, Transform newTransform)
+    public static void SetGlobalTransformUnsafe(ref State state, int entityIndex, Transform2D newTransform)
     {
         state.GlobalTransforms.Positions.X[entityIndex] = newTransform.Position.X;
         state.GlobalTransforms.Positions.Y[entityIndex] = newTransform.Position.Y;
@@ -1079,11 +1075,11 @@ public static class Physics
         state.GlobalTransforms.Sines[entityIndex] = newTransform.Sine;                
     }
 
-    public static Vector2 GetLinearVelocity(ref State state, GenId entityId, ref GenIdResult resultOutput)
+    public static Vector2 GetLinearVelocity(ref State state, GenId entityId)
     {
         if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
         {
-            resultOutput = GenIdResult.StaleGenId;
+            Debug.Assert(false, "Attempted to get the linear velocity of an invalid body.");
             return default;
         }
 
@@ -1091,7 +1087,7 @@ public static class Physics
                 
         if(IsActiveUnsafe(ref state, index) == false)
         {
-            resultOutput = GenIdResult.NotActive;
+            Debug.Assert(false, "Attempted to get the linear velocity of an inactive body.");
             return default;
         }
 
@@ -1112,7 +1108,10 @@ public static class Physics
     public static Vector2 GetLinearVelocityUnsafe(ref State state, int entityIndex)
     {
         Soa_Vector2 linearVelocities = state.LinearVelocities;
-        return new(linearVelocities.X[entityIndex], linearVelocities.Y[entityIndex]);
+        return new(){
+            X = linearVelocities.X[entityIndex],
+            Y = linearVelocities.Y[entityIndex]
+        };
     }
 
     public static void Translate(ref State state, float xDisplacement, float yDisplacement, int entityIndex)
@@ -1160,7 +1159,7 @@ public static class Physics
 
 
 
-    public static void FixedUpdate(HowlAppState app, ref State state, float deltaTime, int subSteps)
+    public static void FixedUpdate(ref State state, float deltaTime, int subSteps)
     {
         long startStepTime = Time.GetSystemTick();
 
@@ -1190,8 +1189,8 @@ public static class Physics
         ref Array<float> baseRadii = ref state.BaseRadii;
         ref Array<float> baseWidths = ref state.BaseWidths;
         ref Array<float> baseHeights = ref state.BaseHeights;
-        ref Soa_Transform localTransforms = ref state.LocalTransforms;
-        ref Soa_Transform globalTransforms = ref state.GlobalTransforms;
+        ref Soa_Transform2D localTransforms = ref state.LocalTransforms;
+        ref Soa_Transform2D globalTransforms = ref state.GlobalTransforms;
         ref Array<float> globalPositionsX = ref globalTransforms.Positions.X;
         ref Array<float> globalPositionsY = ref globalTransforms.Positions.Y;  
         ref Array<float> globalScalesX = ref globalTransforms.Scales.X;
@@ -1432,7 +1431,7 @@ public static class Physics
             long endMovementStepTime = Time.GetSystemTick();
             state.BodyMovementStepInMs = Time.ElapsedMilliseconds(startMovementStepTime, endMovementStepTime);
 
-            // transform physics bodies
+            // Transform2D physics bodies
             long startTransformVertsTime = Time.GetSystemTick();
             TransformAllShapesVertices(activeBodies, nodes, ref globalVertices, localVertices, shapes, ref globalScalesX, ref globalScalesY, 
                 ref globalPositionsX, ref globalPositionsY, ref globalSines, ref globalCosines, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, 
@@ -1567,9 +1566,9 @@ public static class Physics
 
         Collisions.Manifold.CompleteStep(ref state.CollisionManifold);
 
-        // Transform bodies by collision resolution.
+        // Transform2D bodies by collision resolution.
         // NOTE: this is needed at the end as the final
-        // sub-step iteration does not transform the bodies
+        // sub-step iteration does not Transform2D the bodies
         // at the end of it's loop; meaning the final collision
         // resolution wouldn't be applied.
         TransformAllShapesVertices(activeBodies, nodes, ref globalVertices, localVertices, shapes, ref globalScalesX, ref globalScalesY, 
@@ -1588,7 +1587,7 @@ public static class Physics
     ///     Remarks: All provided System.Spans must be indexed by a integer <c>physicsBodyIndex</c>:
     /// </remarks>
     public static void BodyMovementStep(SwapBackArray<int> activeBodies, ref Array<IntrusiveList.Node> nodes, 
-        Soa_Transform localTransforms, ref Soa_Transform globalTransforms, ref Array<float> linearVelocitiesX, 
+        Soa_Transform2D localTransforms, ref Soa_Transform2D globalTransforms, ref Array<float> linearVelocitiesX, 
         ref Array<float> linearVelocitiesY, Array<float> forcesX, Array<float> forcesY, Array<float> masses, 
         Array<float> angularVelocities, ref Array<float> collisionDisplacementsX, ref Array<float> collisionDisplacementsY, 
         Array<float> localCentersOfMassX, Array<float> localCentersOfMassY, ref Array<float> rotationRadians, Array<int> categories, 
@@ -1688,7 +1687,7 @@ public static class Physics
                 
                 while (true)
                 {
-                    Soa_Transform.TransformRelative(localTransforms, globalTransforms, shapeIndex, shapeIndex,
+                    N_Howl.N_Math.Math.TransformRelative(localTransforms, globalTransforms, shapeIndex, shapeIndex,
                         bodyPosX, bodyPosY, bodyScaleX, bodyScaleY, bodySine, bodyCosine, bodyRotationRadians
                     );
 
@@ -1716,7 +1715,7 @@ public static class Physics
         Array<float> localRadii, ref Array<float> globalRadii
     )
     {
-        FsSoa_Vector2.ClearAppendCounts(ref globalVertices);
+        N_Howl.N_Math.Math.ClearAppendCounts(ref globalVertices);
         int length = activeBodies.Count;
 
         for(int i = 1; i < length; i++) // start at one to avoid Nil.
@@ -1775,7 +1774,7 @@ public static class Physics
         for(int vertex = 0; vertex < vertexCount; vertex++){
             int currentIndex = vertex + startIndex;
 
-            // transform the base/un-transformed vertice.
+            // Transform2D the base/un-transformed vertice.
             Math.Math.TransformVector(localVertices.X[currentIndex], localVertices.Y[currentIndex], scaleX, scaleY,
                 globalCosines[shapeIndex], globalSines[shapeIndex], globalPositionsX[shapeIndex], globalPositionsY[shapeIndex], 
                 out float x, out float y
@@ -1784,12 +1783,12 @@ public static class Physics
             // store the newly transformed vertex into the global vertices array.
             // (TODO): this will need to be changed so that you can append directly to an entry element index
             // if you already know the element index. Create a new unsafe function for it.
-            FsSoa_Vector2.Append(ref globalVertices, shapeIndex, x, y);
+            N_Howl.N_Math.Math.Append(ref globalVertices, shapeIndex, x, y);
         }
 
         // set the new centroid.
         Shape.GetVerticesUnsafe(globalVertices, shapeIndex, ref vertsX, ref vertsY);
-        ShapeUtils.CalculateCentroid(vertsX, vertsY, ref centroidsX[shapeIndex], ref centroidsY[shapeIndex]);
+        N_Howl.N_Math.Math.CalculateCentroid(vertsX, vertsY, ref centroidsX[shapeIndex], ref centroidsY[shapeIndex]);
 
         switch (shapeType)
         {
@@ -1801,9 +1800,9 @@ public static class Physics
             break;
 
             case Shape.Rigid.ShapeType.Circle:
-                globalRadii[shapeIndex] = Circle.ScaleRadius(localRadii[shapeIndex], scaleX, scaleY);
+                globalRadii[shapeIndex] = N_Howl.N_Math.Math.ScaleRadius(localRadii[shapeIndex], scaleX, scaleY);
                 // set the new min and max vectors. 
-                Circle.GetMinMaxVectors(vertsX[0], vertsY[0], globalRadii[shapeIndex], 
+                N_Howl.N_Math.Math.GetMinMaxVertices(vertsX[0], vertsY[0], globalRadii[shapeIndex], 
                     out minAabbsX[shapeIndex], out minAabbsY[shapeIndex], out maxAabbsX[shapeIndex], out maxAabbsY[shapeIndex]
                 );
             break;
@@ -2598,19 +2597,16 @@ public static class Physics
 
     public static class Body
     {
-        public static GenIdResult Allocate(ref State state, Transform globalTransform, bool gravityAffected, ref GenId entityId)
+        public static bool Allocate(ref State state, Transform2D globalTransform, bool gravityAffected, ref GenId entityId)
         {
-            GenIdResult result = GenIdAllocator.Allocate(ref state.GenIdAllocator, ref entityId);
-
-            if(result != GenIdResult.Ok)
-            {
-                return result;
+            if(GenIdAllocator.Allocate(ref state.GenIdAllocator, ref entityId) == false){
+                return false;
             }
 
             int bodyIndex = GenId.GetIndex(entityId);
             SetActiveUnsafe(ref state, bodyIndex, true);
 
-            Soa_Transform.CopyTransformToSoa(state.GlobalTransforms, ref globalTransform, bodyIndex);
+            N_Howl.N_Math.Math.CopyToSoa(ref state.GlobalTransforms, globalTransform, bodyIndex);
             
             // clear any garbage data from the previously allocated body.
             state.ShapeCollisionDisplacements.X[bodyIndex] = 0;
@@ -2621,27 +2617,29 @@ public static class Physics
             state.GravityAffected[bodyIndex] = gravityAffected;
             ClearForcesAndVelocities(ref state, bodyIndex);
 
-            bool inserted = IntrusiveList.AddToTree(ref state.BodyHierarchy, bodyIndex);
-            System.Diagnostics.Debug.Assert(inserted, "failed to insert into transform hierarchy.");
-            return result;
+            if(IntrusiveList.AddToTree(ref state.BodyHierarchy, bodyIndex)==false){
+                Debug.Assert(false, "failed to insert into Transform2D hierarchy.");
+                GenIdAllocator.Deallocate(ref state.GenIdAllocator, entityId);
+                SetActiveUnsafe(ref state, bodyIndex, false);
+                return false;
+            }
+            return true;
         }
 
-        public static GenIdResult Deallocate(ref State state, GenId genId)
+        public static bool Deallocate(ref State state, GenId genId)
         {
-            if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, genId))
-            {
-                return GenIdResult.StaleGenId;
+            if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, genId)){
+                return false;
             }
             
             int entityIndex = GenId.GetIndex(genId);
-            if (state.EntityTypes[entityIndex] != EntityType.Body)
-            {
-                return GenIdResult.NotAllocated;
+            if (state.EntityTypes[entityIndex] != EntityType.Body){
+                Debug.Assert(false, "Attempted to deallocate a entity that isnt a physics body.");
+                return false;
             }
 
             DeallocateUnsafe(ref state, entityIndex);
-
-            return GenIdResult.Ok;
+            return true;
         }
 
         /// <remarks>
@@ -2678,66 +2676,68 @@ public static class Physics
             SetActiveUnsafe(ref state, entityIndex, false);            
         }
 
-        public static GenIdResult SetActive(ref State state, GenId entityId, bool isActive)
+        public static bool SetActive(ref State state, GenId entityId, bool isActive)
         {
-            if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body)
-            {
-                return GenIdResult.NotAllocated;
+            if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body){
+                Debug.Assert(false, "Attempted a body operation on a non-physics body.");
+                return false;
             }
 
             return SetActive(ref state, entityId, isActive);
         }
 
-        public static bool IsActive(ref State state, GenId entityId, ref GenIdResult resultOutput)
+        public static bool IsActive(ref State state, GenId entityId)
         {
-            if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body)
-            {
-                resultOutput = GenIdResult.NotAllocated;
+            if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body){
+                Debug.Assert(false, "Attempted a body operation on a non-physics body.");
                 return false;
             }
 
-            return IsActive(ref state, entityId, ref resultOutput);
+            return Physics.IsActive(ref state, entityId);
         }
 
-        public static GenIdResult SetLocalTransform(ref State state, GenId entityId, Transform newTransform)
+        public static bool SetLocalTransform(ref State state, GenId entityId, Transform2D newTransform)
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body)
             {
-                return GenIdResult.NotAllocated;
+                Debug.Assert(false, "Attempted a body operation on a non-physics body.");
+                return false;
             }
 
-            return SetLocalTransform(ref state, entityId, newTransform);
+            return Physics.SetLocalTransform(ref state, entityId, newTransform);
         }
 
-        public static Vector2 GetLinearVelocity(ref State state, GenId entityId, ref GenIdResult resultOutput)
+        public static Vector2 GetLinearVelocity(ref State state, GenId entityId)
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body)
             {
-                resultOutput = GenIdResult.NotAllocated;
+                Debug.Assert(false, "Attempted a body operation on a non-physics body.");
                 return default;
             }
 
-            return GetLinearVelocity(ref state, entityId, ref resultOutput);
+            return Physics.GetLinearVelocity(ref state, entityId);
         }
 
-        public static GenIdResult ImpulseForce(ref State state, Vector2 force, GenId entityId)
+        public static bool ImpulseForce(ref State state, Vector2 force, GenId entityId)
         {
             if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
             {
-                return GenIdResult.StaleGenId;
+                Debug.Assert(false, "invalid gen id");
+                return false;
             }
 
             int index = GenId.GetIndex(entityId);
             
             if(IsActiveUnsafe(ref state, index) == false)
             {
-                return GenIdResult.NotActive;
+                Debug.Assert(false, "body isnt active.");
+                return false;
             }
 
             state.LinearVelocities.X[index] += force.X;
             state.LinearVelocities.Y[index] += force.Y;
 
-            return GenIdResult.Ok;
+            return false;
         }
 
         public static void ClearForcesAndVelocities(ref State state, int entityIndex)
@@ -3147,33 +3147,35 @@ public static class Physics
 
 
 
-        public static GenIdResult SetActive(ref State state, GenId entityId, bool isActive)
+        public static bool SetActive(ref State state, GenId entityId, bool isActive)
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Shape)
             {
-                return GenIdResult.NotAllocated;
+                Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
+                return false;
             }
-            return SetActive(ref state, entityId, isActive);
+            return Physics.SetActive(ref state, entityId, isActive);
         }
 
-        public static bool IsActive(ref State state, GenId entityId, ref GenIdResult resultOutput)
+        public static bool IsActive(ref State state, GenId entityId)
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Shape)
             {
-                resultOutput = GenIdResult.NotAllocated;
+                Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
                 return false;
             }
 
-            return IsActive(ref state, entityId, ref resultOutput);
+            return Physics.IsActive(ref state, entityId);
         }
 
-        public static GenIdResult SetLocalTransform(ref State state, GenId entityId, Transform newTransform)
+        public static bool SetLocalTransform(ref State state, GenId entityId, Transform2D newTransform)
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Shape)
             {
-                return GenIdResult.NotAllocated;
+                Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
+                return false;
             }
-            return SetLocalTransform(ref state, entityId, newTransform);
+            return Physics.SetLocalTransform(ref state, entityId, newTransform);
         }
 
         /// <summary>
@@ -3181,17 +3183,15 @@ public static class Physics
         /// </summary>
         /// <param name="state">the state that contacinsthe physics body.</param>
         /// <param name="physicsBodyId">the id of the physics body.</param>
-        /// <param name="result">output for the genid result.</param>
         /// <returns>true, if the physics body has collided with another; otherwise false.</returns>
-        public static bool HasCollisions(ref State state, GenId physicsBodyId, ref GenIdResult result)
+        public static bool HasCollisions(ref State state, GenId physicsBodyId)
         {
             if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, physicsBodyId))
             {
-                result = GenIdResult.StaleGenId;
+                Debug.Assert(false, "inavalid gen id.");
                 return false;
             }
 
-            result = GenIdResult.Ok;
             return Collisions.Manifold.HasContacts(state.CollisionManifold, GenId.GetIndex(physicsBodyId));
         }
 
@@ -3287,11 +3287,11 @@ public static class Physics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static ref float GetStaticFriction(ref State state, GenId entityId, ref GenIdResult resultOutput)
+            public static ref float GetStaticFriction(ref State state, GenId entityId, ref bool isValidOutput)
             {
-                if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
-                {
-                    resultOutput = GenIdResult.StaleGenId;
+                if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId)){
+                    Debug.Assert(false, "invalid gen id.");
+                    isValidOutput = false;
                     
                     // return a ref to the nil.
                     return ref state.Materials.StaticFriction[0];
@@ -3300,13 +3300,14 @@ public static class Physics
                 if(IsRigidBodyUnsafe(ref state, entityId) != true)
                 {
                     // return not allocated as only a rigidbody is meant to have this property. 
-                    resultOutput = GenIdResult.NotAllocated;
+                    Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
+                    isValidOutput = false;
 
                     // return a ref to the nil.
                     return ref state.Materials.StaticFriction[0];            
                 }
 
-                resultOutput = GenIdResult.Ok;
+                isValidOutput = true;
                 return ref GetStaticFrictionUnsafe(ref state, entityId);
             }
 
@@ -3332,11 +3333,12 @@ public static class Physics
             ///     Gets a reference to the kinetic friction value of a body.
             /// </summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static ref float GetKineticFriction(ref State state, GenId entityId, ref GenIdResult resultOutput)
+            public static ref float GetKineticFriction(ref State state, GenId entityId, ref bool isValidOutput)
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    resultOutput = GenIdResult.StaleGenId;
+                    Debug.Assert(false, "invalid gen id.");
+                    isValidOutput = false;
 
                     // return a ref to the nil.
                     return ref state.Materials.KineticFriction[0];
@@ -3345,13 +3347,14 @@ public static class Physics
                 if(IsRigidBodyUnsafe(ref state, entityId) != true)
                 {
                     // return not allocated as only a rigidbody is meant to have this property. 
-                    resultOutput = GenIdResult.NotAllocated;
+                    Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
+                    isValidOutput = false;
 
                     // return a ref to the nil.
                     return ref state.Materials.KineticFriction[0];            
                 }
                 
-                resultOutput = GenIdResult.Ok;
+                isValidOutput = true;
                 return ref GetKineticFrictionUnsafe(ref state, entityId);
             }
 
@@ -3374,11 +3377,11 @@ public static class Physics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static ref float GetDensity(ref State state, GenId entityId, ref GenIdResult resultOutput)
+            public static ref float GetDensity(ref State state, GenId entityId, ref bool isValidOutput)
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    resultOutput = GenIdResult.StaleGenId;
+                    Debug.Assert(false, "invalid gen id.");
 
                     // return a ref to the nil.
                     return ref state.Materials.Density[0];
@@ -3387,13 +3390,14 @@ public static class Physics
                 if(IsRigidBodyUnsafe(ref state, entityId) != true)
                 {
                     // return not allocated as only a rigidbody is meant to have this property. 
-                    resultOutput = GenIdResult.NotAllocated;
+                    Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
+                    isValidOutput = false;
 
                     // return a ref to the nil.
                     return ref state.Materials.Density[0];            
                 }
 
-                resultOutput = GenIdResult.Ok;
+                isValidOutput = true;
                 return ref GetDensityUnsafe(ref state, entityId);
             }
 
@@ -3416,11 +3420,12 @@ public static class Physics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static ref float GetRestitution(ref State state, GenId entityId, ref GenIdResult resultOutput)
+            public static ref float GetRestitution(ref State state, GenId entityId, ref bool isValidOutput)
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
-                {
-                    resultOutput = GenIdResult.StaleGenId;
+                {                    
+                    Debug.Assert(false, "invalid gen id.");
+                    isValidOutput = false;
 
                     // return a ref to the nil.
                     return ref state.Materials.Restitution[0];
@@ -3429,13 +3434,14 @@ public static class Physics
                 if(IsRigidBodyUnsafe(ref state, entityId) != true)
                 {
                     // return not allocated as only a rigidbody is meant to have this property. 
-                    resultOutput = GenIdResult.NotAllocated;
+                    Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
+                    isValidOutput = false;
 
                     // return a ref to the nil.
                     return ref state.Materials.Restitution[0];            
                 }
 
-                resultOutput = GenIdResult.Ok;
+                isValidOutput = true;
                 return ref GetRestitutionUnsafe(ref state, entityId);
             }
 
@@ -3458,15 +3464,16 @@ public static class Physics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static GenIdResult SetRotationalResponse(ref State state, GenId entityId, bool enabled)
+            public static bool SetRotationalResponse(ref State state, GenId entityId, bool enabled)
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    return GenIdResult.StaleGenId;
+                    Debug.Assert(false, "invalid gen id.");
+                    return false;
                 }
 
                 SetRotationalResponseUnsafe(ref state, entityId, enabled);
-                return GenIdResult.Ok;
+                return true;
             }
 
             /// <remarks>
@@ -3488,15 +3495,14 @@ public static class Physics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static bool UsesRotationalResponse(ref State state, GenId entityId, ref GenIdResult resultOutput)
+            public static bool UsesRotationalResponse(ref State state, GenId entityId)
             {
                 if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    resultOutput = GenIdResult.StaleGenId;
+                    Debug.Assert(false, "invalid gen id");
                     return false;
                 }
 
-                resultOutput = GenIdResult.Ok;
                 return UsesRotationalResponseUnsafe(ref state, entityId);
             }
 
@@ -3519,15 +3525,16 @@ public static class Physics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static GenIdResult SetRigidBody(ref State state, GenId entityId, bool enabled)
+            public static bool SetRigidBody(ref State state, GenId entityId, bool enabled)
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    return GenIdResult.StaleGenId;
+                    Debug.Assert(false, "invalid gen id");
+                    return false;
                 }
 
                 SetRigidBodyUnsafe(ref state, GenId.GetIndex(entityId), enabled);
-                return GenIdResult.Ok;
+                return true;
             }
 
             /// <remarks>
@@ -3548,15 +3555,14 @@ public static class Physics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static bool IsRigidBody(ref State state, GenId entityId, ref GenIdResult resultOutput)
+            public static bool IsRigidBody(ref State state, GenId entityId)
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    resultOutput = GenIdResult.StaleGenId;
+                    Debug.Assert(false, "invalid gen id");
                     return false;
                 }
                 
-                resultOutput = GenIdResult.Ok;
                 return IsRigidBodyUnsafe(ref state, entityId);
             }
 
@@ -3639,7 +3645,7 @@ public static class Physics
             state.EntityTypes[shapeIndex] = EntityType.Shape;
 
             // clear any garbage data from previous allocations.
-            FsSoa_Vector2.ClearEntryAppendCount(ref state.BaseVertices, shapeIndex);
+            N_Howl.N_Math.Math.ClearEntryAppendCount(ref state.BaseVertices, shapeIndex);
 
             // set this so that the previous position isnt garbage from previous steps.
             state.PreviousStepPositions.X[bodyIndex] = state.GlobalTransforms.Positions.X[bodyIndex];
@@ -3653,19 +3659,19 @@ public static class Physics
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static void FinaliseCollisionShapeAllocation(ref State state, System.Span<float> shapeBaseVertsX,
-            System.Span<float> shapeBaseVertsY, Transform transform, int shapeIndex, int bodyIndex, bool IsRigid)
+            System.Span<float> shapeBaseVertsY, Transform2D transform, int shapeIndex, int bodyIndex, bool IsRigid)
         {        
             // note:
             // order matters here (from top to bottom):
-            // - set transform data
+            // - set Transform2D data
             // - set vertce data
-            // - transform vertice data (getting centroid as well).
+            // - Transform2D vertice data (getting centroid as well).
             // - add shape to tree.
             // - integrate the now intialised shape into the body (if it is a rigid shape.)
 
-            Soa_Transform globalTransforms = state.GlobalTransforms;
+            Soa_Transform2D globalTransforms = state.GlobalTransforms;
             
-            Transform globalTransform = Transform.TransformRelative(transform, globalTransforms.Positions.X[bodyIndex], 
+            Transform2D globalTransform = N_Howl.N_Math.Math.TransformRelative(transform, globalTransforms.Positions.X[bodyIndex], 
                 globalTransforms.Positions.Y[bodyIndex], globalTransforms.Scales.X[bodyIndex], globalTransforms.Scales.Y[bodyIndex], 
                 globalTransforms.Sines[bodyIndex], globalTransforms.Cosines[bodyIndex], globalTransforms.RotationRadians[bodyIndex]
             );            
@@ -3675,7 +3681,7 @@ public static class Physics
 
             for(int i = 0; i < shapeBaseVertsX.Length; i++)
             {
-                FsSoa_Vector2.Append(ref state.BaseVertices, shapeIndex, shapeBaseVertsX[i], shapeBaseVertsY[i]);
+                N_Howl.N_Math.Math.Append(ref state.BaseVertices, shapeIndex, shapeBaseVertsX[i], shapeBaseVertsY[i]);
             }
 
             TransformShapeVertices(ref state.GlobalVertices, state.BaseVertices, ref globalTransforms.Positions.X, 
@@ -3710,20 +3716,18 @@ public static class Physics
             public static class Collider
             {                
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-                public static GenIdResult Allocate(ref State state, Math.Shapes.Circle shape, Transform transform, 
+                public static bool Allocate(ref State state, Math.Shapes.Circle shape, Transform2D transform, 
                     Shape.Behaviour colliderBehaviour, GenId bodyId, ref GenId colliderId
                 )
                 {
-                    GenIdResult result = GenIdAllocator.Allocate(ref state.GenIdAllocator, ref colliderId); 
-                    if(result != GenIdResult.Ok)
-                    {
-                        return result;
-                    }
+                    if(GenIdAllocator.Allocate(ref state.GenIdAllocator, ref colliderId) == false){
+                        return false;
+                    } 
                     
                     if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, bodyId))
                     {
                         Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
-                        return GenIdResult.StaleGenId;
+                        return false;
                     }
 
                     int shapeIndex = GenId.GetIndex(colliderId);
@@ -3743,7 +3747,7 @@ public static class Physics
                         false
                     );
                 
-                    return GenIdResult.Ok;
+                    return true;
                 }
             }
             
@@ -3753,21 +3757,19 @@ public static class Physics
                 public static readonly System.Numerics.Vector<float> VectorRotationalInertia = new(RotationalInertia);
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-                public static GenIdResult Allocate(ref State state, Math.Shapes.Circle shape, Transform transform, 
+                public static bool Allocate(ref State state, Math.Shapes.Circle shape, Transform2D transform, 
                     Material material, Shape.Behaviour colliderBehaviour, bool rotationalResponse, GenId bodyId, ref GenId genId
                 )
                 {
 
-                    GenIdResult result = GenIdAllocator.Allocate(ref state.GenIdAllocator, ref genId);
-                    if(result != GenIdResult.Ok)
-                    {
-                        return result;
+                    if(GenIdAllocator.Allocate(ref state.GenIdAllocator, ref genId) == false){
+                        return false;
                     }
 
                     if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, bodyId))
                     {
                         Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
-                        return GenIdResult.StaleGenId;
+                        return false;
                     }
 
                     int shapeIndex = GenId.GetIndex(genId);
@@ -3790,7 +3792,7 @@ public static class Physics
                         true
                     );
 
-                    return GenIdResult.Ok;
+                    return true;
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -3856,24 +3858,20 @@ public static class Physics
             public static class Collider
             {                
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-                public static GenIdResult Allocate(ref State state, Math.Shapes.Rectangle shape, Transform transform, 
+                public static bool Allocate(ref State state, N_Howl.N_Math.Rectangle shape, Transform2D transform, 
                     Shape.Behaviour colliderBehaviour, GenId bodyId, ref GenId genId
                 )
                 {
-
-                    GenIdResult result = GenIdAllocator.Allocate(ref state.GenIdAllocator, ref genId);
-                    if(result != GenIdResult.Ok)
-                    {
-                        return result;
+                    if(GenIdAllocator.Allocate(ref state.GenIdAllocator, ref genId) == false){
+                        return false;
                     }
 
-                    PolygonRectangle polyRect = default;
-                    PolygonRectangle.Initialise(ref polyRect, shape);
+                    PolygonRectangle polyRect = N_Howl.N_Math.Math.CreatePolygonRectangle(shape);
 
                     if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, bodyId))
                     {
                         Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
-                        return GenIdResult.StaleGenId;
+                        return false;
                     }
 
                     int shapeIndex = GenId.GetIndex(genId);
@@ -3892,11 +3890,12 @@ public static class Physics
                         state.InverseMasses[shapeIndex] = 0;
                     }
 
-                    FinaliseCollisionShapeAllocation(ref state, PolygonRectangle.GetVerticesXAsSpan(polyRect), PolygonRectangle.GetVerticesYAsSpan(polyRect), 
+                    FinaliseCollisionShapeAllocation(
+                        ref state, N_Howl.N_Math.Math.GetVerticesXAsSpan(polyRect), N_Howl.N_Math.Math.GetVerticesYAsSpan(polyRect), 
                         transform, shapeIndex, bodyIndex, false
                     );
 
-                    return GenIdResult.Ok;
+                    return true;
                 }
             }
 
@@ -3906,23 +3905,20 @@ public static class Physics
                 public static readonly System.Numerics.Vector<float> VectorRotationalInertia = new(RotationalInertia);
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-                public static GenIdResult Allocate(ref State state, Math.Shapes.Rectangle shape, Transform transform,
+                public static bool Allocate(ref State state, N_Howl.N_Math.Rectangle shape, Transform2D transform,
                     Material material, Shape.Behaviour colliderBehaviour, bool rotationalResponse, GenId bodyId, ref GenId genId
                 )
                 {
-                    GenIdResult result = GenIdAllocator.Allocate(ref state.GenIdAllocator, ref genId);
-                    if(result != GenIdResult.Ok)
-                    {
-                        return result;
-                    }
+                    if(GenIdAllocator.Allocate(ref state.GenIdAllocator, ref genId) == false){
+                        return false;
+                    }   
 
-                    PolygonRectangle polyRect = default;
-                    PolygonRectangle.Initialise(ref polyRect, shape);
+                    PolygonRectangle polyRect = N_Howl.N_Math.Math.CreatePolygonRectangle(shape);
                     
                     if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, bodyId))
                     {
                         Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
-                        return GenIdResult.StaleGenId;
+                        return false;
                     }
 
                     int shapeIndex = GenId.GetIndex(genId);
@@ -3941,11 +3937,12 @@ public static class Physics
                         IntegrateProperties(ref state, transform.Scale.X, transform.Scale.Y, shape.Height, shape.Width, shapeIndex);
                     }
 
-                    FinaliseCollisionShapeAllocation(ref state, PolygonRectangle.GetVerticesXAsSpan(polyRect), PolygonRectangle.GetVerticesYAsSpan(polyRect), 
+                    FinaliseCollisionShapeAllocation(
+                        ref state, N_Howl.N_Math.Math.GetVerticesXAsSpan(polyRect), N_Howl.N_Math.Math.GetVerticesYAsSpan(polyRect), 
                         transform, shapeIndex, bodyIndex, true
                     );
 
-                    return GenIdResult.Ok;
+                    return true;
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -4006,24 +4003,25 @@ public static class Physics
             yOutput = Array.AsSpan(vertices.Y, startIndex, appendCount);
         }
 
-        public static GenIdResult Deallocate(ref State state, GenId genId, bool recalculateBodyCenterOfMass)
+        public static bool Deallocate(ref State state, GenId genId, bool recalculateBodyCenterOfMass)
         {
             if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, genId))
             {
-                return GenIdResult.StaleGenId;
+                Debug.Assert(false, "invalid gen id");
+                return false;
             }
 
             int entityIndex = GenId.GetIndex(genId);
 
             if(state.EntityTypes[entityIndex] != EntityType.Shape)
             {
-                System.Diagnostics.Debug.Assert(false);
-                return GenIdResult.NotAllocated;                
+                Debug.Assert(false, "not allocated.");
+                return false;
             }
 
             DeallocateUnsafe(ref state, entityIndex, recalculateBodyCenterOfMass);
 
-            return GenIdResult.Ok;
+            return true;
         }
 
         /// <remarks>
@@ -4058,69 +4056,70 @@ public static class Physics
 
 
 
-    public static void Draw(HowlAppState howl, State state, float deltaTime)
-    {
+    public static void Draw(
+        State state, float deltaTime
+    ){
         if (state.DrawBodyGlobalPositions)
         {
-            DrawGlobalPositions(howl, state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes, 
+            DrawGlobalPositions(state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes, 
                 state.GlobalTransforms.Positions.X, state.GlobalTransforms.Positions.Y
             );            
         }
 
         if (state.DrawShapes)
         {            
-            DrawShapes(howl, state.CollisionManifold, state.GlobalVertices, state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes, 
+            DrawShapes(state.CollisionManifold, state.GlobalVertices, state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes, 
                 state.Centroids.X, state.Centroids.Y, state.GlobalRadii, state.Categories
             );
         }
 
         if (state.DrawCentroidsUnrotated)
         {
-            DrawCentroids(howl, state.Centroids, state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes);
+            DrawCentroids(state.Centroids, state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes);
         }
 
         if (state.DrawLinearVelocities)
         {            
-            DrawLinearVelocities(howl, state.BodyHierarchy.RootIndices, state.LinearVelocities, 
+            DrawLinearVelocities(state.BodyHierarchy.RootIndices, state.LinearVelocities, 
                 state.GlobalTransforms.Positions.X, state.GlobalTransforms.Positions.Y
             );
         }
 
         if (state.DrawAabbs)
         {
-            DrawAabbs(howl, state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes, state.Aabbs.MinX, state.Aabbs.MinY, 
+            DrawAabbs(state.BodyHierarchy.RootIndices, state.BodyHierarchy.Nodes, state.Aabbs.MinX, state.Aabbs.MinY, 
                 state.Aabbs.MaxX, state.Aabbs.MaxY
             );
         }
 
         if (state.DrawBvhBranches)
         {
-            BoundingVolumeHierarchy.DrawBranches(howl, state.Bvh, Colour.Yellow);
+            BoundingVolumeHierarchy.DrawBranches(state.Bvh);
         }
 
         if (state.DrawLeaves)
         {    
-            BoundingVolumeHierarchy.DrawLeaves(howl, state.Bvh, Colour.Yellow);
+            BoundingVolumeHierarchy.DrawLeaves(state.Bvh);
         }
 
         if (state.DrawCollisionInformation)
         {
-            DrawCollisionInformation(howl, state.CollisionManifold);
+            DrawCollisionInformation(state.CollisionManifold);
         }
 
         if (state.DrawCentroidsUnrotated)
         {            
-            DrawCentersOfMassUnRotated(howl, state.BodyHierarchy.RootIndices, state.GlobalTransforms.Positions.X, state.GlobalTransforms.Positions.Y,
-                state.GlobalTransforms.Sines, state.GlobalTransforms.Cosines, state.LocalCentersOfMass.X, state.LocalCentersOfMass.Y
+            DrawCentersOfMassUnRotated(state.BodyHierarchy.RootIndices, state.GlobalTransforms.Positions.X, 
+                state.GlobalTransforms.Positions.Y, state.LocalCentersOfMass.X, state.LocalCentersOfMass.Y
             );
         }
 
     }
 
-    public static void DrawGlobalPositions(HowlAppState howl, SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, 
+    public static void DrawGlobalPositions(
+        SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, 
         Array<float> globalPositionsX, Array<float> globalPositionsY
-    )
-    {
+    ){
         for(int i = 1; i < activeBodies.Count; i++) // skip nil.
         {
             int bodyIndex = activeBodies[i];
@@ -4136,12 +4135,14 @@ public static class Physics
 
             while (true)
             {
-                Renderer.DrawWireCircle(howl, new Circle(globalPositionsX[shapeIndex], globalPositionsY[shapeIndex], 0.1f), Colour.White, 
-                    DrawSpace.World
+                Circle shape = new Circle(){X = globalPositionsX[shapeIndex], Y = globalPositionsY[shapeIndex], Radius = 0.1f};
+
+                N_Howl.N_Debug.Debug.DrawWireCircle(
+                    shape: shape, zPosition: 0, layer: 0, materialIndex: PositionColour, 
+                    cameraIndex: 1, thickness: 0.01f
                 );
 
                 shapeIndex = nodes[shapeIndex].NextSibling;
-
                 if(shapeIndex == firstShapeIndex)
                 {
                     break;
@@ -4150,26 +4151,33 @@ public static class Physics
         }
     }
 
-    public static void DrawCentersOfMassUnRotated(HowlAppState howl, SwapBackArray<int> activeBodies, 
-        Array<float> globalPositionsX, Array<float> globalPositionsY, Array<float> globalSines, Array<float> globalCosines, 
+    public static void DrawCentersOfMassUnRotated(
+        SwapBackArray<int> activeBodies, Array<float> globalPositionsX, Array<float> globalPositionsY,
         Array<float> localCentersOfMassX, Array<float> localCentersOfMassY
-    )
-    {
+    ){
         for(int i = 1; i < activeBodies.Count; i++)
         {
             int bodyIndex = activeBodies[i];
 
-            Renderer.DrawWireCircle(howl, new Circle(globalPositionsX[bodyIndex] + localCentersOfMassX[bodyIndex], 
-            globalPositionsY[bodyIndex] + localCentersOfMassY[bodyIndex], 0.1f), CenterOfMassColour, DrawSpace.World);
+            Circle shape = new(){
+                X = globalPositionsX[bodyIndex] + localCentersOfMassX[bodyIndex],
+                Y = globalPositionsY[bodyIndex] + localCentersOfMassY[bodyIndex],
+                Radius = 0.01f
+            };
+
+            N_Howl.N_Debug.Debug.DrawWireCircle(
+                shape: shape, zPosition: 0, layer: 0, materialIndex: CenterOfMassColour, 
+                cameraIndex: 1, thickness: 0.01f
+            );
         }
     }
 
-    public static void DrawShapes(HowlAppState howl, Collisions.Manifold collisions, FsSoa_Vector2 vertices,
-        SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> radii, 
+    public static void DrawShapes(
+        Collisions.Manifold collisions, FsSoa_Vector2 vertices, SwapBackArray<int> activeBodies, 
+        Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> radii, 
         Array<int> categories
-    )
-    {
-        Colour colour = default;
+    ){
+        int materialIndex = default;
 
         System.Span<float> polyVertsX = stackalloc float[vertices.EntryStride];
         System.Span<float> polyVertsY = stackalloc float[vertices.EntryStride];
@@ -4191,33 +4199,37 @@ public static class Physics
 
                 if (Shape.Category.IsSolid(category))
                 {
-                    colour = DynamicShapeColour;
+                    materialIndex = DynamicShapeColour;
                 }
                 else if (Shape.Category.IsKinematic(category))
                 {
-                    colour = KinematicShapeColour;
+                    materialIndex = KinematicShapeColour;
                 }
                 else if(Shape.Category.IsTrigger(category))
                 {
-                    colour = Collisions.Manifold.HasContacts(collisions, shapeIndex)
+                    materialIndex = Collisions.Manifold.HasContacts(collisions, shapeIndex)
                     ? ActiveTriggerShapeColour
                     : PassiveTriggerShapeColour;            
-
                 }
                 else
                 {
-                    colour = FallbackShapeColour;
+                    materialIndex = FallbackShapeColour;
                 }
 
                 if (Shape.Category.IsPolygon(category))
                 {
                     Shape.GetVerticesUnsafe(vertices, shapeIndex, ref polyVertsX, ref polyVertsY);
-                    Renderer.DrawWirePoly(howl, polyVertsX, polyVertsY, colour, DrawSpace.World);
+                    N_Howl.N_Debug.Debug.DrawWirePoly(
+                        polyVertsX, polyVertsY, zPosition: 0, layer: 0, materialIndex, cameraIndex: 1, thickness: 0.01f
+                    );
                 }
                 else if (Shape.Category.IsCircle(category))
                 {
-                    Circle shape = new(centroidsX[shapeIndex], centroidsY[shapeIndex], radii[shapeIndex]);
-                    Renderer.DrawWireCircle(howl, shape, colour, DrawSpace.World);
+                    Circle shape = new(){X = centroidsX[shapeIndex], Y = centroidsY[shapeIndex], Radius = radii[shapeIndex]};
+                    N_Howl.N_Debug.Debug.DrawWireCircle(
+                        shape: shape, zPosition: 0, layer: 0, materialIndex: materialIndex, 
+                        cameraIndex: 1, thickness: 0.01f
+                    );                    
                 }
 
                 shapeIndex = nodes[shapeIndex].NextSibling;
@@ -4229,8 +4241,10 @@ public static class Physics
         }
     }
 
-    public static void DrawCentroids(HowlAppState app, Soa_Vector2 centroids, SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes)
-    {
+    public static void DrawCentroids(
+        Soa_Vector2 centroids, SwapBackArray<int> activeBodies, 
+        Array<IntrusiveList.Node> nodes
+    ){
         int count = activeBodies.Count;
         for(int i = 1; i < count; i++) // start at one to skip Nil.
         {
@@ -4246,7 +4260,12 @@ public static class Physics
             int shapeIndex = firstShapeIndex;
             while (true)
             {
-                Renderer.DrawWireCircle(app, new Circle(centroids.X[shapeIndex], centroids.Y[shapeIndex], 0.1f), CentroidColour, DrawSpace.World);
+                Circle shape = new(){X = centroids.X[shapeIndex], Y = centroids.Y[shapeIndex], Radius = 0.1f};
+
+                N_Howl.N_Debug.Debug.DrawWireCircle(
+                    shape: shape, zPosition: 0, layer: 0, materialIndex: CentroidColour, 
+                    cameraIndex: 1, thickness: 0.01f
+                );                    
                 
                 shapeIndex = nodes[shapeIndex].NextSibling;
                 if(shapeIndex == firstShapeIndex)
@@ -4257,25 +4276,30 @@ public static class Physics
         }
     }
 
-    public static void DrawLinearVelocities(HowlAppState app, SwapBackArray<int> activeBodies,
-        Soa_Vector2 linearVelocities, Array<float> globalPositionsX, Array<float> globalPositionsY
-    )
-    {
-        int count = activeBodies.Count;
-        for(int i = 1; i < count; i++) // start at one to skip Nil.
-        {
-            int bodyIndex = activeBodies[i];
+    public static void DrawLinearVelocities(
+        SwapBackArray<int> activeBodies, Soa_Vector2 linearVelocities, 
+        Array<float> globalPositionsX, Array<float> globalPositionsY
+    ){
+        // int count = activeBodies.Count;
+        // for(int i = 1; i < count; i++) // start at one to skip Nil.
+        // {
+        //     int bodyIndex = activeBodies[i];
 
-            float startX = globalPositionsX[bodyIndex];
-            float startY = globalPositionsY[bodyIndex];
-            float endX = startX + linearVelocities.X[bodyIndex];
-            float endY = startY + linearVelocities.Y[bodyIndex];
+        //     float startX = globalPositionsX[bodyIndex];
+        //     float startY = globalPositionsY[bodyIndex];
+        //     float endX = startX + linearVelocities.X[bodyIndex];
+        //     float endY = startY + linearVelocities.Y[bodyIndex];
 
-            Renderer.DrawLine(app, LinearVelocityColour, new Vector2(startX, startY), new Vector2(endX, endY), DrawSpace.World);
-        }
+        //     Vector2 start = new(){X = startX, Y = startY};
+        //     Vector2 end = new(){X = endX, Y = endY};
+
+        //     Renderer.DrawLine(app, LinearVelocityColour, new Vector2(startX, startY), new Vector2(endX, endY), DrawSpace.World);
+        // }
+        Debug.Assert(false, "");
     }
 
-    public static void DrawAabbs(HowlAppState app, SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, Array<float> aabbsMinX, 
+    public static void DrawAabbs(
+        SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, Array<float> aabbsMinX, 
         Array<float> aabbsMinY, Array<float> aabbsMaxX, Array<float> aabbsMaxY
     )
     {
@@ -4297,7 +4321,10 @@ public static class Physics
                 float minY = aabbsMinY[shapeIndex];
                 float maxX = aabbsMaxX[shapeIndex];
                 float maxY = aabbsMaxY[shapeIndex];
-                Renderer.DrawWirePoly(app, [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], AabbColour, DrawSpace.World);
+
+                N_Howl.N_Debug.Debug.DrawWirePoly(
+                    [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], zPosition: 0, layer: 0, AabbColour, cameraIndex: 1, thickness: 0.01f
+                );
 
                 shapeIndex = nodes[shapeIndex].NextSibling;
 
@@ -4309,8 +4336,9 @@ public static class Physics
         }
     }
 
-    public static void DrawCollisionInformation(HowlAppState app, Collisions.Manifold collisions)
-    {
+    public static void DrawCollisionInformation(
+        Collisions.Manifold collisions
+    ){
         // hoisitng invariance.
         System.Span<float> firstContactPointsX = Array.AsSpan(collisions.FirstContactPoints.X);
         System.Span<float> firstContactPointsY = Array.AsSpan(collisions.FirstContactPoints.Y);
@@ -4335,6 +4363,8 @@ public static class Physics
 
         Array<int> active = collisions.ActiveIndices;
         Array<int> activeCounts = collisions.ActiveIndicesCount;
+        
+        Circle shape = default;
 
         for(int i = 0; i < activeCounts.Length; i++)
         {
@@ -4370,16 +4400,33 @@ public static class Physics
                 otherCentroidX = otherCentroidsX[collisionIndex];
                 otherCentroidY = otherCentroidsY[collisionIndex];
 
-                // draw centroids.
-                Renderer.DrawWireCircle(app, new Circle(otherCentroidX, otherCentroidY, 0.1f), CollisionOtherColour, DrawSpace.World);
 
-                // draw contact point 1.
-                Renderer.DrawWireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), ContactPointColour, DrawSpace.World);            
+                // draw centroids.
+                N_Howl.N_Debug.Debug.DrawWireCircle(
+                    shape: shape, zPosition: 0, layer: 0, materialIndex: CentroidColour, 
+                    cameraIndex: 1, thickness: 0.01f
+                );
+                
+                shape.X = otherCentroidX;
+                shape.Y = otherCentroidY;
+                shape.Radius = 0.1f;
+                N_Howl.N_Debug.Debug.DrawWireCircle(
+                    shape: shape, zPosition: 0, layer: 0, materialIndex: CollisionOtherColour,
+                    cameraIndex: 1, thickness: 0.01f
+                );  
+
+                shape.X = contactPointX;
+                shape.Y = contactPointY;
+                shape.Radius = 0.1f;
+                N_Howl.N_Debug.Debug.DrawWireCircle(
+                    shape: shape, zPosition: 0, layer: 0, materialIndex: ContactPointColour,
+                    cameraIndex: 1, thickness: 0.01f
+                );
 
                 // draw normal from contact point. 
-                normalStart = new Vector2(contactPointX, contactPointY);
-                normalEnd = normalStart + new Vector2(normalX, normalY);
-                Renderer.DrawLine(app, CollisionNormalColour, normalStart, normalEnd, DrawSpace.World);
+                // normalStart = new(){X = contactPointX, Y = contactPointY};
+                // normalEnd = normalStart + new Vector2(){X = normalX, Y = normalY};
+                // Renderer.DrawLine(app, CollisionNormalColour, normalStart, normalEnd, DrawSpace.World);
 
                 if (twoContactPoints[collisionIndex])
                 {
@@ -4388,12 +4435,19 @@ public static class Physics
                     contactPointY = secondContactPointsY[collisionIndex];
 
                     // draw contact point 2.
-                    Renderer.DrawWireCircle(app, new Circle(contactPointX, contactPointY, 0.1f), ContactPointColour, DrawSpace.World);            
+                    shape.X = contactPointX;
+                    shape.Y = contactPointY;
+                    shape.Radius = 0.1f;
+
+                    N_Howl.N_Debug.Debug.DrawWireCircle(
+                        shape: shape, zPosition: 0, layer: 0, materialIndex: ContactPointColour,
+                        cameraIndex: 1, thickness: 0.01f
+                    );
 
                     // draw normal from contact point. 
-                    normalStart = new Vector2(contactPointX, contactPointY);
-                    normalEnd = normalStart + new Vector2(normalX, normalY);
-                    Renderer.DrawLine(app, CollisionNormalColour, normalStart, normalEnd, DrawSpace.World);
+                    // normalStart = new(){X = contactPointX, Y = contactPointY};
+                    // normalEnd = normalStart + new Vector2(){X = normalX, Y = normalY};
+                    // Renderer.DrawLine(app, CollisionNormalColour, normalStart, normalEnd, DrawSpace.World);
                 }
             }
         }
@@ -4718,10 +4772,10 @@ public static class Physics
                 manifold.MaxEntries = totalColliders;
                 int dataLength = manifold.Stride * manifold.MaxEntries;
 
-                Soa_Vector2.Initialise(ref manifold.Normals, ref arena, dataLength);
-                Soa_Vector2.Initialise(ref manifold.ColliderCentroids, ref arena, dataLength);
-                Soa_Vector2.Initialise(ref manifold.FirstContactPoints, ref arena, dataLength);
-                Soa_Vector2.Initialise(ref manifold.SecondContactPoints, ref arena, dataLength);
+                N_Howl.N_Math.Math.Init(ref manifold.Normals, ref arena, dataLength);
+                N_Howl.N_Math.Math.Init(ref manifold.ColliderCentroids, ref arena, dataLength);
+                N_Howl.N_Math.Math.Init(ref manifold.FirstContactPoints, ref arena, dataLength);
+                N_Howl.N_Math.Math.Init(ref manifold.SecondContactPoints, ref arena, dataLength);
                 Array.Initialise(ref manifold.Depths, ref arena, dataLength);
                 Array.Initialise(ref manifold.TwoContactPoints, ref arena, dataLength);
                 Array.Initialise(ref manifold.ContactStates, ref arena, dataLength);
@@ -5080,11 +5134,11 @@ public static class Physics
                 Shape.GetVerticesUnsafe(vertices, otherIndex, ref otherVertsX, ref otherVertsY);
 
                 // narrow phase SAT intersect check.
-                if(SAT.PolygonsIntersect(ownerVertsX, ownerVertsY, otherVertsX, otherVertsY, ownerPosX, ownerPosY, 
+                if(N_Howl.N_Math.Math.PolygonsIntersect(ownerVertsX, ownerVertsY, otherVertsX, otherVertsY, ownerPosX, ownerPosY, 
                     otherPosX, otherPosY, out float normalX, out float normalY, out float depth
                 ))
                 {
-                    SAT.FindContactPoints(ownerVertsX, ownerVertsY, otherVertsX, otherVertsY, SAT.PolygonContactPointEpsilon, 
+                    N_Howl.N_Math.Math.FindContactPoints(ownerVertsX, ownerVertsY, otherVertsX, otherVertsY, N_Howl.N_Math.Math.PolygonContactPointEpsilon, 
                         out float firstContactPointX, out float firstContactPointY, out float secondContactPointX, out float secondContactPointY, 
                         out int contactCount
                     );
@@ -5144,13 +5198,13 @@ public static class Physics
                 // gather polygon a vertices.
                 Shape.GetVerticesUnsafe(vertices, polyIndex, ref polyVertsX, ref polyVertsY);
 
-                bool intersect = SAT.PolygonAndCircleIntersect(polyVertsX, polyVertsY, polyPosX, polyPosY, circPosX, circPosY, radii[circIndex], 
+                bool intersect = N_Howl.N_Math.Math.PolygonAndCircleIntersect(polyVertsX, polyVertsY, polyPosX, polyPosY, circPosX, circPosY, radii[circIndex], 
                     circPosX, circPosY, out float normalX, out float normalY, out float depth
                 );
                 // narrow phase intersect check.
                 if(intersect)
                 {            
-                    SAT.FindContactPoints(polyVertsX, polyVertsY, circPosX, circPosY, out float contactPointX, out float contactPointY);
+                    N_Howl.N_Math.Math.FindContactPoints(polyVertsX, polyVertsY, circPosX, circPosY, out float contactPointX, out float contactPointY);
                     
                     collided = true;
 
@@ -5195,7 +5249,7 @@ public static class Physics
                 ref float ownerR = ref radii[ownerIndex];
                 ref float otherR = ref radii[otherIndex];
 
-                bool intersects = SAT.CirclesIntersect(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, otherR, out float normalX, 
+                bool intersects = N_Howl.N_Math.Math.CirclesIntersect(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, otherR, out float normalX, 
                     out float normalY, out float depth
                 );
             
@@ -5204,7 +5258,7 @@ public static class Physics
                     collided = true;
 
                     // submit the collision with contact points if one of the colliders needs them.
-                    SAT.FindContactPoints(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, out float contactPointX, out float contactPointY);
+                    N_Howl.N_Math.Math.FindContactPoints(ownerPosX, ownerPosY, ownerR, otherPosX, otherPosY, out float contactPointX, out float contactPointY);
                     
                     return Manifold.SetDataTwoWay(ref collisions, ownerIndex, otherIndex, ownerPosX, ownerPosY, otherPosX, otherPosY, 
                         normalX, normalY, contactPointX, contactPointY, depth
@@ -5225,7 +5279,7 @@ public static class Physics
                     return false;
                 }
 
-                return Aabb.Intersect(
+                return N_Howl.N_Math.Math.AabbsIntersect(
                     minAabbsX[shapeIndexA], minAabbsX[shapeIndexB], minAabbsY[shapeIndexA], minAabbsY[shapeIndexB], 
                     maxAabbsX[shapeIndexA], maxAabbsX[shapeIndexB], maxAabbsY[shapeIndexA], maxAabbsY[shapeIndexB]
                 );

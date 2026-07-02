@@ -372,7 +372,10 @@ public static class ComponentArray
 
     public static bool Allocate<T>(ref ComponentArray<T> array, int index, T value) where T : unmanaged 
     {
-        Debug.Assert(index > 0, "Nil access attempted.");
+        if(index<=0){
+            Debug.Panic("invalid or Nil access attempted.");
+            return false;
+        }
         ref bool isAllocated = ref array.Allocated[index];
         if(isAllocated==true)
         {
@@ -381,14 +384,16 @@ public static class ComponentArray
 
         isAllocated = true;
         array.Sparse[index] = value;
-        SetActiveUnsafe(ref array, index);
 
         return true;
     }
 
     public static bool Deallocate<T>(ref ComponentArray<T> array, int index) where T : unmanaged
     {
-        Debug.Assert(index > 0, "Nil access attempted.");
+        if(index<=0){
+            Debug.Panic("invalid or Nil access attempted.");
+            return false;
+        }
         ref bool isAllocated = ref array.Allocated[index];
         if(isAllocated==false)
         {
@@ -513,6 +518,12 @@ public static class ComponentArray
     {
         System.Diagnostics.Debug.Assert(index != 0, "Nil access attempted.");
         return ref array.Sparse[index];
+    }
+
+    public static bool IsAllocated<T>(
+        this ComponentArray<T> array, int index
+    ) where T : unmanaged{
+        return array.Allocated[index] == true;
     }
 }
 

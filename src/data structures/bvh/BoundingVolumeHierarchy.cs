@@ -674,37 +674,33 @@ public struct BoundingVolumeHierarchy
 
 
 
-    public static void DrawBranches(HowlAppState app, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
-    {
+    public static void DrawBranches(
+        BoundingVolumeHierarchy bvh
+    ){
         for(int i = 0; i < bvh.Branches.AppendCount; i++)
         {
-            Renderer.DrawWireRect(
-                app,
-                new Rectangle(
-                    new Vector2(bvh.Branches.Aabbs.MinX[i], bvh.Branches.Aabbs.MinY[i]), 
-                    new Vector2(bvh.Branches.Aabbs.MaxX[i], bvh.Branches.Aabbs.MaxY[i])
-                ), 
-                colour,
-                Graphics.DrawSpace.World
-            );
+            N_Howl.N_Math.Rectangle rect = new(){
+                X       = bvh.Branches.Aabbs.MinX[i],
+                Y       = bvh.Branches.Aabbs.MinY[i],
+                Width   = bvh.Branches.Aabbs.MaxX[i] - bvh.Branches.Aabbs.MinX[i],
+                Height  = bvh.Branches.Aabbs.MaxY[i] - bvh.Branches.Aabbs.MinY[i],
+            };
+            N_Howl.N_Debug.Debug.DrawWireRect(rect, 0, 0, 2, 1, 0.01f);
         }
-
     }
 
-    public static void DrawLeaves(HowlAppState app, BoundingVolumeHierarchy bvh, Howl.Graphics.Colour colour)
-    {
+    public static void DrawLeaves(
+        BoundingVolumeHierarchy bvh
+    ){
         for(int i = 0; i < bvh.Leaves.AppendCount; i++)
         {
-            Renderer.DrawWireRect(
-                app,
-                new Rectangle(
-                    new Vector2(bvh.Leaves.Aabbs.MinX[i], bvh.Leaves.Aabbs.MinY[i]), 
-                    new Vector2(bvh.Leaves.Aabbs.MaxX[i], bvh.Leaves.Aabbs.MaxY[i])
-                ), 
-                colour,
-                Graphics.DrawSpace.World
-            );
+            N_Howl.N_Math.Rectangle rect = new(){
+                X       = bvh.Leaves.Aabbs.MinX[i],
+                Y       = bvh.Leaves.Aabbs.MinY[i],
+                Width   = bvh.Leaves.Aabbs.MaxX[i] - bvh.Leaves.Aabbs.MinX[i],
+                Height  = bvh.Leaves.Aabbs.MaxY[i] - bvh.Leaves.Aabbs.MinY[i],
+            };
+            N_Howl.N_Debug.Debug.DrawWireRect(rect, 0, 0, 2, 1, 0.01f);
         }
-
     }
 }

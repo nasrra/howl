@@ -82,12 +82,12 @@ public class GenIdAllocator : IDisposable
     ///         </item>
     ///     </list>
     /// </returns>
-    public static GenIdResult Allocate(GenIdAllocator registry, ref GenId genId)
+    public static bool Allocate(GenIdAllocator registry, ref GenId genId)
     {
         if(registry.FreeSlots.Count == 0)
         {
             Debug.LogError("Memory Limit Hit", stackDepth: 2);
-            return GenIdResult.MemoryLimitHit;
+            return false;
         }
         
         // get the next available slot to allocate in.
@@ -108,7 +108,7 @@ public class GenIdAllocator : IDisposable
         registry.Allocated[slot] = true;
         genId = registry.GenIds[slot];
 
-        return GenIdResult.Ok;
+        return true;
     }
 
     /// <summary>
@@ -122,23 +122,24 @@ public class GenIdAllocator : IDisposable
     ///             <see cref="GenIdResult.Ok"/>
     ///         </item>
     ///         <item>
-    ///             <see cref="GenIdResult.StaleGenId"/>
+    ///             <see cref="GenIdResult.InvalidGenId"/>
     ///         </item>
     ///     </list>
     /// </returns>    
-    public static GenIdResult Deallocate(GenIdAllocator registry, GenId genId)
+    public static bool Deallocate(GenIdAllocator registry, GenId genId)
     {
         int index = GenId.GetIndex(genId);
 
         // do nothing if the gen index is stale.
         if(registry.GenIds[index] != genId)
         {
-            return GenIdResult.StaleGenId;
+            Debug.LogWarning("Attempted to deallocate an invalid gen id.");
+            return false;
         }
 
         DeallocateUnsafe(registry, index);
         
-        return GenIdResult.Ok;
+        return true;
     }
 
     /// <summary>
