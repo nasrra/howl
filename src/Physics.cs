@@ -1,13 +1,14 @@
 using System.Runtime.CompilerServices;
 using Howl.Text;
-using Howl.Text.Bvh;
 using Howl.Unmanaged.Collections;
 using Howl.Unmanaged.Ecs;
 using N_Howl.N_Math;
 using N_Howl.N_Rendering;
 using N_Howl.N_Graphics;
+using N_Howl.N_DataStructures;
+using Memory = Howl.Memory;
 
-namespace Howl;
+namespace N_Howl.N_Physics;
 
 public static class Physics{
 
@@ -199,7 +200,7 @@ public static class Physics{
         public static void SetKineticFriction(ref float kineticFriction, float value)
         {
             AssertKineticFrictionInRange(value);
-            kineticFriction = Math.Math.Clamp(value, MinFriction, MaxFriction);
+            kineticFriction = Math.Clamp(value, MinFriction, MaxFriction);
         }
 
         /// <remarks>
@@ -240,7 +241,7 @@ public static class Physics{
         public static void SetStaticFriction(ref float staticFriction, ref float kineticFriction, float value)
         {
             AssertStaticFrictionInRange(value, kineticFriction);
-            staticFriction = Math.Math.Clamp(value, kineticFriction, MaxFriction);
+            staticFriction = Math.Clamp(value, kineticFriction, MaxFriction);
         }
 
         /// <remarks>
@@ -279,7 +280,7 @@ public static class Physics{
         public static void SetDensity(ref float density, float value)
         {
             AssertDensityInRange(value);
-            density = Math.Math.Clamp(value, MinDensity, MaxDensity);
+            density = Math.Clamp(value, MinDensity, MaxDensity);
         }
 
         /// <param name="material">the physics material to mutate.</param>
@@ -312,7 +313,7 @@ public static class Physics{
         public static void SetRestitution(ref float restitution, float value)
         {
             AssertRestitutionInRange(value);
-            restitution = Math.Math.Clamp(value, MinRestitution, MaxRestitution);
+            restitution = Math.Clamp(value, MinRestitution, MaxRestitution);
         }
 
         /// <remarks>
@@ -352,7 +353,7 @@ public static class Physics{
         {
             if (soa.IsIntialised)
             {
-                Debug.Panic("Already Initialised.");
+                Howl.Debug.Panic("Already Initialised.");
                 return false;
             }
             
@@ -882,7 +883,7 @@ public static class Physics{
         {
             if (state.IsInitialised)
             {
-                Debug.Panic("Already Initialised.");
+                Howl.Debug.Panic("Already Initialised.");
                 return false;
             }
 
@@ -924,8 +925,8 @@ public static class Physics{
             {   // Utility.
                 
                 Howl.Unmanaged.Ecs.GenIdAllocator.Initialise(ref state.GenIdAllocator, ref arena, maxEntities);
-                BoundingVolumeHierarchy.Initialise(ref state.Bvh, ref arena, maxEntities);
-                CategorisedLeafOverlaps.Initialise(ref state.OverlapsScratchBuffer, ref arena, Shape.Category.Count, maxCollisions);
+                DataStructures.Init(ref state.Bvh, ref arena, maxEntities);
+                DataStructures.Init(ref state.OverlapsScratchBuffer, ref arena, Shape.Category.Count, maxCollisions);
                 Collisions.Manifold.Initialise(ref state.CollisionManifold, ref arena, maxEntities);
                 CategorisedOverlapArray.Initialise(ref state.SubStepShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
                 CategorisedOverlapArray.Initialise(ref state.SubStepRigidShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
@@ -975,7 +976,7 @@ public static class Physics{
     {
         if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
         {
-            Debug.Assert(false, "Attempted to set an invalid body active.");
+            Howl.Debug.Assert(false, "Attempted to set an invalid body active.");
             return false;
         }
         SetActiveUnsafe(ref state, entityId, isActive);
@@ -1031,7 +1032,7 @@ public static class Physics{
     {
         if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, genId))
         {
-            Debug.Assert(false, "Attempted to set the local Transform2D of an invalid gen id");
+            Howl.Debug.Assert(false, "Attempted to set the local Transform2D of an invalid gen id");
             return false;
         }
 
@@ -1079,7 +1080,7 @@ public static class Physics{
     {
         if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
         {
-            Debug.Assert(false, "Attempted to get the linear velocity of an invalid body.");
+            Howl.Debug.Assert(false, "Attempted to get the linear velocity of an invalid body.");
             return default;
         }
 
@@ -1087,7 +1088,7 @@ public static class Physics{
                 
         if(IsActiveUnsafe(ref state, index) == false)
         {
-            Debug.Assert(false, "Attempted to get the linear velocity of an inactive body.");
+            Howl.Debug.Assert(false, "Attempted to get the linear velocity of an inactive body.");
             return default;
         }
 
@@ -1161,7 +1162,7 @@ public static class Physics{
 
     public static void FixedUpdate(ref State state, float deltaTime, int subSteps)
     {
-        long startStepTime = Time.GetSystemTick();
+        long startStepTime = Howl.Time.GetSystemTick();
 
         // == hoisting invariance. ==.
         
@@ -1265,7 +1266,7 @@ public static class Physics{
 
         {   // Bvh
             
-            long startBvhStepTime = Time.GetSystemTick();
+            long startBvhStepTime = Howl.Time.GetSystemTick();
             
             CalculateBvhLeafPadding(globalPositionsX, globalPositionsY, previousPositionsX, previousPositionsY, activeBodies, 
                 ref bvhLeafPaddings, deltaTime
@@ -1274,7 +1275,7 @@ public static class Physics{
             // Update Overlap Scratch Buffer Category Length.       
             {                
             
-                CategorisedLeafOverlaps.ClearCounts(ref overlaps);
+                DataStructures.Clear(ref overlaps);
                 overlaps.CategoryLengths[Shape.Category.DynColCircle]       = state.DynamicColliderCircleCount;
                 overlaps.CategoryLengths[Shape.Category.TriColCircle]     = state.TriggerColliderCircleCount;
                 overlaps.CategoryLengths[Shape.Category.KinColCircle]   = state.KinematicColliderCircleCount;
@@ -1291,7 +1292,7 @@ public static class Physics{
                 overlaps.CategoryLengths[Shape.Category.TriRigPolygon]   = state.TriggerRigidPolygonCount;
                 overlaps.CategoryLengths[Shape.Category.KinRigPolygon] = state.KinematicRigidPolygonCount;
                 
-                CategorisedLeafOverlaps.BuildChunks(overlaps);
+                DataStructures.BuildChunks(overlaps);
             }
 
             // Reconstruct Bvh.
@@ -1299,11 +1300,11 @@ public static class Physics{
                 bvhLeafPaddings, ref bvhLeafIndices, ref bvh
             );
 
-            BoundingVolumeHierarchy.FindOverlaps(bvh.Branches, bvh.Leaves, overlaps);
+            DataStructures.FindOverlaps(bvh.Branches, bvh.Leaves, overlaps);
             FormatCategorisedOverlaps(overlaps, ref bvhLeafIndices, categories);
             
-            long endBvhStepTime = Time.GetSystemTick();
-            state.BvhConstructionStepInMs = Time.ElapsedMilliseconds(startBvhStepTime, endBvhStepTime);
+            long endBvhStepTime = Howl.Time.GetSystemTick();
+            state.BvhConstructionStepInMs = Howl.Time.ElapsedMilliseconds(startBvhStepTime, endBvhStepTime);
         }
         
         // note: ordering matters here; keep this below the bvh section always.
@@ -1312,136 +1313,136 @@ public static class Physics{
         // == retrieve overlap info.
 
         // solid polygon rigidbody.        
-        OverlapInfo overlaps_DynRigPol_To_DynRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.DynRigPolygon);
-        OverlapInfo overlaps_DynRigPol_To_DynRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.DynRigCircle);
-        OverlapInfo overlaps_DynRigPol_To_KinRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.KinRigPolygon);
-        OverlapInfo overlaps_DynRigPol_To_KinRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.KinRigCircle);
-        OverlapInfo overlaps_DynRigPol_To_TriRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.TriRigPolygon);
-        OverlapInfo overlaps_DynRigPol_To_TriRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.TriRigCircle);
-        OverlapInfo overlaps_DynRigPol_To_DynColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.DynColPolygon);
-        OverlapInfo overlaps_DynRigPol_To_DynColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.DynColCircle);
-        OverlapInfo overlaps_DynRigPol_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_DynRigPol_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_DynRigPol_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_DynRigPol_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_DynRigPol_To_DynRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.DynRigPolygon);
+        OverlapInfo overlaps_DynRigPol_To_DynRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.DynRigCircle);
+        OverlapInfo overlaps_DynRigPol_To_KinRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.KinRigPolygon);
+        OverlapInfo overlaps_DynRigPol_To_KinRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.KinRigCircle);
+        OverlapInfo overlaps_DynRigPol_To_TriRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.TriRigPolygon);
+        OverlapInfo overlaps_DynRigPol_To_TriRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.TriRigCircle);
+        OverlapInfo overlaps_DynRigPol_To_DynColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.DynColPolygon);
+        OverlapInfo overlaps_DynRigPol_To_DynColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.DynColCircle);
+        OverlapInfo overlaps_DynRigPol_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_DynRigPol_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_DynRigPol_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_DynRigPol_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigPolygon, Shape.Category.TriColCircle);
         
         // solid circle rigid body.
-        OverlapInfo overlaps_DynRigCir_To_DynRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.DynRigCircle);
-        OverlapInfo overlaps_DynRigCir_To_KinRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.KinRigPolygon);
-        OverlapInfo overlaps_DynRigCir_To_KinRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.KinRigCircle);
-        OverlapInfo overlaps_DynRigCir_To_TriRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.TriRigPolygon);
-        OverlapInfo overlaps_DynRigCir_To_TriRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.TriRigCircle);
-        OverlapInfo overlaps_DynRigCir_To_DynColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.DynColPolygon);
-        OverlapInfo overlaps_DynRigCir_To_DynColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.DynColCircle);
-        OverlapInfo overlaps_DynRigCir_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_DynRigCir_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_DynRigCir_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_DynRigCir_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_DynRigCir_To_DynRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.DynRigCircle);
+        OverlapInfo overlaps_DynRigCir_To_KinRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.KinRigPolygon);
+        OverlapInfo overlaps_DynRigCir_To_KinRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.KinRigCircle);
+        OverlapInfo overlaps_DynRigCir_To_TriRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.TriRigPolygon);
+        OverlapInfo overlaps_DynRigCir_To_TriRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.TriRigCircle);
+        OverlapInfo overlaps_DynRigCir_To_DynColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.DynColPolygon);
+        OverlapInfo overlaps_DynRigCir_To_DynColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.DynColCircle);
+        OverlapInfo overlaps_DynRigCir_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_DynRigCir_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_DynRigCir_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_DynRigCir_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynRigCircle, Shape.Category.TriColCircle);
 
         // kinematic polygon rigid body.
-        OverlapInfo overlaps_KinRigPol_To_KinRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.KinRigPolygon);
-        OverlapInfo overlaps_KinRigPol_To_KinRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.KinRigCircle);
-        OverlapInfo overlaps_KinRigPol_To_TriRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.TriRigPolygon);
-        OverlapInfo overlaps_KinRigPol_To_TriRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.TriRigCircle);
-        OverlapInfo overlaps_KinRigPol_To_DynColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.DynColPolygon);
-        OverlapInfo overlaps_KinRigPol_To_DynColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.DynColCircle);
-        OverlapInfo overlaps_KinRigPol_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_KinRigPol_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_KinRigPol_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_KinRigPol_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_KinRigPol_To_KinRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.KinRigPolygon);
+        OverlapInfo overlaps_KinRigPol_To_KinRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.KinRigCircle);
+        OverlapInfo overlaps_KinRigPol_To_TriRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.TriRigPolygon);
+        OverlapInfo overlaps_KinRigPol_To_TriRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.TriRigCircle);
+        OverlapInfo overlaps_KinRigPol_To_DynColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.DynColPolygon);
+        OverlapInfo overlaps_KinRigPol_To_DynColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.DynColCircle);
+        OverlapInfo overlaps_KinRigPol_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_KinRigPol_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_KinRigPol_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_KinRigPol_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigPolygon, Shape.Category.TriColCircle);
         
         // kinematic circle rigid body.
-        OverlapInfo overlaps_KinRigCir_To_KinRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.KinRigCircle);
-        OverlapInfo overlaps_KinRigCir_To_TriRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.TriRigPolygon);
-        OverlapInfo overlaps_KinRigCir_To_TriRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.TriRigCircle);
-        OverlapInfo overlaps_KinRigCir_To_DynColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.DynColPolygon);
-        OverlapInfo overlaps_KinRigCir_To_DynColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.DynColCircle);
-        OverlapInfo overlaps_KinRigCir_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_KinRigCir_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_KinRigCir_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_KinRigCir_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_KinRigCir_To_KinRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.KinRigCircle);
+        OverlapInfo overlaps_KinRigCir_To_TriRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.TriRigPolygon);
+        OverlapInfo overlaps_KinRigCir_To_TriRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.TriRigCircle);
+        OverlapInfo overlaps_KinRigCir_To_DynColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.DynColPolygon);
+        OverlapInfo overlaps_KinRigCir_To_DynColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.DynColCircle);
+        OverlapInfo overlaps_KinRigCir_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_KinRigCir_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_KinRigCir_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_KinRigCir_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinRigCircle, Shape.Category.TriColCircle);
         
         // trigger polygon rigid body.
-        OverlapInfo overlaps_TriRigPol_To_TriRigPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.TriRigPolygon);    
-        OverlapInfo overlaps_TriRigPol_To_TriRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.TriRigCircle);
-        OverlapInfo overlaps_TriRigPol_To_DynColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.DynColPolygon);
-        OverlapInfo overlaps_TriRigPol_To_DynColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.DynColCircle);
-        OverlapInfo overlaps_TriRigPol_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_TriRigPol_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_TriRigPol_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_TriRigPol_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_TriRigPol_To_TriRigPol = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.TriRigPolygon);    
+        OverlapInfo overlaps_TriRigPol_To_TriRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.TriRigCircle);
+        OverlapInfo overlaps_TriRigPol_To_DynColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.DynColPolygon);
+        OverlapInfo overlaps_TriRigPol_To_DynColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.DynColCircle);
+        OverlapInfo overlaps_TriRigPol_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_TriRigPol_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_TriRigPol_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_TriRigPol_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigPolygon, Shape.Category.TriColCircle);
         
         // trigger circle rigidbody.
-        OverlapInfo overlaps_TriRigCir_To_TriRigCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.TriRigCircle);
-        OverlapInfo overlaps_TriRigCir_To_DynColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.DynColPolygon);
-        OverlapInfo overlaps_TriRigCir_To_DynColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.DynColCircle);
-        OverlapInfo overlaps_TriRigCir_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_TriRigCir_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_TriRigCir_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_TriRigCir_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_TriRigCir_To_TriRigCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.TriRigCircle);
+        OverlapInfo overlaps_TriRigCir_To_DynColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.DynColPolygon);
+        OverlapInfo overlaps_TriRigCir_To_DynColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.DynColCircle);
+        OverlapInfo overlaps_TriRigCir_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_TriRigCir_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_TriRigCir_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_TriRigCir_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriRigCircle, Shape.Category.TriColCircle);
         
         // solid polygon collider.
-        OverlapInfo overlaps_DynColPol_To_DynColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.DynColPolygon);
-        OverlapInfo overlaps_DynColPol_To_DynColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.DynColCircle);
-        OverlapInfo overlaps_DynColPol_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_DynColPol_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_DynColPol_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_DynColPol_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_DynColPol_To_DynColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.DynColPolygon);
+        OverlapInfo overlaps_DynColPol_To_DynColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.DynColCircle);
+        OverlapInfo overlaps_DynColPol_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_DynColPol_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_DynColPol_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_DynColPol_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColPolygon, Shape.Category.TriColCircle);
         
         // solid circle collider.
-        OverlapInfo overlaps_DynColCir_To_DynColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.DynColCircle);
-        OverlapInfo overlaps_DynColCir_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_DynColCir_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_DynColCir_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_DynColCir_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_DynColCir_To_DynColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.DynColCircle);
+        OverlapInfo overlaps_DynColCir_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_DynColCir_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_DynColCir_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_DynColCir_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.DynColCircle, Shape.Category.TriColCircle);
         
         // kinematic polygon collider.
-        OverlapInfo overlaps_KinColPol_To_KinColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinColPolygon, Shape.Category.KinColPolygon);
-        OverlapInfo overlaps_KinColPol_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinColPolygon, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_KinColPol_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinColPolygon, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_KinColPol_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinColPolygon, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_KinColPol_To_KinColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinColPolygon, Shape.Category.KinColPolygon);
+        OverlapInfo overlaps_KinColPol_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinColPolygon, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_KinColPol_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinColPolygon, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_KinColPol_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinColPolygon, Shape.Category.TriColCircle);
         
         // kinematic circle collider.
-        OverlapInfo overlaps_KinColCir_To_KinColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinColCircle, Shape.Category.KinColCircle);
-        OverlapInfo overlaps_KinColCir_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinColCircle, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_KinColCir_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.KinColCircle, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_KinColCir_To_KinColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinColCircle, Shape.Category.KinColCircle);
+        OverlapInfo overlaps_KinColCir_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.KinColCircle, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_KinColCir_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.KinColCircle, Shape.Category.TriColCircle);
         
         // trigger polygon collider.
-        OverlapInfo overlaps_TriColPol_To_TriColPol = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriColPolygon, Shape.Category.TriColPolygon);
-        OverlapInfo overlaps_TriColPol_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriColPolygon, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_TriColPol_To_TriColPol = DataStructures.GetOverlaps(overlaps, Shape.Category.TriColPolygon, Shape.Category.TriColPolygon);
+        OverlapInfo overlaps_TriColPol_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriColPolygon, Shape.Category.TriColCircle);
         
         // trigger circle collider.
-        OverlapInfo overlaps_TriColCir_To_TriColCir = CategorisedLeafOverlaps.GetOverlaps(overlaps, Shape.Category.TriColCircle, Shape.Category.TriColCircle);
+        OverlapInfo overlaps_TriColCir_To_TriColCir = DataStructures.GetOverlaps(overlaps, Shape.Category.TriColCircle, Shape.Category.TriColCircle);
 
         for(int i = 0; i < subSteps; i++)
         {
-            long startSubStepTime = Time.GetSystemTick();
+            long startSubStepTime = Howl.Time.GetSystemTick();
 
             // clear any grabage collisions that were resolved last sub step.
             CategorisedOverlapArray.ClearCounts(ref shapeCollisionsToResolve);
             CategorisedOverlapArray.ClearCounts(ref rigidShapeCollisionsToResolve);
 
             // RigidBody Movement Step.
-            long startMovementStepTime = Time.GetSystemTick();
+            long startMovementStepTime = Howl.Time.GetSystemTick();
             BodyMovementStep(activeBodies, ref nodes, localTransforms, ref globalTransforms, ref linearVelocitiesX, ref linearVelocitiesY, 
                 forcesX, forcesY, masses, angularVelocities, ref collisionDisplacementsX, ref collisionDisplacementsY, localCentersOfMassX, 
                 localCentersOfMassY, ref globalRotationRadians, categories, gravityAffected, gravityDirectionX, gravityDirectionY, gravity, 
                 deltaTime, MovementStepConfig.Full
             );
-            long endMovementStepTime = Time.GetSystemTick();
-            state.BodyMovementStepInMs = Time.ElapsedMilliseconds(startMovementStepTime, endMovementStepTime);
+            long endMovementStepTime = Howl.Time.GetSystemTick();
+            state.BodyMovementStepInMs = Howl.Time.ElapsedMilliseconds(startMovementStepTime, endMovementStepTime);
 
             // Transform2D physics bodies
-            long startTransformVertsTime = Time.GetSystemTick();
+            long startTransformVertsTime = Howl.Time.GetSystemTick();
             TransformAllShapesVertices(activeBodies, nodes, ref globalVertices, localVertices, shapes, ref globalScalesX, ref globalScalesY, 
                 ref globalPositionsX, ref globalPositionsY, ref globalSines, ref globalCosines, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, 
                 ref centroidsX, ref centroidsY, baseRadii, ref globalRadii
             );
-            long endTransformVertsTime = Time.GetSystemTick();
-            state.TransformVerticesStepInMs = Time.ElapsedMilliseconds(startTransformVertsTime, endTransformVertsTime);
+            long endTransformVertsTime = Howl.Time.GetSystemTick();
+            state.TransformVerticesStepInMs = Howl.Time.ElapsedMilliseconds(startTransformVertsTime, endTransformVertsTime);
 
             // Find collisions.
-            long startFindCollisionsTime = Time.GetSystemTick();
+            long startFindCollisionsTime = Howl.Time.GetSystemTick();
                         
             Collisions.Detection.DynamicRigidPolygon_To_DynamicRigidPolygon(    overlaps_DynRigPol_To_DynRigPol, bvhLeafIndices, ref collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, globalVertices, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
             Collisions.Detection.DynamicRigidPolygon_To_DynamicRigidCircle(     overlaps_DynRigPol_To_DynRigCir, bvhLeafIndices, ref collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, globalVertices, globalRadii, shapeCollisionsToResolve, rigidShapeCollisionsToResolve);
@@ -1533,21 +1534,21 @@ public static class Physics{
 
             Collisions.Detection.TriggerColliderCircle_To_TriggerColliderCircle(overlaps_TriColCir_To_TriColCir, bvhLeafIndices, ref collisions, nodes, centroidsX, centroidsY, minAabbsX, minAabbsY, maxAabbsX, maxAabbsY, globalRadii);
 
-            long endFindCollisionsTime = Time.GetSystemTick();
-            state.FindCollisionsStepInMs = Time.ElapsedMilliseconds(startFindCollisionsTime, endFindCollisionsTime);
+            long endFindCollisionsTime = Howl.Time.GetSystemTick();
+            state.FindCollisionsStepInMs = Howl.Time.ElapsedMilliseconds(startFindCollisionsTime, endFindCollisionsTime);
 
             // Resolve Collider Collisions.
             // NOTE: ordering matters here, make sure to this is above rigidbody collision resolution.
-            long startColliderResolutionTime = Time.GetSystemTick();
+            long startColliderResolutionTime = Howl.Time.GetSystemTick();
             ResolveColliderCollisions(nodes, shapeCollisionsToResolve, collisionDepths, collisionNormalsX, collisionNormalsY, 
                 ref collisionDisplacementsX, ref collisionDisplacementsY, collisionsStride
             );
-            long endColliderResolutionTime = Time.GetSystemTick();
-            state.ColliderResolutionStepInMs = Time.ElapsedMilliseconds(startColliderResolutionTime, endColliderResolutionTime);
+            long endColliderResolutionTime = Howl.Time.GetSystemTick();
+            state.ColliderResolutionStepInMs = Howl.Time.ElapsedMilliseconds(startColliderResolutionTime, endColliderResolutionTime);
 
             // Resolve RigidBody Collisions.
             // NOTE: ordering matters here, make sure this is below collision resolution.
-            long startRigidResolutionTime = Time.GetSystemTick();
+            long startRigidResolutionTime = Howl.Time.GetSystemTick();
             ResolveRigidShapeCollisions(rigidShapeCollisionsToResolve, nodes,
                 collisionNormalsX, collisionNormalsY, collisionFirstContactPointsX, collisionFirstContactPointsY,
                 globalPositionsX, globalPositionsY, localCentersOfMassX, localCentersOfMassY, 
@@ -1557,11 +1558,11 @@ public static class Physics{
                 distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, 
                 collisionsStride
             );
-            long endRigidResolutionTime = Time.GetSystemTick();
-            state.RigidResolutionStepInMs = Time.ElapsedMilliseconds(startRigidResolutionTime, endRigidResolutionTime);
+            long endRigidResolutionTime = Howl.Time.GetSystemTick();
+            state.RigidResolutionStepInMs = Howl.Time.ElapsedMilliseconds(startRigidResolutionTime, endRigidResolutionTime);
 
-            long endSubStepTime = Time.GetSystemTick();
-            state.SubStepTimeInMs = Time.ElapsedMilliseconds(startSubStepTime, endSubStepTime);
+            long endSubStepTime = Howl.Time.GetSystemTick();
+            state.SubStepTimeInMs = Howl.Time.ElapsedMilliseconds(startSubStepTime, endSubStepTime);
         }
 
         Collisions.Manifold.CompleteStep(ref state.CollisionManifold);
@@ -1576,8 +1577,8 @@ public static class Physics{
             ref centroidsX, ref centroidsY, baseRadii, ref globalRadii
         );
 
-        long endStepTime = Time.GetSystemTick();
-        state.StepTimeInMs = Time.ElapsedMilliseconds(startStepTime, endStepTime);
+        long endStepTime = Howl.Time.GetSystemTick();
+        state.StepTimeInMs = Howl.Time.ElapsedMilliseconds(startStepTime, endStepTime);
     }
 
     /// <summary>
@@ -1635,7 +1636,7 @@ public static class Physics{
 
                     // apply the rotation.
                     float rotAmount = angularVelocities[bodyIndex] * deltaTime;
-                    Math.Math.RotorMultiply(bodySine, bodyCosine, rotAmount, 
+                    Math.RotorMultiply(bodySine, bodyCosine, rotAmount, 
                         ref bodySine, ref bodyCosine
                     );
                     rotationRadians[bodyIndex] = System.MathF.Atan2(bodySine, bodyCosine);
@@ -1770,12 +1771,12 @@ public static class Physics{
         System.Span<float> vertsY = default;
 
         int vertexCount = localVertices.AppendCounts[shapeIndex];
-        int startIndex = Collections.FixedStrideArray.GetElementIndex(shapeIndex, localVertices.EntryStride, 0);                        
+        int startIndex = Howl.Collections.FixedStrideArray.GetElementIndex(shapeIndex, localVertices.EntryStride, 0);                        
         for(int vertex = 0; vertex < vertexCount; vertex++){
             int currentIndex = vertex + startIndex;
 
             // Transform2D the base/un-transformed vertice.
-            Math.Math.TransformVector(localVertices.X[currentIndex], localVertices.Y[currentIndex], scaleX, scaleY,
+            Math.TransformVector(localVertices.X[currentIndex], localVertices.Y[currentIndex], scaleX, scaleY,
                 globalCosines[shapeIndex], globalSines[shapeIndex], globalPositionsX[shapeIndex], globalPositionsY[shapeIndex], 
                 out float x, out float y
             );
@@ -1794,13 +1795,13 @@ public static class Physics{
         {
             case Shape.Rigid.ShapeType.Rectangle:
                 // set the new min and max vectors.
-                Math.Math.GetMinMaxVectors(vertsX, vertsY, out minAabbsX[shapeIndex], out minAabbsY[shapeIndex], 
+                Math.GetMinMaxVectors(vertsX, vertsY, out minAabbsX[shapeIndex], out minAabbsY[shapeIndex], 
                     out maxAabbsX[shapeIndex], out maxAabbsY[shapeIndex]
                 );
             break;
 
             case Shape.Rigid.ShapeType.Circle:
-                globalRadii[shapeIndex] = N_Howl.N_Math.Math.ScaleRadius(localRadii[shapeIndex], scaleX, scaleY);
+                globalRadii[shapeIndex] = N_Howl.N_Math.Math.ScaleCircleRadius(localRadii[shapeIndex], scaleX, scaleY);
                 // set the new min and max vectors. 
                 N_Howl.N_Math.Math.GetMinMaxVertices(vertsX[0], vertsY[0], globalRadii[shapeIndex], 
                     out minAabbsX[shapeIndex], out minAabbsY[shapeIndex], out maxAabbsX[shapeIndex], out maxAabbsY[shapeIndex]
@@ -1836,7 +1837,7 @@ public static class Physics{
     )
     {
         // clear the previous bvh data.
-        BoundingVolumeHierarchy.Clear(ref bvh);
+        DataStructures.Clear(ref bvh);
 
         int count = activeBodies.Count;
         for(int i = 1; i < count; i++) // start at one to avoid Nil.
@@ -1866,7 +1867,7 @@ public static class Physics{
 
                 // insert into the bvh.
                 bvhLeafIndices[
-                    Soa_Leaf.Append(ref bvh.Leaves, minX, minY, maxX, maxY, centroidsX[shapeIndex], centroidsY[shapeIndex], 
+                    DataStructures.Append(ref bvh.Leaves, minX, minY, maxX, maxY, centroidsX[shapeIndex], centroidsY[shapeIndex], 
                         bvhCategories[shapeIndex]
                     )
                 ] = shapeIndex;
@@ -1880,7 +1881,7 @@ public static class Physics{
         }
 
         // construct the bvh with the new data.
-        BoundingVolumeHierarchy.ConstructTree(ref bvh);
+        DataStructures.ConstructTree(ref bvh);
     }
 
 
@@ -2176,14 +2177,14 @@ public static class Physics{
             float relativeVelocityY = otherBodyLinVelY - ownerBodyLinVelY;
 
             // the magnitude of the relative velocity relative to the normal
-            float magnitude = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
+            float magnitude = Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
 
             if(magnitude > 0)
             {
                 continue;
             }
 
-            float restitution = Math.Math.Min(ownerShapeRestitution, otherShapeRestitution);
+            float restitution = Math.Min(ownerShapeRestitution, otherShapeRestitution);
 
             // magnitude of the impulse
             float impulseMagnitude = -(1f + restitution) * magnitude;
@@ -2230,7 +2231,7 @@ public static class Physics{
         bool ownerRotationalResponse, bool otherRotationalResponse, int contactPointsCount, bool otherShapeIsKinematic
     )
     {
-        float restitution = Math.Math.Min(ownerShapeRestitution, otherShapeRestitution);
+        float restitution = Math.Min(ownerShapeRestitution, otherShapeRestitution);
                 
         for(int j = 0; j < contactPointsCount; j++)
         {
@@ -2257,7 +2258,7 @@ public static class Physics{
             float relativeVelocityY = (otherBodyLinVelY + angularVelocityBY) - (ownerBodyLinVelY + angularVelocityAY);
             
             // the magnitude of the relative velocity relative to the normal
-            float magnitude = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
+            float magnitude = Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
 
             if(magnitude > 0)
             {
@@ -2265,8 +2266,8 @@ public static class Physics{
             }
 
             // calculate the denominator.
-            float perpADotNormal = Math.Math.Dot(perpendicularAX, perpendicularAY, revNormalX, revNormalY);
-            float perpBDotNormal = Math.Math.Dot(perpendicularBX, perpendicularBY, revNormalX, revNormalY);
+            float perpADotNormal = Math.Dot(perpendicularAX, perpendicularAY, revNormalX, revNormalY);
+            float perpBDotNormal = Math.Dot(perpendicularBX, perpendicularBY, revNormalX, revNormalY);
             float denominator = ownerBodyInvMass + otherBodyInvMass + 
                 (perpADotNormal * perpADotNormal) * ownerBodyInvRotInertia +
                 (perpBDotNormal * perpBDotNormal) * otherBodyInvRotInertia;
@@ -2286,7 +2287,7 @@ public static class Physics{
 
         }
 
-        // keep these outside the for loop so they dont allocate each time.
+        // keep these outside the for loop so they dont allocate each Howl.Time.
         float impulseX;
         float impulseY;
         float distAX;
@@ -2313,7 +2314,7 @@ public static class Physics{
             {
                 distAX = distsAX[i];
                 distAY = distsAY[i];
-                ownerBodyAngVel += -Math.Math.Cross(distAX, distAY, impulseX, impulseY) * ownerBodyInvRotInertia;
+                ownerBodyAngVel += -Math.Cross(distAX, distAY, impulseX, impulseY) * ownerBodyInvRotInertia;
             }
 
             if (otherShapeIsKinematic)
@@ -2328,7 +2329,7 @@ public static class Physics{
             {
                 distBX = distsBX[i];
                 distBY = distsBY[i];
-                otherBodyAngVel += Math.Math.Cross(distBX, distBY, impulseX, impulseY) * otherBodyInvRotInertia;
+                otherBodyAngVel += Math.Cross(distBX, distBY, impulseX, impulseY) * otherBodyInvRotInertia;
             }
         }        
     }
@@ -2378,26 +2379,26 @@ public static class Physics{
             float relativeVelocityY = (otherLinearVelocityY + angularVelocityBY) - (ownerLinearVelocityY + angularVelocityAY);
 
             // this is the direction the body is travelling in along the contact point surface.
-            float relativeDotNormal = Math.Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
+            float relativeDotNormal = Math.Dot(relativeVelocityX, relativeVelocityY, revNormalX, revNormalY);
             float tangentX = relativeVelocityX - relativeDotNormal * revNormalX;
             float tangentY = relativeVelocityY - relativeDotNormal * revNormalY;
 
-            if(Math.Math.NearlyEqual((tangentX * tangentX) + (tangentY * tangentY), 0, 1e-12f))
+            if(Math.NearlyEqual((tangentX * tangentX) + (tangentY * tangentY), 0, 1e-12f))
             {
                 continue;
             }
 
-            Math.Math.Normalise(tangentX, tangentY, out tangentX, out tangentY);
+            Math.Normalise(tangentX, tangentY, out tangentX, out tangentY);
 
             // calculate the denominator.
-            float perpADotTangent = Math.Math.Dot(perpendicularAX, perpendicularAY, tangentX, tangentY);
-            float perpBDotTangent = Math.Math.Dot(perpendicularBX, perpendicularBY, tangentX, tangentY);
+            float perpADotTangent = Math.Dot(perpendicularAX, perpendicularAY, tangentX, tangentY);
+            float perpBDotTangent = Math.Dot(perpendicularBX, perpendicularBY, tangentX, tangentY);
             float denominator = ownerInverseMass + otherInverseMass + 
                 (perpADotTangent * perpADotTangent) * ownerInverseRotationalInertia +
                 (perpBDotTangent * perpBDotTangent) * otherInverseRotationalInertia;
 
             // Calculate the DESIRED friction magnitude to stop all sliding.
-            float frictionImpulseMag = -Math.Math.Dot(relativeVelocityX, relativeVelocityY, tangentX, tangentY) / denominator;
+            float frictionImpulseMag = -Math.Dot(relativeVelocityX, relativeVelocityY, tangentX, tangentY) / denominator;
 
             // Coulomb's Law:
             // Limit that desire by the static friction. 
@@ -2405,7 +2406,7 @@ public static class Physics{
 
             // the the desired friction amount is greater than static friction
             // that means that the object should be sliding with kinetic friction.
-            if (Math.Math.Abs(frictionImpulseMag) > maxFriction)
+            if (Math.Abs(frictionImpulseMag) > maxFriction)
             {
                 // Note: We multiply by the SIGN of frictionImpulseMag to keep the direction correct.
                 frictionImpulseMag = (impulseMagnitudes[j] * kineticFriction) * System.MathF.Sign(frictionImpulseMag);
@@ -2416,7 +2417,7 @@ public static class Physics{
             impulsesY[j] = frictionImpulseMag * tangentY;
         }
 
-        // keep these outside the for loop so they dont allocate each time.
+        // keep these outside the for loop so they dont allocate each Howl.Time.
         float impulseX;
         float impulseY;
         float distAX;
@@ -2443,7 +2444,7 @@ public static class Physics{
             {
                 distAX = distsAX[j];
                 distAY = distsAY[j];
-                ownerAngularVelocity += -Math.Math.Cross(distAX, distAY, impulseX, impulseY) * ownerInverseRotationalInertia;
+                ownerAngularVelocity += -Math.Cross(distAX, distAY, impulseX, impulseY) * ownerInverseRotationalInertia;
             }
 
             if (otherIsKinematic)
@@ -2458,7 +2459,7 @@ public static class Physics{
             {
                 distBX = distsBX[j];
                 distBY = distsBY[j];
-                otherAngularVelocity += Math.Math.Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
+                otherAngularVelocity += Math.Cross(distBX, distBY, impulseX, impulseY) * otherInverseRotationalInertia;
             }       
         } 
     }
@@ -2496,7 +2497,7 @@ public static class Physics{
         {
             for(int j = i; j < Shape.Category.Count; j++)
             {    
-                OverlapInfo info = CategorisedLeafOverlaps.GetOverlaps(overlaps, i, j);
+                OverlapInfo info = DataStructures.GetOverlaps(overlaps, i, j);
                 for(int w = 0; w < info.Length; w++)
                 {
                     // get the data about the owner and other.
@@ -2577,7 +2578,7 @@ public static class Physics{
             int index = active[i];
             float deltaMovementX = currentPositionX[index] - previousPositionX[index];
             float deltaMovementY = currentPositionY[index] - previousPositionY[index];
-            float deltaMovement = Math.Math.Max(Math.Math.Abs(deltaMovementX),Math.Math.Abs(deltaMovementY));   
+            float deltaMovement = Math.Max(Math.Abs(deltaMovementX),Math.Abs(deltaMovementY));   
             float timeFactor = 1 + deltaTime;
             bvhLeafPadding[index] = deltaMovement * timeFactor;
         }
@@ -2618,7 +2619,7 @@ public static class Physics{
             ClearForcesAndVelocities(ref state, bodyIndex);
 
             if(IntrusiveList.AddToTree(ref state.BodyHierarchy, bodyIndex)==false){
-                Debug.Assert(false, "failed to insert into Transform2D hierarchy.");
+                Howl.Debug.Assert(false, "failed to insert into Transform2D hierarchy.");
                 GenIdAllocator.Deallocate(ref state.GenIdAllocator, entityId);
                 SetActiveUnsafe(ref state, bodyIndex, false);
                 return false;
@@ -2634,7 +2635,7 @@ public static class Physics{
             
             int entityIndex = GenId.GetIndex(genId);
             if (state.EntityTypes[entityIndex] != EntityType.Body){
-                Debug.Assert(false, "Attempted to deallocate a entity that isnt a physics body.");
+                Howl.Debug.Assert(false, "Attempted to deallocate a entity that isnt a physics body.");
                 return false;
             }
 
@@ -2679,7 +2680,7 @@ public static class Physics{
         public static bool SetActive(ref State state, GenId entityId, bool isActive)
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body){
-                Debug.Assert(false, "Attempted a body operation on a non-physics body.");
+                Howl.Debug.Assert(false, "Attempted a body operation on a non-physics body.");
                 return false;
             }
 
@@ -2689,7 +2690,7 @@ public static class Physics{
         public static bool IsActive(ref State state, GenId entityId)
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body){
-                Debug.Assert(false, "Attempted a body operation on a non-physics body.");
+                Howl.Debug.Assert(false, "Attempted a body operation on a non-physics body.");
                 return false;
             }
 
@@ -2700,7 +2701,7 @@ public static class Physics{
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body)
             {
-                Debug.Assert(false, "Attempted a body operation on a non-physics body.");
+                Howl.Debug.Assert(false, "Attempted a body operation on a non-physics body.");
                 return false;
             }
 
@@ -2711,7 +2712,7 @@ public static class Physics{
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Body)
             {
-                Debug.Assert(false, "Attempted a body operation on a non-physics body.");
+                Howl.Debug.Assert(false, "Attempted a body operation on a non-physics body.");
                 return default;
             }
 
@@ -2722,7 +2723,7 @@ public static class Physics{
         {
             if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
             {
-                Debug.Assert(false, "invalid gen id");
+                Howl.Debug.Assert(false, "invalid gen id");
                 return false;
             }
 
@@ -2730,7 +2731,7 @@ public static class Physics{
             
             if(IsActiveUnsafe(ref state, index) == false)
             {
-                Debug.Assert(false, "body isnt active.");
+                Howl.Debug.Assert(false, "body isnt active.");
                 return false;
             }
 
@@ -2819,7 +2820,7 @@ public static class Physics{
                 
                 while (true)
                 {
-                    float distSqrd = Math.Math.DistanceSquared(state.Centroids.X[shapeIndex], state.Centroids.Y[shapeIndex], 
+                    float distSqrd = Math.DistanceSquared(state.Centroids.X[shapeIndex], state.Centroids.Y[shapeIndex], 
                         centerOfMassX, centerOfMassY
                     );
 
@@ -3151,7 +3152,7 @@ public static class Physics{
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Shape)
             {
-                Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
+                Howl.Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
                 return false;
             }
             return Physics.SetActive(ref state, entityId, isActive);
@@ -3161,7 +3162,7 @@ public static class Physics{
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Shape)
             {
-                Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
+                Howl.Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
                 return false;
             }
 
@@ -3172,7 +3173,7 @@ public static class Physics{
         {
             if(state.EntityTypes[GenId.GetIndex(entityId)] != EntityType.Shape)
             {
-                Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
+                Howl.Debug.Assert(false, "Attempted a shape operation on a non-physics shape.");
                 return false;
             }
             return Physics.SetLocalTransform(ref state, entityId, newTransform);
@@ -3188,7 +3189,7 @@ public static class Physics{
         {
             if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, physicsBodyId))
             {
-                Debug.Assert(false, "inavalid gen id.");
+                Howl.Debug.Assert(false, "inavalid gen id.");
                 return false;
             }
 
@@ -3224,7 +3225,7 @@ public static class Physics{
 
             // get the collision indices of the physics body.
             int bodyIndex = GenId.GetIndex(physicsBodyId);
-            int start = Collections.FixedStrideArray.GetElementIndex(bodyIndex, manifold.Stride, 0);
+            int start = Howl.Collections.FixedStrideArray.GetElementIndex(bodyIndex, manifold.Stride, 0);
             int collisionCount = manifold.ActiveIndicesCount[bodyIndex];
             System.Span<int> collisionIndices = Array.AsSpan(manifold.ActiveIndices, start, collisionCount);
 
@@ -3290,7 +3291,7 @@ public static class Physics{
             public static ref float GetStaticFriction(ref State state, GenId entityId, ref bool isValidOutput)
             {
                 if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId)){
-                    Debug.Assert(false, "invalid gen id.");
+                    Howl.Debug.Assert(false, "invalid gen id.");
                     isValidOutput = false;
                     
                     // return a ref to the nil.
@@ -3300,7 +3301,7 @@ public static class Physics{
                 if(IsRigidBodyUnsafe(ref state, entityId) != true)
                 {
                     // return not allocated as only a rigidbody is meant to have this property. 
-                    Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
+                    Howl.Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
                     isValidOutput = false;
 
                     // return a ref to the nil.
@@ -3337,7 +3338,7 @@ public static class Physics{
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    Debug.Assert(false, "invalid gen id.");
+                    Howl.Debug.Assert(false, "invalid gen id.");
                     isValidOutput = false;
 
                     // return a ref to the nil.
@@ -3347,7 +3348,7 @@ public static class Physics{
                 if(IsRigidBodyUnsafe(ref state, entityId) != true)
                 {
                     // return not allocated as only a rigidbody is meant to have this property. 
-                    Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
+                    Howl.Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
                     isValidOutput = false;
 
                     // return a ref to the nil.
@@ -3381,7 +3382,7 @@ public static class Physics{
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    Debug.Assert(false, "invalid gen id.");
+                    Howl.Debug.Assert(false, "invalid gen id.");
 
                     // return a ref to the nil.
                     return ref state.Materials.Density[0];
@@ -3390,7 +3391,7 @@ public static class Physics{
                 if(IsRigidBodyUnsafe(ref state, entityId) != true)
                 {
                     // return not allocated as only a rigidbody is meant to have this property. 
-                    Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
+                    Howl.Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
                     isValidOutput = false;
 
                     // return a ref to the nil.
@@ -3424,7 +3425,7 @@ public static class Physics{
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {                    
-                    Debug.Assert(false, "invalid gen id.");
+                    Howl.Debug.Assert(false, "invalid gen id.");
                     isValidOutput = false;
 
                     // return a ref to the nil.
@@ -3434,7 +3435,7 @@ public static class Physics{
                 if(IsRigidBodyUnsafe(ref state, entityId) != true)
                 {
                     // return not allocated as only a rigidbody is meant to have this property. 
-                    Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
+                    Howl.Debug.Assert(false, "Attempted a rigid body operation on a non rigid body.");
                     isValidOutput = false;
 
                     // return a ref to the nil.
@@ -3468,7 +3469,7 @@ public static class Physics{
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    Debug.Assert(false, "invalid gen id.");
+                    Howl.Debug.Assert(false, "invalid gen id.");
                     return false;
                 }
 
@@ -3499,7 +3500,7 @@ public static class Physics{
             {
                 if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    Debug.Assert(false, "invalid gen id");
+                    Howl.Debug.Assert(false, "invalid gen id");
                     return false;
                 }
 
@@ -3529,7 +3530,7 @@ public static class Physics{
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    Debug.Assert(false, "invalid gen id");
+                    Howl.Debug.Assert(false, "invalid gen id");
                     return false;
                 }
 
@@ -3559,7 +3560,7 @@ public static class Physics{
             {
                 if(GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, entityId))
                 {
-                    Debug.Assert(false, "invalid gen id");
+                    Howl.Debug.Assert(false, "invalid gen id");
                     return false;
                 }
                 
@@ -3716,7 +3717,7 @@ public static class Physics{
             public static class Collider
             {                
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-                public static bool Allocate(ref State state, Math.Shapes.Circle shape, Transform2D transform, 
+                public static bool Allocate(ref State state, N_Math.Circle shape, Transform2D transform, 
                     Shape.Behaviour colliderBehaviour, GenId bodyId, ref GenId colliderId
                 )
                 {
@@ -3726,7 +3727,7 @@ public static class Physics{
                     
                     if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, bodyId))
                     {
-                        Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
+                        Howl.Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return false;
                     }
 
@@ -3757,7 +3758,7 @@ public static class Physics{
                 public static readonly System.Numerics.Vector<float> VectorRotationalInertia = new(RotationalInertia);
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-                public static bool Allocate(ref State state, Math.Shapes.Circle shape, Transform2D transform, 
+                public static bool Allocate(ref State state, N_Math.Circle shape, Transform2D transform, 
                     Material material, Shape.Behaviour colliderBehaviour, bool rotationalResponse, GenId bodyId, ref GenId genId
                 )
                 {
@@ -3768,7 +3769,7 @@ public static class Physics{
 
                     if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, bodyId))
                     {
-                        Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
+                        Howl.Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return false;
                     }
 
@@ -3812,7 +3813,7 @@ public static class Physics{
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
                 public static float CalculateMass(float radius, float density)
                 {
-                    return density * Math.Shapes.Circle.GetArea(radius);
+                    return density * Math.GetCircleArea(radius);
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -3820,14 +3821,14 @@ public static class Physics{
                     System.Numerics.Vector<float> density
                 )
                 {
-                    return density * Math.Shapes.Circle.GetArea(radius);
+                    return density * Math.GetArea(radius);
                 }
 
                 public static void IntegrateProperties(ref State state, float scaleX, float scaleY, float baseRadii,
                     int shapeIndex
                 )
                 {
-                    float radius = Math.Shapes.Circle.ScaleRadius(baseRadii, scaleX, scaleY);
+                    float radius = Math.ScaleCircleRadius(baseRadii, scaleX, scaleY);
                     state.GlobalRadii[shapeIndex] = radius;
 
                     float mass = CalculateMass(radius, state.Materials.Density[shapeIndex]); 
@@ -3870,7 +3871,7 @@ public static class Physics{
 
                     if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, bodyId))
                     {
-                        Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
+                        Howl.Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return false;
                     }
 
@@ -3917,7 +3918,7 @@ public static class Physics{
                     
                     if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, bodyId))
                     {
-                        Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
+                        Howl.Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return false;
                     }
 
@@ -3948,7 +3949,7 @@ public static class Physics{
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
                 public static float CalculateMass(float width, float height, float density)
                 {
-                    return Math.Shapes.Rectangle.GetArea(width, height) * density;
+                    return Math.GetRectangleArea(width, height) * density;
                 } 
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -3956,7 +3957,7 @@ public static class Physics{
                     System.Numerics.Vector<float> height, System.Numerics.Vector<float> density
                 )
                 {
-                    return Math.Shapes.Rectangle.GetArea(width, height) * density;
+                    return Math.GetRectangleArea(width, height) * density;
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -3997,7 +3998,7 @@ public static class Physics{
 
         public static void GetVerticesUnsafe(FsSoa_Vector2 vertices, int bodyIndex, ref System.Span<float> xOutput, ref System.Span<float> yOutput)
         {
-            int startIndex = Collections.FixedStrideArray.GetElementIndex(bodyIndex, vertices.EntryStride, 0);
+            int startIndex = Howl.Collections.FixedStrideArray.GetElementIndex(bodyIndex, vertices.EntryStride, 0);
             int appendCount = vertices.AppendCounts[bodyIndex];
             xOutput = Array.AsSpan(vertices.X, startIndex, appendCount);
             yOutput = Array.AsSpan(vertices.Y, startIndex, appendCount);
@@ -4007,7 +4008,7 @@ public static class Physics{
         {
             if (GenIdAllocator.IsGenIdStale(ref state.GenIdAllocator, genId))
             {
-                Debug.Assert(false, "invalid gen id");
+                Howl.Debug.Assert(false, "invalid gen id");
                 return false;
             }
 
@@ -4015,7 +4016,7 @@ public static class Physics{
 
             if(state.EntityTypes[entityIndex] != EntityType.Shape)
             {
-                Debug.Assert(false, "not allocated.");
+                Howl.Debug.Assert(false, "not allocated.");
                 return false;
             }
 
@@ -4094,12 +4095,12 @@ public static class Physics{
 
         if (state.DrawBvhBranches)
         {
-            BoundingVolumeHierarchy.DrawBranches(state.Bvh);
+            DataStructures.DrawBranches(state.Bvh);
         }
 
         if (state.DrawLeaves)
         {    
-            BoundingVolumeHierarchy.DrawLeaves(state.Bvh);
+            DataStructures.DrawLeaves(state.Bvh);
         }
 
         if (state.DrawCollisionInformation)
@@ -4295,7 +4296,7 @@ public static class Physics{
 
         //     Renderer.DrawLine(app, LinearVelocityColour, new Vector2(startX, startY), new Vector2(endX, endY), DrawSpace.World);
         // }
-        Debug.Assert(false, "");
+        Howl.Debug.Assert(false, "");
     }
 
     public static void DrawAabbs(
@@ -4373,7 +4374,7 @@ public static class Physics{
             {
                 continue;
             }
-            int entryElementIndex = Collections.FixedStrideArray.GetElementIndex(i, collisions.Stride, 0);
+            int entryElementIndex = Howl.Collections.FixedStrideArray.GetElementIndex(i, collisions.Stride, 0);
             for(int j = 0; j < count; j++)
             {
                 int elementIndex = entryElementIndex+j;
@@ -4549,7 +4550,7 @@ public static class Physics{
 
                 if (callbacks.IsInitialised)
                 {
-                    Debug.Panic("Already Initialised.");
+                    Howl.Debug.Panic("Already Initialised.");
                     return false;
                 }
 
@@ -4758,15 +4759,15 @@ public static class Physics{
             {
                 if (manifold.IsInitialised)
                 {
-                    Debug.Panic("Already Initialised.");
+                    Howl.Debug.Panic("Already Initialised.");
                     return false;
                 }
 
-                Debug.Assert(totalColliders <= Constants.MaxColliders, 
+                Howl.Debug.Assert(totalColliders <= Constants.MaxColliders, 
                     $"Collision Manifold total colliders '{totalColliders}' exceeds max collisions colliders  '{Constants.MaxColliders}'"
                 );
 
-                Math.Math.Clamp(totalColliders, 0, Constants.MaxColliders);
+                Math.Clamp(totalColliders, 0, Constants.MaxColliders);
 
                 manifold.Stride = totalColliders;
                 manifold.MaxEntries = totalColliders;
@@ -4819,7 +4820,7 @@ public static class Physics{
                 float colliderCentroidX, float colliderCentroidY, float normalX, float normalY, float contactPointX, float contactPointY, float depth
             )
             {
-                int elementIndex = Collections.FixedStrideArray.GetElementIndex(recipientIndex, manifold.Stride, colliderIndex);
+                int elementIndex = Howl.Collections.FixedStrideArray.GetElementIndex(recipientIndex, manifold.Stride, colliderIndex);
 
                 ref int phase = ref manifold.ActivePhase[elementIndex];
                 if(phase <= 0)
@@ -4866,7 +4867,7 @@ public static class Physics{
                 float secondContactPointX, float secondContactPointY, float depth
             )
             {
-                int elementIndex = Collections.FixedStrideArray.GetElementIndex(recipientIndex, manifold.Stride, colliderIndex);
+                int elementIndex = Howl.Collections.FixedStrideArray.GetElementIndex(recipientIndex, manifold.Stride, colliderIndex);
 
                 ref int phase = ref manifold.ActivePhase[elementIndex];
                 if(phase <= 0)
@@ -5018,7 +5019,7 @@ public static class Physics{
                     {
                         // get the active phase of the collision.
 
-                        int elementIndex = Collections.FixedStrideArray.GetElementIndex(entryIndex, stride, entryElementIndex);;
+                        int elementIndex = Howl.Collections.FixedStrideArray.GetElementIndex(entryIndex, stride, entryElementIndex);;
                         int collisionIndex = activeIndices[elementIndex];
                         ref int phase = ref active[collisionIndex];
 

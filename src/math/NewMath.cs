@@ -11,10 +11,77 @@ public const float Tau = 6.283185307179586f;
 public const float OneSixth = 1.0f / 6.0f;
 public const float OneTwentyFourth = 1.0f / 24.0f;
 
+public static readonly System.Numerics.Vector<float> Vector_Pi = new System.Numerics.Vector<float>(Math.Pi);
+
 /**##########################################################################################################################################
     div: Scalar Math.
 ##########################################################################################################################################**/
 
+/// <summary>
+/// A rotation update using complex number multiplication (rotors)
+/// and a 4th order Taylor Series expansion for delta trigonometry.
+/// </summary>
+/// <remarks>
+/// This is significantly faster then Vector.SinCos as it avoids
+/// heavy transcendental instructions.
+/// 
+/// Accuracy: High for theta < 90 degrees (1.57 radian) per step.
+/// Stability: Includes a renormalization pass to prevent floating-point drift
+/// (scaling/shrinking) over time.
+/// </remarks>
+/// <param name="sin">the current sine values.</param>
+/// <param name="cos">the current cosing values.</param>
+/// <param name="theta">the angular change in radians: E.g. (angularVelocity * deltaTime).</param>
+/// <param name="newSin">output for updated sine values.</param>
+/// <param name="newCos">putput for updated cosine values.</param>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void RotorMultiply(
+    float sin, float cos, float theta, ref float newSin, ref float newCos
+){
+    float thetaSq = theta * theta;
+
+    // Get Sin/Cos of theta (Small Angle Approximation)
+    float sinDelta = theta * (1 - (thetaSq * OneSixth));
+    float cosDelta = 1 - (thetaSq * 0.5f) + (thetaSq * thetaSq * OneTwentyFourth);
+
+    // Complex Multiplication (identity math)
+    // next sin = sin(a)cos(b) + cos(a)sin(b)
+    float nextSin = (sin * cosDelta) + (cos * sinDelta);
+    // next cos = cos(a)cos(b) - sin(a)sin(b)
+    float nextCos = (cos * cosDelta) - (sin * sinDelta);
+
+    // renormalise.
+    // Note: floating-point numbers are imprecise, which accumulates the more they
+    // are operated on. Renormalizing (the inv leng part) force the length back
+    // to 1.0, so it doesnt drift and squish or enlargen undeterministically.
+    float dot = (nextSin * nextSin) + (nextCos * nextCos);
+    float invLen = 1 / Sqrt(dot);
+
+    // --- NAN PROTECTION ---
+    // Define a tiny epsilon to avoid division by zero.        
+    if (float.IsNaN(invLen) || 1e-10f > invLen)
+    {
+        return;
+    }
+
+    newSin = nextSin * invLen;
+    newCos = nextCos * invLen;
+}
+
+/// <summary>
+///     Calculates the sum of all integers from <c><paramref name="n"/></c> to 1.
+/// </summary>
+/// <remarks>
+///     Remarks: <c><paramref name="n"/></c> should not be larger than 46430.
+/// </remarks>
+/// <param name="n">the n'th number.</param>
+/// <returns>the triangular sum.</returns>
+public static int CalculateTriangularSum(
+    int n
+){
+    Howl.Debug.Assert(n<46430, "");
+    return n * (n+1) / 2;
+}
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 public static void Normalise(float x, float y, out float nX, out float nY){
@@ -1314,6 +1381,42 @@ public static bool AabbIntersectsLine(
     return false;
 }
 
+/// <summary>
+///     Constructs a Axis-Aligned-Bounding-Box from the union of two AABB's
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static Aabb UnionAabbs(
+    Aabb a, Aabb b
+){
+    UnionAabbs(
+        a.MinX, a.MinY, a.MaxX, a.MaxY,
+        b.MinX, b.MinY, b.MaxX, b.MaxY,
+        out float unionMinX, out float unionMinY,
+        out float unionMaxX, out float unionMaxY
+    );
+
+    Aabb result = default;
+    result.MinX = unionMinX;
+    result.MinY = unionMinY;
+    result.MaxX = unionMaxX;
+    result.MaxY = unionMaxY;
+    return result;
+}
+
+/// <summary>
+///     Gets the min and max components for the union of an AABB.
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void UnionAabbs(
+    float minXA, float minYA, float maxXA, float maxYA,
+    float minXB, float minYB, float maxXB, float maxYB,
+    out float unionMinX, out float unionMinY, out float unionMaxX, out float unionMaxY
+){
+    unionMinX = Math.Min(minXA, minXB);
+    unionMinY = Math.Min(minYA, minYB);
+    unionMaxX = Math.Max(maxXA, maxXB);
+    unionMaxY = Math.Max(maxYA, maxYB);
+}
 
 /**##########################################################################################################################################
     div: Shape Utils.
@@ -1554,17 +1657,53 @@ public static void GetMinMaxVertices(
 public static float ScaleRadius(
     float radius, Vector2 scale
 ){
-    return ScaleRadius(radius, scale.X, scale.Y);
+    return ScaleCircleRadius(radius, scale.X, scale.Y);
 }
 
 /// <remarks>
 ///     The radius is scaled by the largest component in the scaling vector.
 /// </remarks>
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static float ScaleRadius(
+public static float ScaleCircleRadius(
     float radius, float scaleX, float scaleY
 ){
     return radius *= Max(scaleX, scaleY);
+}
+
+/// <summary>
+/// Gets the area of a circle.
+/// </summary>
+/// <param name="radius">the radius of the circle.</param>
+/// <returns>the area of the circle.</returns>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float GetCircleArea(
+    float radius
+){
+    return radius * radius * Pi;
+}
+
+/// <summary>
+/// Gets the area of a circle.
+/// </summary>
+/// <param name="circle">the circle.</param>
+/// <returns>the area of the circle.</returns>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float GetCircleArea(
+    ref Circle circle
+){
+    return GetCircleArea(circle.Radius);
+}
+
+/// <summary>
+/// Vectorised calculation of circles radii.
+/// </summary>
+/// <param name="radius">a vector of circle radii.</param>
+/// <returns>the area values of the circles.</returns>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static System.Numerics.Vector<float> GetArea(
+    System.Numerics.Vector<float> radius
+){
+    return radius * radius * Vector_Pi;
 }
 
 /**##########################################################################################################################################
@@ -2463,6 +2602,31 @@ public static void FindContactPoints(
             contactPointY = closestPointY;
         }
     } 
+}
+
+/**##########################################################################################################################################
+    div: Rectangle.
+##########################################################################################################################################**/
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float GetRectangleArea(
+    float width, float height
+){
+    return width * height;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float GetRectangleArea(
+    ref Rectangle rectangle
+){
+    return GetRectangleArea(rectangle.Width, rectangle.Height);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static System.Numerics.Vector<float> GetRectangleArea(
+    System.Numerics.Vector<float> width, System.Numerics.Vector<float> heigth
+){
+    return width * heigth;
 }
 
 }
