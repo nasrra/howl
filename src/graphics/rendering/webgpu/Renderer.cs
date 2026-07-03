@@ -5,6 +5,7 @@ using Howl;
 using Howl.Text;
 using Howl.Unmanaged.Collections;
 using N_Howl.N_Font;
+using N_Howl.N_Graphics;
 using N_Howl.N_Math;
 using N_Howl.N_Windowing;
 using Silk.NET.Core.Native;
@@ -2256,33 +2257,40 @@ public static SpriteId AllocateSpriteChain(
 }
 
 public static bool InitSprite(
-    ref RendererCtx ctx, SpriteId spriteId, Transform transform, Region region, int virtualTextureIndex, int materialIndex, bool isActive 
+    ref RendererCtx ctx, SpriteId spriteId, Transform transform, Colour colour, Region region, 
+    ColourState colourState, int virtualTextureIndex, int materialIndex, bool isActive 
 ){
-    return InitSprite(ref ctx.SpriteManager, spriteId, transform, region, virtualTextureIndex, materialIndex, isActive);
+    return InitSprite(
+        ref ctx.SpriteManager, spriteId, transform, colour, region, 
+        colourState, virtualTextureIndex, materialIndex, isActive
+    );
 }
 
 public static bool InitSprite(
-    ref SpriteManager manager, SpriteId spriteId, Transform transform, Region region, int virtualTextureIndex, int materialIndex, bool isActive
+    ref SpriteManager manager, SpriteId spriteId, Transform transform, Colour colour, Region region, 
+    ColourState colourState, int virtualTextureIndex, int materialIndex, bool isActive
 ){
 
-    int spriteIndex = GenId.GetIndex(spriteId.GenId);
-    int generation = GenId.GetGeneration(spriteId.GenId);
+    int index = GenId.GetIndex(spriteId.GenId);
+    int gen = GenId.GetGeneration(spriteId.GenId);
 
     { // validation
         AssertInitialisedSpriteManager(manager);
         AssertValidSpriteId(spriteId);
         AssertValidVirtualTextureIndex(virtualTextureIndex);
         AssertValidMaterialIndex(materialIndex);
-        if(generation != manager.SpriteGenerations[spriteIndex]){
+        if(gen != manager.SpriteGenerations[index]){
             return false;
         }
     }
 
-    SetSpriteTransformUnsafe(ref manager, spriteIndex, transform);
-    SetSpriteMaterialUnsafe(ref manager, spriteIndex, materialIndex);
-    SetSpriteRegionUnsafe(ref manager, spriteIndex, region);
-    SetSpriteVirtualTextureUnsafe(ref manager, spriteIndex, virtualTextureIndex);
-    SetSpriteActiveUnsafe(ref manager, spriteIndex, isActive);
+    SetSpriteTransformUnsafe(ref manager, index, transform);
+    SetSpriteMaterialUnsafe(ref manager, index, materialIndex);
+    SetSpriteRegionUnsafe(ref manager, index, region);
+    SetSpriteVirtualTextureUnsafe(ref manager, index, virtualTextureIndex);
+    SetSpriteActiveUnsafe(ref manager, index, isActive);
+    SetSpriteColourUnsafe(ref manager, index, colour);
+    SetSpriteColourStateUnsafe(ref manager, index, colourState);
     return true;
 }
 
@@ -2623,6 +2631,84 @@ public static void SetSpriteVirtualTextureUnsafe(
     ref SpriteManager manager, int spriteIndex, int virtualTextureIndex
 ){
     manager.Sprites[spriteIndex].VirtualTextureIndex = virtualTextureIndex;
+}
+
+public static bool SetSpriteColour(
+    ref SpriteManager manager, SpriteId spriteId, Colour colour
+){
+
+    int index = GenId.GetIndex(spriteId.GenId);
+    int gen = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation.
+        AssertValidSpriteId(spriteId);
+        AssertInitialisedSpriteManager(manager);
+        if(manager.SpriteGenerations[index] != gen){
+            return false;
+        } 
+    }
+
+    SetSpriteColourUnsafe(ref manager, index, colour);
+    return true;
+}
+
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>Bypasses all validation checks.</para>
+/// </remarks>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void SetSpriteColourUnsafe(
+    ref SpriteManager manager, SpriteId spriteId, Colour colour
+){
+    SetSpriteColourUnsafe(ref manager, GenId.GetIndex(spriteId.GenId), colour);
+}
+
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>Bypasses all validation checks.</para>
+/// </remarks>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void SetSpriteColourUnsafe(
+    ref SpriteManager manager, int spriteIndex, Colour colour
+){
+    manager.Sprites[spriteIndex].Colour = colour;
+}
+
+public static bool SetSpriteColourState(
+    ref SpriteManager manager, SpriteId spriteId, ColourState colourState
+){
+    int index = GenId.GetIndex(spriteId.GenId);
+    int gen = GenId.GetGeneration(spriteId.GenId);
+    
+    { // validation.
+        AssertValidSpriteId(spriteId);
+        AssertInitialisedSpriteManager(manager);
+        if(manager.SpriteGenerations[index] != gen){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>Bypassses all validation checks.</para>
+/// </remarks>
+public static void SetSpriteColourStateUnsafe(
+    ref SpriteManager manager, SpriteId spriteId, ColourState colourState
+){
+    SetSpriteColourStateUnsafe(ref manager, GenId.GetIndex(spriteId.GenId), colourState);
+}
+
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>Bypassses all validation checks.</para>
+/// </remarks>
+public static void SetSpriteColourStateUnsafe(
+    ref SpriteManager manager, int spriteIndex, ColourState colourState
+){
+    manager.Sprites[spriteIndex].ColourState = (int)colourState;
 }
 
 /**##########################################################################################################################################

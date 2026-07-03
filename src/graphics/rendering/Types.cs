@@ -95,3 +95,8 @@ public struct FontTexturesInitInfo{
     /// </summary>
     public Array<int> VirtualTextures;
 }
+
+public enum ColourState : int{
+    Tint = 0,
+    Override = 1
+}

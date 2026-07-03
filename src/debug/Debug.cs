@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using N_Howl.N_CameraSystem;
+using N_Howl.N_Graphics;
 using N_Howl.N_Math;
 using N_Howl.N_Rendering;
 
@@ -122,7 +123,7 @@ public static unsafe class Debug{
 
         bool isValidOutput = false;
         SpriteId sprite = Renderer.AllocateOneFrameSprite(layer, ref isValidOutput);
-        Renderer.InitSprite(sprite, transform, default, 1, materialIndex, true);
+        Renderer.InitSprite(sprite, transform, Colour.White, default, default, 1, materialIndex, true);
     }
 
     public static float CalculateThicknessRelativeToCamera(

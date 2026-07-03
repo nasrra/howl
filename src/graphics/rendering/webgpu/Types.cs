@@ -6,6 +6,7 @@ using Howl;
 using N_Howl.N_Math;
 using Howl.Text;
 using N_Howl.N_Font;
+using N_Howl.N_Graphics;
 
 namespace N_Howl.N_Rendering.N_WebGpu;
 
@@ -312,7 +313,13 @@ public struct VirtualTextureManager{
     public bool IsInitialised;
 }
 
-[StructLayout(LayoutKind.Sequential)]
+/**
+    WGSL requires that the total size of a struct must be a multiple of its largest member's alignment
+
+    Remember to look at alignments and sizes when changing this: 
+    https://www.w3.org/TR/WGSL/#alignment-and-size
+**/
+[StructLayout(LayoutKind.Sequential, Size = 128)]
 public unsafe struct Sprite : System.IComparable<Sprite>{
     /// <summary>
     ///     The maximum amount of sprites a shader can store.
@@ -327,9 +334,11 @@ public unsafe struct Sprite : System.IComparable<Sprite>{
     public const int MaxAmount = 1677721;
     public Matrix4x4 Transform;
     public Region Region;
+    public Colour Colour;
+    public SpriteState State;
     public int VirtualTextureIndex;
     public int MaterialIndex;
-    public SpriteState State;
+    public int ColourState;
     public int Layer;
 
     public int CompareTo(

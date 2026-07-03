@@ -40,17 +40,9 @@ public static void Draw(
     WebGPU.Renderer.DrawRenderer(ref GlobalState.WebGpuCtx);
 }
 
-public static SpriteId AllocateSprite(
-    int layer, ref bool isValidOutput
-){
-    return WebGPU.Renderer.AllocateSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
-}
-
-public static bool DeallocateSprite(
-    SpriteId spriteId
-){
-    return WebGPU.Renderer.DeallocateSprite(ref GlobalState.WebGpuCtx, spriteId);
-}
+/**##########################################################################################################################################
+    div: Textures.
+##########################################################################################################################################**/
 
 public static bool LoadImageTexture(
     int virtualTextureId
@@ -76,23 +68,9 @@ public static void SetVirtualTextureFilePath(
     WebGPU.Renderer.SetVirtualTextureFilePath(ref GlobalState.WebGpuCtx, filePath, virtualTextureId);
 }
 
-public static bool SetSpriteTransform(
-    SpriteId spriteId, Transform transform
-){
-    return WebGPU.Renderer.SetSpriteTransform(ref GlobalState.WebGpuCtx, spriteId, transform);
-}
-
-public static bool SetSpriteVirtualTexture(
-    SpriteId spriteId, int virtualTextureId
-){
-    return WebGPU.Renderer.SetSpriteVirtualTexture(ref GlobalState.WebGpuCtx, spriteId, virtualTextureId);
-}
-
-public static bool SetSpriteMaterial(
-    SpriteId spriteId, int materialId
-){
-    return WebGPU.Renderer.SetSpriteMaterial(ref GlobalState.WebGpuCtx, spriteId, materialId);
-}
+/**##########################################################################################################################################
+    div: Buffers.
+##########################################################################################################################################**/
 
 public static void WriteToUserUniformBuffer(
     void* uboData, uint sizeOfBufferInBytes
@@ -106,16 +84,30 @@ public static void WriteToUserStorageBuffer(
     WebGPU.Renderer.WriteToUserStorageBuffer(ref GlobalState.WebGpuCtx, uboData, sizeOfBufferInBytes);
 }
 
-public static bool SetSpriteRegion(
-    SpriteId spriteId, Region region
+/**##########################################################################################################################################
+    div: Sprites.
+##########################################################################################################################################**/
+
+public static SpriteId AllocateSprite(
+    int layer, ref bool isValidOutput
 ){
-    return WebGPU.Renderer.SetSpriteRegion(ref GlobalState.WebGpuCtx, spriteId, region);
+    return WebGPU.Renderer.AllocateSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
+}
+
+public static bool DeallocateSprite(
+    SpriteId spriteId
+){
+    return WebGPU.Renderer.DeallocateSprite(ref GlobalState.WebGpuCtx, spriteId);
 }
 
 public static bool InitSprite(
-    SpriteId spriteId, Transform transform, Region region, int virtualTextureIndex, int materialIndex, bool isActive
+    SpriteId spriteId, Transform transform, N_Graphics.Colour colour, Region region, 
+    ColourState colourState, int virtualTextureIndex, int materialIndex, bool isActive
 ){
-    return WebGPU.Renderer.InitSprite(ref GlobalState.WebGpuCtx, spriteId, transform, region, virtualTextureIndex, materialIndex, isActive);
+    return WebGPU.Renderer.InitSprite(
+        ref GlobalState.WebGpuCtx, spriteId, transform, colour, region, 
+        colourState, virtualTextureIndex, materialIndex, isActive
+    );
 }
 
 public static SpriteId AllocateSpriteChain(
@@ -136,12 +128,33 @@ public static SpriteId AllocateOneFrameSprite(
     return WebGPU.Renderer.AllocateOneFrameSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
 }
 
-public static void OnWindowResize(){
-    if(GlobalState.IsInitialised==false){
-        return;
-    }
-    WebGPU.Renderer.HandleWindowResize(ref GlobalState.WebGpuCtx, Windowing.GetWindowResolution());
+public static bool SetSpriteTransform(
+    SpriteId spriteId, Transform transform
+){
+    return WebGPU.Renderer.SetSpriteTransform(ref GlobalState.WebGpuCtx, spriteId, transform);
 }
+
+public static bool SetSpriteVirtualTexture(
+    SpriteId spriteId, int virtualTextureId
+){
+    return WebGPU.Renderer.SetSpriteVirtualTexture(ref GlobalState.WebGpuCtx, spriteId, virtualTextureId);
+}
+
+public static bool SetSpriteMaterial(
+    SpriteId spriteId, int materialId
+){
+    return WebGPU.Renderer.SetSpriteMaterial(ref GlobalState.WebGpuCtx, spriteId, materialId);
+}
+
+public static bool SetSpriteRegion(
+    SpriteId spriteId, Region region
+){
+    return WebGPU.Renderer.SetSpriteRegion(ref GlobalState.WebGpuCtx, spriteId, region);
+}
+
+/**##########################################################################################################################################
+    div: Final Render Texture. 
+##########################################################################################################################################**/
 
 public static Rectangle GetDestinationRectangle(
 
@@ -187,5 +200,15 @@ public static float GetFinalTextureAspectRatio(
     return WebGPU.Renderer.GetFinalRenderTextureAspectRatio(GlobalState.WebGpuCtx);
 }
 
+/**##########################################################################################################################################
+    div: Windowing.
+##########################################################################################################################################**/
+
+public static void OnWindowResize(){
+    if(GlobalState.IsInitialised==false){
+        return;
+    }
+    WebGPU.Renderer.HandleWindowResize(ref GlobalState.WebGpuCtx, Windowing.GetWindowResolution());
+}
 
 }
