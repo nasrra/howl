@@ -315,6 +315,15 @@ public struct Quaternion{
     public float W;
 
     public static readonly Quaternion Identity = new(){W = 1};
+
+    public static Quaternion operator*(Quaternion lhs, Quaternion rhs){
+        Quaternion result = default;
+        result.X = (lhs.W * rhs.X) + (lhs.X * rhs.W) + (lhs.Y * rhs.Z) - (lhs.Z * rhs.Y);
+        result.Y = (lhs.W * rhs.Y) - (lhs.X * rhs.Z) + (lhs.Y * rhs.W) + (lhs.Z * rhs.X);
+        result.Z = (lhs.W * rhs.Z) + (lhs.X * rhs.Y) - (lhs.Y * rhs.X) + (lhs.Z * rhs.W);
+        result.W = (lhs.W * rhs.W) - (lhs.X * rhs.X) - (lhs.Y * rhs.Y) - (lhs.Z * rhs.Z);
+        return result;
+    }
 }
 
 public struct Transform{

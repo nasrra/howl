@@ -924,7 +924,7 @@ public static class Physics{
                 Collisions.Manifold.Initialise(ref state.CollisionManifold, ref arena, maxEntities);
                 CategorisedOverlapArray.Initialise(ref state.SubStepShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
                 CategorisedOverlapArray.Initialise(ref state.SubStepRigidShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
-                IntrusiveList.Initialise(ref state.BodyHierarchy, ref arena, maxEntities);
+                DataStructures.Init(ref state.BodyHierarchy, ref arena, maxEntities);
             }
 
             state.GravityDirection = new(){Y = -1};
@@ -1225,7 +1225,7 @@ public static class Physics{
         ref Array<bool> rotationalResponses = ref state.RotationalResponses;
         ref Array<Shape.Rigid.ShapeType> shapes = ref state.ShapeTypes;
         ref SwapBackArray<int> activeBodies = ref state.BodyHierarchy.RootIndices;
-        ref Array<IntrusiveList.Node> nodes = ref state.BodyHierarchy.Nodes;
+        ref Array<IntrusiveListNode> nodes = ref state.BodyHierarchy.Nodes;
 
         // scratch buffers for rigid body reslution.
         System.Span<float> impulseMagnitudes = stackalloc float[MaxCollisionContactPoints]; 
@@ -1581,7 +1581,7 @@ public static class Physics{
     /// <remarks>
     ///     Remarks: All provided System.Spans must be indexed by a integer <c>physicsBodyIndex</c>:
     /// </remarks>
-    public static void BodyMovementStep(SwapBackArray<int> activeBodies, ref Array<IntrusiveList.Node> nodes, 
+    public static void BodyMovementStep(SwapBackArray<int> activeBodies, ref Array<IntrusiveListNode> nodes, 
         Soa_Transform2D localTransforms, ref Soa_Transform2D globalTransforms, ref Array<float> linearVelocitiesX, 
         ref Array<float> linearVelocitiesY, Array<float> forcesX, Array<float> forcesY, Array<float> masses, 
         Array<float> angularVelocities, ref Array<float> collisionDisplacementsX, ref Array<float> collisionDisplacementsY, 
@@ -1674,7 +1674,7 @@ public static class Physics{
             }
 
             // move and rotate the body's shapes.
-            ref IntrusiveList.Node node = ref nodes[bodyIndex];
+            ref IntrusiveListNode node = ref nodes[bodyIndex];
             int bodyFirstShapeIndex = node.FirstChild;
             if(bodyFirstShapeIndex != 0)
             {
@@ -1703,7 +1703,7 @@ public static class Physics{
     ///     All arrays must be of the same length and elements should be vertivally accessible via <c>physicsBodyIndex</c>. 
     /// </remarks>
     public static void TransformAllShapesVertices(
-        SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, ref FsSoa_Vector2 globalVertices, FsSoa_Vector2 localVertices, 
+        SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes, ref FsSoa_Vector2 globalVertices, FsSoa_Vector2 localVertices, 
         Array<Shape.Rigid.ShapeType> shapes, ref Array<float> globalScalesX, ref Array<float> globalScalesY, ref Array<float> globalPositionsX, 
         ref Array<float> globalPositionsY, ref Array<float> globalSines, ref Array<float> globalCosines, Array<float> minAabbsX, 
         Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY, ref Array<float> centroidsX, ref Array<float> centroidsY, 
@@ -1825,7 +1825,7 @@ public static class Physics{
     /// <param name="bvhLeafPaddings"></param>
     /// <param name="bvhLeafIndices"></param>
     /// <param name="bvh"></param>
-    public static void ConstructBvhTree(SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, Array<float> minAabbsX, 
+    public static void ConstructBvhTree(SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes, Array<float> minAabbsX, 
         Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> centroidsX, Array<float> centroidsY, 
         Array<int> bvhCategories, Array<float> bvhLeafPaddings, ref Array<int> bvhLeafIndices, ref BoundingVolumeHierarchy bvh
     )
@@ -1837,7 +1837,7 @@ public static class Physics{
         for(int i = 1; i < count; i++) // start at one to avoid Nil.
         {
             int bodyIndex = activeBodies[i];
-            ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
+            ref IntrusiveListNode bodyNode = ref nodes[bodyIndex];
             int firstShapeIndex = bodyNode.FirstChild;
             if(firstShapeIndex == 0)
             {
@@ -1851,7 +1851,7 @@ public static class Physics{
             int shapeIndex = firstShapeIndex;
             while (true)
             {
-                ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex]; 
+                ref IntrusiveListNode shapeNode = ref nodes[shapeIndex]; 
 
                 ref float padding = ref bvhLeafPaddings[shapeIndex];
                 minX = minAabbsX[shapeIndex] - padding;
@@ -1891,7 +1891,7 @@ public static class Physics{
 
 
     public static void ResolveColliderCollisions(
-        Array<IntrusiveList.Node> nodes, CategorisedOverlapArray<int> subStepCollisionsToResolve, Array<float> collisionDepths, 
+        Array<IntrusiveListNode> nodes, CategorisedOverlapArray<int> subStepCollisionsToResolve, Array<float> collisionDepths, 
         Array<float> collisionNormalsX, Array<float> collisionNormalsY, ref Array<float> displacementsX, ref Array<float> displacementsY, 
         int collisionsStride
     )
@@ -1921,8 +1921,8 @@ public static class Physics{
             displacementX = collisionNormalsX[collisionIndex] * depth * 0.5f;
             displacementY = collisionNormalsY[collisionIndex] * depth * 0.5f;
 
-            ref IntrusiveList.Node ownerNode = ref nodes[ownerIndex]; 
-            ref IntrusiveList.Node otherNode = ref nodes[otherIndex]; 
+            ref IntrusiveListNode ownerNode = ref nodes[ownerIndex]; 
+            ref IntrusiveListNode otherNode = ref nodes[otherIndex]; 
             
             // apply the displacement to the bodies of the shape.            
             displacementsX[otherNode.Parent] -= displacementX;
@@ -1946,7 +1946,7 @@ public static class Physics{
             displacementX = collisionNormalsX[collisionIndex] * depth;
             displacementY = collisionNormalsY[collisionIndex] * depth;
 
-            ref IntrusiveList.Node ownerNode = ref nodes[ownerIndex]; 
+            ref IntrusiveListNode ownerNode = ref nodes[ownerIndex]; 
 
             // apply the displacement to the body of the shape.
             displacementsX[ownerNode.Parent] += displacementX;
@@ -1996,7 +1996,7 @@ public static class Physics{
     /// <param name="impulsesX">scratch buffer</param>
     /// <param name="impulsesY">scratch buffer</param>
     /// <param name="collisionsStride">the stride of elements in a collision entry.</param>
-    public static void ResolveRigidShapeCollisions(CategorisedOverlapArray<int> collisionsToResolve, Array<IntrusiveList.Node> nodes,
+    public static void ResolveRigidShapeCollisions(CategorisedOverlapArray<int> collisionsToResolve, Array<IntrusiveListNode> nodes,
         Array<float> collisionNormalsX, Array<float> collisionNormalsY, Array<float> firstContactPointsX, Array<float> firstContactPointsY,
         Array<float> globalPositionsX, Array<float> globalPositionsY, Array<float> localCentersOfMassX, Array<float> localCentersOfMassY, 
         Array<float> secondContactPointsX, Array<float> secondContactPointsY, ref Array<float> linearVelocitiesX, 
@@ -2037,7 +2037,7 @@ public static class Physics{
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void ResolveRigidBodyCollisions(
-        System.Span<int> collisionsToResolve, Array<IntrusiveList.Node> nodes, Array<float> normalsX, Array<float> normalsY, 
+        System.Span<int> collisionsToResolve, Array<IntrusiveListNode> nodes, Array<float> normalsX, Array<float> normalsY, 
         Array<float> firstContactPointsX, Array<float> firstContactPointsY, Array<float> secondContactPointsX, 
         Array<float> secondContactPointsY, ref Array<float> linearVelocitiesX, ref Array<float> linearVelocitiesY, 
         Array<float> restitutions, Array<float> kineticFrictions, Array<float> staticFrictions, ref Array<float> angularVelocities,
@@ -2612,7 +2612,7 @@ public static class Physics{
             state.GravityAffected[bodyIndex] = gravityAffected;
             ClearForcesAndVelocities(ref state, bodyIndex);
 
-            if(IntrusiveList.AddToTree(ref state.BodyHierarchy, bodyIndex)==false){
+            if(DataStructures.IntrusiveListAddRoot(ref state.BodyHierarchy, bodyIndex)==false){
                 Howl.Debug.Assert(false, "failed to insert into Transform2D hierarchy.");
                 GenIdAllocator.Deallocate(ref state.GenIdAllocator, entityId);
                 SetActiveUnsafe(ref state, bodyIndex, false);
@@ -2648,7 +2648,7 @@ public static class Physics{
             // deallocate all shapes.
             // note the reverse order and starting deallocation at the last child.
             // this is so first shape is preserved until the end of the loop, ensuring the loop knows when to stop.
-            ref Array<IntrusiveList.Node> nodes = ref state.BodyHierarchy.Nodes;
+            ref Array<IntrusiveListNode> nodes = ref state.BodyHierarchy.Nodes;
             int lastShapeIndex = nodes[nodes[entityIndex].FirstChild].PreviousSibling;
             if(lastShapeIndex != 0)
             {
@@ -2666,7 +2666,7 @@ public static class Physics{
                 }
             }
 
-            IntrusiveList.RemoveFromTree(ref state.BodyHierarchy, entityIndex);
+            DataStructures.IntrusiveListRemoveNode(ref state.BodyHierarchy, entityIndex);
             state.GravityAffected[entityIndex] = false;
             SetActiveUnsafe(ref state, entityIndex, false);            
         }
@@ -2764,9 +2764,9 @@ public static class Physics{
             float bodyGlobalPosX = state.GlobalTransforms.Positions.X[bodyIndex];
             float bodyGlobalPosY = state.GlobalTransforms.Positions.Y[bodyIndex];
 
-            ref Array<IntrusiveList.Node> nodes = ref state.BodyHierarchy.Nodes;
+            ref Array<IntrusiveListNode> nodes = ref state.BodyHierarchy.Nodes;
 
-            ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
+            ref IntrusiveListNode bodyNode = ref nodes[bodyIndex];
             int firstShapeIndex = bodyNode.FirstChild;
 
             if(firstShapeIndex == 0)
@@ -2786,7 +2786,7 @@ public static class Physics{
                     centerOfMassY -= mass * (bodyGlobalPosY - state.Centroids.Y[shapeIndex]); 
                     totalMass += mass;
 
-                    ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
+                    ref IntrusiveListNode shapeNode = ref nodes[shapeIndex];
                     int nextShapeIndex = shapeNode.NextSibling;
                     if(nextShapeIndex == firstShapeIndex)
                     {
@@ -2820,7 +2820,7 @@ public static class Physics{
 
                     totalRotationalInertia += state.RotationalInertia[shapeIndex] + (state.Masses[shapeIndex] * distSqrd); 
 
-                    ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
+                    ref IntrusiveListNode shapeNode = ref nodes[shapeIndex];
                     int nextShapeIndex = shapeNode.NextSibling;
                     if(nextShapeIndex == firstShapeIndex)
                     {
@@ -3686,7 +3686,7 @@ public static class Physics{
                 state.ShapeTypes, shapeIndex
             );
 
-            IntrusiveList.AddToTree(ref state.BodyHierarchy, shapeIndex, bodyIndex);
+            DataStructures.IntrusiveListAddBranch(ref state.BodyHierarchy, shapeIndex, bodyIndex);
 
             if (IsRigid)
             {
@@ -3972,8 +3972,8 @@ public static class Physics{
                     int shapeIndex
                 )
                 {
-                    ref Array<IntrusiveList.Node> nodes = ref state.BodyHierarchy.Nodes;
-                    ref IntrusiveList.Node shapeNode = ref nodes[shapeIndex];
+                    ref Array<IntrusiveListNode> nodes = ref state.BodyHierarchy.Nodes;
+                    ref IntrusiveListNode shapeNode = ref nodes[shapeIndex];
 
                     float height = baseHeight * scaleY;
                     float width = baseWidth * scaleX;
@@ -4029,7 +4029,7 @@ public static class Physics{
             DecrementCategoryCounter(ref state, state.Categories[entityIndex]);
             SetActiveUnsafe(ref state, entityIndex, false);
             int bodyIndex = state.BodyHierarchy.Nodes[entityIndex].Parent;
-            IntrusiveList.RemoveFromTree(ref state.BodyHierarchy, entityIndex);
+            DataStructures.IntrusiveListRemoveNode(ref state.BodyHierarchy, entityIndex);
             SetActiveUnsafe(ref state, entityIndex, false);
             
             if (recalculateBodyCenterOfMass)
@@ -4119,13 +4119,13 @@ public static class Physics{
     }
 
     public static void DrawGlobalPositions(
-        DrawInfo info, SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, 
+        DrawInfo info, SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes, 
         Array<float> globalPositionsX, Array<float> globalPositionsY
     ){
         for(int i = 1; i < activeBodies.Count; i++) // skip nil.
         {
             int bodyIndex = activeBodies[i];
-            ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
+            ref IntrusiveListNode bodyNode = ref nodes[bodyIndex];
             int firstShapeIndex = bodyNode.FirstChild;
 
             if(firstShapeIndex == 0)
@@ -4173,7 +4173,7 @@ public static class Physics{
 
     public static void DrawShapes(
         DrawInfo info, Collisions.Manifold collisions, FsSoa_Vector2 vertices, SwapBackArray<int> activeBodies, 
-        Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> radii, 
+        Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> radii, 
         Array<int> categories
     ){
         Colour colour = default;
@@ -4184,7 +4184,7 @@ public static class Physics{
         for(int i = 1; i < activeBodies.Count; i++) // skip nil.
         {
             int bodyIndex = activeBodies[i];
-            ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
+            ref IntrusiveListNode bodyNode = ref nodes[bodyIndex];
             int firstShapeIndex = bodyNode.FirstChild;
             if(firstShapeIndex == 0)
             {
@@ -4241,13 +4241,13 @@ public static class Physics{
     }
 
     public static void DrawCentroids(
-        DrawInfo info, Soa_Vector2 centroids, SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes
+        DrawInfo info, Soa_Vector2 centroids, SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes
     ){
         int count = activeBodies.Count;
         for(int i = 1; i < count; i++) // start at one to skip Nil.
         {
             int bodyIndex = activeBodies[i]; 
-            ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
+            ref IntrusiveListNode bodyNode = ref nodes[bodyIndex];
 
             if(bodyNode.FirstChild == 0)
             {
@@ -4297,14 +4297,14 @@ public static class Physics{
     }
 
     public static void DrawAabbs(
-        DrawInfo info, SwapBackArray<int> activeBodies, Array<IntrusiveList.Node> nodes, 
+        DrawInfo info, SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes, 
         Array<float> aabbsMinX, Array<float> aabbsMinY, Array<float> aabbsMaxX, Array<float> aabbsMaxY
     )
     {
         for(int i = 1; i < activeBodies.Count; i++) // start at one to skip Nil.
         {
             int bodyIndex = activeBodies[i];
-            ref IntrusiveList.Node bodyNode = ref nodes[bodyIndex];
+            ref IntrusiveListNode bodyNode = ref nodes[bodyIndex];
             int firstShapeIndex = bodyNode.FirstChild;
             if(firstShapeIndex == 0)
             {
@@ -5267,7 +5267,7 @@ public static class Physics{
                 return default;
             }
 
-            public static bool BroadPhase(Array<IntrusiveList.Node> nodes, Array<float> minAabbsX, Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY,
+            public static bool BroadPhase(Array<IntrusiveListNode> nodes, Array<float> minAabbsX, Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY,
                 int shapeIndexA, int shapeIndexB
             )
             {
@@ -5296,7 +5296,7 @@ public static class Physics{
 
 
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-            public static void DynamicRigidPolygon_To_DynamicRigidPolygon(OverlapInfo info, Array<int> bvhIndices, ref Manifold collisions, Array<IntrusiveList.Node> nodes, 
+            public static void DynamicRigidPolygon_To_DynamicRigidPolygon(OverlapInfo info, Array<int> bvhIndices, ref Manifold collisions, Array<IntrusiveListNode> nodes, 
                 Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY,
                 FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
             )
@@ -5334,7 +5334,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_DynamicRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY, 
                 FsSoa_Vector2 vertices, Array<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
             )
             {
@@ -5378,7 +5378,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_KinematicRigidPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
                 CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
             )
@@ -5416,7 +5416,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_KinematicRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii,
                 CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
             )
@@ -5461,7 +5461,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_TriggerRigidPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -5484,7 +5484,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_TriggerRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -5514,7 +5514,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_DynamicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve 
             )
             {
@@ -5546,7 +5546,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_DynamicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii,
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -5586,7 +5586,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, CategorisedOverlapArray<int> subStepCollisionsToResolve 
             )
             {
@@ -5618,7 +5618,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii,
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -5658,7 +5658,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices 
             )
             {
@@ -5681,7 +5681,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidPolygon_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -5721,7 +5721,7 @@ public static class Physics{
 
 
             public static void DynamicRigidCircle_To_DynamicRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii, CategorisedOverlapArray<int> colliderCollisionsToResolve, 
                 CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
             )
@@ -5764,7 +5764,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidCircle_To_KinematicRigidPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii,
                 CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
             )
@@ -5804,7 +5804,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidCircle_To_KinematicRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve, CategorisedOverlapArray<int> rigidBodyCollisionsToResolve
             )
@@ -5847,7 +5847,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidCircle_To_TriggerRigidPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -5872,7 +5872,7 @@ public static class Physics{
             }
             
             public static void DynamicRigidCircle_To_TriggerRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -5900,7 +5900,7 @@ public static class Physics{
             } 
 
             public static void DynamicRigidCircle_To_DynamicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -5935,7 +5935,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidCircle_To_DynamicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -5973,7 +5973,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidCircle_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -6008,7 +6008,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidCircle_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -6046,7 +6046,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidCircle_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6071,7 +6071,7 @@ public static class Physics{
             }
 
             public static void DynamicRigidCircle_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -6111,7 +6111,7 @@ public static class Physics{
 
 
             public static void KinematicRigidPolygon_To_KinematicRigidPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices 
             )
             {
@@ -6134,7 +6134,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidPolygon_To_KinematicRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6165,7 +6165,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidPolygon_To_TriggerRigidPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices 
             )
             {
@@ -6188,7 +6188,7 @@ public static class Physics{
             }
             
             public static void KinematicRigidPolygon_To_TriggerRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6218,7 +6218,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidPolygon_To_DynamicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, 
                 CategorisedOverlapArray<int> subStepCollisionsToResolve
             )
@@ -6251,7 +6251,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidPolygon_To_DynamicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -6291,7 +6291,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidPolygon_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -6314,7 +6314,7 @@ public static class Physics{
             } 
 
             public static void KinematicRigidPolygon_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6345,7 +6345,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidPolygon_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -6368,7 +6368,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidPolygon_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6410,7 +6410,7 @@ public static class Physics{
 
 
             public static void KinematicRigidCircle_To_KinematicRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -6438,7 +6438,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidCircle_To_TriggerRigidPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6463,7 +6463,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidCircle_To_TriggerRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -6491,7 +6491,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidCircle_To_DynamicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -6526,7 +6526,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidCircle_To_DynamicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -6563,7 +6563,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidCircle_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6588,7 +6588,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidCircle_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -6616,7 +6616,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidCircle_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6641,7 +6641,7 @@ public static class Physics{
             }
 
             public static void KinematicRigidCircle_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -6680,7 +6680,7 @@ public static class Physics{
 
 
             public static void TriggerRigidPolygon_To_TriggerRigidPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -6703,7 +6703,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidPolygon_To_TriggerRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6733,7 +6733,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidPolygon_To_DynamicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -6756,7 +6756,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidPolygon_To_DynamicColliderCircle (OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6786,7 +6786,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidPolygon_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -6809,7 +6809,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidPolygon_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6839,7 +6839,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidPolygon_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -6862,7 +6862,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidPolygon_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6904,7 +6904,7 @@ public static class Physics{
 
 
             public static void TriggerRigidCircle_To_TriggerRigidCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -6932,7 +6932,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidCircle_To_DynamicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -6957,7 +6957,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidCircle_To_DynamicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -6985,7 +6985,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidCircle_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -7010,7 +7010,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidCircle_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -7038,7 +7038,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidCircle_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -7063,7 +7063,7 @@ public static class Physics{
             }
 
             public static void TriggerRigidCircle_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -7104,7 +7104,7 @@ public static class Physics{
 
 
             public static void DynamicColliderPolygon_To_DynamicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -7137,7 +7137,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderPolygon_To_DynamicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii,
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -7177,7 +7177,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderPolygon_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -7210,7 +7210,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderPolygon_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii,
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -7250,7 +7250,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderPolygon_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -7273,7 +7273,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderPolygon_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -7315,7 +7315,7 @@ public static class Physics{
 
 
             public static void DynamicColliderCircle_To_DynamicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -7353,7 +7353,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderCircle_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii,
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -7388,7 +7388,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderCircle_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii, 
                 CategorisedOverlapArray<int> colliderCollisionsToResolve
             )
@@ -7426,7 +7426,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderCircle_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -7451,7 +7451,7 @@ public static class Physics{
             }
 
             public static void DynamicColliderCircle_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -7485,7 +7485,7 @@ public static class Physics{
             *******************/
 
             public static void KinematicColliderPolygon_To_KinematicColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -7508,7 +7508,7 @@ public static class Physics{
             }
 
             public static void KinematicColliderPolygon_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -7538,7 +7538,7 @@ public static class Physics{
             }
 
             public static void KinematicColliderPolygon_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -7561,7 +7561,7 @@ public static class Physics{
             }
 
             public static void KinematicColliderPolygon_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -7603,7 +7603,7 @@ public static class Physics{
 
 
             public static void KinematicColliderCircle_To_KinematicColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -7631,7 +7631,7 @@ public static class Physics{
             }
 
             public static void KinematicColliderCircle_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -7656,7 +7656,7 @@ public static class Physics{
             }
 
             public static void KinematicColliderCircle_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {
@@ -7696,7 +7696,7 @@ public static class Physics{
 
 
             public static void TriggerColliderPolygon_To_TriggerColliderPolygon(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices
             )
             {
@@ -7719,7 +7719,7 @@ public static class Physics{
             }
 
             public static void TriggerColliderPolygon_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, FsSoa_Vector2 vertices, Array<float> radii
             )
             {
@@ -7761,7 +7761,7 @@ public static class Physics{
 
 
             public static void TriggerColliderCircle_To_TriggerColliderCircle(OverlapInfo info, Array<int> bvhIndices, 
-                ref Manifold collisions, Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
+                ref Manifold collisions, Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> minAabbsX, Array<float> minAabbsY, 
                 Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> radii
             )
             {

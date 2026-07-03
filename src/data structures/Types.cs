@@ -282,3 +282,74 @@ public struct BoundingVolumeHierarchy{
     public Array<int> MortonLeafIds;
     public bool IsInitialised;
 }
+
+public struct IntrusiveListNode{
+    /// <summary>
+    ///     the <c>nodeIndex</c> of this node's parent.
+    /// </summary>
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>when <c>0</c> is stored, this points to the <c>Nil</c> element and is invalid.</para>
+    /// </remarks>
+    public int Parent;
+    /// <summary>
+    ///     the <c>nodeIndex</c> of this node's next sibling.
+    /// </summary>
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>this value is self-recursive, meaning the next sibling loops back to this node's index.</para>
+    /// </remarks>
+    public int NextSibling;
+    /// <summary>
+    ///     the <c>nodeIndex</c> of this node's previous sibling.
+    /// </summary>
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>this value is self-recursive, meaning the previous sibling loops back to this node's index.</para>
+    /// </remarks>
+    public int PreviousSibling;
+    /// <summary>
+    ///     the <c>nodeIndex</c> of this node's first child.
+    /// </summary>
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>when <c>0</c> is stored, this points to the <c>Nil</c> element and is invalid.</para>
+    /// </remarks>
+    public int FirstChild;
+    /// <summary>
+    ///     the <c>nodeIndex</c> of this node's index in <c><see cref="State.RootIndices"/></c>.
+    /// </summary>
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>contains a <c>Nil</c> element</para>.
+    ///    <para>when <c>0</c> is stored, this points to the <c>Nil</c> element and is invalid.</para>
+    /// </remarks>
+    public int RootDenseIndex;
+    /// <summary>
+    ///     whether or not this node is within the state's tree.
+    /// </summary>
+    public bool InTree;
+    
+    public override string ToString(){
+        return $"""
+        {nameof(IntrusiveListNode)} 
+            Parent: {Parent},
+            NextSibling: {NextSibling},
+            PreviousSibling: {PreviousSibling},
+            FirstChild: {FirstChild},
+            RootDenseIndex: {RootDenseIndex},
+            InTree: {InTree}
+        """;
+    }
+}
+
+public struct IntrusiveList{
+    public const int MinLength = 1;
+    public const int MaxLength = int.MaxValue;   
+    public Array<IntrusiveListNode> Nodes;
+    /// <remarks>
+    ///     Remarks: contains a <c>Nil</c> element.
+    /// </remarks>
+    public SwapBackArray<int> RootIndices;
+    public bool IsInitialised;
+}

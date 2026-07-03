@@ -171,11 +171,6 @@ public static float Tan(float value){
 }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static float Dot(Vector3 lhs, Vector3 rhs){
-    return (lhs.X * rhs.X) + (lhs.Y * rhs.Y) + (lhs.Z * rhs.Z);
-}
-
-[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 public static float Abs(
     float value
 ){
@@ -192,32 +187,10 @@ public static float Atan2(
     return System.MathF.Atan2(y, x);
 }
 
-[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static float LengthSquared(
-    Vector3 vector
-){
-    return (vector.X * vector.X) + (vector.Y * vector.Y) + (vector.Z * vector.Z);
-}
-
-[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static float Length(
-    Vector3 vector
-){
-    return Sqrt(LengthSquared(vector));
-}
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 public static int LengthSquared(Vector2I vector){
     return (vector.X * vector.X) + (vector.Y * vector.Y);
-}
-
-[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static Vector3 Cross(Vector3 a, Vector3 b){
-    return new(){
-        X = (a.Y * b.Z) - (a.Z * b.Y),
-        Y = (a.Z * b.X) - (a.X * b.Z),
-        Z = (a.X * b.Y) - (a.Y * b.X)
-    };
 }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -226,7 +199,6 @@ public static float Cross(
 ){
     return lhsX * rhsY - lhsY * rhsX;    
 }   
-
 
 /// <summary>
 /// Clamps a value between a min and max
@@ -267,19 +239,6 @@ public static T Min<T>(
     T a, T b
 ) where T : System.Numerics.INumber<T> {
     return a < b? a : b;
-}
-
-[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static Vector3 Normalise(Vector3 vector){
-    float sqrd = LengthSquared(vector);
-    if(sqrd > 0){
-        float invLength = 1.0f / Sqrt(sqrd);
-        vector.X *= invLength;
-        vector.Y *= invLength;
-        vector.Z *= invLength;
-        return vector;
-    }
-    return default;
 }
 
 public static Matrix4x4 IdentityMatrix()
@@ -1066,6 +1025,22 @@ public static Transform ToTransform(
         Scale = new(){X = transform2D.Scale.X, Y = transform2D.Scale.Y},
         Rotation = rotation3D
     };
+}
+
+/// <summary>
+///     Transforms the left-hand side by the righ-hand side.
+/// </summary>
+public static Transform TransformRelative(
+    Transform lhs, Transform rhs
+){
+    Transform result = default;
+    // combine scales.
+    result.Scale = lhs.Scale * rhs.Scale;
+    // combine rotations (order matters: rhs*lhs means rhs rotates lhs)
+    result.Rotation = lhs.Rotation * rhs.Rotation;
+    // combine positions (order matters: scale->rotate->translate).
+    result.Position = RotateVector(lhs.Position * rhs.Scale, rhs.Rotation) + rhs.Position;
+    return result;
 }
 
 /**##########################################################################################################################################
@@ -2636,6 +2611,63 @@ public static System.Numerics.Vector<float> GetRectangleArea(
     System.Numerics.Vector<float> width, System.Numerics.Vector<float> heigth
 ){
     return width * heigth;
+}
+
+/**##########################################################################################################################################
+    div: Vector3
+##########################################################################################################################################**/
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float LengthSquared(
+    Vector3 vector
+){
+    return (vector.X * vector.X) + (vector.Y * vector.Y) + (vector.Z * vector.Z);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float Length(
+    Vector3 vector
+){
+    return Sqrt(LengthSquared(vector));
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static Vector3 Cross(Vector3 a, Vector3 b){
+    return new(){
+        X = (a.Y * b.Z) - (a.Z * b.Y),
+        Y = (a.Z * b.X) - (a.X * b.Z),
+        Z = (a.X * b.Y) - (a.Y * b.X)
+    };
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static Vector3 Normalise(Vector3 vector){
+    float sqrd = LengthSquared(vector);
+    if(sqrd > 0){
+        float invLength = 1.0f / Sqrt(sqrd);
+        vector.X *= invLength;
+        vector.Y *= invLength;
+        vector.Z *= invLength;
+        return vector;
+    }
+    return default;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static float Dot(Vector3 lhs, Vector3 rhs){
+    return (lhs.X * rhs.X) + (lhs.Y * rhs.Y) + (lhs.Z * rhs.Z);
+}
+
+/// <summary>
+///     Rotates a Vector around the origin (0,0,0), by a quaternion rotation. 
+/// </summary>
+public static Vector3 RotateVector(
+    Vector3 v, Quaternion q
+){
+    Vector3 qV = new(){X = q.X, Y = q.Y, Z = q.Z};
+    Vector3 cross1 = Cross(qV, v);
+    Vector3 cross2 = Cross(qV, cross1);
+    return v + (cross1 * (2.0f * q.W)) + (cross2 * 2.0f);
 }
 
 }

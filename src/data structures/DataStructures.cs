@@ -992,4 +992,290 @@ public static void DrawLeaves(
     }
 }
 
+/**##########################################################################################################################################
+    div: Intrusive List.
+##########################################################################################################################################**/
+
+public static bool Init(
+    ref IntrusiveList list, ref Memory.Arena arena, int length
+){
+    if (list.IsInitialised){
+        Howl.Debug.Panic("Already Initialised.");
+        return false;
+    }
+
+    Howl.Debug.Assert(length >= IntrusiveList.MinLength, 
+        $"IntrusiveList must have a length greater than '{length}'."
+    );
+
+    length = Math.Clamp(length, IntrusiveList.MinLength, IntrusiveList.MaxLength);
+
+    Array.Initialise(ref list.Nodes, ref arena, length);
+    SwapBackArray.Initialise(ref list.RootIndices, ref arena, length);
+
+    SwapBackArray.Append(ref list.RootIndices, 0);
+
+    list.IsInitialised=true;
+    return true;
+}
+
+/// <summary>
+///     Adds a root node to the tree.
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool IntrusiveListAddRoot(
+    ref IntrusiveList list, int nodeIndex
+){
+    // node cannot be the Nil.
+    if(nodeIndex == 0){
+        System.Diagnostics.Debug.Assert(false, "node: '{nodeIndex}' cannot be the Nil element.");
+        return false;
+    }
+
+    ref IntrusiveListNode node = ref list.Nodes[nodeIndex];
+
+    if (node.InTree){
+        return false;
+    }
+
+    // the node is a root.
+    node.RootDenseIndex = SwapBackArray.Append(ref list.RootIndices, nodeIndex);
+
+    // node has no other siblings.
+    node.NextSibling = nodeIndex;
+    node.PreviousSibling = nodeIndex;
+
+    node.InTree = true;
+    return true;
+}
+
+/// <summary>
+///     Adds a node to the tree.
+/// </summary>
+/// <remarks>
+///     <para>Remarks:</para>
+///     <para>if <c><paramref name="parentIndex"/></c> is zero, this will become a root node.</para>
+/// </remarks>
+/// <returns>
+///     true, if successfully added to the tree; otherwise false if already added.
+/// </returns>
+public static bool IntrusiveListAddBranch(
+    ref IntrusiveList list, int nodeIndex, int parentIndex
+){
+    // node cannot be the Nil.
+    if(nodeIndex == 0){
+        System.Diagnostics.Debug.Assert(false, "node: '{nodeIndex}' cannot be the Nil element.");
+        return false;
+    }
+
+    // add as a root if parent index is zero.
+    if(parentIndex == 0){
+        return IntrusiveListAddRoot(ref list, nodeIndex);
+    }
+
+    ref Array<IntrusiveListNode> nodes = ref list.Nodes;
+    ref IntrusiveListNode node = ref nodes[nodeIndex];
+
+    if (node.InTree){
+        return false;
+    }
+    
+    ref IntrusiveListNode parent = ref nodes[parentIndex];
+    if (parent.InTree == false){
+        System.Diagnostics.Debug.Assert(false, " parent: '{parentIndex}' is not in the tree!");
+        return false;
+    }
+
+    node.Parent = parentIndex;
+    // only set if it is pointing to the Nil.
+    if(parent.FirstChild == 0){
+        parent.FirstChild = nodeIndex;
+        
+        // node has no other siblings (as it is the first child).
+        node.NextSibling = nodeIndex;
+        node.PreviousSibling = nodeIndex;
+    }
+    else{
+        // get the last child.
+        int lastChildIndex = nodes[parent.FirstChild].PreviousSibling;
+        ref IntrusiveListNode lastChild = ref nodes[lastChildIndex];
+        
+        // get the first child.
+        int firstChildIndex = parent.FirstChild;
+        ref IntrusiveListNode firstChild = ref nodes[firstChildIndex];
+
+        // connect last child to the new node.
+        lastChild.NextSibling = nodeIndex;
+        node.PreviousSibling = lastChildIndex;
+
+        node.NextSibling = firstChildIndex;
+        firstChild.PreviousSibling = nodeIndex;
+    }
+
+    node.InTree = true;
+    return true;
+}
+
+/// <returns>
+///     true, if successfully removed from the tree; otherwise false if already removed.
+/// </returns>
+public static bool IntrusiveListRemoveNode(
+    ref IntrusiveList list, int nodeIndex
+){
+    // node cannot be the Nil.
+    if(nodeIndex == 0){
+        System.Diagnostics.Debug.Assert(false, "{nodeIndex} cannot be the Nil element.");
+        return false;
+    }
+
+    ref Array<IntrusiveListNode> nodes = ref list.Nodes;
+    ref SwapBackArray<int> roots = ref list.RootIndices;
+    ref IntrusiveListNode node = ref nodes[nodeIndex];
+
+    if (node.InTree == false)
+    {
+        return false;
+    }
+    
+    int parentIndex = node.Parent;
+    int firstChildIndex = node.FirstChild;
+
+    // deallocate from parent.
+    if(parentIndex != 0)
+    {
+        node.Parent = 0;
+        ref IntrusiveListNode parent = ref nodes[parentIndex];
+        
+        // if this node doesnt have any children;
+        if(node.FirstChild == 0){
+            // nil the parents child.
+            if(parent.FirstChild == nodeIndex){
+                parent.FirstChild = 0;
+            }
+        }
+        else{
+            if(parent.FirstChild == nodeIndex){
+                // move the children to the parent.
+                parent.FirstChild = node.FirstChild;
+
+                // deallocate from children by setting their parent to this node's parent.
+                ref IntrusiveListNode child = ref nodes[node.FirstChild];
+                while (true){
+                    child.Parent = parentIndex;
+                    
+                    int nextSiblingIndex = child.NextSibling;
+                    
+                    if(nextSiblingIndex == firstChildIndex){
+                        break;
+                    }
+
+                    child = ref nodes[nextSiblingIndex];
+                }
+            }
+            else{
+                // append this node's children to it's parents children.
+
+                int parentFirstChildIndex = parent.FirstChild;
+                ref IntrusiveListNode parentFirstChild = ref nodes[parentFirstChildIndex];
+                
+                int parentLastChildIndex = parentFirstChild.PreviousSibling;
+                ref IntrusiveListNode parentLastChild = ref nodes[parentLastChildIndex];
+                
+                parentLastChild.NextSibling = node.FirstChild;
+
+                int currentSiblingIndex = node.FirstChild;
+                ref IntrusiveListNode child = ref nodes[currentSiblingIndex];
+                child.PreviousSibling = parentLastChildIndex;
+                
+                while (true)
+                {
+                    child.Parent = parentIndex;
+                    
+                    int nextSiblingIndex = child.NextSibling;
+                    
+                    if(nextSiblingIndex == firstChildIndex)
+                    {
+                        child.NextSibling = parentFirstChildIndex;
+                        parentFirstChild.PreviousSibling = currentSiblingIndex;
+                        break;
+                    }
+
+                    currentSiblingIndex = nextSiblingIndex;
+                    child = ref nodes[nextSiblingIndex];
+                }
+
+                // don't perform sibling deallocation at the end of this function.
+                // as the re-ordering of siblings in the parent has aready done this.
+                // goto End;
+            }
+        }
+    }
+    else{
+        // remove the node from the roots array.
+        // performing the dense index swap as well.
+        ref IntrusiveListNode lastRoot = ref nodes[roots[roots.Count-1]];
+        lastRoot.RootDenseIndex = node.RootDenseIndex;
+        SwapBackArray.RemoveAt(ref roots, node.RootDenseIndex);
+        node.RootDenseIndex = 0;
+
+        if (firstChildIndex != 0)
+        {
+            // deallocate from children by making them root nodes in the tree.
+            int currentSiblingIndex = firstChildIndex;
+            ref IntrusiveListNode child = ref nodes[currentSiblingIndex]; 
+            while (true)
+            {
+                
+                child.Parent = 0;
+
+                // add children to root stack array.
+                child.RootDenseIndex = SwapBackArray.Append(ref roots, currentSiblingIndex);
+
+                // children are now roots, so they should no longer be associated with thier siblings.
+                int nextSiblingIndex = child.NextSibling;
+                child.NextSibling = currentSiblingIndex;
+                child.PreviousSibling = currentSiblingIndex;
+
+                if(nextSiblingIndex == firstChildIndex)
+                {
+                    break;
+                }
+                
+                currentSiblingIndex = nextSiblingIndex;
+
+                // go to the next sibling of the child.
+                child = ref nodes[currentSiblingIndex];
+            }
+
+            // no need to deallocate from siblings, as this has already done that.
+            goto End;
+        }
+    }
+
+
+    // deallocate from siblings.
+    ref IntrusiveListNode nextSibling = ref nodes[node.NextSibling];
+    nextSibling.PreviousSibling = node.PreviousSibling;
+
+    ref IntrusiveListNode previousSibling = ref nodes[node.PreviousSibling];
+    previousSibling.NextSibling = node.NextSibling;
+
+    End:
+    node.InTree = false;
+    return true;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool IsIntrusiveListNodeInTree(
+    IntrusiveList tree, int nodeIndex
+){
+    return tree.Nodes[nodeIndex].InTree;
+}
+
+public static bool IsIntrusiveListNodeRoot(
+    IntrusiveList tree, int nodeIndex
+){
+    return tree.Nodes[nodeIndex].Parent == 0;
+}
+
 }
