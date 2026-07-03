@@ -1,5 +1,5 @@
 using Howl.Algorithms.Sorting;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 using N_Howl.N_Math;
 
 namespace N_Howl.N_DataStructures;
@@ -353,3 +353,4 @@ public struct IntrusiveList{
     public SwapBackArray<int> RootIndices;
     public bool IsInitialised;
 }
+

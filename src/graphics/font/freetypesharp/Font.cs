@@ -5,7 +5,7 @@ using Howl.Text;
 using static FreeTypeSharp.FT;
 using static FreeTypeSharp.FT_LOAD;
 using static FreeTypeSharp.FT_Render_Mode_;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 using Howl;
 using System.Runtime.CompilerServices;
 

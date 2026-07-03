@@ -1,6 +1,6 @@
 using Howl;
 using Howl.Text;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 using N_Howl.N_Math;
 using FreeType = N_Howl.N_Font.N_FreeTypeSharp.Font;
 
@@ -16,7 +16,7 @@ public static bool LoadFont(
     uint fontHeightInPixels
 ){
     Buffer<byte> utf8Path = default;
-    Buffer.Initialise(ref utf8Path, stackalloc byte[String.GetByteCountUTF8(filePath)]);
+    Collections.Init(ref utf8Path, stackalloc byte[String.GetByteCountUTF8(filePath)]);
     String.GetBytesUTF8(filePath, ref utf8Path);
 
     nint retrievedFontHeightInPixels = 0;
@@ -33,7 +33,7 @@ public static void InitFontData(
     Debug.Assert(glyphCount > 1, "Font data should be intialised with a count greater than one to account for the Nil element.");
     glyphCount = Math.Clamp(glyphCount, 1, int.MaxValue);
     fontData.BaseGlyphIndex = baseGlyphIndex;
-    Array.Initialise(ref fontData.Glyphs, ref arena, glyphCount);
+    Collections.Init(ref fontData.Glyphs, ref arena, glyphCount);
 }
 
 }

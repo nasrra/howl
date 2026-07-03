@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Howl;
 using Howl.Text;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 using N_Howl.N_Font;
 using N_Howl.N_Graphics;
 using N_Howl.N_Math;
@@ -165,7 +165,7 @@ public static void DrawRenderer(
     **/
     // prepare for sorting.
     System.Span<Sprite> span = new(ctx.SpriteManager.SortedSprites.Pointer, ctx.SpriteManager.SortedSprites.Length);
-    Array.ClearZeroed(ctx.SpriteManager.SortedSprites);
+    Collections.ClearZeroed(ctx.SpriteManager.SortedSprites);
     Memory.Copy<Sprite>((byte*)ctx.SpriteManager.Sprites.Pointer, (byte*)ctx.SpriteManager.SortedSprites.Pointer, ctx.SpriteManager.Sprites.Length);
     /**
         sort sprites by their z position within their local layer groups.
@@ -355,7 +355,7 @@ public static void DrawRenderer(
         for(int i = 0; i < ctx.SpriteManager.OneFrameSpritesIndices.Count; i++){
             DeallocateSprite(ref ctx.SpriteManager, ctx.SpriteManager.OneFrameSpritesIndices[i]);
         }
-        StackArray.Clear(ref ctx.SpriteManager.OneFrameSpritesIndices);
+        Collections.Clear(ref ctx.SpriteManager.OneFrameSpritesIndices);
     }
 }
 
@@ -420,7 +420,7 @@ public static void RequestAdapters(
         Store Adapters.
     
     *******************/
-    Array.Initialise(ref ctx.Adapters, ref arena, adapterCount);
+    Collections.Init(ref ctx.Adapters, ref arena, adapterCount);
     int writeIndex = 0;
     for(int i = 0; i < (int)adapterCount; i++){
     fixed(Adapter* adapter = &ctx.Adapters[writeIndex]){
@@ -440,7 +440,7 @@ public static void RequestAdapters(
         adapter->Pointer = foundAdapters[i];
         //retrieve adapter features.
         nuint featureCount = WebGPUApi.AdapterEnumerateFeatures(adapter->Pointer, null);
-        Array.Initialise(ref adapter->Features, ref arena, (int)featureCount);
+        Collections.Init(ref adapter->Features, ref arena, (int)featureCount);
         WebGPUApi.AdapterEnumerateFeatures(adapter->Pointer, adapter->Features.Pointer);
         adapter->IsInitialised = true;
 
@@ -462,7 +462,7 @@ public static void RequestDevices(
     );
 
     // initialisation.
-    Array.Initialise(ref ctx.Devices, ref arena, ctx.Adapters.Length);
+    Collections.Init(ref ctx.Devices, ref arena, ctx.Adapters.Length);
     var callback = new WebGPU.PfnRequestDeviceCallback(OnDeviceRequestEnded);
     var onLostCallback = new WebGPU.PfnDeviceLostCallback(OnDeviceLostCallback);
 
@@ -1410,21 +1410,21 @@ public static void InitVertexBuffer(
 
     Vertex* pVertices = stackalloc Vertex[4]; 
     Buffer<Vertex> vertices = default;
-    Howl.Unmanaged.Collections.Buffer.Initialise(ref vertices, pVertices, 4);
+    Collections.Init(ref vertices, pVertices, 4);
     // top left.
-    Howl.Unmanaged.Collections.Buffer.Append(
+    Collections.Append(
         ref vertices, new(){UV = new(){X = 0, Y = 0}, Position = new(){X = -0.5f, Y = 0.5f}}
     );
     // top right.
-    Howl.Unmanaged.Collections.Buffer.Append(
+    Collections.Append(
         ref vertices, new(){UV = new(){X = 1, Y = 0}, Position = new(){X = 0.5f, Y = 0.5f}}
     );
     // bottom right.
-    Howl.Unmanaged.Collections.Buffer.Append(
+    Collections.Append(
         ref vertices, new(){UV = new(){X = 1, Y = 1}, Position = new(){X = 0.5f, Y = -0.5f}}
     );
     // bottom left.
-    Howl.Unmanaged.Collections.Buffer.Append(
+    Collections.Append(
         ref vertices, new(){UV = new (){X = 0, Y = 1}, Position = new(){X = -0.5f, Y = -0.5f}}
     );
     WriteToBuffer(GetChosenDevice(ref ctx), vertices, ref ctx.VertexBuffer);
@@ -1450,14 +1450,14 @@ public static void InitIndexBuffer(
 
     uint* pIndices = stackalloc uint[totalIndices];
     Buffer<uint> indices = default;
-    Howl.Unmanaged.Collections.Buffer.Initialise(ref indices, pIndices, totalIndices);
+    Collections.Init(ref indices, pIndices, totalIndices);
     for(uint i = 0; i < totalVertices; i+=4){
-        Howl.Unmanaged.Collections.Buffer.Append(ref indices, i+0u);
-        Howl.Unmanaged.Collections.Buffer.Append(ref indices, i+1u);
-        Howl.Unmanaged.Collections.Buffer.Append(ref indices, i+2u);
-        Howl.Unmanaged.Collections.Buffer.Append(ref indices, i+2u);
-        Howl.Unmanaged.Collections.Buffer.Append(ref indices, i+3u);
-        Howl.Unmanaged.Collections.Buffer.Append(ref indices, i+0u);
+        Collections.Append(ref indices, i+0u);
+        Collections.Append(ref indices, i+1u);
+        Collections.Append(ref indices, i+2u);
+        Collections.Append(ref indices, i+2u);
+        Collections.Append(ref indices, i+3u);
+        Collections.Append(ref indices, i+0u);
     }
     WriteToBuffer(GetChosenDevice(ref ctx), indices, ref ctx.IndexBuffer);
 
@@ -1682,10 +1682,10 @@ public static void InitVirtualTextureManager(
     maxVirtualTextures = Math.Clamp(maxVirtualTextures, 2, VirtualTexture.MaxAmount);
 
     // initialise virtual textures.
-    Array.Initialise(ref manager.VirtualTextures, ref arena, maxVirtualTextures);
-    Array.Initialise(ref manager.VirtualTextureFilePaths, ref arena, maxVirtualTextures);
-    Array.Initialise(ref manager.VirtualTextureFontData, ref arena, maxVirtualTextures);
-    Array.Initialise(ref manager.VirtualTextureTypes, ref arena, maxVirtualTextures);
+    Collections.Init(ref manager.VirtualTextures, ref arena, maxVirtualTextures);
+    Collections.Init(ref manager.VirtualTextureFilePaths, ref arena, maxVirtualTextures);
+    Collections.Init(ref manager.VirtualTextureFontData, ref arena, maxVirtualTextures);
+    Collections.Init(ref manager.VirtualTextureTypes, ref arena, maxVirtualTextures);
     manager.VirtualTextureBuffer = CreateBuffer<VirtualTexture>(
         device, WebGPU.BufferUsage.CopySrc | WebGPU.BufferUsage.MapWrite, WebGPU.BufferUsage.CopyDst | WebGPU.BufferUsage.Uniform, (uint)maxVirtualTextures
     );
@@ -1706,7 +1706,7 @@ public static void InitVirtualTextureManager(
     // +2 for the nil entry and the font texture array.
     int textureArrayCount = imageInfos.Length + VirtualTextureManager.FontTextureArrayIndex + 1;
     int writeIndex = 0;
-    Array.Initialise(ref manager.TextureArrays, ref arena, textureArrayCount);
+    Collections.Init(ref manager.TextureArrays, ref arena, textureArrayCount);
     
     // init the nil.
     // the format should be the least taxing on VRAM storage.
@@ -1780,9 +1780,9 @@ public static void InitTextureArray(
     array.View = WebGPUApi.TextureCreateView(array.Pointer, &viewDesc);
 
     // create the free texture indices for all textures.
-    StackArray.Initialise(ref array.FreeLayerIndices, ref arena, (int)layerCount);
+    Collections.Init(ref array.FreeLayerIndices, ref arena, (int)layerCount);
     for(int i = 0; i < layerCount; i++){
-        StackArray.Push(ref array.FreeLayerIndices, i);
+        Collections.Push(ref array.FreeLayerIndices, i);
     }
 
     array.Extents = textDesc.Size;
@@ -1924,7 +1924,7 @@ public static bool LoadImageTexture(
         return false;
     }
     vT.ShaderTextureArrayBinding = textureArrayBinding;
-    vT.TextureArrayLayerIndex = StackArray.Pop(ref textureArray.FreeLayerIndices);
+    vT.TextureArrayLayerIndex = Collections.Pop(ref textureArray.FreeLayerIndices);
     vT.IsLoaded = 1;
 
     // write the pixel data to the texture array.
@@ -1958,7 +1958,7 @@ public static bool UnloadImageTexture(
     }
 
     // push the freed layer index back into the texture array for reuse.
-    StackArray.Push(ref manager.TextureArrays[vT.ShaderTextureArrayBinding].FreeLayerIndices, vT.TextureArrayLayerIndex);
+    Collections.Push(ref manager.TextureArrays[vT.ShaderTextureArrayBinding].FreeLayerIndices, vT.TextureArrayLayerIndex);
     vT.IsLoaded = 0;
     return true;
 }
@@ -1997,7 +1997,7 @@ public static bool LoadFontTexture(
     Memory.Arena.ClearZeroed(ref transient);
     uint textureWidth = fontTextureArray.Extents.Width;
     uint textureHeight = fontTextureArray.Extents.Height;
-    Array.Initialise(ref textureData, ref transient, (int)textureWidth * (int)textureHeight); 
+    Collections.Init(ref textureData, ref transient, (int)textureWidth * (int)textureHeight); 
 #pragma warning enable
     ref FontData fontData = ref manager.VirtualTextureFontData[virtualTextureIndex];
 
@@ -2017,7 +2017,7 @@ public static bool LoadFontTexture(
         return false;
     }
     vT.ShaderTextureArrayBinding = VirtualTextureManager.FontTextureArrayIndex;
-    vT.TextureArrayLayerIndex = StackArray.Pop(ref textureArray.FreeLayerIndices);
+    vT.TextureArrayLayerIndex = Collections.Pop(ref textureArray.FreeLayerIndices);
 
     // write the data into the texture array.
     WriteToTextureArray(device, textureArray, WebGPU.TextureFormat.R8Unorm, (uint)vT.TextureArrayLayerIndex, textureData);
@@ -2132,12 +2132,12 @@ public static void InitSpriteManager(
         device, WebGPU.BufferUsage.CopySrc | WebGPU.BufferUsage.MapWrite, 
         WebGPU.BufferUsage.CopyDst | WebGPU.BufferUsage.Storage, (uint)maxSprites
     );
-    Array.Initialise(ref manager.Sprites, ref arena, maxSprites);
-    Array.Initialise(ref manager.SpriteGenerations, ref arena, maxSprites);
-    Array.Initialise(ref manager.ChainSprites, ref arena, maxSprites);
-    Array.Initialise(ref manager.SortedSprites, ref arena, maxSprites);
-    Array.Initialise(ref manager.SpriteLayers, ref arena, layerInfos.Length);
-    StackArray.Initialise(ref manager.OneFrameSpritesIndices, ref arena, maxSprites);
+    Collections.Init(ref manager.Sprites, ref arena, maxSprites);
+    Collections.Init(ref manager.SpriteGenerations, ref arena, maxSprites);
+    Collections.Init(ref manager.ChainSprites, ref arena, maxSprites);
+    Collections.Init(ref manager.SortedSprites, ref arena, maxSprites);
+    Collections.Init(ref manager.SpriteLayers, ref arena, layerInfos.Length);
+    Collections.Init(ref manager.OneFrameSpritesIndices, ref arena, maxSprites);
     // exclude the Nil sprite.
     int freeIndex = 1;
     for(int i = 0; i < manager.SpriteLayers.Length; i++){
@@ -2145,18 +2145,18 @@ public static void InitSpriteManager(
         ref SpriteLayerCreateInfo createInfo = ref layerInfos[i];
 
         layer.MaxSprites = createInfo.MaxSprites;
-        StackArray.Initialise(ref layer.FreeSpritesIndices, ref arena, layer.MaxSprites);
+        Collections.Init(ref layer.FreeSpritesIndices, ref arena, layer.MaxSprites);
         // push the free indices.
         if(i == 0){
             // exclude the Nil sprite.
             for(int j = 1; j < layer.MaxSprites; j++){
-                StackArray.Push(ref layer.FreeSpritesIndices, freeIndex);
+                Collections.Push(ref layer.FreeSpritesIndices, freeIndex);
                 freeIndex++;
             }
         }
         else{
             for(int j = 0; j < layer.MaxSprites; j++){
-                StackArray.Push(ref layer.FreeSpritesIndices, freeIndex);
+                Collections.Push(ref layer.FreeSpritesIndices, freeIndex);
                 freeIndex++;
             }
         }
@@ -2187,7 +2187,7 @@ public static SpriteId AllocateSprite(
         return default;
     }
 
-    int spriteIndex = StackArray.Pop(ref freeIndices);
+    int spriteIndex = Collections.Pop(ref freeIndices);
     ref Sprite sprite = ref manager.Sprites[spriteIndex]; 
     sprite.State = SpriteState.Inactive;
     sprite.Layer = layer;
@@ -2207,7 +2207,7 @@ public static SpriteId AllocateOneFrameSprite(
 ){
     SpriteId spriteId = AllocateSprite(ref manager, layer, ref isValidOutput);
     if(isValidOutput){
-        StackArray.Push(ref manager.OneFrameSpritesIndices, spriteId);
+        Collections.Push(ref manager.OneFrameSpritesIndices, spriteId);
     } 
     return spriteId;
 }
@@ -2429,7 +2429,7 @@ public static bool DeallocateSprite(
     }
     sprite.State = SpriteState.Deallocated;
 
-    StackArray.Push(ref manager.SpriteLayers[spriteId.Layer].FreeSpritesIndices, index);
+    Collections.Push(ref manager.SpriteLayers[spriteId.Layer].FreeSpritesIndices, index);
 
     return true;
 }

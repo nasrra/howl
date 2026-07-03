@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using Howl;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 using N_Howl.N_Input;
 using N_Howl.N_Math;
 using N_Howl.N_Windowing;
@@ -17,7 +17,7 @@ public static void Init(
     ref Memory.Arena arena, int cameraCount
 ){
     GlobalState.IsIntialised = true;
-    Array.Initialise(ref GlobalState.Cameras, ref arena, cameraCount);
+    Collections.Init(ref GlobalState.Cameras, ref arena, cameraCount);
 }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

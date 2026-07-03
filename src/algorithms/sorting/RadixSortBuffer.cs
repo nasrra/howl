@@ -1,5 +1,5 @@
 
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 
 namespace Howl.Algorithms.Sorting;
 
@@ -38,10 +38,10 @@ public struct RadixSortBuffer
             return false;
         }
 
-        Array.Initialise(ref buffer.TranslatedValues, ref arena, length);
-        Array.Initialise(ref buffer.TempValues, ref arena, length);
-        Array.Initialise(ref buffer.TempIndices, ref arena, length);
-        Array.Initialise(ref buffer.ByteCount, ref arena, 256); // count must always be 256 as radix operates on 8-bit/byte chunks.
+        N_Howl.N_Collections.Collections.Init(ref buffer.TranslatedValues, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref buffer.TempValues, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref buffer.TempIndices, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref buffer.ByteCount, ref arena, 256); // count must always be 256 as radix operates on 8-bit/byte chunks.
 
         buffer.IsInitialised = true;
         return true;

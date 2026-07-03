@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 
 namespace Howl.Math;
 
@@ -43,9 +43,9 @@ public struct FsSoa_Vector2{
         Debug.Assert(soa.IsIntialised==false, "Already Initialised.");
         soa.IsIntialised = true;
         int dataLength = entryStride*maxEntries;
-        Array.Initialise(ref soa.X, ref arena, dataLength);
-        Array.Initialise(ref soa.Y, ref arena, dataLength);
-        Array.Initialise(ref soa.AppendCounts, ref arena, dataLength);
+        N_Howl.N_Collections.Collections.Init(ref soa.X, ref arena, dataLength);
+        N_Howl.N_Collections.Collections.Init(ref soa.Y, ref arena, dataLength);
+        N_Howl.N_Collections.Collections.Init(ref soa.AppendCounts, ref arena, dataLength);
         soa.EntryStride = entryStride;
         soa.MaxEntries = maxEntries;
     }

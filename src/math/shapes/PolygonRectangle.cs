@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 
 namespace Howl.Math.Shapes;
 

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Howl.Text;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 
 namespace Howl.Unix;
 

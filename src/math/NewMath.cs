@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using N_Howl.N_Math;
 using Howl;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 
 namespace N_Howl.N_Math; 
 public unsafe static class Math{
@@ -722,9 +722,9 @@ public static void Init(ref FsSoa_Vector2 soa, ref Memory.Arena arena, int entry
     Debug.Assert(soa.IsIntialised==false, "Already Initialised.");
     soa.IsIntialised = true;
     int dataLength = entryStride*maxEntries;
-    Array.Initialise(ref soa.X, ref arena, dataLength);
-    Array.Initialise(ref soa.Y, ref arena, dataLength);
-    Array.Initialise(ref soa.AppendCounts, ref arena, dataLength);
+    Collections.Init(ref soa.X, ref arena, dataLength);
+    Collections.Init(ref soa.Y, ref arena, dataLength);
+    Collections.Init(ref soa.AppendCounts, ref arena, dataLength);
     soa.EntryStride = entryStride;
     soa.MaxEntries = maxEntries;
 }
@@ -790,8 +790,8 @@ public static bool Init(ref Soa_Vector2 soa, ref Memory.Arena arena, int length)
     }
     soa.IsIntialised = true;
     soa.Length = length;
-    Array.Initialise(ref soa.X, ref arena, length);
-    Array.Initialise(ref soa.Y, ref arena, length);
+    Collections.Init(ref soa.X, ref arena, length);
+    Collections.Init(ref soa.Y, ref arena, length);
     return true;
 }
 
@@ -837,9 +837,9 @@ public static bool Init(ref Soa_Transform2D soa, ref Memory.Arena arena, int len
     soa.IsInitialised = true;
     Init(ref soa.Positions, ref arena, length);
     Init(ref soa.Scales, ref arena, length);
-    Array.Initialise(ref soa.Sines, ref arena, length);
-    Array.Initialise(ref soa.Cosines, ref arena, length);
-    Array.Initialise(ref soa.RotationRadians, ref arena, length);
+    Collections.Init(ref soa.Sines, ref arena, length);
+    Collections.Init(ref soa.Cosines, ref arena, length);
+    Collections.Init(ref soa.RotationRadians, ref arena, length);
     return true;
 }
 
@@ -1057,10 +1057,10 @@ public static bool Init(
         return false;
     }
 
-    Array.Initialise(ref soa.MinX, ref arena, length);
-    Array.Initialise(ref soa.MinY, ref arena, length);
-    Array.Initialise(ref soa.MaxX, ref arena, length);
-    Array.Initialise(ref soa.MaxY, ref arena, length);
+    Collections.Init(ref soa.MinX, ref arena, length);
+    Collections.Init(ref soa.MinY, ref arena, length);
+    Collections.Init(ref soa.MaxX, ref arena, length);
+    Collections.Init(ref soa.MaxY, ref arena, length);
     soa.Length = length;
 
     soa.IsIntialised = true;
@@ -1122,10 +1122,10 @@ public static void ResetCount(ref  Soa_Aabb soa)
 /// <param name="length">the amount of aabb's to get the centroid of from the starting index.</param>
 public static void CalculateCentroids_Sisd(ref Soa_Aabb soa, System.Span<float> x, System.Span<float> y, int startIndex, int length)
 {
-    System.Span<float> minX = Array.AsSpan(soa.MinX);
-    System.Span<float> minY = Array.AsSpan(soa.MinY);
-    System.Span<float> maxX = Array.AsSpan(soa.MaxX);
-    System.Span<float> maxY = Array.AsSpan(soa.MaxY);
+    System.Span<float> minX = Collections.AsSpan(soa.MinX);
+    System.Span<float> minY = Collections.AsSpan(soa.MinY);
+    System.Span<float> maxX = Collections.AsSpan(soa.MaxX);
+    System.Span<float> maxY = Collections.AsSpan(soa.MaxY);
 
     for(int i = startIndex; i < length; i++)
     {
@@ -1149,10 +1149,10 @@ public static void CalculateCentroids_Simd(ref Soa_Aabb soa, System.Span<float> 
     ref int tailindex
 )
 {
-    System.Span<float> minX = Array.AsSpan(soa.MinX);
-    System.Span<float> minY = Array.AsSpan(soa.MinY);
-    System.Span<float> maxX = Array.AsSpan(soa.MaxX);
-    System.Span<float> maxY = Array.AsSpan(soa.MaxY);
+    System.Span<float> minX = Collections.AsSpan(soa.MinX);
+    System.Span<float> minY = Collections.AsSpan(soa.MinY);
+    System.Span<float> maxX = Collections.AsSpan(soa.MaxX);
+    System.Span<float> maxY = Collections.AsSpan(soa.MaxY);
 
     int simdSize = System.Numerics.Vector<float>.Count;
     int i = startIndex; 

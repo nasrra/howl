@@ -1,9 +1,9 @@
 using System.Runtime.CompilerServices;
 using Howl.Algorithms;
 using Howl.Algorithms.Sorting;
-using Howl.Unmanaged.Collections;
 using N_Howl.N_Graphics;
 using N_Howl.N_Math;
+using N_Howl.N_Collections;
 using Memory = Howl.Memory;
 
 namespace N_Howl.N_DataStructures;
@@ -25,11 +25,11 @@ public static bool Init(
 
     overlaps.CategoriesTriangularSum = Math.CalculateTriangularSum(categoryCount);
 
-    Array.Initialise(ref overlaps.CategoryLengths, ref arena, categoryCount);
-    Array.Initialise(ref overlaps.SubCategoryStartIndices, ref arena, overlaps.CategoriesTriangularSum);
-    Array.Initialise(ref overlaps.SubCategoryCounts, ref arena, overlaps.CategoriesTriangularSum);
-    Array.Initialise(ref overlaps.OwnerLeafIndices, ref arena, maxOverlaps);
-    Array.Initialise(ref overlaps.OtherLeafIndices, ref arena, maxOverlaps);
+    Collections.Init(ref overlaps.CategoryLengths, ref arena, categoryCount);
+    Collections.Init(ref overlaps.SubCategoryStartIndices, ref arena, overlaps.CategoriesTriangularSum);
+    Collections.Init(ref overlaps.SubCategoryCounts, ref arena, overlaps.CategoriesTriangularSum);
+    Collections.Init(ref overlaps.OwnerLeafIndices, ref arena, maxOverlaps);
+    Collections.Init(ref overlaps.OtherLeafIndices, ref arena, maxOverlaps);
 
     overlaps.IsInitialised = true;
     return true;
@@ -42,7 +42,7 @@ public static bool Init(
 public static void BuildChunks(
     CategorisedLeafOverlaps state
 ){
-    CategorisedOverlapArray.BuildChunks(ref state.CategoryLengths, ref state.SubCategoryStartIndices, state.MaxOverlaps);        
+    Collections.BuildChunks(ref state.CategoryLengths, ref state.SubCategoryStartIndices, state.MaxOverlaps);        
 }
 
 /// <summary>
@@ -59,7 +59,7 @@ public static bool Append(
     int ownerCategory, int otherCategory
 ){
     int writeIndex = 0;
-    if(CategorisedOverlapArray.IncrementSubCategoryCount(ref overlaps.CategoryLengths, ref overlaps.SubCategoryCounts, 
+    if(Collections.IncrementSubCategoryCount(ref overlaps.CategoryLengths, ref overlaps.SubCategoryCounts, 
         ref overlaps.SubCategoryStartIndices, overlaps.CategoriesTriangularSum, ownerCategory, otherCategory, ref writeIndex
     ))
     {
@@ -97,11 +97,11 @@ public static void Clear(
 public static OverlapInfo GetOverlaps(
     CategorisedLeafOverlaps overlaps, int categoryA, int categoryB
 ){
-    int elementIndex = CategorisedOverlapArray.GetElementIndex(categoryA, categoryB, overlaps.CategoriesTriangularSum);
+    int elementIndex = Collections.GetCategorisedOverlapArrayElementIndex(categoryA, categoryB, overlaps.CategoriesTriangularSum);
     int startIndex = overlaps.SubCategoryStartIndices[elementIndex];
     int count = overlaps.SubCategoryCounts[elementIndex];
-    System.Span<int> ownerIndices = Array.AsSpan(overlaps.OwnerLeafIndices, startIndex, count);
-    System.Span<int> otherIndices = Array.AsSpan(overlaps.OtherLeafIndices, startIndex, count);
+    System.Span<int> ownerIndices = Collections.AsSpan(overlaps.OwnerLeafIndices, startIndex, count);
+    System.Span<int> otherIndices = Collections.AsSpan(overlaps.OtherLeafIndices, startIndex, count);
     OverlapInfo info = default;
     info.OwnerLeafIndices = ownerIndices;
     info.OtherLeafIndices = otherIndices;
@@ -123,8 +123,8 @@ public static bool Init(
 
     Math.Init(ref soa.Aabbs, ref arena, length);
     Math.Init(ref soa.Centroids, ref arena, length);
-    Array.Initialise(ref soa.BranchIndices, ref arena, length);
-    Array.Initialise(ref soa.Categories, ref arena, length);
+    Collections.Init(ref soa.BranchIndices, ref arena, length);
+    Collections.Init(ref soa.Categories, ref arena, length);
     soa.Length = length;
 
     soa.IsInitialised = true;
@@ -168,10 +168,10 @@ public static bool LeafIntersectsAabb(
 ){
     // hoisting of invariance.
     Soa_Aabb aabbs = leaves.Aabbs;
-    System.Span<float> aabbsMinX = Array.AsSpan(aabbs.MinX);
-    System.Span<float> aabbsMinY = Array.AsSpan(aabbs.MinY);
-    System.Span<float> aabbsMaxX = Array.AsSpan(aabbs.MaxX);
-    System.Span<float> aabbsMaxY = Array.AsSpan(aabbs.MaxY);
+    System.Span<float> aabbsMinX = Collections.AsSpan(aabbs.MinX);
+    System.Span<float> aabbsMinY = Collections.AsSpan(aabbs.MinY);
+    System.Span<float> aabbsMaxX = Collections.AsSpan(aabbs.MaxX);
+    System.Span<float> aabbsMaxY = Collections.AsSpan(aabbs.MaxY);
 
     return Math.AabbsIntersect(
         aabbsMinX[leafIndex], queryAreaMinX, aabbsMinY[leafIndex], queryAreaMinY, 
@@ -188,10 +188,10 @@ public static bool LeafIntersectsLine(
 ){
     // hoisting of invariance.
     Soa_Aabb aabbs = leaves.Aabbs;
-    System.Span<float> aabbsMinX = Array.AsSpan(aabbs.MinX);
-    System.Span<float> aabbsMinY = Array.AsSpan(aabbs.MinY);
-    System.Span<float> aabbsMaxX = Array.AsSpan(aabbs.MaxX);
-    System.Span<float> aabbsMaxY = Array.AsSpan(aabbs.MaxY);
+    System.Span<float> aabbsMinX = Collections.AsSpan(aabbs.MinX);
+    System.Span<float> aabbsMinY = Collections.AsSpan(aabbs.MinY);
+    System.Span<float> aabbsMaxX = Collections.AsSpan(aabbs.MaxX);
+    System.Span<float> aabbsMaxY = Collections.AsSpan(aabbs.MaxY);
 
     return Math.AabbIntersectsLine(
         aabbsMinX[leafIndex], aabbsMinY[leafIndex], aabbsMaxX[leafIndex], aabbsMaxY[leafIndex], 
@@ -212,11 +212,11 @@ public static bool Init(
     }
 
     Math.Init(ref soa.Aabbs, ref arena, length);
-    Array.Initialise(ref soa.LeftLeafIndices, ref arena, length);
-    Array.Initialise(ref soa.RightLeafIndices, ref arena, length);
-    Array.Initialise(ref soa.SubtreeSizes, ref arena, length);
-    Array.Initialise(ref soa.LeafCounts, ref arena, length);
-    Array.Initialise(ref soa.ParentIndices, ref arena, length);
+    Collections.Init(ref soa.LeftLeafIndices, ref arena, length);
+    Collections.Init(ref soa.RightLeafIndices, ref arena, length);
+    Collections.Init(ref soa.SubtreeSizes, ref arena, length);
+    Collections.Init(ref soa.LeafCounts, ref arena, length);
+    Collections.Init(ref soa.ParentIndices, ref arena, length);
     soa.Length = length;
 
     soa.IsInitialised = true;
@@ -272,8 +272,8 @@ public static void Clear(
 public static void Init(
     ref Soa_Overlap soa, ref Memory.Arena arena, int length
 ){
-    Array.Initialise(ref soa.OwnerLeafIndices, ref arena, length);
-    Array.Initialise(ref soa.OtherLeafIndices, ref arena, length);
+    Collections.Init(ref soa.OwnerLeafIndices, ref arena, length);
+    Collections.Init(ref soa.OtherLeafIndices, ref arena, length);
     soa.Length = length;
 }
 
@@ -312,8 +312,8 @@ public static bool Init(
         return false;
     }
 
-    Array.Initialise(ref soa.OwnerLeafIndices, ref arena, length);
-    Array.Initialise(ref soa.OtherLeafIndices, ref arena, length);
+    Collections.Init(ref soa.OwnerLeafIndices, ref arena, length);
+    Collections.Init(ref soa.OtherLeafIndices, ref arena, length);
     Math.Init(ref soa.OwnerAabbs, ref arena, length);
     Math.Init(ref soa.OtherAabbs, ref arena, length);
     soa.Length = length;
@@ -376,8 +376,8 @@ public static bool Init(
 
     Init(ref bvh.Leaves, ref arena, length);
     Init(ref bvh.Branches, ref arena, branchesLength);
-    Array.Initialise(ref bvh.MortonCentroids, ref arena, length);
-    Array.Initialise(ref bvh.MortonLeafIds, ref arena, length);
+    Collections.Init(ref bvh.MortonCentroids, ref arena, length);
+    Collections.Init(ref bvh.MortonLeafIds, ref arena, length);
     RadixSortBuffer.Initialise(ref bvh.RadixSortBuffer, ref arena, length);
 
     bvh.IsInitialised = true;
@@ -441,7 +441,7 @@ public static void ConstructTree(
         bvh.MortonLeafIds[i] = i;
     }
     
-    RadixSort.IndexedAscend(Array.AsSpan(bvh.MortonCentroids), Array.AsSpan(bvh.MortonLeafIds), 
+    RadixSort.IndexedAscend(Collections.AsSpan(bvh.MortonCentroids), Collections.AsSpan(bvh.MortonLeafIds), 
         ref bvh.RadixSortBuffer, 0, bvh.Leaves.AppendCount
     );
 
@@ -597,18 +597,18 @@ public static void FindOverlaps(Soa_Branch branches, Soa_Leaf leaves, ref Soa_Ov
     Clear(ref overlaps);
 
     // hoisting of inavriance.
-    System.Span<float> leafMinX = Array.AsSpan(leaves.Aabbs.MinX);
-    System.Span<float> leafMinY = Array.AsSpan(leaves.Aabbs.MinY);
-    System.Span<float> leafMaxX = Array.AsSpan(leaves.Aabbs.MaxX);
-    System.Span<float> leafMaxY = Array.AsSpan(leaves.Aabbs.MaxY);
-    System.Span<float> branchMinX = Array.AsSpan(branches.Aabbs.MinX);
-    System.Span<float> branchMinY = Array.AsSpan(branches.Aabbs.MinY);
-    System.Span<float> branchMaxX = Array.AsSpan(branches.Aabbs.MaxX);
-    System.Span<float> branchMaxY = Array.AsSpan(branches.Aabbs.MaxY);
-    System.Span<int> branchSubtreeSizes = Array.AsSpan(branches.SubtreeSizes);
-    System.Span<int> branchLeafCounts = Array.AsSpan(branches.LeafCounts);
-    System.Span<int> rightLeafIndices = Array.AsSpan(branches.RightLeafIndices);
-    System.Span<int> leftLeafIndices = Array.AsSpan(branches.LeftLeafIndices);
+    System.Span<float> leafMinX         = Collections.AsSpan(leaves.Aabbs.MinX);
+    System.Span<float> leafMinY         = Collections.AsSpan(leaves.Aabbs.MinY);
+    System.Span<float> leafMaxX         = Collections.AsSpan(leaves.Aabbs.MaxX);
+    System.Span<float> leafMaxY         = Collections.AsSpan(leaves.Aabbs.MaxY);
+    System.Span<float> branchMinX       = Collections.AsSpan(branches.Aabbs.MinX);
+    System.Span<float> branchMinY       = Collections.AsSpan(branches.Aabbs.MinY);
+    System.Span<float> branchMaxX       = Collections.AsSpan(branches.Aabbs.MaxX);
+    System.Span<float> branchMaxY       = Collections.AsSpan(branches.Aabbs.MaxY);
+    System.Span<int> branchSubtreeSizes = Collections.AsSpan(branches.SubtreeSizes);
+    System.Span<int> branchLeafCounts   = Collections.AsSpan(branches.LeafCounts);
+    System.Span<int> rightLeafIndices   = Collections.AsSpan(branches.RightLeafIndices);
+    System.Span<int> leftLeafIndices    = Collections.AsSpan(branches.LeftLeafIndices);
     float minX;
     float minY; 
     float maxX;
@@ -684,19 +684,19 @@ public static void FindOverlaps(Soa_Branch branches, Soa_Leaf leaves, Categorise
     Clear(ref overlaps);
 
     // hoisting of inavriance.
-    System.Span<float> leafMinX = Array.AsSpan(leaves.Aabbs.MinX);
-    System.Span<float> leafMinY = Array.AsSpan(leaves.Aabbs.MinY);
-    System.Span<float> leafMaxX = Array.AsSpan(leaves.Aabbs.MaxX);
-    System.Span<float> leafMaxY = Array.AsSpan(leaves.Aabbs.MaxY);
-    System.Span<int> leafCategories = Array.AsSpan(leaves.Categories);
-    System.Span<float> branchMinX = Array.AsSpan(branches.Aabbs.MinX);
-    System.Span<float> branchMinY = Array.AsSpan(branches.Aabbs.MinY);
-    System.Span<float> branchMaxX = Array.AsSpan(branches.Aabbs.MaxX);
-    System.Span<float> branchMaxY = Array.AsSpan(branches.Aabbs.MaxY);
-    System.Span<int> branchSubtreeSizes = Array.AsSpan(branches.SubtreeSizes);
-    System.Span<int> rightLeafIndices = Array.AsSpan(branches.RightLeafIndices);
-    System.Span<int> branchLeafCounts = Array.AsSpan(branches.LeafCounts);
-    System.Span<int> leftLeafIndices = Array.AsSpan(branches.LeftLeafIndices);
+    System.Span<float> leafMinX         = Collections.AsSpan(leaves.Aabbs.MinX);
+    System.Span<float> leafMinY         = Collections.AsSpan(leaves.Aabbs.MinY);
+    System.Span<float> leafMaxX         = Collections.AsSpan(leaves.Aabbs.MaxX);
+    System.Span<float> leafMaxY         = Collections.AsSpan(leaves.Aabbs.MaxY);
+    System.Span<int> leafCategories     = Collections.AsSpan(leaves.Categories);
+    System.Span<float> branchMinX       = Collections.AsSpan(branches.Aabbs.MinX);
+    System.Span<float> branchMinY       = Collections.AsSpan(branches.Aabbs.MinY);
+    System.Span<float> branchMaxX       = Collections.AsSpan(branches.Aabbs.MaxX);
+    System.Span<float> branchMaxY       = Collections.AsSpan(branches.Aabbs.MaxY);
+    System.Span<int> branchSubtreeSizes = Collections.AsSpan(branches.SubtreeSizes);
+    System.Span<int> rightLeafIndices   = Collections.AsSpan(branches.RightLeafIndices);
+    System.Span<int> branchLeafCounts   = Collections.AsSpan(branches.LeafCounts);
+    System.Span<int> leftLeafIndices    = Collections.AsSpan(branches.LeftLeafIndices);
     float minX;
     float minY; 
     float maxX;
@@ -780,14 +780,14 @@ public static void AreaQuery(Soa_Branch branches, Soa_Leaf leaves, System.Span<i
     appendedOverlapsOutput = 0;
 
     // hoisting of invariance.
-    System.Span<float> branchMinX = Array.AsSpan(branches.Aabbs.MinX);
-    System.Span<float> branchMinY = Array.AsSpan(branches.Aabbs.MinY);
-    System.Span<float> branchMaxX = Array.AsSpan(branches.Aabbs.MaxX);
-    System.Span<float> branchMaxY = Array.AsSpan(branches.Aabbs.MaxY);
-    System.Span<int> branchSubtreeSizes = Array.AsSpan(branches.SubtreeSizes);
-    System.Span<int> leftLeafIndices = Array.AsSpan(branches.LeftLeafIndices);
-    System.Span<int> branchLeafCounts = Array.AsSpan(branches.LeafCounts);
-    System.Span<int> rightLeafIndices = Array.AsSpan(branches.RightLeafIndices);
+    System.Span<float> branchMinX       = Collections.AsSpan(branches.Aabbs.MinX);
+    System.Span<float> branchMinY       = Collections.AsSpan(branches.Aabbs.MinY);
+    System.Span<float> branchMaxX       = Collections.AsSpan(branches.Aabbs.MaxX);
+    System.Span<float> branchMaxY       = Collections.AsSpan(branches.Aabbs.MaxY);
+    System.Span<int> branchSubtreeSizes = Collections.AsSpan(branches.SubtreeSizes);
+    System.Span<int> leftLeafIndices    = Collections.AsSpan(branches.LeftLeafIndices);
+    System.Span<int> branchLeafCounts   = Collections.AsSpan(branches.LeafCounts);
+    System.Span<int> rightLeafIndices   = Collections.AsSpan(branches.RightLeafIndices);
             
     int otherLeaf;
 
@@ -880,14 +880,14 @@ public static void TreeRaycastQuery(
     appendedOverlapsOutput = 0;
 
     // hoisting of invariance.
-    System.Span<float> branchMinX = Array.AsSpan(branches.Aabbs.MinX);
-    System.Span<float> branchMinY = Array.AsSpan(branches.Aabbs.MinY);
-    System.Span<float> branchMaxX = Array.AsSpan(branches.Aabbs.MaxX);
-    System.Span<float> branchMaxY = Array.AsSpan(branches.Aabbs.MaxY);
-    System.Span<int> branchSubtreeSizes = Array.AsSpan(branches.SubtreeSizes);
-    System.Span<int> leftLeafIndices = Array.AsSpan(branches.LeftLeafIndices);
-    System.Span<int> branchLeafCounts = Array.AsSpan(branches.LeafCounts);
-    System.Span<int> rightLeafIndices = Array.AsSpan(branches.RightLeafIndices);
+    System.Span<float> branchMinX       = Collections.AsSpan(branches.Aabbs.MinX);
+    System.Span<float> branchMinY       = Collections.AsSpan(branches.Aabbs.MinY);
+    System.Span<float> branchMaxX       = Collections.AsSpan(branches.Aabbs.MaxX);
+    System.Span<float> branchMaxY       = Collections.AsSpan(branches.Aabbs.MaxY);
+    System.Span<int> branchSubtreeSizes = Collections.AsSpan(branches.SubtreeSizes);
+    System.Span<int> leftLeafIndices    = Collections.AsSpan(branches.LeftLeafIndices);
+    System.Span<int> branchLeafCounts   = Collections.AsSpan(branches.LeafCounts);
+    System.Span<int> rightLeafIndices   = Collections.AsSpan(branches.RightLeafIndices);
             
     int otherLeaf;
 
@@ -1010,10 +1010,10 @@ public static bool Init(
 
     length = Math.Clamp(length, IntrusiveList.MinLength, IntrusiveList.MaxLength);
 
-    Array.Initialise(ref list.Nodes, ref arena, length);
-    SwapBackArray.Initialise(ref list.RootIndices, ref arena, length);
+    Collections.Init(ref list.Nodes, ref arena, length);
+    Collections.Init(ref list.RootIndices, ref arena, length);
 
-    SwapBackArray.Append(ref list.RootIndices, 0);
+    Collections.Append(ref list.RootIndices, 0);
 
     list.IsInitialised=true;
     return true;
@@ -1039,7 +1039,7 @@ public static bool IntrusiveListAddRoot(
     }
 
     // the node is a root.
-    node.RootDenseIndex = SwapBackArray.Append(ref list.RootIndices, nodeIndex);
+    node.RootDenseIndex = Collections.Append(ref list.RootIndices, nodeIndex);
 
     // node has no other siblings.
     node.NextSibling = nodeIndex;
@@ -1215,7 +1215,7 @@ public static bool IntrusiveListRemoveNode(
         // performing the dense index swap as well.
         ref IntrusiveListNode lastRoot = ref nodes[roots[roots.Count-1]];
         lastRoot.RootDenseIndex = node.RootDenseIndex;
-        SwapBackArray.RemoveAt(ref roots, node.RootDenseIndex);
+        Collections.RemoveAt(ref roots, node.RootDenseIndex);
         node.RootDenseIndex = 0;
 
         if (firstChildIndex != 0)
@@ -1229,7 +1229,7 @@ public static bool IntrusiveListRemoveNode(
                 child.Parent = 0;
 
                 // add children to root stack array.
-                child.RootDenseIndex = SwapBackArray.Append(ref roots, currentSiblingIndex);
+                child.RootDenseIndex = Collections.Append(ref roots, currentSiblingIndex);
 
                 // children are now roots, so they should no longer be associated with thier siblings.
                 int nextSiblingIndex = child.NextSibling;

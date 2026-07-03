@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Howl.Unmanaged.Collections;
 
 namespace Howl.Algorithms.Sorting;
 
@@ -236,7 +235,12 @@ public static class RadixSortF
     /// <param name="buffer">A radix sort buffer </param>
     public static void Ascend(System.Span<float> values, ref RadixSortBuffer buffer)
     {
-        Ascend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), Array.AsSpan(buffer.ByteCount));
+        Ascend(
+            values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TranslatedValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount)
+        );
     }
 
     /// <summary>
@@ -252,7 +256,13 @@ public static class RadixSortF
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void Ascend(System.Span<float> values, ref RadixSortBuffer buffer, int start, int length)
     {
-        Ascend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), Array.AsSpan(buffer.ByteCount), start, length);
+        Ascend(
+            values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TranslatedValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount), 
+            start, length
+        );
     }
 
     /// <summary>
@@ -339,8 +349,12 @@ public static class RadixSortF
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void IndexedAscend(System.Span<float> values, System.Span<int> indices, ref RadixSortBuffer buffer, int start, int length)
     {
-        IndexedAscend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), 
-            indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount), start, length
+        IndexedAscend(
+            values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TranslatedValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), indices, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempIndices), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount), start, length
         );
     }
 
@@ -361,8 +375,13 @@ public static class RadixSortF
     /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
     public static void IndexedAscend(System.Span<float> values, System.Span<int> indices, ref RadixSortBuffer buffer)
     {
-        IndexedAscend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), 
-            indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount)
+        IndexedAscend(
+            values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TranslatedValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), 
+            indices, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempIndices), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount)
         );
     }
 
@@ -434,7 +453,12 @@ public static class RadixSortF
     /// <param name="buffer">A radix sort buffer </param>
     public static void Descend(System.Span<float> values, ref RadixSortBuffer buffer)
     {
-        Descend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), Array.AsSpan(buffer.ByteCount));
+        Descend(
+            values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TranslatedValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount)
+        );
     }
 
     /// <summary>
@@ -450,7 +474,13 @@ public static class RadixSortF
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void Descend(System.Span<float> values, ref RadixSortBuffer buffer, int start, int length)
     {
-        Descend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), Array.AsSpan(buffer.ByteCount), start, length);
+        Descend(
+            values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TranslatedValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount), 
+            start, length
+        );
     }
 
     /// <summary>
@@ -537,8 +567,13 @@ public static class RadixSortF
     /// <param name="length">the total number of elements after '<paramref name="start"/>' to process.</param>
     public static void IndexedDescend(System.Span<float> values, System.Span<int> indices, ref RadixSortBuffer buffer, int start, int length)
     {
-        IndexedDescend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), 
-            indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount), start, length
+        IndexedDescend(
+            values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TranslatedValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), 
+            indices, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempIndices), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount), start, length
         );
     }
 
@@ -559,8 +594,12 @@ public static class RadixSortF
     /// <param name="buffer">A radix sorting buffer for all temporary arrays reused during sorting.</param>
     public static void IndexedDescend(System.Span<float> values, System.Span<int> indices, ref RadixSortBuffer buffer)
     {
-        IndexedDescend(values, Array.AsSpan(buffer.TranslatedValues), Array.AsSpan(buffer.TempValues), 
-            indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount)
+        IndexedDescend(values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TranslatedValues), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), 
+            indices, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempIndices), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount)
         );
     }
 }

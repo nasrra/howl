@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Howl.Text;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 
 namespace N_Howl.N_IO;
 public unsafe static class IO{
@@ -44,7 +44,7 @@ public unsafe static class IO{
         }
 
         int length = desiredChannels * image.Width * image.Height;
-        Array.Initialise(ref image.Pixels, ptr, length);
+        Collections.Init(ref image.Pixels, ptr, length);
         isValidOutput = true;
         return image;
     }

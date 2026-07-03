@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 using System.Numerics;
 
 namespace Howl.Math.Shapes;
@@ -46,10 +46,10 @@ public struct Soa_Aabb
             return false;
         }
 
-        Array.Initialise(ref soa.MinX, ref arena, length);
-        Array.Initialise(ref soa.MinY, ref arena, length);
-        Array.Initialise(ref soa.MaxX, ref arena, length);
-        Array.Initialise(ref soa.MaxY, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.MinX, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.MinY, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.MaxX, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.MaxY, ref arena, length);
         soa.Length = length;
 
         soa.IsIntialised = true;
@@ -111,10 +111,10 @@ public struct Soa_Aabb
     /// <param name="length">the amount of aabb's to get the centroid of from the starting index.</param>
     public static void CalculateCentroids_Sisd(ref Soa_Aabb soa, System.Span<float> x, System.Span<float> y, int startIndex, int length)
     {
-        System.Span<float> minX = Array.AsSpan(soa.MinX);
-        System.Span<float> minY = Array.AsSpan(soa.MinY);
-        System.Span<float> maxX = Array.AsSpan(soa.MaxX);
-        System.Span<float> maxY = Array.AsSpan(soa.MaxY);
+        System.Span<float> minX = N_Howl.N_Collections.Collections.AsSpan(soa.MinX);
+        System.Span<float> minY = N_Howl.N_Collections.Collections.AsSpan(soa.MinY);
+        System.Span<float> maxX = N_Howl.N_Collections.Collections.AsSpan(soa.MaxX);
+        System.Span<float> maxY = N_Howl.N_Collections.Collections.AsSpan(soa.MaxY);
 
         for(int i = startIndex; i < length; i++)
         {
@@ -138,10 +138,10 @@ public struct Soa_Aabb
         ref int tailindex
     )
     {
-        System.Span<float> minX = Array.AsSpan(soa.MinX);
-        System.Span<float> minY = Array.AsSpan(soa.MinY);
-        System.Span<float> maxX = Array.AsSpan(soa.MaxX);
-        System.Span<float> maxY = Array.AsSpan(soa.MaxY);
+        System.Span<float> minX = N_Howl.N_Collections.Collections.AsSpan(soa.MinX);
+        System.Span<float> minY = N_Howl.N_Collections.Collections.AsSpan(soa.MinY);
+        System.Span<float> maxX = N_Howl.N_Collections.Collections.AsSpan(soa.MaxX);
+        System.Span<float> maxY = N_Howl.N_Collections.Collections.AsSpan(soa.MaxY);
 
         int simdSize = System.Numerics.Vector<float>.Count;
         int i = startIndex; 

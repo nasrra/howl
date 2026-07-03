@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 
 namespace Howl.Math;
 
@@ -29,8 +29,8 @@ public struct Soa_Vector2
         }
         soa.IsIntialised = true;
         soa.Length = length;
-        Array.Initialise(ref soa.X, ref arena, length);
-        Array.Initialise(ref soa.Y, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.X, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.Y, ref arena, length);
         return true;
     }
 

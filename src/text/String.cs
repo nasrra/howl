@@ -2,8 +2,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using Howl.Unmanaged.Collections;
-using Howl.Unmanaged.Ecs;
+using N_Howl.N_Collections;
+using N_Howl.N_Ecs;
 
 namespace Howl.Text;
 
@@ -418,7 +418,7 @@ public unsafe struct String
                 return false;
             }
 
-            Array.Initialise(ref allocator.SubAllocators, ref arena, maxStringLength + 1);
+            N_Howl.N_Collections.Collections.Init(ref allocator.SubAllocators, ref arena, maxStringLength + 1);
             String.Initialise(ref allocator.FallbackString, ref arena, fallbackString.Length);
             Append(ref allocator.FallbackString, fallbackString);
             allocator.IsInitialised = true;
@@ -503,7 +503,7 @@ public unsafe struct String
 
                 // initialise string and gen ids.                
                 GenIdAllocator.Initialise(ref allocator.GenIdAllocator, ref arena, maxStrings);
-                ComponentArray.Initialise(ref allocator.Strings, ref arena, maxStrings);
+                N_Howl.N_Collections.Collections.Init(ref allocator.Strings, ref arena, maxStrings);
 
                 // initialise all strings in the chars arena.
                 for(int i = 0; i < maxStrings; i++)
@@ -519,7 +519,7 @@ public unsafe struct String
             {
                 if(GenIdAllocator.Allocate(ref allocator.GenIdAllocator, ref genId)){
                     int index = GenId.GetIndex(genId);
-                    ComponentArray.GetDataUnsafe(allocator.Strings, index).Count = 0;
+                    N_Howl.N_Collections.Collections.GetDataUnsafe(allocator.Strings, index).Count = 0;
                     return true;
                 }
                 return false;
@@ -543,7 +543,7 @@ public unsafe struct String
                 }
                 isValidOutput = true;
                 int index = GenId.GetIndex(genId);
-                return ref ComponentArray.GetDataUnsafe(allocator.Strings, index);
+                return ref N_Howl.N_Collections.Collections.GetDataUnsafe(allocator.Strings, index);
             }
         }
     }

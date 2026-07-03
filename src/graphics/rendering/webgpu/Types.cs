@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Howl.Unmanaged.Collections;
 using WebGPU = Silk.NET.WebGPU;
 using SDL = Silk.NET.SDL;
 using Howl;
@@ -7,6 +6,7 @@ using N_Howl.N_Math;
 using Howl.Text;
 using N_Howl.N_Font;
 using N_Howl.N_Graphics;
+using N_Howl.N_Collections;
 
 namespace N_Howl.N_Rendering.N_WebGpu;
 

@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 
 namespace Howl.Math;
 
@@ -23,9 +23,9 @@ public struct Soa_Transform
         soa.IsInitialised = true;
         Soa_Vector2.Initialise(ref soa.Positions, ref arena, length);
         Soa_Vector2.Initialise(ref soa.Scales, ref arena, length);
-        Array.Initialise(ref soa.Sines, ref arena, length);
-        Array.Initialise(ref soa.Cosines, ref arena, length);
-        Array.Initialise(ref soa.RotationRadians, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.Sines, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.Cosines, ref arena, length);
+        N_Howl.N_Collections.Collections.Init(ref soa.RotationRadians, ref arena, length);
         return true;
     }
 

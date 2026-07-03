@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Howl.Unmanaged.Collections;
 
 namespace Howl.Algorithms.Sorting;
 
@@ -216,7 +215,11 @@ public static class RadixSort
     public static void IndexedAscend(System.Span<uint> values, System.Span<int> indices, ref RadixSortBuffer buffer, int start, int length
     )
     {
-        IndexedAscend(values, Array.AsSpan(buffer.TempValues), indices, Array.AsSpan(buffer.TempIndices), Array.AsSpan(buffer.ByteCount), start, length);
+        IndexedAscend(values, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempValues), indices, 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.TempIndices), 
+            N_Howl.N_Collections.Collections.AsSpan(buffer.ByteCount), start, length
+        );
     }
     
 

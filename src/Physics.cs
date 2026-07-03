@@ -1,12 +1,12 @@
 using System.Runtime.CompilerServices;
 using Howl.Text;
-using Howl.Unmanaged.Collections;
-using Howl.Unmanaged.Ecs;
+using N_Howl.N_DataStructures;
+using N_Howl.N_Ecs;
 using N_Howl.N_Math;
 using N_Howl.N_Rendering;
 using N_Howl.N_Graphics;
-using N_Howl.N_DataStructures;
 using Memory = Howl.Memory;
+using N_Howl.N_Collections;
 
 namespace N_Howl.N_Physics;
 
@@ -351,10 +351,10 @@ public static class Physics{
                 return false;
             }
             
-            Array.Initialise(ref soa.StaticFriction, ref arena, length);
-            Array.Initialise(ref soa.KineticFriction, ref arena, length);
-            Array.Initialise(ref soa.Density, ref arena, length);
-            Array.Initialise(ref soa.Restitution, ref arena, length);
+            Collections.Init(ref soa.StaticFriction, ref arena, length);
+            Collections.Init(ref soa.KineticFriction, ref arena, length);
+            Collections.Init(ref soa.Density, ref arena, length);
+            Collections.Init(ref soa.Restitution, ref arena, length);
 
             soa.IsIntialised = true;
             return true;
@@ -766,7 +766,7 @@ public static class Physics{
         ///    <para>Remarks:</para>
         ///    <para></para>
         /// </remarks>
-        public Howl.Unmanaged.Collections.StackArray<int> DisplacedThisSubStep;
+        public StackArray<int> DisplacedThisSubStep;
 
 
 
@@ -783,7 +783,7 @@ public static class Physics{
         /// <summary>
         ///     The gen-id allocator for all phsyics bodies.
         /// </summary>
-        public Howl.Unmanaged.Ecs.GenIdAllocator GenIdAllocator;
+        public GenIdAllocator GenIdAllocator;
 
         /// <remarks>
         ///    <para>Remarks:</para>
@@ -896,34 +896,34 @@ public static class Physics{
                 Math.Init(ref state.LocalCentersOfMass, ref arena, maxEntities);
                 Math.Init(ref state.Aabbs, ref arena, maxEntities);
                 Soa_Material.Initialise(ref state.Materials, ref arena, maxEntities);
-                Array.Initialise(ref state.AngularVelocities, ref arena, maxEntities);
-                Array.Initialise(ref state.Masses, ref arena, maxEntities);
-                Array.Initialise(ref state.InverseMasses, ref arena, maxEntities);
-                Array.Initialise(ref state.BaseWidths, ref arena, maxEntities);
-                Array.Initialise(ref state.BaseHeights, ref arena, maxEntities);
-                Array.Initialise(ref state.BaseRadii, ref arena, maxEntities);
-                Array.Initialise(ref state.GlobalRadii, ref arena, maxEntities);
-                Array.Initialise(ref state.RotationalInertia, ref arena, maxEntities);
-                Array.Initialise(ref state.InverseRotationalInertia, ref arena, maxEntities);
-                Array.Initialise(ref state.Generations, ref arena, maxEntities);
-                Array.Initialise(ref state.Categories, ref arena, maxEntities);
-                Array.Initialise(ref state.BvhLeafIndices, ref arena, maxEntities);
-                Array.Initialise(ref state.BvhLeafPaddings, ref arena, maxEntities);
-                Array.Initialise(ref state.ShapeTypes, ref arena, maxEntities);
-                Array.Initialise(ref state.RotationalResponses, ref arena, maxEntities);
-                Array.Initialise(ref state.EntityTypes, ref arena, maxEntities);
-                Array.Initialise(ref state.Active, ref arena, maxEntities);
-                Array.Initialise(ref state.GravityAffected, ref arena, maxEntities);
+                Collections.Init(ref state.AngularVelocities, ref arena, maxEntities);
+                Collections.Init(ref state.Masses, ref arena, maxEntities);
+                Collections.Init(ref state.InverseMasses, ref arena, maxEntities);
+                Collections.Init(ref state.BaseWidths, ref arena, maxEntities);
+                Collections.Init(ref state.BaseHeights, ref arena, maxEntities);
+                Collections.Init(ref state.BaseRadii, ref arena, maxEntities);
+                Collections.Init(ref state.GlobalRadii, ref arena, maxEntities);
+                Collections.Init(ref state.RotationalInertia, ref arena, maxEntities);
+                Collections.Init(ref state.InverseRotationalInertia, ref arena, maxEntities);
+                Collections.Init(ref state.Generations, ref arena, maxEntities);
+                Collections.Init(ref state.Categories, ref arena, maxEntities);
+                Collections.Init(ref state.BvhLeafIndices, ref arena, maxEntities);
+                Collections.Init(ref state.BvhLeafPaddings, ref arena, maxEntities);
+                Collections.Init(ref state.ShapeTypes, ref arena, maxEntities);
+                Collections.Init(ref state.RotationalResponses, ref arena, maxEntities);
+                Collections.Init(ref state.EntityTypes, ref arena, maxEntities);
+                Collections.Init(ref state.Active, ref arena, maxEntities);
+                Collections.Init(ref state.GravityAffected, ref arena, maxEntities);
             }
 
             {   // Utility.
                 
-                Howl.Unmanaged.Ecs.GenIdAllocator.Initialise(ref state.GenIdAllocator, ref arena, maxEntities);
+                GenIdAllocator.Initialise(ref state.GenIdAllocator, ref arena, maxEntities);
                 DataStructures.Init(ref state.Bvh, ref arena, maxEntities);
                 DataStructures.Init(ref state.OverlapsScratchBuffer, ref arena, Shape.Category.Count, maxCollisions);
                 Collisions.Manifold.Initialise(ref state.CollisionManifold, ref arena, maxEntities);
-                CategorisedOverlapArray.Initialise(ref state.SubStepShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
-                CategorisedOverlapArray.Initialise(ref state.SubStepRigidShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
+                Collections.Init(ref state.SubStepShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
+                Collections.Init(ref state.SubStepRigidShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
                 DataStructures.Init(ref state.BodyHierarchy, ref arena, maxEntities);
             }
 
@@ -1116,7 +1116,7 @@ public static class Physics{
 
         if(tX == 0 || tY == 0)
         {
-            StackArray.Push(ref state.DisplacedThisSubStep, entityIndex);
+            Collections.Push(ref state.DisplacedThisSubStep, entityIndex);
         }
 
         tX += xDisplacement;
@@ -1251,11 +1251,11 @@ public static class Physics{
             // prepare sub step collision resolution collection.
             shapeCollisionsToResolve.CategoryLengths[Collisions.ResolutionCategory.Dynamic] = solidCount;
             shapeCollisionsToResolve.CategoryLengths[Collisions.ResolutionCategory.Kinematic] = kinematicCount;
-            CategorisedOverlapArray.BuildChunks(ref shapeCollisionsToResolve);
+            Collections.BuildChunks(ref shapeCollisionsToResolve);
 
             rigidShapeCollisionsToResolve.CategoryLengths[Collisions.ResolutionCategory.Dynamic] = solidCount;
             rigidShapeCollisionsToResolve.CategoryLengths[Collisions.ResolutionCategory.Kinematic] = kinematicCount;
-            CategorisedOverlapArray.BuildChunks(ref rigidShapeCollisionsToResolve);
+            Collections.BuildChunks(ref rigidShapeCollisionsToResolve);
         }
 
         {   // Bvh
@@ -1413,8 +1413,8 @@ public static class Physics{
             long startSubStepTime = Howl.Time.GetSystemTick();
 
             // clear any grabage collisions that were resolved last sub step.
-            CategorisedOverlapArray.ClearCounts(ref shapeCollisionsToResolve);
-            CategorisedOverlapArray.ClearCounts(ref rigidShapeCollisionsToResolve);
+            Collections.ClearCounts(ref shapeCollisionsToResolve);
+            Collections.ClearCounts(ref rigidShapeCollisionsToResolve);
 
             // RigidBody Movement Step.
             long startMovementStepTime = Howl.Time.GetSystemTick();
@@ -1906,7 +1906,7 @@ public static class Physics{
         System.Span<int> collisionsToResolve;
 
         // == resolve solid to solid collisions ==.
-        collisionsToResolve = CategorisedOverlapArray.GetOverlaps(subStepCollisionsToResolve,
+        collisionsToResolve = Collections.GetOverlaps(subStepCollisionsToResolve,
             Collisions.ResolutionCategory.Dynamic,
             Collisions.ResolutionCategory.Dynamic
         );
@@ -1933,7 +1933,7 @@ public static class Physics{
 
         // == resolve solid to kinematic collisions ==.
 
-        collisionsToResolve = CategorisedOverlapArray.GetOverlaps(subStepCollisionsToResolve,
+        collisionsToResolve = Collections.GetOverlaps(subStepCollisionsToResolve,
             Collisions.ResolutionCategory.Dynamic,
             Collisions.ResolutionCategory.Kinematic
         );
@@ -2010,7 +2010,7 @@ public static class Physics{
         System.Span<int> collisions;
         bool otherIsKinematic = false;
 
-        collisions = CategorisedOverlapArray.GetOverlaps(
+        collisions = Collections.GetOverlaps(
             collisionsToResolve, Collisions.ResolutionCategory.Dynamic, Collisions.ResolutionCategory.Dynamic
         );
 
@@ -2021,7 +2021,7 @@ public static class Physics{
             contactPointsY, distsAX, distsAY, distsBX, distsBY, impulseMagnitudes, impulsesX, impulsesY, collisionsStride, otherIsKinematic
         );
 
-        collisions = CategorisedOverlapArray.GetOverlaps(
+        collisions = Collections.GetOverlaps(
             collisionsToResolve, Collisions.ResolutionCategory.Dynamic, Collisions.ResolutionCategory.Kinematic
         );
 
@@ -3207,21 +3207,21 @@ public static class Physics{
             
             // hoisting invariance.
             Collisions.Manifold manifold = state.CollisionManifold;
-            System.Span<float> normalsX = Array.AsSpan(manifold.Normals.X);
-            System.Span<float> normalsY = Array.AsSpan(manifold.Normals.Y);
-            System.Span<float> firstContactPointsX = Array.AsSpan(manifold.FirstContactPoints.X);
-            System.Span<float> firstContactPointsY = Array.AsSpan(manifold.FirstContactPoints.Y);
-            System.Span<float> secondContactPointsX = Array.AsSpan(manifold.SecondContactPoints.X);
-            System.Span<float> secondContactPointsY = Array.AsSpan(manifold.SecondContactPoints.Y);
-            System.Span<float> depths = Array.AsSpan(manifold.Depths);
-            System.Span<bool> twoContactPoints = Array.AsSpan(manifold.TwoContactPoints);
-            System.Span<Collisions.ContactState> contactStates = Array.AsSpan(manifold.ContactStates);
+            System.Span<float> normalsX = Collections.AsSpan(manifold.Normals.X);
+            System.Span<float> normalsY = Collections.AsSpan(manifold.Normals.Y);
+            System.Span<float> firstContactPointsX = Collections.AsSpan(manifold.FirstContactPoints.X);
+            System.Span<float> firstContactPointsY = Collections.AsSpan(manifold.FirstContactPoints.Y);
+            System.Span<float> secondContactPointsX = Collections.AsSpan(manifold.SecondContactPoints.X);
+            System.Span<float> secondContactPointsY = Collections.AsSpan(manifold.SecondContactPoints.Y);
+            System.Span<float> depths = Collections.AsSpan(manifold.Depths);
+            System.Span<bool> twoContactPoints = Collections.AsSpan(manifold.TwoContactPoints);
+            System.Span<Collisions.ContactState> contactStates = Collections.AsSpan(manifold.ContactStates);
 
             // get the collision indices of the physics body.
             int bodyIndex = GenId.GetIndex(physicsBodyId);
             int start = Howl.Collections.FixedStrideArray.GetElementIndex(bodyIndex, manifold.Stride, 0);
-            int collisionCount = manifold.ActiveIndicesCount[bodyIndex];
-            System.Span<int> collisionIndices = Array.AsSpan(manifold.ActiveIndices, start, collisionCount);
+            int collisionCount = manifold.ActiveIndices.EntryCounts[bodyIndex];
+            System.Span<int> collisionIndices = Collections.AsSpan(manifold.ActiveIndices.EntryElements, start, collisionCount);
 
             StackArray<Collisions.Callbacks<T>.Callback> callbackStack;
 
@@ -3994,8 +3994,8 @@ public static class Physics{
         {
             int startIndex = Howl.Collections.FixedStrideArray.GetElementIndex(bodyIndex, vertices.EntryStride, 0);
             int appendCount = vertices.AppendCounts[bodyIndex];
-            xOutput = Array.AsSpan(vertices.X, startIndex, appendCount);
-            yOutput = Array.AsSpan(vertices.Y, startIndex, appendCount);
+            xOutput = Collections.AsSpan(vertices.X, startIndex, appendCount);
+            yOutput = Collections.AsSpan(vertices.Y, startIndex, appendCount);
         }
 
         public static bool Deallocate(ref State state, GenId genId, bool recalculateBodyCenterOfMass)
@@ -4339,15 +4339,15 @@ public static class Physics{
         DrawInfo info, Collisions.Manifold collisions
     ){
         // hoisitng invariance.
-        System.Span<float> firstContactPointsX = Array.AsSpan(collisions.FirstContactPoints.X);
-        System.Span<float> firstContactPointsY = Array.AsSpan(collisions.FirstContactPoints.Y);
-        System.Span<float> secondContactPointsX = Array.AsSpan(collisions.SecondContactPoints.X);
-        System.Span<float> secondContactPointsY = Array.AsSpan(collisions.SecondContactPoints.Y);
-        System.Span<float> normalsX = Array.AsSpan(collisions.Normals.X);
-        System.Span<float> normalsY = Array.AsSpan(collisions.Normals.Y);
-        System.Span<float> otherCentroidsX = Array.AsSpan(collisions.ColliderCentroids.X);
-        System.Span<float> otherCentroidsY = Array.AsSpan(collisions.ColliderCentroids.Y);
-        System.Span<bool> twoContactPoints = Array.AsSpan(collisions.TwoContactPoints);
+        System.Span<float> firstContactPointsX = Collections.AsSpan(collisions.FirstContactPoints.X);
+        System.Span<float> firstContactPointsY = Collections.AsSpan(collisions.FirstContactPoints.Y);
+        System.Span<float> secondContactPointsX = Collections.AsSpan(collisions.SecondContactPoints.X);
+        System.Span<float> secondContactPointsY = Collections.AsSpan(collisions.SecondContactPoints.Y);
+        System.Span<float> normalsX = Collections.AsSpan(collisions.Normals.X);
+        System.Span<float> normalsY = Collections.AsSpan(collisions.Normals.Y);
+        System.Span<float> otherCentroidsX = Collections.AsSpan(collisions.ColliderCentroids.X);
+        System.Span<float> otherCentroidsY = Collections.AsSpan(collisions.ColliderCentroids.Y);
+        System.Span<bool> twoContactPoints = Collections.AsSpan(collisions.TwoContactPoints);
 
         float contactPointX;
         float contactPointY;
@@ -4359,8 +4359,8 @@ public static class Physics{
         // Vector2 normalStart;
         // Vector2 normalEnd;
 
-        Array<int> active = collisions.ActiveIndices;
-        Array<int> activeCounts = collisions.ActiveIndicesCount;
+        Array<int> active = collisions.ActiveIndices.EntryElements;
+        Array<int> activeCounts = collisions.ActiveIndices.EntryCounts;
         
         Circle shape = default;
 
@@ -4551,22 +4551,22 @@ public static class Physics{
                     return false;
                 }
 
-                Array.Initialise(ref callbacks.OnEnterCallbacks, ref arena, maxPhysicsEntities);
+                Collections.Init(ref callbacks.OnEnterCallbacks, ref arena, maxPhysicsEntities);
                 for(int i = 0; i < maxPhysicsEntities; i++)
                 {
-                    StackArray.Initialise(ref callbacks.OnEnterCallbacks[i], ref arena, maxCallbacks);
+                    Collections.Init(ref callbacks.OnEnterCallbacks[i], ref arena, maxCallbacks);
                 }
 
-                Array.Initialise(ref callbacks.OnExitCallbacks, ref arena, maxPhysicsEntities);
+                Collections.Init(ref callbacks.OnExitCallbacks, ref arena, maxPhysicsEntities);
                 for(int i = 0; i < maxPhysicsEntities; i++)
                 {
-                    StackArray.Initialise(ref callbacks.OnExitCallbacks[i], ref arena, maxCallbacks);
+                    Collections.Init(ref callbacks.OnExitCallbacks[i], ref arena, maxCallbacks);
                 }
 
-                Array.Initialise(ref callbacks.OnSustainCallbacks, ref arena, maxPhysicsEntities);
+                Collections.Init(ref callbacks.OnSustainCallbacks, ref arena, maxPhysicsEntities);
                 for(int i = 0; i < maxPhysicsEntities; i++)
                 {
-                    StackArray.Initialise(ref callbacks.OnSustainCallbacks[i], ref arena, maxCallbacks);
+                    Collections.Init(ref callbacks.OnSustainCallbacks[i], ref arena, maxCallbacks);
                 }
 
                 callbacks.IsInitialised = true;
@@ -4581,7 +4581,7 @@ public static class Physics{
             /// <param name="index">the index of the callback stack to push onto.</param>
             public static void PushOnEnterCallback<T>(ref Callbacks<T> callbacks, Callbacks<T>.Callback callback, int index) where T : unmanaged
             {
-                StackArray.Push(ref callbacks.OnEnterCallbacks[index], callback);
+                Collections.Push(ref callbacks.OnEnterCallbacks[index], callback);
             }
 
             /// <summary>
@@ -4591,7 +4591,7 @@ public static class Physics{
             /// <param name="index">the index of the stack to clear.</param>
             public static void ClearOnEnterCallbacks<T>(ref Callbacks<T> collisionCallbacks, int index)
             {
-                StackArray.Clear(ref collisionCallbacks.OnEnterCallbacks[index]);
+                Collections.Clear(ref collisionCallbacks.OnEnterCallbacks[index]);
             }
 
             /// <summary>
@@ -4602,7 +4602,7 @@ public static class Physics{
             /// <param name="index">the index of the callback stack to push onto.</param>
             public static void PushOnSustainCallback<T>(ref Callbacks<T> callbacks, Callbacks<T>.Callback callback, int index)
             {
-                StackArray.Push(ref callbacks.OnSustainCallbacks[index], callback);
+                Collections.Push(ref callbacks.OnSustainCallbacks[index], callback);
             }
 
             /// <summary>
@@ -4612,7 +4612,7 @@ public static class Physics{
             /// <param name="index">the index of the stack to clear.</param>
             public static void ClearOnSustainCallbacks<T>(Callbacks<T> callbacks, int index)
             {
-                StackArray.Clear(ref callbacks.OnSustainCallbacks[index]);
+                Collections.Clear(ref callbacks.OnSustainCallbacks[index]);
             }
 
             /// <summary>
@@ -4623,7 +4623,7 @@ public static class Physics{
             /// <param name="index">the index of the callback stack to push onto.</param>
             public static void PushOnExitCallback<T>(ref Callbacks<T> callbacks, Callbacks<T>.Callback callback, int index)
             {
-                StackArray.Push(ref callbacks.OnExitCallbacks[index], callback);
+                Collections.Push(ref callbacks.OnExitCallbacks[index], callback);
             }
 
             /// <summary>
@@ -4633,7 +4633,7 @@ public static class Physics{
             /// <param name="index">the index of the stack to clear.</param>
             public static void ClearOnExitCallbacks<T>(ref Callbacks<T> callbacks, int index)
             {
-                StackArray.Clear(ref callbacks.OnExitCallbacks[index]);
+                Collections.Clear(ref callbacks.OnExitCallbacks[index]);
             }
         }
 
@@ -4703,18 +4703,7 @@ public static class Physics{
             /// <summary>
             ///     The indices of <c>active</c> collision elements separated by <c>entry</c> in the current step.
             /// </summary>
-            /// <remarks>
-            ///     Remarks: this array is a fixed-stride swapback array.
-            /// </remarks>
-            public Array<int> ActiveIndices;
-
-            /// <summary>
-            ///     The count of indices an entry has in the <c>ActiveIndices</c> fixed stride swapwback array.
-            /// </summary>
-            /// <remarks>
-            ///     Remarks: Elements should be accessed via <c>entryIndex</c>.
-            /// </remarks>
-            public Array<int> ActiveIndicesCount;
+            public FixedStrideSwapbackArray<int> ActiveIndices;
 
             /// <summary>
             ///     The <c>phase</c> a collision element is of being <c>active</c>.
@@ -4770,17 +4759,16 @@ public static class Physics{
                 manifold.MaxEntries = totalColliders;
                 int dataLength = manifold.Stride * manifold.MaxEntries;
 
-                N_Howl.N_Math.Math.Init(ref manifold.Normals, ref arena, dataLength);
-                N_Howl.N_Math.Math.Init(ref manifold.ColliderCentroids, ref arena, dataLength);
-                N_Howl.N_Math.Math.Init(ref manifold.FirstContactPoints, ref arena, dataLength);
-                N_Howl.N_Math.Math.Init(ref manifold.SecondContactPoints, ref arena, dataLength);
-                Array.Initialise(ref manifold.Depths, ref arena, dataLength);
-                Array.Initialise(ref manifold.TwoContactPoints, ref arena, dataLength);
-                Array.Initialise(ref manifold.ContactStates, ref arena, dataLength);
-                Array.Initialise(ref manifold.PreviousContactStates, ref arena, dataLength);
-                Array.Initialise(ref manifold.ActivePhase, ref arena, dataLength);
-                Array.Initialise(ref manifold.ActiveIndices, ref arena, dataLength);
-                Array.Initialise(ref manifold.ActiveIndicesCount, ref arena, totalColliders);
+                Math.Init(ref manifold.Normals, ref arena, dataLength);
+                Math.Init(ref manifold.ColliderCentroids, ref arena, dataLength);
+                Math.Init(ref manifold.FirstContactPoints, ref arena, dataLength);
+                Math.Init(ref manifold.SecondContactPoints, ref arena, dataLength);
+                Collections.Init(ref manifold.Depths, ref arena, dataLength);
+                Collections.Init(ref manifold.TwoContactPoints, ref arena, dataLength);
+                Collections.Init(ref manifold.ContactStates, ref arena, dataLength);
+                Collections.Init(ref manifold.PreviousContactStates, ref arena, dataLength);
+                Collections.Init(ref manifold.ActivePhase, ref arena, dataLength);
+                Collections.Init(ref manifold.ActiveIndices, ref arena, totalColliders, totalColliders);
 
                 manifold.IsInitialised = true;
                 return true;
@@ -4822,9 +4810,7 @@ public static class Physics{
                 ref int phase = ref manifold.ActivePhase[elementIndex];
                 if(phase <= 0)
                 {
-                    FixedStrideSwapBackArray.Append(ref manifold.ActiveIndices, ref manifold.ActiveIndicesCount, 
-                        manifold.Stride, recipientIndex, elementIndex
-                    );
+                    Collections.Append(ref manifold.ActiveIndices, manifold.Stride, recipientIndex, elementIndex);
                 }
                 phase = 1;
 
@@ -4869,9 +4855,7 @@ public static class Physics{
                 ref int phase = ref manifold.ActivePhase[elementIndex];
                 if(phase <= 0)
                 {
-                    FixedStrideSwapBackArray.Append(ref manifold.ActiveIndices, ref manifold.ActiveIndicesCount, 
-                        manifold.Stride, recipientIndex, elementIndex
-                    );
+                    Collections.Append(ref manifold.ActiveIndices, manifold.Stride, recipientIndex, elementIndex);
                 }
                 phase = 1;
 
@@ -4997,8 +4981,8 @@ public static class Physics{
             {        
                 Array<ContactState> contactStates = manifold.ContactStates;
                 Array<ContactState> previousContactStates = manifold.PreviousContactStates;
-                ref Array<int> activeIndicesCounts = ref manifold.ActiveIndicesCount;
-                ref Array<int> activeIndices = ref manifold.ActiveIndices;
+                ref Array<int> activeIndicesCounts = ref manifold.ActiveIndices.EntryCounts;
+                ref Array<int> activeIndices = ref manifold.ActiveIndices.EntryElements;
                 ref Array<int> active = ref manifold.ActivePhase;
                 int stride = manifold.Stride;
                 int maxEntries = manifold.MaxEntries;
@@ -5062,7 +5046,7 @@ public static class Physics{
                         phase%=4;
                         if (phase == 0)
                         {
-                            FixedStrideSwapBackArray.RemoveAt(ref activeIndices, ref activeIndicesCounts, stride, entryIndex, entryElementIndex);
+                            Collections.RemoveAt(ref manifold.ActiveIndices, stride, entryIndex, entryElementIndex);
                         }
                     }
                 }
@@ -5076,7 +5060,7 @@ public static class Physics{
             /// <returns>true, if the collider is in contact with another; otherwise false.</returns>
             public static bool HasContacts(Manifold manifold, int index)
             {
-                return manifold.ActiveIndicesCount[index] > 0;
+                return manifold.ActiveIndices.EntryCounts[index] > 0;
             }
         }
 
@@ -5320,12 +5304,12 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
 
-                        CategorisedOverlapArray.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -5359,12 +5343,12 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
 
-                        CategorisedOverlapArray.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -5402,12 +5386,12 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
 
-                        CategorisedOverlapArray.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -5442,12 +5426,12 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
 
-                        CategorisedOverlapArray.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -5537,7 +5521,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref subStepCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref subStepCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -5572,7 +5556,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -5609,7 +5593,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref subStepCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref subStepCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -5644,7 +5628,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -5745,12 +5729,12 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
 
-                        CategorisedOverlapArray.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -5790,12 +5774,12 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
 
-                        CategorisedOverlapArray.Append(ref rigidBodyCollisionsToResolve, collisionIndices.BToA, 
+                        Collections.Append(ref rigidBodyCollisionsToResolve, collisionIndices.BToA, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -5828,12 +5812,12 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
 
-                        CategorisedOverlapArray.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref rigidBodyCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -5926,7 +5910,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -5959,7 +5943,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -5999,7 +5983,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -6032,7 +6016,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -6242,7 +6226,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref subStepCollisionsToResolve, collisionIndices.BToA, 
+                        Collections.Append(ref subStepCollisionsToResolve, collisionIndices.BToA, 
                             ResolutionCategory.Kinematic,
                             ResolutionCategory.Dynamic
                         );
@@ -6277,7 +6261,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -6517,7 +6501,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -6549,7 +6533,7 @@ public static class Physics{
 
                     if (collided)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -7128,7 +7112,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -7163,7 +7147,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -7201,7 +7185,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -7236,7 +7220,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -7339,7 +7323,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Dynamic
                         );
@@ -7379,7 +7363,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.BToA, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );
@@ -7412,7 +7396,7 @@ public static class Physics{
                     // resolve the collision.
                     if (collided == true)
                     {
-                        CategorisedOverlapArray.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
+                        Collections.Append(ref colliderCollisionsToResolve, collisionIndices.AToB, 
                             ResolutionCategory.Dynamic,
                             ResolutionCategory.Kinematic
                         );

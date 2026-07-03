@@ -1,5 +1,5 @@
 using System;
-using Howl.Unmanaged.Collections;
+using N_Howl.N_Collections;
 using N_Howl.N_Math;
 
 namespace N_Howl.N_CameraSystem;
