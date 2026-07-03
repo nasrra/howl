@@ -128,7 +128,7 @@ public static void Update(
     // update mouse button states.
     for(int i = 0; i < (int)MouseButton.Length; i++){
         ref InputState buttonState = ref GlobalState.PreviousMouseButtonStates[i];
-        if(GlobalState.KeyDown[i] == true){
+        if(GlobalState.MouseButtonDown[i] == true){
             switch(buttonState){
                 case InputState.JustPressed:
                     buttonState = InputState.Pressed;

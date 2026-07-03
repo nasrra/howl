@@ -77,7 +77,7 @@ public static void UpdateProjectionMatrices(
     }
 }
 
-public static Vector2 GetMouseScreenPosition(
+public static Vector2 GetMouseOrthographicPosition(
     int cameraIndex
 ){
     ref Camera camera = ref GlobalState.Cameras[cameraIndex];

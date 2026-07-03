@@ -563,7 +563,7 @@ public static void OnQueueWorkDone(
 }
 
 /**##########################################################################################################################################
-    WINDOWING.
+    div: WINDOWING.
 ##########################################################################################################################################**/
 
 public static void LinkToWindow(
@@ -749,7 +749,7 @@ public static void UpdateDestinationRectangle(
 }
 
 /**##########################################################################################################################################
-    PIPELINES
+    div: PIPELINES
 ##########################################################################################################################################**/
 
 public static void InitGraphicsPipeline(
@@ -1284,7 +1284,7 @@ public static void FreeBlitPipeline(
 }
 
 /**##########################################################################################################################################
-    SHADERS.
+    div: SHADERS.
 ##########################################################################################################################################**/
 
 public static WebGPU.ShaderModule* CreateShaderModule(
@@ -1606,7 +1606,7 @@ public static bool WriteToUserStorageBuffer(ref RendererCtx ctx, void* ubo, uint
 }
 
 /**##########################################################################################################################################
-    TEXTURES.
+    div: TEXTURES.
 ##########################################################################################################################################**/
 
 public static Texture CreateTexture(
@@ -2065,7 +2065,7 @@ public static float GetFinalRenderTextureAspectRatio(
 }
 
 /**##########################################################################################################################################
-    SAMPLERS.
+    div: SAMPLERS.
 ##########################################################################################################################################**/
 
 public static void InitSampler(
@@ -2102,7 +2102,7 @@ public static void InitSampler(
 }
 
 /**##########################################################################################################################################
-    SPRITES
+    div: SPRITES
 ##########################################################################################################################################**/
 
 public static void InitSpriteManager(
@@ -2634,6 +2634,13 @@ public static void SetSpriteVirtualTextureUnsafe(
 }
 
 public static bool SetSpriteColour(
+    ref RendererCtx ctx, SpriteId spriteId, Colour colour
+){
+    return SetSpriteColour(ref ctx.SpriteManager, spriteId, colour);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool SetSpriteColour(
     ref SpriteManager manager, SpriteId spriteId, Colour colour
 ){
 
@@ -2712,7 +2719,7 @@ public static void SetSpriteColourStateUnsafe(
 }
 
 /**##########################################################################################################################################
-    RESOURCE HANDLING
+    div: RESOURCE HANDLING
 ##########################################################################################################################################**/
 
 public static void FreeDeviceResources(

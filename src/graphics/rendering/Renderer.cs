@@ -1,4 +1,5 @@
 using Howl.Text;
+using N_Howl.N_Graphics;
 using N_Howl.N_Math;
 using N_Howl.N_Windowing;
 using WebGPU = N_Howl.N_Rendering.N_WebGpu;
@@ -150,6 +151,12 @@ public static bool SetSpriteRegion(
     SpriteId spriteId, Region region
 ){
     return WebGPU.Renderer.SetSpriteRegion(ref GlobalState.WebGpuCtx, spriteId, region);
+}
+
+public static bool SetSpriteColour(
+    SpriteId spriteId, Colour colour
+){
+    return WebGPU.Renderer.SetSpriteColour(ref GlobalState.WebGpuCtx, spriteId, colour);
 }
 
 /**##########################################################################################################################################

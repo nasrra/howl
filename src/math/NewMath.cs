@@ -675,6 +675,15 @@ public static Quaternion GetRotationBetweenPoints(
     div: Vector2
 ##########################################################################################################################################**/
 
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static Vector2 Abs(
+    Vector2 v
+){
+    v.X = Abs(v.X);
+    v.Y = Abs(v.Y);
+    return v;
+}
+
 /// <summary>
 /// Gets the distance between two vectors
 /// </summary>
@@ -1318,32 +1327,32 @@ public static bool AabbsIntersect(
 }
 
 /// <summary>
-///     Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
+///     Checks whether an Axis-Aligned-Bounding-Box intersects with a point.
 /// </summary>
 /// <returns>true, if there is an intersection; otherwise false.</returns>
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static bool AabbIntersectsVector(
-    in Aabb aabb, Vector2 vector
+public static bool AabbIntersectsPoint(
+    in Aabb aabb, Vector2 point
 ){
-    return AabbIntersectsVector(
+    return AabbIntersectsPoint(
         aabb.MinX, aabb.MinY, aabb.MaxX, aabb.MaxY,
-        vector.X, vector.Y
+        point.X, point.Y
     );
 }
 
 /// <summary>
-///     Checks whether an Axis-Aligned-Bounding-Box intersects with a vector.
+///     Checks whether an Axis-Aligned-Bounding-Box intersects with a point.
 /// </summary>
 /// <returns>true, if there is an intersection; otherwise false.</returns>
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static bool AabbIntersectsVector(
-    float aabbMinX, float aabbMinY, float aabbMaxX, float aabbMaxY, float vectorX, float vectorY
+public static bool AabbIntersectsPoint(
+    float aabbMinX, float aabbMinY, float aabbMaxX, float aabbMaxY, float pointX, float pointY
 ){
     return 
-    aabbMinX <= vectorX &&
-    aabbMinY <= vectorY && 
-    aabbMaxX >= vectorX &&
-    aabbMaxY >= vectorY;        
+    aabbMinX <= pointX &&
+    aabbMinY <= pointY && 
+    aabbMaxX >= pointX &&
+    aabbMaxY >= pointY;        
 }
 
 /// <summary>
@@ -1370,10 +1379,10 @@ public static bool AabbIntersectsLine(
     float closestPointY;
 
     ClosestPoint(lineStartX, lineStartY, lineEndX, lineEndY, aabbMinX, aabbMinY, out closestPointX, out closestPointY);
-    if(AabbIntersectsVector(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, closestPointX, closestPointY))
+    if(AabbIntersectsPoint(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, closestPointX, closestPointY))
     {
         ClosestPoint(lineStartX, lineStartY, lineEndX, lineEndY, aabbMaxX, aabbMaxY, out closestPointX, out closestPointY);
-        if(AabbIntersectsVector(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, closestPointX, closestPointY))
+        if(AabbIntersectsPoint(aabbMinX, aabbMinY, aabbMaxX, aabbMaxY, closestPointX, closestPointY))
         {
             return true;
         }
