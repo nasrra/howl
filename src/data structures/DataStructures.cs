@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Howl.Algorithms;
 using Howl.Algorithms.Sorting;
 using Howl.Unmanaged.Collections;
+using N_Howl.N_Graphics;
 using N_Howl.N_Math;
 using Memory = Howl.Memory;
 
@@ -962,7 +963,7 @@ public static void TreeRaycastQuery(
 ********************/
 
 public static void DrawBranches(
-    BoundingVolumeHierarchy bvh, float zPosition, int spriteLayer, int materialIndex, int cameraIndex, float wireThickness
+    BoundingVolumeHierarchy bvh, Colour colour, float zPosition, int spriteLayer, int materialIndex, int cameraIndex, float wireThickness
 ){
     for(int i = 0; i < bvh.Branches.AppendCount; i++)
     {
@@ -972,12 +973,12 @@ public static void DrawBranches(
             Width   = bvh.Branches.Aabbs.MaxX[i] - bvh.Branches.Aabbs.MinX[i],
             Height  = bvh.Branches.Aabbs.MaxY[i] - bvh.Branches.Aabbs.MinY[i],
         };
-        N_Debug.Debug.DrawWireRect(rect, zPosition, spriteLayer, materialIndex, cameraIndex, wireThickness);
+        N_Debug.Debug.DrawWireRect(rect, colour, zPosition, spriteLayer, materialIndex, cameraIndex, wireThickness);
     }
 }
 
 public static void DrawLeaves(
-    BoundingVolumeHierarchy bvh, float zPosition, int spriteLayer, int materialIndex, int cameraIndex, float wireThickness
+    BoundingVolumeHierarchy bvh, Colour colour, float zPosition, int spriteLayer, int materialIndex, int cameraIndex, float wireThickness
 ){
     for(int i = 0; i < bvh.Leaves.AppendCount; i++)
     {
@@ -987,7 +988,7 @@ public static void DrawLeaves(
             Width   = bvh.Leaves.Aabbs.MaxX[i] - bvh.Leaves.Aabbs.MinX[i],
             Height  = bvh.Leaves.Aabbs.MaxY[i] - bvh.Leaves.Aabbs.MinY[i],
         };
-        N_Debug.Debug.DrawWireRect(rect, zPosition, spriteLayer, materialIndex, cameraIndex, wireThickness);
+        N_Debug.Debug.DrawWireRect(rect, colour, zPosition, spriteLayer, materialIndex, cameraIndex, wireThickness);
     }
 }
 

@@ -103,25 +103,26 @@ public static class Physics{
 
 
     public struct DrawInfo{
-        public int MaterialIdDynamicShape; // = 2;
-        public int MaterialIdPassiveTriggerShape; // = 6;
-        public int MaterialIdKinematicShape; // = 5;
-        public int MaterialIdActiveTriggerShape; // = 1;
-        public int MaterialIdAabb; // = 7;
-        public int MaterialIdFallbackShape; // = 8;
-        public int MaterialIdInactivePhysicsBody; // = 9;
-        public int MaterialIdBvhLeafAABB; // = 2;
-        public int MaterialIdBvhBranchAABB; // = 7;
-        public int MaterialIdContactPoint; // = 1;
-        public int MaterialIdLinearVelocity; // = 8;
-        public int MaterialIdPosition; // = 8;
-        public int MaterialIdCentroid; // = 4;
-        public int MaterialIdCollisionOther; // = 3;
-        public int MaterialIdCollisionNormal; // = 3;
-        public int MaterialIdCenterOfMass; // = 5;
+        public Colour ColourDynamicShape;
+        public Colour ColourPassiveTriggerShape;
+        public Colour ColourKinematicShape;
+        public Colour ColourActiveTriggerShape;
+        public Colour ColourAabb;
+        public Colour ColourFallbackShape;
+        public Colour ColourInactivePhysicsBody;
+        public Colour ColourBvhLeafAABB;
+        public Colour ColourBvhBranchAABB;
+        public Colour ColourContactPoint;
+        public Colour ColourLinearVelocity;
+        public Colour ColourPosition;
+        public Colour ColourCentroid;
+        public Colour ColourCollisionOther;
+        public Colour ColourCollisionNormal;
+        public Colour ColourCenterOfMass;
         public int SpriteLayer;
         public int CameraId;
-        public int ZPosition;
+        public float ZPosition;
+        public int MaterialIndex;
         public float WireframeThickness;
     }
 
@@ -4091,14 +4092,14 @@ public static class Physics{
         if (state.DrawBvhBranches)
         {
             DataStructures.DrawBranches(
-                state.Bvh, info.ZPosition, info.SpriteLayer, info.MaterialIdBvhBranchAABB, info.CameraId, info.WireframeThickness
+                state.Bvh, info.ColourBvhBranchAABB, info.ZPosition, info.SpriteLayer, info.MaterialIndex, info.CameraId, info.WireframeThickness
             );
         }
 
         if (state.DrawLeaves)
         {    
             DataStructures.DrawLeaves(
-                state.Bvh, info.ZPosition, info.SpriteLayer, info.MaterialIdBvhLeafAABB, info.CameraId, info.WireframeThickness
+                state.Bvh, info.ColourBvhLeafAABB, info.ZPosition, info.SpriteLayer, info.MaterialIndex, info.CameraId, info.WireframeThickness
             );
         }
 
@@ -4138,10 +4139,7 @@ public static class Physics{
             {
                 Circle shape = new Circle(){X = globalPositionsX[shapeIndex], Y = globalPositionsY[shapeIndex], Radius = 0.1f};
 
-                N_Howl.N_Debug.Debug.DrawWireCircle(
-                    shape: shape, info.ZPosition, info.SpriteLayer, info.MaterialIdPosition, 
-                    info.CameraId, info.WireframeThickness
-                );
+                N_Debug.Debug.DrawWireCircle(shape, info.ColourPosition, info.ZPosition, info.SpriteLayer, info.MaterialIndex, info.CameraId, info.WireframeThickness);
 
                 shapeIndex = nodes[shapeIndex].NextSibling;
                 if(shapeIndex == firstShapeIndex)
@@ -4167,7 +4165,7 @@ public static class Physics{
             };
 
             N_Debug.Debug.DrawWireCircle(
-                shape: shape, info.ZPosition, info.SpriteLayer, info.MaterialIdCenterOfMass, 
+                shape: shape, info.ColourCenterOfMass, info.ZPosition, info.SpriteLayer, info.MaterialIndex, 
                 info.CameraId, info.WireframeThickness
             );
         }
@@ -4178,7 +4176,7 @@ public static class Physics{
         Array<IntrusiveList.Node> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> radii, 
         Array<int> categories
     ){
-        int materialIndex = default;
+        Colour colour = default;
 
         System.Span<float> polyVertsX = stackalloc float[vertices.EntryStride];
         System.Span<float> polyVertsY = stackalloc float[vertices.EntryStride];
@@ -4200,35 +4198,35 @@ public static class Physics{
 
                 if (Shape.Category.IsSolid(category))
                 {
-                    materialIndex = info.MaterialIdDynamicShape;
+                    colour = info.ColourDynamicShape;
                 }
                 else if (Shape.Category.IsKinematic(category))
                 {
-                    materialIndex = info.MaterialIdKinematicShape;
+                    colour = info.ColourKinematicShape;
                 }
                 else if(Shape.Category.IsTrigger(category))
                 {
-                    materialIndex = Collisions.Manifold.HasContacts(collisions, shapeIndex)
-                    ? info.MaterialIdActiveTriggerShape
-                    : info.MaterialIdPassiveTriggerShape;            
+                    colour = Collisions.Manifold.HasContacts(collisions, shapeIndex)
+                    ? info.ColourActiveTriggerShape
+                    : info.ColourPassiveTriggerShape;            
                 }
                 else
                 {
-                    materialIndex = info.MaterialIdFallbackShape;
+                    colour = info.ColourFallbackShape;
                 }
 
                 if (Shape.Category.IsPolygon(category))
                 {
                     Shape.GetVerticesUnsafe(vertices, shapeIndex, ref polyVertsX, ref polyVertsY);
                     N_Debug.Debug.DrawWirePoly(
-                        polyVertsX, polyVertsY, info.ZPosition, info.SpriteLayer, materialIndex, info.CameraId, info.WireframeThickness
+                        polyVertsX, polyVertsY, colour, info.ZPosition, info.SpriteLayer, info.MaterialIndex, info.CameraId, info.WireframeThickness
                     );
                 }
                 else if (Shape.Category.IsCircle(category))
                 {
                     Circle shape = new(){X = centroidsX[shapeIndex], Y = centroidsY[shapeIndex], Radius = radii[shapeIndex]};
                     N_Debug.Debug.DrawWireCircle(
-                        shape: shape, info.ZPosition, info.SpriteLayer, materialIndex, 
+                        shape: shape, colour, info.ZPosition, info.SpriteLayer, info.MaterialIndex, 
                         info.CameraId, info.WireframeThickness
                     );                    
                 }
@@ -4263,7 +4261,7 @@ public static class Physics{
                 Circle shape = new(){X = centroids.X[shapeIndex], Y = centroids.Y[shapeIndex], Radius = 0.1f};
 
                 N_Debug.Debug.DrawWireCircle(
-                    shape: shape, info.ZPosition, info.SpriteLayer, info.MaterialIdCentroid, 
+                    shape: shape, info.ColourCentroid, info.ZPosition, info.SpriteLayer, info.MaterialIndex, 
                     info.CameraId, info.WireframeThickness
                 );                    
                 
@@ -4323,8 +4321,8 @@ public static class Physics{
                 float maxY = aabbsMaxY[shapeIndex];
 
                 N_Debug.Debug.DrawWirePoly(
-                    [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], info.ZPosition, 
-                    info.SpriteLayer, info.MaterialIdAabb, info.CameraId, info.WireframeThickness
+                    [minX, maxX, maxX, minX], [maxY, maxY, minY, minY], info.ColourAabb, info.ZPosition, 
+                    info.SpriteLayer, info.MaterialIndex, info.CameraId, info.WireframeThickness
                 );
 
                 shapeIndex = nodes[shapeIndex].NextSibling;
@@ -4403,7 +4401,7 @@ public static class Physics{
 
                 // draw centroids.
                 N_Debug.Debug.DrawWireCircle(
-                    shape: shape, info.ZPosition, info.SpriteLayer, info.MaterialIdCentroid, 
+                    shape: shape, info.ColourCentroid, info.ZPosition, info.SpriteLayer, info.MaterialIndex, 
                     info.CameraId, info.WireframeThickness
                 );
                 
@@ -4411,7 +4409,7 @@ public static class Physics{
                 shape.Y = otherCentroidY;
                 shape.Radius = 0.1f;
                 N_Debug.Debug.DrawWireCircle(
-                    shape: shape, info.ZPosition, info.SpriteLayer, info.MaterialIdCollisionOther,
+                    shape: shape, info.ColourCollisionOther, info.ZPosition, info.SpriteLayer, info.MaterialIndex,
                     info.CameraId, info.WireframeThickness
                 );  
 
@@ -4419,7 +4417,7 @@ public static class Physics{
                 shape.Y = contactPointY;
                 shape.Radius = 0.1f;
                 N_Debug.Debug.DrawWireCircle(
-                    shape: shape, info.ZPosition, info.SpriteLayer, info.MaterialIdContactPoint,
+                    shape: shape, info.ColourContactPoint, info.ZPosition, info.SpriteLayer, info.MaterialIndex,
                     info.CameraId, info.WireframeThickness
                 );
 
@@ -4440,7 +4438,7 @@ public static class Physics{
                     shape.Radius = 0.1f;
 
                     N_Howl.N_Debug.Debug.DrawWireCircle(
-                        shape: shape, info.ZPosition, info.SpriteLayer, info.MaterialIdContactPoint,
+                        shape: shape, info.ColourContactPoint, info.ZPosition, info.SpriteLayer, info.MaterialIndex,
                         info.CameraId, info.WireframeThickness
                     );
 

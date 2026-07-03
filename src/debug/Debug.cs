@@ -16,14 +16,14 @@ public static unsafe class Debug{
     ///     draws a wire rect relative to a camera's position.
     /// </summary>
     public static void DrawWireRect(
-        Rectangle shape, float zPosition, int layer, int materialIndex, int cameraIndex, float thickness = DefaultWireFrameThickness
+        Rectangle shape, Colour colour, float zPosition, int layer, int materialIndex, int cameraIndex, float thickness = DefaultWireFrameThickness
     ){
         thickness = CalculateThicknessRelativeToCamera(thickness, zPosition, cameraIndex);
-        DrawWireRect(shape, zPosition, layer, materialIndex, thickness);
+        DrawWireRect(shape, colour, zPosition, layer, materialIndex, thickness);
     }
 
     public static void DrawWireRect(
-        Rectangle shape, float zPosition, int layer, int materialIndex, float thickness = DefaultWireFrameThickness
+        Rectangle shape, Colour colour, float zPosition, int layer, int materialIndex, float thickness = DefaultWireFrameThickness
     ){
         AssertState();
 
@@ -38,25 +38,25 @@ public static unsafe class Debug{
         Vector3 bottomRight = new(){X = rightX, Y = bottomY, Z = zPosition};
         Vector3 bottomLeft = new(){X = leftX, Y = bottomY, Z = zPosition};
 
-        DrawLine(topLeft, topRight, layer, materialIndex, thickness);
-        DrawLine(topRight, bottomRight, layer, materialIndex, thickness);
-        DrawLine(bottomRight, bottomLeft, layer, materialIndex, thickness);
-        DrawLine(bottomLeft, topLeft, layer, materialIndex, thickness);
+        DrawLine(colour, layer, materialIndex, thickness, topLeft, topRight);
+        DrawLine(colour, layer, materialIndex, thickness, topRight, bottomRight);
+        DrawLine(colour, layer, materialIndex, thickness, bottomRight, bottomLeft);
+        DrawLine(colour, layer, materialIndex, thickness, bottomLeft, topLeft);
     }
 
     /// <summary>
     ///     draws a circle relative to a camera's position.
     /// </summary>
     public static void DrawWireCircle(
-        Circle shape, float zPosition, int layer, int materialIndex, int cameraIndex, 
+        Circle shape, Colour colour, float zPosition, int layer, int materialIndex, int cameraIndex, 
         float thickness = DefaultWireFrameThickness, int verticeCount = DefaultCircleVerticeAmount
     ){
         thickness = CalculateThicknessRelativeToCamera(thickness, zPosition, cameraIndex);
-        DrawWireCircle(shape, zPosition, layer, materialIndex, thickness, verticeCount);
+        DrawWireCircle(shape, colour, zPosition, layer, materialIndex, thickness, verticeCount);
     }
 
     public static void DrawWireCircle(
-        Circle shape, float zPosition, int layer, int materialIndex, 
+        Circle shape, Colour colour, float zPosition, int layer, int materialIndex, 
         float thickness = DefaultWireFrameThickness, int verticeCount = DefaultCircleVerticeAmount
     ){
         verticeCount = Math.Clamp(verticeCount, 3, int.MaxValue);
@@ -77,9 +77,9 @@ public static unsafe class Debug{
             float endY = sin * relX + cos * relY + shape.Y; // add back the circle position at the end.
 
             DrawLine(
+                colour, layer, materialIndex, thickness,
                 new(){X = startX, Y = startY, Z = zPosition}, 
-                new(){X = endX, Y = endY, Z = zPosition}, 
-                layer, materialIndex, thickness
+                new(){X = endX, Y = endY, Z = zPosition} 
             );
 
             startX = endX;
@@ -91,14 +91,14 @@ public static unsafe class Debug{
     ///     Draws a wire poly relative to a camera.
     /// </summary>
     public static void DrawWirePoly(
-        System.Span<float> verticesX, System.Span<float> verticesY, float zPosition, int layer, int materialIndex, int cameraIndex, float thickness = DefaultWireFrameThickness
+        System.Span<float> verticesX, System.Span<float> verticesY, Colour colour, float zPosition, int layer, int materialIndex, int cameraIndex, float thickness = DefaultWireFrameThickness
     ){
         thickness = CalculateThicknessRelativeToCamera(thickness, zPosition, cameraIndex);
-        DrawWirePoly(verticesX, verticesY, zPosition, layer, materialIndex, thickness);
+        DrawWirePoly(verticesX, verticesY, colour, zPosition, layer, materialIndex, thickness);
     }
 
     public static void DrawWirePoly(
-        System.Span<float> verticesX, System.Span<float> verticesY, float zPosition, int layer, int materialIndex, float thickness = DefaultWireFrameThickness
+        System.Span<float> verticesX, System.Span<float> verticesY, Colour colour, float zPosition, int layer, int materialIndex, float thickness = DefaultWireFrameThickness
     ){
         int nextIndex;
         int count = verticesX.Length;
@@ -106,12 +106,12 @@ public static unsafe class Debug{
             nextIndex = (startIndex + 1) % count;
             Vector3 start   = new(){ X = verticesX[startIndex], Y = verticesY[startIndex], Z = zPosition};
             Vector3 end     = new(){ X = verticesX[nextIndex], Y = verticesY[nextIndex], Z = zPosition};
-            DrawLine(start, end, layer, materialIndex, thickness);
+            DrawLine(colour, layer, materialIndex, thickness, start, end);
         }
     }
 
     public static void DrawLine(
-        Vector3 start, Vector3 end, int layer, int materialIndex, float thickness = DefaultWireFrameThickness
+        Colour colour, int layer, int materialIndex, float thickness, Vector3 start, Vector3 end
     ){
         AssertState();
 
@@ -123,7 +123,7 @@ public static unsafe class Debug{
 
         bool isValidOutput = false;
         SpriteId sprite = Renderer.AllocateOneFrameSprite(layer, ref isValidOutput);
-        Renderer.InitSprite(sprite, transform, Colour.White, default, default, 1, materialIndex, true);
+        Renderer.InitSprite(sprite, transform, colour, default, ColourState.Override, 1, materialIndex, true);
     }
 
     public static float CalculateThicknessRelativeToCamera(

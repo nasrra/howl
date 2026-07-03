@@ -34,6 +34,7 @@ public struct Colour{
     public readonly static Colour LightBlue = new(){R = 0.5f, G = 0.5f, B = 1, A = 1};
     public readonly static Colour Purple = new(){R = 1, G = 0, B = 1, A = 1};
     public readonly static Colour Pink = new(){R = 1, G = 0.5f, B = 0.5f, A = 1};
+    public readonly static Colour LightGreen = new(){R = 0.5f, G = 1, B = 0.5f, A = 1};
 }
 
 public enum TargetFrameRate
