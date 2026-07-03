@@ -330,7 +330,7 @@ public struct Transform{
     public Quaternion Rotation;
     public Vector3 Position;
     public Vector3 Scale;
-    public static readonly Transform Identity = new(){Scale = new(){X = 1, Y = 1, Z = 1}}; 
+    public static readonly Transform Identity = new(){Scale = new(){X = 1, Y = 1, Z = 1}, Rotation = Quaternion.Identity}; 
 }
 
 public struct Transform2D{

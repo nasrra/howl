@@ -83,5 +83,44 @@ public static void UpdateChildren(
     }
 }
 
+public static void UpdateChildrenPositions(
+    Array<IntrusiveListNode> hierarchy, ComponentArray<Transform> globalTransforms, ComponentArray<Transform> localTransforms, int nodeIndex
+){
+    ref IntrusiveListNode node = ref hierarchy[nodeIndex];
+
+    int firstChildIndex = node.FirstChild;
+        
+    if(firstChildIndex != 0)
+    {
+        UpdateNodeRecursive(globalTransforms, localTransforms, nodeIndex, firstChildIndex, firstChildIndex);
+    }
+
+    void UpdateNodeRecursive(
+        ComponentArray<Transform> globalTransforms, ComponentArray<Transform> localTransforms, int parentIndex, int nodeIndex, int parentFirstChildIndex
+    ){
+        // transform the child.
+        ref Transform parentGlobalTransform = ref globalTransforms.Sparse[parentIndex];
+        ref Transform localTransform = ref localTransforms.Sparse[nodeIndex];
+        globalTransforms.Sparse[nodeIndex].Position = localTransform.Position + parentGlobalTransform.Position;
+
+        ref IntrusiveListNode node = ref hierarchy[nodeIndex];
+        int firstChildIndex = node.FirstChild;
+        if(node.FirstChild != 0)
+        {
+            UpdateNodeRecursive(globalTransforms, localTransforms, nodeIndex, firstChildIndex, firstChildIndex);
+        }
+
+        int nextIndex = node.NextSibling;
+        if(nextIndex == parentFirstChildIndex)
+        {
+            return;
+        }
+        else
+        {
+            UpdateNodeRecursive(globalTransforms, localTransforms, parentIndex, nextIndex, parentFirstChildIndex);
+        }
+    }
+}
+
 
 }
