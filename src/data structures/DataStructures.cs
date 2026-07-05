@@ -997,7 +997,7 @@ public static void DrawLeaves(
 ##########################################################################################################################################**/
 
 public static bool Init(
-    ref IntrusiveList list, ref Memory.Arena arena, int length
+    ref IntrusiveList list, ref Memory.Arena arena, int length, bool preserveRootOrder
 ){
     if (list.IsInitialised){
         Howl.Debug.Panic("Already Initialised.");
@@ -1016,6 +1016,7 @@ public static bool Init(
     Collections.Append(ref list.RootIndices, 0);
 
     list.IsInitialised=true;
+    list.PreserveRootOrder = preserveRootOrder;
     return true;
 }
 
@@ -1038,9 +1039,11 @@ public static bool IntrusiveListAddRoot(
         return false;
     }
 
-    // the node is a root.
-    node.RootDenseIndex = Collections.Append(ref list.RootIndices, nodeIndex);
-
+    if(!Collections.Append(ref list.RootIndices, nodeIndex)){
+        return false;
+    }
+    node.RootDenseIndex = list.RootIndices.Count-1;
+    
     // node has no other siblings.
     node.NextSibling = nodeIndex;
     node.PreviousSibling = nodeIndex;
@@ -1129,7 +1132,7 @@ public static bool IntrusiveListRemoveNode(
     }
 
     ref Array<IntrusiveListNode> nodes = ref list.Nodes;
-    ref SwapBackArray<int> roots = ref list.RootIndices;
+    ref Buffer<int> roots = ref list.RootIndices;
     ref IntrusiveListNode node = ref nodes[nodeIndex];
 
     if (node.InTree == false)
@@ -1211,12 +1214,27 @@ public static bool IntrusiveListRemoveNode(
         }
     }
     else{
-        // remove the node from the roots array.
-        // performing the dense index swap as well.
-        ref IntrusiveListNode lastRoot = ref nodes[roots[roots.Count-1]];
-        lastRoot.RootDenseIndex = node.RootDenseIndex;
-        Collections.RemoveAt(ref roots, node.RootDenseIndex);
-        node.RootDenseIndex = 0;
+
+        switch(list.PreserveRootOrder){
+            case true:
+                // move all root node dense indices backward; reflecting the ordered removal.
+                for(int i = node.RootDenseIndex+1; i < roots.Count; i++){
+                    ref IntrusiveListNode nextRoot = ref nodes[roots[i]];
+                    nextRoot.RootDenseIndex--;
+                }
+                // remove the root index.
+                Collections.OrderedRemoveAt(ref roots, node.RootDenseIndex);
+            break;
+            case false:
+                // remove the node from the roots array.
+                // performing the dense index swap as well.
+                ref IntrusiveListNode lastRoot = ref nodes[roots[roots.Count-1]];
+                lastRoot.RootDenseIndex = node.RootDenseIndex;
+                Collections.UnOrderedRemoveAt(ref roots, node.RootDenseIndex);
+                node.RootDenseIndex = 0;
+            break;
+        }
+
 
         if (firstChildIndex != 0)
         {
@@ -1229,7 +1247,8 @@ public static bool IntrusiveListRemoveNode(
                 child.Parent = 0;
 
                 // add children to root stack array.
-                child.RootDenseIndex = Collections.Append(ref roots, currentSiblingIndex);
+                Collections.Append(ref roots, currentSiblingIndex);
+                child.RootDenseIndex = roots.Count;
 
                 // children are now roots, so they should no longer be associated with thier siblings.
                 int nextSiblingIndex = child.NextSibling;
@@ -1265,6 +1284,34 @@ public static bool IntrusiveListRemoveNode(
     return true;
 }
 
+/// <summary>
+///     Sends a root node to the front of the <c><see cref="IntrusiveList.RootIndices"/></c> buffer.
+/// </summary>
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>The 'front' in this context is index <c>1</c> NOT <c>0</c> as the collection stores a <c>Nil Element</c>.</para>
+/// </remarks>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void IntrusiveListSendRootToFront(
+    ref IntrusiveList tree, int rootIndex
+){
+    /**    
+        shift all the node root indices - before the root index to send to the front - 
+        forwards to reflect their new element positions after the ordered insertion. 
+    **/
+    for(int i = rootIndex; i > 0; i--){
+        tree.Nodes[tree.RootIndices[i]].RootDenseIndex++;
+    }
+
+    // set the root node's root index to 1 (which is the front).
+    int nodeIndex = tree.RootIndices[rootIndex];
+    tree.Nodes[nodeIndex].RootDenseIndex = 1;
+
+    // send the root node to the front of the root list.
+    Collections.OrderedRemoveAt(ref tree.RootIndices, rootIndex);
+    Collections.OrderedInsert(ref tree.RootIndices, nodeIndex, 1);
+}
+
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 public static bool IsIntrusiveListNodeInTree(
     IntrusiveList tree, int nodeIndex
@@ -1276,6 +1323,19 @@ public static bool IsIntrusiveListNodeRoot(
     IntrusiveList tree, int nodeIndex
 ){
     return tree.Nodes[nodeIndex].Parent == 0;
+}
+
+/// <summary>
+///     Gets the root node of a node within an intrusive list.
+/// </summary>
+public static ref IntrusiveListNode GetIntrusiveListNodeRoot(
+    IntrusiveList tree, int nodeIndex
+){
+    ref IntrusiveListNode node = ref tree.Nodes[nodeIndex];
+    while(node.Parent != 0){
+        node = ref tree.Nodes[node.Parent];
+    }
+    return ref node;
 }
 
 }

@@ -47,6 +47,7 @@ public struct Vector3{
     public readonly static Vector3 Right = new(){X = 1, Y = 0, Z = 0};
     public readonly static Vector3 Up = new(){X = 0, Y = 1, Z = 0};
     public readonly static Vector3 Forward = new(){X = 0, Y = 0, Z = 1};
+    public readonly static Vector3 MaxValue = new(){X = float.MaxValue, Y = float.MaxValue, Z = float.MaxValue};
 
     public float X;
     public float Y;

@@ -84,7 +84,7 @@ public static void UpdateChildren(
 }
 
 public static void UpdateChildrenPositions(
-    Array<IntrusiveListNode> hierarchy, ComponentArray<Transform2D> globalTransforms, ComponentArray<Transform2D> localTransforms, int nodeIndex
+    Array<IntrusiveListNode> hierarchy, ComponentArray<Vector3> globalPositions, ComponentArray<Vector3> localPositions, int nodeIndex
 ){
     ref IntrusiveListNode node = ref hierarchy[nodeIndex];
 
@@ -92,22 +92,22 @@ public static void UpdateChildrenPositions(
         
     if(firstChildIndex != 0)
     {
-        UpdateNodeRecursive(globalTransforms, localTransforms, nodeIndex, firstChildIndex, firstChildIndex);
+        UpdateNodeRecursive(globalPositions, localPositions, nodeIndex, firstChildIndex, firstChildIndex);
     }
 
     void UpdateNodeRecursive(
-        ComponentArray<Transform2D> globalTransforms, ComponentArray<Transform2D> localTransforms, int parentIndex, int nodeIndex, int parentFirstChildIndex
+        ComponentArray<Vector3> globalPositions, ComponentArray<Vector3> localPositions, int parentIndex, int nodeIndex, int parentFirstChildIndex
     ){
         // transform the child.
-        ref Transform2D parentGlobalTransform = ref globalTransforms.Sparse[parentIndex];
-        ref Transform2D localTransform = ref localTransforms.Sparse[nodeIndex];
-        globalTransforms.Sparse[nodeIndex].Position = localTransform.Position + parentGlobalTransform.Position;
+        ref Vector3 parentGlobalPosition = ref globalPositions.Sparse[parentIndex];
+        ref Vector3 localPosition = ref localPositions.Sparse[nodeIndex];
+        globalPositions.Sparse[nodeIndex] = localPosition + parentGlobalPosition;
 
         ref IntrusiveListNode node = ref hierarchy[nodeIndex];
         int firstChildIndex = node.FirstChild;
         if(node.FirstChild != 0)
         {
-            UpdateNodeRecursive(globalTransforms, localTransforms, nodeIndex, firstChildIndex, firstChildIndex);
+            UpdateNodeRecursive(globalPositions, localPositions, nodeIndex, firstChildIndex, firstChildIndex);
         }
 
         int nextIndex = node.NextSibling;
@@ -117,7 +117,7 @@ public static void UpdateChildrenPositions(
         }
         else
         {
-            UpdateNodeRecursive(globalTransforms, localTransforms, parentIndex, nextIndex, parentFirstChildIndex);
+            UpdateNodeRecursive(globalPositions, localPositions, parentIndex, nextIndex, parentFirstChildIndex);
         }
     }
 }

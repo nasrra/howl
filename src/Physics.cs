@@ -924,7 +924,7 @@ public static class Physics{
                 Collisions.Manifold.Initialise(ref state.CollisionManifold, ref arena, maxEntities);
                 Collections.Init(ref state.SubStepShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
                 Collections.Init(ref state.SubStepRigidShapeCollisionsToResolve, ref arena, Collisions.ResolutionCategory.Count, maxCollisions);
-                DataStructures.Init(ref state.BodyHierarchy, ref arena, maxEntities);
+                DataStructures.Init(ref state.BodyHierarchy, ref arena, maxEntities, preserveRootOrder: false);
             }
 
             state.GravityDirection = new(){Y = -1};
@@ -1224,7 +1224,7 @@ public static class Physics{
         float gravityDirectionY = state.GravityDirection.Y;
         ref Array<bool> rotationalResponses = ref state.RotationalResponses;
         ref Array<Shape.Rigid.ShapeType> shapes = ref state.ShapeTypes;
-        ref SwapBackArray<int> activeBodies = ref state.BodyHierarchy.RootIndices;
+        ref Buffer<int> activeBodies = ref state.BodyHierarchy.RootIndices;
         ref Array<IntrusiveListNode> nodes = ref state.BodyHierarchy.Nodes;
 
         // scratch buffers for rigid body reslution.
@@ -1581,7 +1581,7 @@ public static class Physics{
     /// <remarks>
     ///     Remarks: All provided System.Spans must be indexed by a integer <c>physicsBodyIndex</c>:
     /// </remarks>
-    public static void BodyMovementStep(SwapBackArray<int> activeBodies, ref Array<IntrusiveListNode> nodes, 
+    public static void BodyMovementStep(Buffer<int> activeBodies, ref Array<IntrusiveListNode> nodes, 
         Soa_Transform2D localTransforms, ref Soa_Transform2D globalTransforms, ref Array<float> linearVelocitiesX, 
         ref Array<float> linearVelocitiesY, Array<float> forcesX, Array<float> forcesY, Array<float> masses, 
         Array<float> angularVelocities, ref Array<float> collisionDisplacementsX, ref Array<float> collisionDisplacementsY, 
@@ -1703,7 +1703,7 @@ public static class Physics{
     ///     All arrays must be of the same length and elements should be vertivally accessible via <c>physicsBodyIndex</c>. 
     /// </remarks>
     public static void TransformAllShapesVertices(
-        SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes, ref FsSoa_Vector2 globalVertices, FsSoa_Vector2 localVertices, 
+        Buffer<int> activeBodies, Array<IntrusiveListNode> nodes, ref FsSoa_Vector2 globalVertices, FsSoa_Vector2 localVertices, 
         Array<Shape.Rigid.ShapeType> shapes, ref Array<float> globalScalesX, ref Array<float> globalScalesY, ref Array<float> globalPositionsX, 
         ref Array<float> globalPositionsY, ref Array<float> globalSines, ref Array<float> globalCosines, Array<float> minAabbsX, 
         Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY, ref Array<float> centroidsX, ref Array<float> centroidsY, 
@@ -1825,7 +1825,7 @@ public static class Physics{
     /// <param name="bvhLeafPaddings"></param>
     /// <param name="bvhLeafIndices"></param>
     /// <param name="bvh"></param>
-    public static void ConstructBvhTree(SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes, Array<float> minAabbsX, 
+    public static void ConstructBvhTree(Buffer<int> activeBodies, Array<IntrusiveListNode> nodes, Array<float> minAabbsX, 
         Array<float> minAabbsY, Array<float> maxAabbsX, Array<float> maxAabbsY, Array<float> centroidsX, Array<float> centroidsY, 
         Array<int> bvhCategories, Array<float> bvhLeafPaddings, ref Array<int> bvhLeafIndices, ref BoundingVolumeHierarchy bvh
     )
@@ -2563,7 +2563,7 @@ public static class Physics{
     }
 
     public static void CalculateBvhLeafPadding(Array<float> currentPositionX, Array<float> currentPositionY, 
-        Array<float> previousPositionX, Array<float> previousPositionY, SwapBackArray<int> active, 
+        Array<float> previousPositionX, Array<float> previousPositionY, Buffer<int> active, 
         ref Array<float> bvhLeafPadding, float deltaTime
     )
     {
@@ -4119,7 +4119,7 @@ public static class Physics{
     }
 
     public static void DrawGlobalPositions(
-        DrawInfo info, SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes, 
+        DrawInfo info, Buffer<int> activeBodies, Array<IntrusiveListNode> nodes, 
         Array<float> globalPositionsX, Array<float> globalPositionsY
     ){
         for(int i = 1; i < activeBodies.Count; i++) // skip nil.
@@ -4151,7 +4151,7 @@ public static class Physics{
     }
 
     public static void DrawCentersOfMassUnRotated(
-        DrawInfo info, SwapBackArray<int> activeBodies, Array<float> globalPositionsX, 
+        DrawInfo info, Buffer<int> activeBodies, Array<float> globalPositionsX, 
         Array<float> globalPositionsY, Array<float> localCentersOfMassX, Array<float> localCentersOfMassY
     ){
         for(int i = 1; i < activeBodies.Count; i++)
@@ -4172,7 +4172,7 @@ public static class Physics{
     }
 
     public static void DrawShapes(
-        DrawInfo info, Collisions.Manifold collisions, FsSoa_Vector2 vertices, SwapBackArray<int> activeBodies, 
+        DrawInfo info, Collisions.Manifold collisions, FsSoa_Vector2 vertices, Buffer<int> activeBodies, 
         Array<IntrusiveListNode> nodes, Array<float> centroidsX, Array<float> centroidsY, Array<float> radii, 
         Array<int> categories
     ){
@@ -4241,7 +4241,7 @@ public static class Physics{
     }
 
     public static void DrawCentroids(
-        DrawInfo info, Soa_Vector2 centroids, SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes
+        DrawInfo info, Soa_Vector2 centroids, Buffer<int> activeBodies, Array<IntrusiveListNode> nodes
     ){
         int count = activeBodies.Count;
         for(int i = 1; i < count; i++) // start at one to skip Nil.
@@ -4275,7 +4275,7 @@ public static class Physics{
     }
 
     public static void DrawLinearVelocities(
-        SwapBackArray<int> activeBodies, Soa_Vector2 linearVelocities, 
+        Buffer<int> activeBodies, Soa_Vector2 linearVelocities, 
         Array<float> globalPositionsX, Array<float> globalPositionsY
     ){
         // int count = activeBodies.Count;
@@ -4297,7 +4297,7 @@ public static class Physics{
     }
 
     public static void DrawAabbs(
-        DrawInfo info, SwapBackArray<int> activeBodies, Array<IntrusiveListNode> nodes, 
+        DrawInfo info, Buffer<int> activeBodies, Array<IntrusiveListNode> nodes, 
         Array<float> aabbsMinX, Array<float> aabbsMinY, Array<float> aabbsMaxX, Array<float> aabbsMaxY
     )
     {

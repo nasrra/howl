@@ -317,11 +317,10 @@ public struct IntrusiveListNode{
     /// </remarks>
     public int FirstChild;
     /// <summary>
-    ///     the <c>nodeIndex</c> of this node's index in <c><see cref="State.RootIndices"/></c>.
+    ///     this node's index in <c><see cref="State.RootIndices"/></c>.
     /// </summary>
     /// <remarks>
     ///    <para>Remarks:</para>
-    ///    <para>contains a <c>Nil</c> element</para>.
     ///    <para>when <c>0</c> is stored, this points to the <c>Nil</c> element and is invalid.</para>
     /// </remarks>
     public int RootDenseIndex;
@@ -350,7 +349,11 @@ public struct IntrusiveList{
     /// <remarks>
     ///     Remarks: contains a <c>Nil</c> element.
     /// </remarks>
-    public SwapBackArray<int> RootIndices;
+    public Buffer<int> RootIndices;
+    /// <summary>
+    ///     Whether or not the ordering of root indices is preserved during root node removal.
+    /// </summary>
+    public bool PreserveRootOrder;
     public bool IsInitialised;
 }
 

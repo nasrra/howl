@@ -127,15 +127,19 @@ public static bool Init<T>(
 /// </summary>
 /// <param name="array">the swapback array instance to append to.</param>
 /// <param name="value">the value to append.</param>
-/// <returns>the index the value was written to in the array.</returns>
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static int Append<T>(
+public static bool Append<T>(
     ref SwapBackArray<T> array, T value
 ) where T : unmanaged{
     
+    if(array.Count == array.Length){
+        Debug.Assert(false, "Memory Limit Hit.");
+        return false;
+    }
+
     array.Count++;
     array[array.Count-1] = value;
-    return array.Count;
+    return true;
 }
 
 /// <summary>
