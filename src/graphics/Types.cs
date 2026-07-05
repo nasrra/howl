@@ -35,6 +35,24 @@ public struct Colour{
     public readonly static Colour Purple = new(){R = 1, G = 0, B = 1, A = 1};
     public readonly static Colour Pink = new(){R = 1, G = 0.5f, B = 0.5f, A = 1};
     public readonly static Colour LightGreen = new(){R = 0.5f, G = 1, B = 0.5f, A = 1};
+
+    public static Colour operator-(
+        Colour colour
+    ){
+        colour.R *= -1;
+        colour.G *= -1;
+        colour.B *= -1;
+        colour.A *= -1;
+        return colour;
+    }
+
+    public static Colour operator*(Colour colour, float value){
+        colour.R *= value;
+        colour.G *= value;
+        colour.B *= value;
+        colour.A *= value;
+        return colour;
+    }
 }
 
 public enum TargetFrameRate

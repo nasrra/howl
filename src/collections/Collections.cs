@@ -307,6 +307,8 @@ public static bool Init<T>(
     Init(ref array.Active, ref arena, length);
     Init(ref array.DenseIndices, ref arena, length);
     array.Length = length;
+    // apend the nil.
+    Append(ref array.Active, 0);
     return true;
 }
 
@@ -472,10 +474,18 @@ public static ref T GetDataUnsafe<T>(
     return ref array.Sparse[index];
 }
 
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 public static bool IsAllocated<T>(
     this ComponentArray<T> array, int index
 ) where T : unmanaged{
     return array.Allocated[index] == true;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool IsActive<T>(
+    ComponentArray<T> array, int elementIndex
+) where T : unmanaged{
+    return array.DenseIndices[elementIndex] > 0;
 }
 
 /**##########################################################################################################################################

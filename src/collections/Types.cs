@@ -90,7 +90,7 @@ public struct ComponentArray<T> where T : unmanaged{
     /// </summary>
     /// <remarks>
     ///    <para>Remarks:</para>
-    ///    <para></para>
+    ///    <para>Contains a <c>Nil</c> element.</para>
     /// </remarks>
     public Array<int> DenseIndices;
     /// <summary>
