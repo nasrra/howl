@@ -536,7 +536,7 @@ public unsafe struct String
             /// </remarks>
             public static ref String GetString(ref SubAllocator allocator, GenId genId, ref bool isValidOutput)
             {
-                if(GenIdAllocator.IsGenIdStale(ref allocator.GenIdAllocator, genId))
+                if(GenIdAllocator.IsGenIdStale(allocator.GenIdAllocator, genId))
                 {
                     isValidOutput = false;
                     return ref allocator.Strings.Sparse[0]; // explicitly get the nil.

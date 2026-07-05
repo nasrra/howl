@@ -1,22 +1,8 @@
 using Howl.Text;
 using N_Howl.N_Math;
+using N_Howl.N_Rendering;
 
 namespace N_Howl.N_Graphics;
-
-public struct Label{ 
-    /// <summary>
-    ///     The colour used when drawing.
-    /// </summary>
-    public Colour Colour;
-    /// <summary>
-    ///     The offset when drawing.
-    /// </summary>
-    public Vector2 Offset;
-    /// <summary>
-    ///     The string id to this text's characters in a string allocator instance.
-    /// </summary>
-    public StringId StringId;
-}
 
 public struct Colour{
     public float R;

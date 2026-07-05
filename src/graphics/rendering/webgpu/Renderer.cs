@@ -2138,6 +2138,7 @@ public static void InitSpriteManager(
     Collections.Init(ref manager.SortedSprites, ref arena, maxSprites);
     Collections.Init(ref manager.SpriteLayers, ref arena, layerInfos.Length);
     Collections.Init(ref manager.OneFrameSpritesIndices, ref arena, maxSprites);
+    Collections.Init(ref manager.GlyphSprites, ref arena, maxSprites);
     // exclude the Nil sprite.
     int freeIndex = 1;
     for(int i = 0; i < manager.SpriteLayers.Length; i++){
@@ -2235,7 +2236,7 @@ public static SpriteId AllocateSpriteChain(
             firstIndex = index;
             chainSprite.IsFirst = true;
         }
-        else if(i==chainLength){
+        else if(i==chainLength-1){
             // maintain the circular linked list.
             previousSprite.NextSprite = firstIndex;
             chainSprite.IsFirst = false;
@@ -2291,110 +2292,6 @@ public static bool InitSprite(
     SetSpriteActiveUnsafe(ref manager, index, isActive);
     SetSpriteColourUnsafe(ref manager, index, colour);
     SetSpriteColourStateUnsafe(ref manager, index, colourState);
-    return true;
-}
-
-public static bool InitSpriteString(
-    ref RendererCtx ctx, SpriteId spriteId, String text, Transform transform, int virtualTextureIndex, int materialIndex, bool isActive
-){
-    return InitSpriteString(
-        ref ctx.SpriteManager, ref ctx.VirtualTextureManager, spriteId, text, transform, virtualTextureIndex, materialIndex, isActive
-    );
-}
-
-public static bool InitSpriteString(
-    ref SpriteManager sprites, ref VirtualTextureManager textures, SpriteId spriteId, String text, Transform transform, int virtualTextureIndex, int materialIndex, bool isActive
-){
-    int firstIndex = GenId.GetIndex(spriteId.GenId);
-    int generation = GenId.GetGeneration(spriteId.GenId);
-
-    { // validation
-        AssertInitialisedSpriteManager(sprites);
-        AssertValidChainSpriteId(spriteId, sprites);
-        AssertValidFontVirtualTextureIndex(virtualTextureIndex, textures);
-        AssertValidMaterialIndex(materialIndex);
-        if(sprites.SpriteGenerations[firstIndex] != generation){
-            return false;
-        }
-    }
-
-    int index = firstIndex;
-    Vector2 advance = default;
-    ref FontData fontData = ref textures.VirtualTextureFontData[virtualTextureIndex];
-    Vector2I maxGlyphSize = new(){X = (int)fontData.MaxGlyphHeightInPixels, Y = (int)fontData.MaxGlyphHeightInPixels};
-    for(int i = 0; i < text.Count; i++){    
-
-        char c = text[i];
-        if(c=='\n'){
-            advance.X = 0;
-            advance.Y -= fontData.MaxGlyphHeightInPixels;
-            continue;
-        }
-        int glyphDataIndex = (int)c - (int)fontData.BaseGlyphIndex + 1;
-        ref Glyph glyphData = ref fontData.Glyphs[glyphDataIndex];
-        
-        // pixel coords.
-        SetSpriteVirtualTextureUnsafe(ref sprites, index, virtualTextureIndex);
-        SetSpriteRegionUnsafe(
-            ref sprites, index, 
-            new(){
-                TopLeft = new(){
-                    X = glyphData.TextureCoords.X, 
-                    Y = glyphData.TextureCoords.Y
-                }, 
-                BotRight = new(){
-                    X = glyphData.TextureCoords.X + glyphData.Size.X, 
-                    Y = glyphData.TextureCoords.Y + glyphData.Size.Y
-                }
-            }
-        );
-
-        /**
-            Note that the transform code below expects to be handed glyph data that is within rasterised space:
-            (X+ = right, Y+ = down). where the origin of the glyph on the font texture is the top left of its quad region.
-
-            As this renderer is in cartesian space (X+ = right, Y+ = up) and the origin of the sprite is at its center, there
-            are conversions that must be accounted for.
-        **/
-        Vector3 scaling = new(){X = (float)glyphData.Size.X/maxGlyphSize.X, Y = (float)glyphData.Size.Y/maxGlyphSize.Y};
-        // Calculate the local top-left of the glyph using the glyph data metrics.
-        // In Y+ up space, adding Offset.Y pushes the top edge correctly upwards from the baseline.
-        float localLeft = advance.X + glyphData.Offset.X;
-        float localTop  = advance.Y + glyphData.Offset.Y; 
-
-        // Since sprites have an origin at their center:
-        // X moves right (+), but Y must move DOWN (-) to reach the center from the top edge.
-        Vector3 positionalOffset = new(){
-            X = localLeft + (glyphData.Size.X * 0.5f),
-            Y = localTop  - (glyphData.Size.Y * 0.5f), 
-            Z = 0.0f
-        };
-
-        Transform glyphTransform = default;
-        // Apply the base transform's scale to the glyph's dimensions
-        glyphTransform.Scale = transform.Scale * new Vector3(){X = glyphData.Size.X, Y = glyphData.Size.Y, Z = 1.0f};
-
-        // Position needs to inherit the base transform's position plus our offset scaled by the base scale
-        glyphTransform.Position = transform.Position + (positionalOffset * transform.Scale);
-        
-        SetSpriteTransformUnsafe(ref sprites, index, glyphTransform);
-
-        // Advance the cursor for the next character, scaled by your base transform scale
-        advance += glyphData.Advance * new Vector2(){X = transform.Scale.X * (1f/transform.Scale.X), Y = transform.Scale.Y* (1f/transform.Scale.Y)};
-
-        // other.
-        SetSpriteActiveUnsafe(ref sprites, index, isActive);
-        SetSpriteMaterialUnsafe(ref sprites, index, materialIndex);
-
-        // next loop iteration preperation.
-        ref ChainSprite chainSprite = ref sprites.ChainSprites[index];
-        index = chainSprite.NextSprite;
-        if(index==firstIndex){
-            // Debug.Assert(false, $"Sprite String '{firstIndex}' is too small to fully contain string: '{String.ToSystemString(text)}'");
-            return false;
-        }
-    }
-
     return true;
 }
 
@@ -2716,6 +2613,182 @@ public static void SetSpriteColourStateUnsafe(
     ref SpriteManager manager, int spriteIndex, ColourState colourState
 ){
     manager.Sprites[spriteIndex].ColourState = (int)colourState;
+}
+
+public static bool InitSpriteString(
+    ref RendererCtx ctx, SpriteId spriteId, String text, Transform transform, int virtualTextureIndex, int materialIndex, bool isActive
+){
+    return InitSpriteString(
+        ref ctx.SpriteManager, ref ctx.VirtualTextureManager, spriteId, text, transform, virtualTextureIndex, materialIndex, isActive
+    );
+}
+
+public static bool InitSpriteString(
+    ref SpriteManager sprites, ref VirtualTextureManager textures, SpriteId spriteId, String text, Transform transform, int virtualTextureIndex, int materialIndex, bool isActive
+){
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation
+        AssertInitialisedSpriteManager(sprites);
+        AssertValidChainSpriteId(spriteId, sprites);
+        AssertValidFontVirtualTextureIndex(virtualTextureIndex, textures);
+        AssertValidMaterialIndex(materialIndex);
+        if(sprites.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+    }
+
+    int index = firstIndex;
+    Vector2 advance = default;
+    ref FontData fontData = ref textures.VirtualTextureFontData[virtualTextureIndex];
+    Vector2I maxGlyphSize = new(){X = (int)fontData.MaxGlyphHeightInPixels, Y = (int)fontData.MaxGlyphHeightInPixels};
+    for(int i = 0; i < text.Count; i++){    
+
+        char c = text[i];
+        if(c=='\n'){
+            advance.X = 0;
+            advance.Y -= fontData.MaxGlyphHeightInPixels;
+            continue;
+        }
+        int glyphDataIndex = (int)c - (int)fontData.BaseGlyphIndex + 1;
+        ref Glyph glyphData = ref fontData.Glyphs[glyphDataIndex];
+        
+        // pixel coords.
+        SetSpriteVirtualTextureUnsafe(ref sprites, index, virtualTextureIndex);
+        SetSpriteRegionUnsafe(
+            ref sprites, index, 
+            new(){
+                TopLeft = new(){
+                    X = glyphData.TextureCoords.X, 
+                    Y = glyphData.TextureCoords.Y
+                }, 
+                BotRight = new(){
+                    X = glyphData.TextureCoords.X + glyphData.Size.X, 
+                    Y = glyphData.TextureCoords.Y + glyphData.Size.Y
+                }
+            }
+        );
+
+        /**
+            Note that the transform code below expects to be handed glyph data that is within rasterised space:
+            (X+ = right, Y+ = down). where the origin of the glyph on the font texture is the top left of its quad region.
+
+            As this renderer is in cartesian space (X+ = right, Y+ = up) and the origin of the sprite is at its center, there
+            are conversions that must be accounted for.
+        **/
+        Vector3 scaling = new(){X = (float)glyphData.Size.X/maxGlyphSize.X, Y = (float)glyphData.Size.Y/maxGlyphSize.Y};
+        // Calculate the local top-left of the glyph using the glyph data metrics.
+        // In Y+ up space, adding Offset.Y pushes the top edge correctly upwards from the baseline.
+        float localLeft = advance.X + glyphData.Offset.X;
+        float localTop  = advance.Y + glyphData.Offset.Y; 
+
+        ref GlyphSprite glyphSprite = ref sprites.GlyphSprites[index];
+
+        // Since sprites have an origin at their center:
+        // X moves right (+), but Y must move DOWN (-) to reach the center from the top edge.
+        glyphSprite.Offset = new(){
+            X = localLeft + (glyphData.Size.X * 0.5f),
+            Y = localTop  - (glyphData.Size.Y * 0.5f), 
+        };
+        glyphSprite.Size.X = glyphData.Size.X;
+        glyphSprite.Size.Y = glyphData.Size.Y;
+        glyphSprite.IsInitialised = true;
+
+        // Advance the cursor for the next character, scaled by your base transform scale
+        // advance += glyphData.Advance * new Vector2(){X = transform.Scale.X * (1f/transform.Scale.X), Y = transform.Scale.Y* (1f/transform.Scale.Y)};
+        advance += glyphData.Advance;
+
+        // other.
+        SetSpriteActiveUnsafe(ref sprites, index, isActive);
+        SetSpriteMaterialUnsafe(ref sprites, index, materialIndex);
+
+        // next loop iteration preperation.
+        ref ChainSprite chainSprite = ref sprites.ChainSprites[index];
+        index = chainSprite.NextSprite;
+        if(index==firstIndex){
+            // Debug.Assert(false, $"Sprite String '{firstIndex}' is too small to fully contain string: '{String.ToSystemString(text)}'");
+            break;
+        }
+    }
+
+    SetSpriteStringTransform(ref sprites, spriteId, transform);
+    return true;
+}
+
+public static bool SetSpriteStringTransform(
+    ref RendererCtx ctx,  SpriteId spriteId, Transform transform
+){
+    return SetSpriteStringTransform(ref ctx.SpriteManager, spriteId, transform);
+}
+
+public static bool SetSpriteStringTransform(
+    ref SpriteManager manager,  SpriteId spriteId, Transform transform
+){
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation
+        AssertInitialisedSpriteManager(manager);
+        AssertValidChainSpriteId(spriteId, manager);
+        if(manager.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+    }
+
+    int index = firstIndex;
+    while(true){
+
+        ref GlyphSprite glyphSprite = ref manager.GlyphSprites[index];
+
+        Transform glyphTransform = default;
+        // Apply the base transform's scale to the glyph's dimensions
+        glyphTransform.Scale = transform.Scale * new Vector3(){X = glyphSprite.Size.X, Y = glyphSprite.Size.Y, Z = 1.0f};
+
+        Vector2 offset = manager.GlyphSprites[index].Offset;
+
+        // Position needs to inherit the base transform's position plus our offset scaled by the base scale
+        glyphTransform.Position = transform.Position + (offset * transform.Scale);
+        
+        SetSpriteTransformUnsafe(ref manager, index, glyphTransform);
+
+        // next loop iteration preperation.
+        ref ChainSprite chainSprite = ref manager.ChainSprites[index];
+        index = chainSprite.NextSprite;
+        if(index==firstIndex){
+            return true;
+        }
+    }
+}
+
+public static SpriteType GetSpriteType(
+    ref RendererCtx ctx, SpriteId spriteId, ref bool isValidOutput
+){
+    return GetSpriteType(ref ctx.SpriteManager, spriteId, ref isValidOutput);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static SpriteType GetSpriteType(
+    ref SpriteManager manager, SpriteId spriteId, ref bool isValidOutput
+){
+    int index = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation
+        AssertInitialisedSpriteManager(manager);
+        if(manager.SpriteGenerations[index] != generation){
+            isValidOutput = false;
+            return default;
+        }
+    }
+
+    if(manager.GlyphSprites[index].IsInitialised){
+        return SpriteType.Glyph;
+    }
+    else{
+        return SpriteType.Image;
+    }
+
 }
 
 /**##########################################################################################################################################

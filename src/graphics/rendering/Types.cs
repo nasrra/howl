@@ -100,3 +100,8 @@ public enum ColourState : int{
     Tint = 0,
     Override = 1
 }
+
+public enum SpriteType : byte{
+    Image,
+    Glyph
+}

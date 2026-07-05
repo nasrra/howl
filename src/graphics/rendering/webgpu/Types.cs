@@ -365,7 +365,7 @@ public struct SpriteManager{
     ///    <para><b>Remarks:</b></para>
     ///     <list type = "bullet">
     ///         <item>Contains a <c>Nil</c> element.</item>    
-    ///         <item>Elements vertically align with <c>SpriteGenerations</c> and <c>ChainSprites</c>.</item>    
+    ///         <item>Elements vertically align with <c>GlyphSprites</c>, <c>ChainSprites</c> and <c>SpriteGenerations</c>.</item>    
     ///     </list>
     /// </remarks>
     public Array<Sprite> Sprites;
@@ -373,7 +373,7 @@ public struct SpriteManager{
     ///    <para><b>Remarks:</b></para>
     ///     <list type = "bullet">
     ///         <item>Contains a <c>Nil</c> element.</item>    
-    ///         <item>Elements vertically align with <c>Sprites</c> and <c>ChainSprites</c>.</item>    
+    ///         <item>Elements vertically align with <c>Sprites</c>, <c>ChainSprites</c> and <c>GlyphSprites</c>.</item>    
     ///     </list>
     /// </remarks>
     public Array<int> SpriteGenerations;
@@ -382,10 +382,19 @@ public struct SpriteManager{
     ///     <list type = "bullet">
     ///         <item>Contains a <c>Nil</c> element.</item>
     ///         <item>Elements are associated as a circular linked list.</item>
-    ///         <item>Elements vertically align with <c>Sprites</c> and <c>GlyphSprites</c>.</item>    
+    ///         <item>Elements vertically align with <c>Sprites</c>, <c>GlyphSprites</c> and <c>SpriteGenerations</c>.</item>    
     ///     </list>
     /// </remarks>
     public Array<ChainSprite> ChainSprites;
+    /// <remarks>
+    ///    <para><b>Remarks:</b></para>
+    ///     <list type = "bullet">
+    ///         <item>Contains a <c>Nil</c> element.</item>
+    ///         <item>Elements are associated as a circular linked list.</item>
+    ///         <item>Elements vertically align with <c>Sprites</c>, <c>ChainSprites</c> and <c>SpriteGenerations</c>.</item>    
+    ///     </list>
+    /// </remarks>
+    public Array<GlyphSprite> GlyphSprites;
     /// <summary>
     ///     The indices of sprites in the <c>Sprites</c> array that are active for a single frame then deallocated one completed.
     /// </summary>
@@ -418,6 +427,18 @@ public struct ChainSprite{
     ///     Whether or not this is the first sprite in the sprite chain.
     /// </summary>
     public bool IsFirst;
+}
+
+public struct GlyphSprite{
+    /// <summary>
+    ///     The positional offset to place this of this glyph within the text/sentence.
+    /// </summary>
+    public Vector2 Offset;
+    /// <summary>
+    ///     The size - in pixels - of the glyph rectangle on the texture.
+    /// </summary>
+    public Vector2 Size;
+    public bool IsInitialised;
 }
 
 public unsafe struct WindowSurface{

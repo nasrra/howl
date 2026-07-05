@@ -117,6 +117,12 @@ public static SpriteId AllocateSpriteChain(
     return WebGPU.Renderer.AllocateSpriteChain(ref GlobalState.WebGpuCtx, chainLength, layer, ref isValidOutput);
 }
 
+public static bool DeallocateSpriteChain(
+    SpriteId spriteId
+){
+    throw new System.NotImplementedException();
+}
+
 public static bool InitSpriteString(
     SpriteId spriteId, String text, Transform transform, int virtualTextureId, int materialId, bool isActive
 ){
@@ -157,6 +163,18 @@ public static bool SetSpriteColour(
     SpriteId spriteId, Colour colour
 ){
     return WebGPU.Renderer.SetSpriteColour(ref GlobalState.WebGpuCtx, spriteId, colour);
+}
+
+public static bool SetSpriteStringTransform(
+    SpriteId spriteId, Transform transform
+){
+    return WebGPU.Renderer.SetSpriteStringTransform(ref GlobalState.WebGpuCtx, spriteId, transform);
+}
+
+public static SpriteType GetSpriteType(
+    SpriteId spriteId, ref bool isValidOutput 
+){
+    return WebGPU.Renderer.GetSpriteType(ref GlobalState.WebGpuCtx, spriteId, ref isValidOutput);
 }
 
 /**##########################################################################################################################################

@@ -113,7 +113,7 @@ public struct GenIdAllocator
     ///     Gets whether or not a gen id is stale within a allocator instance.
     /// </summary>
     /// <returns>true, if the gen id is stale; otherwise false</returns>
-    public static bool IsGenIdStale(ref GenIdAllocator allocator, GenId genId)
+    public static bool IsGenIdStale(GenIdAllocator allocator, GenId genId)
     {
         return allocator.GenIds[GenId.GetIndex(genId)] != genId;
     }
