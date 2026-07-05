@@ -203,3 +203,24 @@ public struct FixedStrideSwapbackArray<T> where T : unmanaged{
     public Array<int> EntryCounts;
     public bool IsInitialised;
 }
+
+public struct RunLengthBuffer<T> where T : unmanaged{
+    /// <summary>
+    ///     The stride of elements after an element in <c>Data</c> that is associated with that element.
+    /// </summary>
+    /// <remarks>
+    ///    <para><b>Remarks:</b></para>
+    ///    <para>Elements are vertically associated with <c>Data</c></para>
+    /// </remarks>
+    public Array<int> Strides;
+    /// <remarks>
+    ///    <para><b>Remarks:</b></para>
+    ///    <para>Elements are vrtically associated with <c>Strides</c>.</para>
+    /// </remarks>
+    public Array<T> Data;
+    /// <summary>
+    ///     The the index of the first valid element in the internal arrays; all subsequent elements are also valid.
+    /// </summary>
+    public int StartIndex;
+    public bool IsInitialised;
+}

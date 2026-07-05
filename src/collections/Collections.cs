@@ -580,6 +580,115 @@ public static System.ReadOnlySpan<T> AsReadOnlySpan<T>(
     return new System.ReadOnlySpan<T>(buffer.Pointer, buffer.Count);
 }
 
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///     <para>
+///         When removing a value from the buffer; the data of the last element in the buffer is copied into the element that is being removed.
+///     </para>
+/// </remarks>
+/// <returns>the index of the value that was swapped with the value that was removed.</returns>
+public static int UnOrderedRemoveAt<T>(
+    ref Buffer<T> buffer, int elementIndex
+) where T : unmanaged{
+    
+    Debug.Assert(elementIndex >= 0 && elementIndex < buffer.Count, 
+        $"Index: '{elementIndex}' is Out Of Bounds; Buffer Count: '{buffer.Count}' ."
+    );
+
+    // decrement the count.
+    buffer.Count--;
+    
+    // set the data to remove with the last entry.
+    buffer[elementIndex] = buffer[buffer.Count];
+
+    return buffer.Count;
+}
+
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>
+///         When removing a value from the buffer; all elements after the removed slot is shifted backward towards element zero.
+///    </para>
+/// </remarks>
+/// <returns>the count of elements of the buffer after the removal.</returns>
+public static int OrderedRemoveAt<T>(
+    ref Buffer<T> buffer, int elementIndex
+) where T : unmanaged{
+
+    Debug.Assert(elementIndex >= 0 && elementIndex < buffer.Count, 
+        $"Index: '{elementIndex}' is Out Of Bounds; Buffer Count: '{buffer.Count}' ."
+    );
+
+    T* dst = buffer.Pointer + elementIndex;
+    T* src = dst+1;
+
+    Memory.Copy<T>((byte*)src, (byte*)dst, buffer.Count-(elementIndex+1));
+
+    /**
+        note orderring matters here; if this was above the for loop
+        you would get an index out of bounds error.
+    **/
+
+    buffer.Count--;
+    return buffer.Count;
+}
+
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>
+///         When inserting a value into an element, any data the was previously in that element is 
+///         shifted forward - away from element zero - including all elements after the inserted element.
+///    </para>
+/// </remarks>
+public static bool OrderedInsert<T>(
+    ref Buffer<T> buffer, T value, int elementIndex
+)where T : unmanaged{
+    if(buffer.Count >= buffer.Length){
+        Debug.Panic("Memory Limit Hit.");
+        return false;
+    }
+
+    System.Span<T> span = new(buffer.Pointer, buffer.Length);
+
+    buffer.Count++;
+    T* src = buffer.Pointer + elementIndex;
+    T* dst = src+1;
+
+    // copy the dataset at and after the current slot further into the buffer. 
+    Memory.Copy<T>((byte*)src, (byte*)dst, buffer.Count-elementIndex-1);
+    // insert the new data.
+    buffer[elementIndex] = value;
+    
+    return true;
+}
+
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>
+///         When inserting a value into an element, any data the was previously in that element is sent forward - away from element zero.
+///     </para>
+/// </remarks>
+public static bool UnOrderedInsert<T>(
+    ref Buffer<T> buffer, T value, int elementIndex
+)where T : unmanaged{
+    
+    if(buffer.Count >= buffer.Length){
+        Debug.Panic("Memory Limit Hit.");
+        return false;
+    }
+
+    System.Span<T> span = new(buffer.Pointer, buffer.Length);
+
+    buffer.Count++;
+
+    // copy the data at the current slot to the back of the buffer.
+    buffer[buffer.Count-1] = buffer[elementIndex];
+    // insert the new data.
+    buffer[elementIndex] = value;
+
+    return true;
+}
+
 /**##########################################################################################################################################
     div: CategorisedOverlapArray.
 ##########################################################################################################################################**/
@@ -896,5 +1005,116 @@ public static int GetFixedStrideArrayAppendIndex(
     isValid = true;
     return GetFixedStrideArrayElementIndex(entryIndex, stride, appendCount);
 }
+
+/**##########################################################################################################################################
+    div: RunLengthBuffer.
+##########################################################################################################################################**/
+
+public static bool Init<T>(
+    ref RunLengthBuffer<T> array, ref Memory.Arena arena, int length
+)where T : unmanaged{
+
+    if(array.IsInitialised){
+        Debug.Assert(false, "Attempted to init an already initialised dynamic stride array.");
+        return false;
+    }
+
+    Init(ref array.Data, ref arena, length);
+    Init(ref array.Strides, ref arena, length);
+    array.StartIndex = length;
+    array.IsInitialised = true;
+    return true;
+}
+
+public static bool Push<T>(
+    ref RunLengthBuffer<T> buffer, T data, int runLength
+)where T : unmanaged{
+
+    if(buffer.StartIndex==0){
+        Debug.Assert(false, "memory limit hit.");
+        return false;
+    }
+
+    buffer.StartIndex--;
+    buffer.Data[buffer.StartIndex] = data;
+    buffer.Strides[buffer.StartIndex] = runLength;
+    return true;
+}
+
+public static bool RemoveAt<T>(
+    ref RunLengthBuffer<T> buffer, int elementIndex
+)where T : unmanaged{
+
+    if(elementIndex < buffer.StartIndex){
+        Debug.Assert(false, "attempted to remove an invalid index.");
+        return false;
+    }
+
+    int removedStride = buffer.Strides[elementIndex];
+    int i = elementIndex-1; 
+    for(; i >= buffer.StartIndex; i--){
+        // push forward.
+        int forward = 1+removedStride;
+        int forwardIndex = i+forward;
+        buffer.Data[forwardIndex] = buffer.Data[i];
+        ref int otherStride = ref buffer.Strides[i]; 
+        if(otherStride > removedStride){
+            otherStride-=forward;
+            buffer.Strides[forwardIndex] = otherStride;
+        }
+        else{
+            buffer.Strides[forwardIndex] = otherStride;
+            break;
+        }
+    }
+    for(; i>= buffer.StartIndex; i--){
+        // push forward.
+        int forwardIndex = i+1+removedStride;
+        buffer.Data[forwardIndex] = buffer.Data[i];
+        buffer.Strides[forwardIndex] = buffer.Strides[i];
+    }
+    
+    buffer.StartIndex++;
+
+    return true;
+}
+
+public static bool MoveToStart<T>(
+    ref RunLengthBuffer<T> buffer, int elementIndex
+)where T : unmanaged{
+
+    if(elementIndex < buffer.StartIndex){
+        Debug.Assert(false, "attempted to remove an invalid index.");
+        return false;
+    }
+
+    int removedStride = buffer.Strides[elementIndex];
+    int i = elementIndex-1; 
+    for(; i >= buffer.StartIndex; i--){
+        // push forward.
+        int forward = 1+removedStride;
+        int forwardIndex = i+forward;
+        buffer.Data[forwardIndex] = buffer.Data[i];
+        ref int otherStride = ref buffer.Strides[i]; 
+        if(otherStride > removedStride){
+            otherStride-=forward;
+            buffer.Strides[forwardIndex] = otherStride;
+        }
+        else{
+            buffer.Strides[forwardIndex] = otherStride;
+            break;
+        }
+    }
+    for(; i>= buffer.StartIndex; i--){
+        // push forward.
+        int forwardIndex = i+1+removedStride;
+        buffer.Data[forwardIndex] = buffer.Data[i];
+        buffer.Strides[forwardIndex] = buffer.Strides[i];
+    }
+    
+
+    return true;
+}
+
 
 }
