@@ -87,7 +87,6 @@ public struct FontTexturesInitInfo{
     ///     the height of the texture to write the glyph data to.
     /// </summary>
     public uint TextureHeight;
-    public uint MaxFonts;
     public uint BaseGlyphIndex;
     public int GlyphCount;
     /// <summary>

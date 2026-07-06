@@ -463,18 +463,18 @@ public unsafe struct String
             return SubAllocator.Deallocate(ref allocator.SubAllocators[stringId.StringLength], stringId.GenId); 
         }
 
-        public static ref String GetString(ref Allocator allocator, StringId stringId, scoped ref bool isValidOutput)
+        public static ref String GetString(ref Allocator allocator, StringId stringId, scoped out bool success)
         {
             ref SubAllocator sub = ref allocator.SubAllocators[stringId.StringLength];
             if (sub.IsInitialised == false)
             {
-                isValidOutput = false;
+                success = false;
                 return ref allocator.FallbackString;
             }
 
-            ref String str = ref SubAllocator.GetString(ref sub, stringId.GenId, ref isValidOutput);
+            ref String str = ref SubAllocator.GetString(ref sub, stringId.GenId, out success);
 
-            if(isValidOutput == false)
+            if(success == false)
             {
                 return ref allocator.FallbackString;
             }
@@ -534,14 +534,14 @@ public unsafe struct String
             ///    <para>Remarks:</para>
             ///    <para>Returns the <c>Nil</c> string in the case that the gen id is stale.</para>
             /// </remarks>
-            public static ref String GetString(ref SubAllocator allocator, GenId genId, ref bool isValidOutput)
+            public static ref String GetString(ref SubAllocator allocator, GenId genId, out bool success)
             {
-                if(GenIdAllocator.IsGenIdStale(allocator.GenIdAllocator, genId))
+                if(GenIdAllocator.IsValidId(allocator.GenIdAllocator, genId))
                 {
-                    isValidOutput = false;
+                    success = false;
                     return ref allocator.Strings.Sparse[0]; // explicitly get the nil.
                 }
-                isValidOutput = true;
+                success = true;
                 int index = GenId.GetIndex(genId);
                 return ref N_Howl.N_Collections.Collections.GetDataUnsafe(allocator.Strings, index);
             }

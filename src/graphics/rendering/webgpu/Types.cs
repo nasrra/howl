@@ -232,9 +232,18 @@ public unsafe struct TextureArray{
     public bool IsInitialised;
 }
 
+/**##########################################################################################################################################
+    div start: Virtual Texture.
+##########################################################################################################################################**/
+
+public enum VirtualTextureType{
+    Image,
+    Font
+}
+
 // pack to 16 for web gpu uniform buffer arrays.
 [StructLayout(LayoutKind.Sequential, Size = 16, Pack = 4)]
-public struct VirtualTexture{
+public struct DeviceVirtualTexture{
     /// <summary>
     ///     The maximum amount of virtual textures a shader can store.
     /// </summary>
@@ -255,6 +264,13 @@ public struct VirtualTexture{
     public int Padding0;
 }
 
+public struct HostVirtualTexture{
+    public String FilePath;
+    public FontData FontData;
+    public VirtualTextureType TextureType;
+    public bool IsInitialised;
+}
+
 public struct VirtualTextureManager{
     /// <summary>
     ///     The index where font textures are stored within the <c>TextureArrays</c> array.
@@ -269,49 +285,29 @@ public struct VirtualTextureManager{
     ///     <list type="bullet">
     ///         <item>Contains a Nil element.</item>
     ///         <item>
-    ///             Elements are vertically associated with <c>VirtualTextureFilePaths</c>, 
-    ///             <c>VirtualTextureTypes</c> and <c>VirtualTextureFontData</c>.
+    ///             Elements are vertically associated with <c>HostVirtualTextures.</c>, 
     ///         </item>
     ///     </list>
     /// </remarks>
-    public Array<VirtualTexture> VirtualTextures;
+    public Array<DeviceVirtualTexture> DeviceVirtualTextures;
     /// <remarks>
     ///    <para><b>Remarks:</b></para>
     ///     <list type="bullet">
     ///         <item>Contains a Nil element.</item>
     ///         <item>
-    ///             Elements are vertically associated with <c>VirtualTextures</c>, 
-    ///             <c>VirtualTextureTypes</c> and <c>VirtualTextureFontData</c>.
+    ///             Elements are vertically associated with <c>DeviceVirtualTextures.</c>, 
     ///         </item>
     ///     </list>
     /// </remarks>
-    public Array<String> VirtualTextureFilePaths;
-    /// <remarks>
-    ///    <para><b>Remarks:</b></para>
-    ///     <list type="bullet">
-    ///         <item>Contains a Nil element.</item>
-    ///         <item>
-    ///             Elements are vertically associated with <c>VirtualTextures</c>, 
-    ///             <c>VirtualTextureTypes</c> and <c>VirtualTextureFilePaths</c>.
-    ///         </item>
-    ///     </list>
-    /// </remarks>
-    public Array<FontData> VirtualTextureFontData;
-    /// <remarks>
-    ///    <para><b>Remarks:</b></para>
-    ///     <list type="bullet">
-    ///         <item>Contains a Nil element.</item>
-    ///         <item>
-    ///             Elements are vertically associated with <c>VirtualTextures</c>, 
-    ///             <c>VirtualTextureFilePaths</c> and <c>VirtualTextureFontData</c>.
-    ///         </item>
-    ///     </list>
-    /// </remarks>
-    public Array<VirtualTextureType> VirtualTextureTypes;
+    public Array<HostVirtualTexture> HostVirtualTextures;
     public Array<TextureArray> TextureArrays;
     public Buffer VirtualTextureBuffer;
     public bool IsInitialised;
 }
+
+/**##########################################################################################################################################
+    div end: Virtual Textures. 
+##########################################################################################################################################**/
 
 /**
     WGSL requires that the total size of a struct must be a multiple of its largest member's alignment
@@ -411,11 +407,6 @@ public struct SpriteManager{
 public struct SpriteLayer{
     public int MaxSprites;
     public StackArray<int> FreeSpritesIndices;
-}
-
-public enum VirtualTextureType{
-    Image,
-    Font
 }
 
 public struct ChainSprite{

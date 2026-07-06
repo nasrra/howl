@@ -157,7 +157,7 @@ public static void DrawRenderer(
     /**========================================
         UNIFORM PREPERATION.
     ========================================**/    
-    WriteToBuffer(device, ctx.VirtualTextureManager.VirtualTextures, ref ctx.VirtualTextureManager.VirtualTextureBuffer);
+    WriteToBuffer(device, ctx.VirtualTextureManager.DeviceVirtualTextures, ref ctx.VirtualTextureManager.VirtualTextureBuffer);
     /**
         TODO:
         This may have to be optimised out later for a compute buffer operation to sort sprites; so that it is faster.
@@ -1058,7 +1058,7 @@ fixed(byte* fragShaderEntryPoint = FragShaderEntryPoint){
                 virtualTexturesEntry.Binding = (uint)ShaderBinding.VirtualTexturesUniform;
                 virtualTexturesEntry.Buffer = ctx.VirtualTextureManager.VirtualTextureBuffer.Device;
                 virtualTexturesEntry.Offset = 0;
-                virtualTexturesEntry.Size = (uint)(sizeof(VirtualTexture) * ctx.VirtualTextureManager.VirtualTextures.Length);
+                virtualTexturesEntry.Size = (uint)(sizeof(DeviceVirtualTexture) * ctx.VirtualTextureManager.DeviceVirtualTextures.Length);
 
                 // sprite ssbo.
                 ref WebGPU.BindGroupEntry spriteSSBOEntry = ref group0Entries[(int)ShaderBinding.SpritesStorage];
@@ -1676,30 +1676,28 @@ public static void InitVirtualTextureManager(
     Debug.Assert(maxVirtualTextures >= 2, 
         "Web GPU virtual texture manager cannot be initialised with less than two virtual textures"
     );
-    Debug.Assert(maxVirtualTextures <= VirtualTexture.MaxAmount, 
-        $"Web GPU renderer cannot store more than '{VirtualTexture.MaxAmount}' unqiue textures, requrested unique textures '{maxVirtualTextures}' is too large."
+    Debug.Assert(maxVirtualTextures <= DeviceVirtualTexture.MaxAmount, 
+        $"Web GPU renderer cannot store more than '{DeviceVirtualTexture.MaxAmount}' unqiue textures, requrested unique textures '{maxVirtualTextures}' is too large."
     );
-    maxVirtualTextures = Math.Clamp(maxVirtualTextures, 2, VirtualTexture.MaxAmount);
+    maxVirtualTextures = Math.Clamp(maxVirtualTextures, 2, DeviceVirtualTexture.MaxAmount);
 
     // initialise virtual textures.
-    Collections.Init(ref manager.VirtualTextures, ref arena, maxVirtualTextures);
-    Collections.Init(ref manager.VirtualTextureFilePaths, ref arena, maxVirtualTextures);
-    Collections.Init(ref manager.VirtualTextureFontData, ref arena, maxVirtualTextures);
-    Collections.Init(ref manager.VirtualTextureTypes, ref arena, maxVirtualTextures);
-    manager.VirtualTextureBuffer = CreateBuffer<VirtualTexture>(
+    Collections.Init(ref manager.DeviceVirtualTextures, ref arena, maxVirtualTextures);
+    Collections.Init(ref manager.HostVirtualTextures, ref arena, maxVirtualTextures);
+    manager.VirtualTextureBuffer = CreateBuffer<DeviceVirtualTexture>(
         device, WebGPU.BufferUsage.CopySrc | WebGPU.BufferUsage.MapWrite, WebGPU.BufferUsage.CopyDst | WebGPU.BufferUsage.Uniform, (uint)maxVirtualTextures
     );
     for(int i = 0; i < maxVirtualTextures; i++){
-        String.Initialise(ref manager.VirtualTextureFilePaths[i], ref arena, filePathLength);
-    }    
+        String.Initialise(ref manager.HostVirtualTextures[i].FilePath, ref arena, filePathLength);
+    }
 
     // initialise font virtual textures.
     for(int i = 0; i < fontInfo.VirtualTextures.Length; i++){
         int virtualTextureIndex = fontInfo.VirtualTextures[i];
         Debug.Assert(virtualTextureIndex>=0, $"Cannot initialise virtual texture '{virtualTextureIndex} to be a font virtual texture.'");
-        ref FontData fontData = ref manager.VirtualTextureFontData[virtualTextureIndex];
-        Font.InitFontData(ref fontData, ref arena, fontInfo.GlyphCount, fontInfo.BaseGlyphIndex);
-        manager.VirtualTextureTypes[virtualTextureIndex] = VirtualTextureType.Font;
+        ref HostVirtualTexture host = ref manager.HostVirtualTextures[virtualTextureIndex];
+        Font.InitFontData(ref host.FontData, ref arena, fontInfo.GlyphCount, fontInfo.BaseGlyphIndex);
+        host.TextureType = VirtualTextureType.Font;
     }
 
     // initialise texture arrays.
@@ -1721,7 +1719,7 @@ public static void InitVirtualTextureManager(
     **/
     WebGPU.TextureFormat fontTextureFormat = WebGPU.TextureFormat.R8Unorm;
     InitTextureArray(
-        ref manager.TextureArrays[writeIndex], device, ref arena, fontTextureFormat, fontInfo.TextureWidth, fontInfo.TextureHeight, fontInfo.MaxFonts
+        ref manager.TextureArrays[writeIndex], device, ref arena, fontTextureFormat, fontInfo.TextureWidth, fontInfo.TextureHeight, (uint)fontInfo.VirtualTextures.Length
     );
     
     // image textures.
@@ -1843,16 +1841,21 @@ public static void SetVirtualTextureFilePath(
 }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static void SetVirtualTextureFilePath(
+public static bool SetVirtualTextureFilePath(
     ref VirtualTextureManager manager, String filePath, int virtualTextureId
 ){
     if(virtualTextureId == 0){
         Debug.Panic("Web GPU renderer attempted to set the texture path of the Nil virtual texture.");
-        return;
+        return false;
     }
-    ref String dst = ref manager.VirtualTextureFilePaths[virtualTextureId];
+    ref String dst = ref manager.HostVirtualTextures[virtualTextureId].FilePath;
+    if(dst.Count>0){
+        Debug.Assert(false, $"Cannot set file path for virtual texture '{virtualTextureId}' as it has already been set.");
+        return false;
+    }
     String.Clear(ref dst);
     String.Append(ref dst, filePath);
+    return true;
 }
 
 public static bool LoadImageTexture(
@@ -1877,7 +1880,7 @@ public static bool LoadImageTexture(
         Debug.Panic("Web GPU attempted to load the Nil virtual texture.");
         return false;
     }
-    ref VirtualTexture vT = ref manager.VirtualTextures[virtualTextureIndex];
+    ref DeviceVirtualTexture vT = ref manager.DeviceVirtualTextures[virtualTextureIndex];
     if(vT.IsLoaded == 1){
         Debug.Panic("Web GPU attempted to load a texture that is already loaded.");
         return false;
@@ -1889,7 +1892,7 @@ public static bool LoadImageTexture(
 
     // load the image file.
     bool isValid = false;
-    String filePath = manager.VirtualTextureFilePaths[virtualTextureIndex];
+    String filePath = manager.HostVirtualTextures[virtualTextureIndex].FilePath;
     N_IO.Image image = N_IO.IO.LoadImage(filePath, ref isValid);
     if(isValid != true){
         Debug.Panic($"Failed to read image file: '{String.ToSystemString(filePath)}'");
@@ -1947,7 +1950,7 @@ public static bool UnloadImageTexture(
     Debug.Assert(manager.IsInitialised,
         $"Web GPU cannot unload virtual texture '{virtualTextureIndex}' from an unintialised virtual texture manager."
     ); 
-    ref VirtualTexture vT = ref manager.VirtualTextures[virtualTextureIndex];
+    ref DeviceVirtualTexture vT = ref manager.DeviceVirtualTextures[virtualTextureIndex];
     if(vT.IsLoaded == 0){
         Debug.Panic($"Web GPU attempted to unload virtual texture '{virtualTextureIndex}', which is already unloaded.");
         return false;
@@ -1974,10 +1977,13 @@ public static bool LoadFontTexture(
     ref VirtualTextureManager manager, ref Memory.Arena transient,  Device device, int virtualTextureIndex, uint glyphHeightInPixels
 ){
     
-    // validation steps.
-    Debug.Assert(device.IsInitialised,
-        $"Web GPU cannot load virtual texture '{virtualTextureIndex}' with an unintialised device"
-    );
+    /**========================================
+        Validation.
+    ========================================**/
+    {
+        AssertInitialisedVirtualTextureManager(manager);
+        AssertInitialisedDevice(device);
+    }
     Debug.Assert(manager.IsInitialised,
         $"Web GPU cannot load virtual texture '{virtualTextureIndex}' to an unintialised virtual texture manager"
     );
@@ -1985,7 +1991,11 @@ public static bool LoadFontTexture(
         Debug.Panic("Web GPU attempted to load the Nil virtual texture.");
         return false;
     }
-    ref VirtualTexture vT = ref manager.VirtualTextures[virtualTextureIndex];
+    if(!IsFontVirtualTexture(ref manager, virtualTextureIndex)){
+        Debug.Assert(false, "Attempted to load a font into a non font-virtual texture");
+        return false;
+    }
+    ref DeviceVirtualTexture vT = ref manager.DeviceVirtualTextures[virtualTextureIndex];
     if(vT.IsLoaded == 1){
         Debug.Panic("Web GPU attempted to load a texture that is already loaded.");
         return false;
@@ -1999,11 +2009,11 @@ public static bool LoadFontTexture(
     uint textureHeight = fontTextureArray.Extents.Height;
     Collections.Init(ref textureData, ref transient, (int)textureWidth * (int)textureHeight); 
 #pragma warning enable
-    ref FontData fontData = ref manager.VirtualTextureFontData[virtualTextureIndex];
+    ref FontData fontData = ref manager.HostVirtualTextures[virtualTextureIndex].FontData;
 
     // load the font file bitmap into a texture.
     if(Font.LoadFont(
-            manager.VirtualTextureFilePaths[virtualTextureIndex], ref fontData, ref textureData, textureWidth, glyphHeightInPixels
+            manager.HostVirtualTextures[virtualTextureIndex].FilePath, ref fontData, ref textureData, textureWidth, glyphHeightInPixels
         ) != true
     ){
         return false;
@@ -2029,13 +2039,13 @@ public static bool LoadFontTexture(
 public static bool IsImageVirtualTexture(
     ref VirtualTextureManager manager, int virtualTextureIndex
 ){
-    return manager.VirtualTextureTypes[virtualTextureIndex] == VirtualTextureType.Image;
+    return manager.HostVirtualTextures[virtualTextureIndex].TextureType == VirtualTextureType.Image;
 }
 
 public static bool IsFontVirtualTexture(
     ref VirtualTextureManager manager, int virtualTextureIndex
 ){
-    return manager.VirtualTextureTypes[virtualTextureIndex] == VirtualTextureType.Font;
+    return manager.HostVirtualTextures[virtualTextureIndex].TextureType == VirtualTextureType.Font;
 }
 
 public static void InitFinalRenderTarget(
@@ -2638,10 +2648,10 @@ public static bool InitSpriteString(
 ){
     int firstIndex = GenId.GetIndex(spriteId.GenId);
     int generation = GenId.GetGeneration(spriteId.GenId);
+    ref HostVirtualTexture vT = ref textures.HostVirtualTextures[virtualTextureIndex];
 
     { // validation
         AssertInitialisedSpriteManager(sprites);
-        AssertValidFontVirtualTextureIndex(virtualTextureIndex, textures);
         AssertValidMaterialIndex(materialIndex);
         if(sprites.SpriteGenerations[firstIndex] != generation){
             return false;
@@ -2650,11 +2660,15 @@ public static bool InitSpriteString(
             Debug.Assert(false, $"Attempted {nameof(InitSpriteString)} with a non-sprite-chain.");
             return false;
         }
+        if(vT.TextureType != VirtualTextureType.Font){
+            Debug.Assert(false, $"Attempted {nameof(InitSpriteString)} with a non font-texture '{virtualTextureIndex}'");
+            return false;
+        }
     }
 
     int index = firstIndex;
     Vector2 advance = default;
-    ref FontData fontData = ref textures.VirtualTextureFontData[virtualTextureIndex];
+    ref FontData fontData = ref textures.HostVirtualTextures[virtualTextureIndex].FontData;
     Vector2I maxGlyphSize = new(){X = (int)fontData.MaxGlyphHeightInPixels, Y = (int)fontData.MaxGlyphHeightInPixels};
     for(int i = 0; i < text.Count; i++){    
 
@@ -2901,13 +2915,6 @@ public static void AssertValidVirtualTextureIndex(
     Debug.Assert(virtualTextureIndex > -1, "Attempted usage of an invalid virtual texture index");
 }
 
-public static void AssertValidFontVirtualTextureIndex(
-    int virtualTextureIndex, VirtualTextureManager manager
-){
-    AssertValidVirtualTextureIndex(virtualTextureIndex);
-    Debug.Assert(IsFontVirtualTexture(ref manager, virtualTextureIndex), "Attempted usage of a image virtual texture for a font virtual texture operation.");
-}
-
 [Conditional("DEBUG")]
 public static void AssertValidImageVirtualTextureIndex(
     int virtualTextureIndex, VirtualTextureManager manager
@@ -2926,7 +2933,7 @@ public static void AssertInitialisedSpriteManager(
 
 [Conditional("DEBUG")]
 public static void AssertInitialisedVirtualTextureManager(
-    ref VirtualTextureManager manager
+    VirtualTextureManager manager
 ){
     // crash.
     Debug.Assert(manager.IsInitialised, "Attempted usage of an unintialised virtual texture manager");

@@ -185,6 +185,12 @@ public struct Vector2{
     public float X;
     public float Y;
 
+    public static readonly Vector2 One      = new(){X = 1, Y = 1};
+    public static readonly Vector2 Up       = new(){Y = 1};
+    public static readonly Vector2 Down     = new(){Y = -1};
+    public static readonly Vector2 Left     = new(){X = -1};
+    public static readonly Vector2 Right    = new(){X = 1};
+
     public static Vector2 operator+ (
         Vector2 lhs, Vector2 rhs
     ){

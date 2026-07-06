@@ -109,12 +109,9 @@ public struct GenIdAllocator
         Collections.Push(ref allocator.FreeSlots, entityIndex);
     }
 
-    /// <summary>
-    ///     Gets whether or not a gen id is stale within a allocator instance.
-    /// </summary>
-    /// <returns>true, if the gen id is stale; otherwise false</returns>
-    public static bool IsGenIdStale(GenIdAllocator allocator, GenId genId)
-    {
-        return allocator.GenIds[GenId.GetIndex(genId)] != genId;
+    public static bool IsValidId(
+        GenIdAllocator allocator, GenId genId
+    ){
+        return genId != default && allocator.GenIds[GenId.GetIndex(genId)] != genId;
     }
 }
