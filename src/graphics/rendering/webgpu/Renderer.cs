@@ -2641,10 +2641,13 @@ public static bool InitSpriteString(
 
     { // validation
         AssertInitialisedSpriteManager(sprites);
-        AssertValidChainSpriteId(spriteId, sprites);
         AssertValidFontVirtualTextureIndex(virtualTextureIndex, textures);
         AssertValidMaterialIndex(materialIndex);
         if(sprites.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+        if(!sprites.ChainSprites[firstIndex].IsInitialised){
+            Debug.Assert(false, $"Attempted {nameof(InitSpriteString)} with a non-sprite-chain.");
             return false;
         }
     }
@@ -2740,8 +2743,11 @@ public static bool SetSpriteStringTransform(
 
     { // validation
         AssertInitialisedSpriteManager(manager);
-        AssertValidChainSpriteId(spriteId, manager);
         if(manager.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+        if(!manager.ChainSprites[firstIndex].IsInitialised){
+            Debug.Assert(false, $"Attempted {nameof(SetSpriteStringTransform)} with a non chain sprite.");
             return false;
         }
     }
@@ -2800,44 +2806,6 @@ public static SpriteType GetSpriteType(
     }
 
 }
-
-/**
-    public static bool DeallocSprite(
-        ref RendererCtx ctx, SpriteId spriteId
-    ){
-        return DeallocSprite(ref ctx.SpriteManager, spriteId);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool DeallocSprite(
-        ref SpriteManager manager, SpriteId spriteId
-    ){
-        // validation steps.
-        Debug.Assert(manager.IsInitialised,
-            "Web GPU cannot deallocate a sprite from an uninitialised sprite manager."
-        );
-        int generation = GenId.GetGeneration(spriteId.GenId);
-        int index = GenId.GetIndex(spriteId.GenId);
-        if(index <= 0){
-            Debug.Panic($"Attempted to deallocate sprite at index '{index}'; which is not allowed as it is the Nil sprite or invalid.");
-            return false;
-        }
-        if(generation != manager.SpriteGenerations[index]){
-            Debug.Panic("Web GPU attempted to deallocate a sprite with a stale index.");
-            return false;
-        }
-        ref Sprite sprite = ref manager.Sprites[index];
-        if(sprite.State == SpriteState.Deallocated){
-            Debug.Panic("Web GPU attempted to deallocate a sprite that has already been deallocated.");
-            return false;
-        }
-        sprite.State = SpriteState.Deallocated;
-
-        Collections.Push(ref manager.SpriteLayers[spriteId.Layer].FreeSpritesIndices, index);
-
-        return true;
-    }
-**/
 
 public static bool DeallocSpriteChain(
     ref RendererCtx ctx, SpriteId spriteId
@@ -2971,17 +2939,6 @@ public static void AssertValidSpriteId(
     int index = GenId.GetIndex(id.GenId);
     // pass.
     Debug.Assert(index > 0, "Attempted usage of the Nil sprite.");
-}
-
-[Conditional("DEBUG")]
-public static void AssertValidChainSpriteId(
-    SpriteId id, SpriteManager manager
-){
-    int index = GenId.GetIndex(id.GenId);
-    // pass.
-    Debug.Assert(index > 0, "Attempted usage of the Nil sprite.");
-    // pass
-    Debug.Assert(manager.ChainSprites[index].NextSprite > 0, "Attempted usage of a non-chain sprite during a sprite string operation.");
 }
 
 [Conditional("DEBUG")]
