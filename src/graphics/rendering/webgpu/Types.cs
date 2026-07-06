@@ -427,6 +427,7 @@ public struct ChainSprite{
     ///     Whether or not this is the first sprite in the sprite chain.
     /// </summary>
     public bool IsFirst;
+    public bool IsInitialised;
 }
 
 public struct GlyphSprite{

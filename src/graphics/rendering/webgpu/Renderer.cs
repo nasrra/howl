@@ -353,7 +353,7 @@ public static void DrawRenderer(
     FreeSurfaceTexture(ref swapChainTexture);
     if(ctx.SpriteManager.OneFrameSpritesIndices.Count > 0){
         for(int i = 0; i < ctx.SpriteManager.OneFrameSpritesIndices.Count; i++){
-            DeallocateSprite(ref ctx.SpriteManager, ctx.SpriteManager.OneFrameSpritesIndices[i]);
+            DeallocSprite(ref ctx.SpriteManager, ctx.SpriteManager.OneFrameSpritesIndices[i]);
         }
         Collections.Clear(ref ctx.SpriteManager.OneFrameSpritesIndices);
     }
@@ -2102,7 +2102,7 @@ public static void InitSampler(
 }
 
 /**##########################################################################################################################################
-    div: SPRITES
+    div start: SPRITES
 ##########################################################################################################################################**/
 
 public static void InitSpriteManager(
@@ -2165,14 +2165,14 @@ public static void InitSpriteManager(
     manager.IsInitialised = true;
 }
 
-public static SpriteId AllocateSprite(
+public static SpriteId AllocSprite(
     ref RendererCtx ctx, int layer, ref bool isValidOutput
 ){
-    return AllocateSprite(ref ctx.SpriteManager, layer, ref isValidOutput);
+    return AllocSprite(ref ctx.SpriteManager, layer, ref isValidOutput);
 }
 
 [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-public static SpriteId AllocateSprite(
+public static SpriteId AllocSprite(
     ref SpriteManager manager, int layer, ref bool isValidOutput
 ){
     
@@ -2197,29 +2197,29 @@ public static SpriteId AllocateSprite(
     return new(){GenId = new(spriteIndex, manager.SpriteGenerations[spriteIndex]), Layer = layer};
 }
 
-public static SpriteId AllocateOneFrameSprite(
+public static SpriteId AllocOneFrameSprite(
     ref RendererCtx ctx, int layer, ref bool isValidOutput
 ){
-    return AllocateOneFrameSprite(ref ctx.SpriteManager, layer, ref isValidOutput);
+    return AllocOneFrameSprite(ref ctx.SpriteManager, layer, ref isValidOutput);
 }
 
-public static SpriteId AllocateOneFrameSprite(
+public static SpriteId AllocOneFrameSprite(
     ref SpriteManager manager, int layer, ref bool isValidOutput
 ){
-    SpriteId spriteId = AllocateSprite(ref manager, layer, ref isValidOutput);
+    SpriteId spriteId = AllocSprite(ref manager, layer, ref isValidOutput);
     if(isValidOutput){
         Collections.Push(ref manager.OneFrameSpritesIndices, spriteId);
     } 
     return spriteId;
 }
 
-public static SpriteId AllocateSpriteChain(
+public static SpriteId AllocSpriteChain(
     ref RendererCtx ctx, int chainLength, int layer, ref bool isValidOutput
 ){
-    return AllocateSpriteChain(ref ctx.SpriteManager, chainLength, layer, ref isValidOutput);
+    return AllocSpriteChain(ref ctx.SpriteManager, chainLength, layer, ref isValidOutput);
 }
 
-public static SpriteId AllocateSpriteChain(
+public static SpriteId AllocSpriteChain(
     ref SpriteManager manager, int chainLength, int layer, ref bool isValidOutput
 ){
     SpriteId first = default;
@@ -2227,7 +2227,7 @@ public static SpriteId AllocateSpriteChain(
     int firstIndex = 0;
     ref StackArray<int> freeIndices = ref manager.SpriteLayers[layer].FreeSpritesIndices;
     for(int i = 0; i < chainLength; i++){
-        SpriteId spriteId = AllocateSprite(ref manager, layer, ref isValidOutput);
+        SpriteId spriteId = AllocSprite(ref manager, layer, ref isValidOutput);
         int index = GenId.GetIndex(spriteId.GenId);
         ref ChainSprite previousSprite = ref manager.ChainSprites[previousIndex];
         ref ChainSprite chainSprite = ref manager.ChainSprites[index];
@@ -2252,6 +2252,7 @@ public static SpriteId AllocateSpriteChain(
             previousSprite.NextSprite = firstIndex;
             return first;
         }
+        chainSprite.IsInitialised = true;
         previousIndex = index;
     }
     return first;
@@ -2295,14 +2296,14 @@ public static bool InitSprite(
     return true;
 }
 
-public static bool DeallocateSprite(
+public static bool DeallocSprite(
     ref RendererCtx ctx, SpriteId spriteId
 ){
-    return DeallocateSprite(ref ctx.SpriteManager, spriteId);
+    return DeallocSprite(ref ctx.SpriteManager, spriteId);
 }
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static bool DeallocateSprite(
+public static bool DeallocSprite(
     ref SpriteManager manager, SpriteId spriteId
 ){
     // validation steps.
@@ -2324,11 +2325,20 @@ public static bool DeallocateSprite(
         Debug.Panic("Web GPU attempted to deallocate a sprite that has already been deallocated.");
         return false;
     }
-    sprite.State = SpriteState.Deallocated;
-
-    Collections.Push(ref manager.SpriteLayers[spriteId.Layer].FreeSpritesIndices, index);
-
+    DeallocSpriteUnsafe(ref manager, index, spriteId.Layer);
     return true;
+}
+
+/// <remarks>
+///    <para><b>Remarks:</b></para>
+///    <para>Bypasses all validation checks.</para>
+/// </remarks>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void DeallocSpriteUnsafe(
+    ref SpriteManager manager, int spriteIndex, int spriteLayer
+){
+    manager.Sprites[spriteIndex].State = SpriteState.Deallocated;
+    Collections.Push(ref manager.SpriteLayers[spriteLayer].FreeSpritesIndices, spriteIndex);
 }
 
 public static bool SetSpriteActive(
@@ -2791,6 +2801,85 @@ public static SpriteType GetSpriteType(
 
 }
 
+/**
+    public static bool DeallocSprite(
+        ref RendererCtx ctx, SpriteId spriteId
+    ){
+        return DeallocSprite(ref ctx.SpriteManager, spriteId);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool DeallocSprite(
+        ref SpriteManager manager, SpriteId spriteId
+    ){
+        // validation steps.
+        Debug.Assert(manager.IsInitialised,
+            "Web GPU cannot deallocate a sprite from an uninitialised sprite manager."
+        );
+        int generation = GenId.GetGeneration(spriteId.GenId);
+        int index = GenId.GetIndex(spriteId.GenId);
+        if(index <= 0){
+            Debug.Panic($"Attempted to deallocate sprite at index '{index}'; which is not allowed as it is the Nil sprite or invalid.");
+            return false;
+        }
+        if(generation != manager.SpriteGenerations[index]){
+            Debug.Panic("Web GPU attempted to deallocate a sprite with a stale index.");
+            return false;
+        }
+        ref Sprite sprite = ref manager.Sprites[index];
+        if(sprite.State == SpriteState.Deallocated){
+            Debug.Panic("Web GPU attempted to deallocate a sprite that has already been deallocated.");
+            return false;
+        }
+        sprite.State = SpriteState.Deallocated;
+
+        Collections.Push(ref manager.SpriteLayers[spriteId.Layer].FreeSpritesIndices, index);
+
+        return true;
+    }
+**/
+
+public static bool DeallocSpriteChain(
+    ref RendererCtx ctx, SpriteId spriteId
+){
+    return DeallocSpriteChain(ref ctx.SpriteManager, spriteId);
+}
+
+public static bool DeallocSpriteChain(
+    ref SpriteManager manager, SpriteId spriteId
+){
+
+    /**========================================
+        Validation.
+    ========================================**/
+    {
+        AssertInitialisedSpriteManager(manager);
+        AssertValidSpriteId(spriteId);
+    }
+
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int gen = GenId.GetIndex(spriteId.GenId);
+    ref ChainSprite chainSprite = ref manager.ChainSprites[firstIndex];
+    if(chainSprite.IsInitialised != true){
+        Debug.Assert(false, $"Attempted {nameof(DeallocSpriteChain)} with a non-sprite-chain.");
+        return false;
+    }
+
+    int index = firstIndex;
+    while(true){
+        chainSprite = ref manager.ChainSprites[index];
+        chainSprite.IsInitialised = false;
+        DeallocSpriteUnsafe(ref manager, index, spriteId.Layer);
+        index = chainSprite.NextSprite;
+        if(index == firstIndex){
+            return true;
+        }
+    }
+}
+
+/**##########################################################################################################################################
+    div end: Sprites
+##########################################################################################################################################**/
 /**##########################################################################################################################################
     div: RESOURCE HANDLING
 ##########################################################################################################################################**/

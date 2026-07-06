@@ -89,16 +89,16 @@ public static void WriteToUserStorageBuffer(
     div: Sprites.
 ##########################################################################################################################################**/
 
-public static SpriteId AllocateSprite(
+public static SpriteId AllocSprite(
     int layer, ref bool isValidOutput
 ){
-    return WebGPU.Renderer.AllocateSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
+    return WebGPU.Renderer.AllocSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
 }
 
-public static bool DeallocateSprite(
+public static bool DeallocSprite(
     SpriteId spriteId
 ){
-    return WebGPU.Renderer.DeallocateSprite(ref GlobalState.WebGpuCtx, spriteId);
+    return WebGPU.Renderer.DeallocSprite(ref GlobalState.WebGpuCtx, spriteId);
 }
 
 public static bool InitSprite(
@@ -111,16 +111,16 @@ public static bool InitSprite(
     );
 }
 
-public static SpriteId AllocateSpriteChain(
+public static SpriteId AllocSpriteChain(
     int chainLength, int layer, ref bool isValidOutput
 ){
-    return WebGPU.Renderer.AllocateSpriteChain(ref GlobalState.WebGpuCtx, chainLength, layer, ref isValidOutput);
+    return WebGPU.Renderer.AllocSpriteChain(ref GlobalState.WebGpuCtx, chainLength, layer, ref isValidOutput);
 }
 
-public static bool DeallocateSpriteChain(
+public static bool DeallocSpriteChain(
     SpriteId spriteId
 ){
-    throw new System.NotImplementedException();
+    return WebGPU.Renderer.DeallocSpriteChain(ref GlobalState.WebGpuCtx, spriteId);
 }
 
 public static bool InitSpriteString(
@@ -132,7 +132,7 @@ public static bool InitSpriteString(
 public static SpriteId AllocateOneFrameSprite(
     int layer, ref bool isValidOutput
 ){
-    return WebGPU.Renderer.AllocateOneFrameSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
+    return WebGPU.Renderer.AllocOneFrameSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
 }
 
 public static bool SetSpriteTransform(
