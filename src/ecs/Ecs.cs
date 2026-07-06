@@ -1,5 +1,6 @@
 using Howl;
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace N_Howl.N_Ecs;
 public struct GenIdAllocator
@@ -21,7 +22,7 @@ public struct GenIdAllocator
 
     public bool IsInitialised;
 
-    public static bool Initialise(ref GenIdAllocator allocator, ref Memory.Arena arena, int length)
+    public static bool Initialise(ref GenIdAllocator allocator, ref MemoryArena arena, int length)
     {
         if (allocator.IsInitialised)
         {
@@ -109,9 +110,9 @@ public struct GenIdAllocator
         Collections.Push(ref allocator.FreeSlots, entityIndex);
     }
 
-    public static bool IsValidId(
+    public static bool IsInvalidId(
         GenIdAllocator allocator, GenId genId
     ){
-        return genId != default && allocator.GenIds[GenId.GetIndex(genId)] != genId;
+        return genId == default || allocator.GenIds[GenId.GetIndex(genId)] != genId;
     }
 }

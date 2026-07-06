@@ -7,6 +7,7 @@ using Howl.Text;
 using N_Howl.N_Font;
 using N_Howl.N_Graphics;
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace N_Howl.N_Rendering.N_WebGpu;
 
@@ -22,7 +23,7 @@ public unsafe struct RendererCtx{
     ///    <para>Elements are vertically assocaited with <c>Adapters</c>.</para>
     /// </remarks>
     public Array<Device> Devices;
-    public Memory.Arena TransientArena;
+    public MemoryArena TransientArena;
     public GraphicsPipeline GraphicsPipeline;
     public BlitPipeline BlitPipeline;
     public Buffer VertexBuffer;

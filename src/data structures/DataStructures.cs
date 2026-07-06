@@ -4,7 +4,7 @@ using Howl.Algorithms.Sorting;
 using N_Howl.N_Graphics;
 using N_Howl.N_Math;
 using N_Howl.N_Collections;
-using Memory = Howl.Memory;
+using N_Howl.N_Memory;
 
 namespace N_Howl.N_DataStructures;
 public static class DataStructures{
@@ -16,7 +16,7 @@ public static class DataStructures{
 /// <param name="categoryCount">the amount of categories the overlap data can be filtered into.</param>
 /// <param name="maxOverlaps">the maximum amount of overlap data that this instance can hold.</param>
 public static bool Init(
-    ref CategorisedLeafOverlaps overlaps, ref Memory.Arena arena, int categoryCount, int maxOverlaps
+    ref CategorisedLeafOverlaps overlaps, ref MemoryArena arena, int categoryCount, int maxOverlaps
 ){
     if (overlaps.IsInitialised){
         Howl.Debug.Panic("Already Initialised");
@@ -114,7 +114,7 @@ public static OverlapInfo GetOverlaps(
 ##########################################################################################################################################**/
 
 public static bool Init(
-    ref Soa_Leaf soa, ref Memory.Arena arena, int length
+    ref Soa_Leaf soa, ref MemoryArena arena, int length
 ){
     if (soa.IsInitialised){
         Howl.Debug.Panic("Already Initialised.");
@@ -204,7 +204,7 @@ public static bool LeafIntersectsLine(
 ##########################################################################################################################################**/
 
 public static bool Init(
-    ref Soa_Branch soa, ref Memory.Arena arena, int length
+    ref Soa_Branch soa, ref MemoryArena arena, int length
 ){
     if (soa.IsInitialised){
         Howl.Debug.Panic("Already Initialised.");
@@ -270,7 +270,7 @@ public static void Clear(
 /// </summary>
 /// <param name="length">the maximum amount of overlaps this instance can hold; i.e. the length of the backing arrays.</param>
 public static void Init(
-    ref Soa_Overlap soa, ref Memory.Arena arena, int length
+    ref Soa_Overlap soa, ref MemoryArena arena, int length
 ){
     Collections.Init(ref soa.OwnerLeafIndices, ref arena, length);
     Collections.Init(ref soa.OtherLeafIndices, ref arena, length);
@@ -304,7 +304,7 @@ public static void Clear(
 ##########################################################################################################################################**/
 
 public static bool Init(
-    ref Soa_QueryResult soa, ref Memory.Arena arena, int length
+    ref Soa_QueryResult soa, ref MemoryArena arena, int length
 ){
     if (soa.IsInitialised)
     {
@@ -363,7 +363,7 @@ public static void Clear(
 ##########################################################################################################################################**/
 
 public static bool Init(
-    ref BoundingVolumeHierarchy bvh, ref Memory.Arena arena, int length
+    ref BoundingVolumeHierarchy bvh, ref MemoryArena arena, int length
 ){
     if (bvh.IsInitialised)
     {
@@ -378,7 +378,7 @@ public static bool Init(
     Init(ref bvh.Branches, ref arena, branchesLength);
     Collections.Init(ref bvh.MortonCentroids, ref arena, length);
     Collections.Init(ref bvh.MortonLeafIds, ref arena, length);
-    RadixSortBuffer.Initialise(ref bvh.RadixSortBuffer, ref arena, length);
+    RadixSortBuffer.Init(ref bvh.RadixSortBuffer, ref arena, length);
 
     bvh.IsInitialised = true;
     return true;
@@ -997,7 +997,7 @@ public static void DrawLeaves(
 ##########################################################################################################################################**/
 
 public static bool Init(
-    ref IntrusiveList list, ref Memory.Arena arena, int length, bool preserveRootOrder
+    ref IntrusiveList list, ref MemoryArena arena, int length, bool preserveRootOrder
 ){
     if (list.IsInitialised){
         Howl.Debug.Panic("Already Initialised.");

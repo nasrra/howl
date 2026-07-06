@@ -2,6 +2,7 @@ using Howl;
 using Howl.Text;
 using N_Howl.N_Collections;
 using N_Howl.N_Math;
+using N_Howl.N_Memory;
 using FreeType = N_Howl.N_Font.N_FreeTypeSharp.Font;
 
 namespace N_Howl.N_Font;
@@ -28,7 +29,7 @@ public static bool LoadFont(
 }
 
 public static void InitFontData(
-    ref FontData fontData, ref Memory.Arena arena, int glyphCount, uint baseGlyphIndex
+    ref FontData fontData, ref MemoryArena arena, int glyphCount, uint baseGlyphIndex
 ){
     Debug.Assert(glyphCount > 1, "Font data should be intialised with a count greater than one to account for the Nil element.");
     glyphCount = Math.Clamp(glyphCount, 1, int.MaxValue);

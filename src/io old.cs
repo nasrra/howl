@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Howl.Text;
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace Howl.IO;
 
@@ -99,14 +100,14 @@ public unsafe static class File
     *******************/
 
     public static bool Read(
-        String filePath, ref Memory.Arena arena, ref long totalBytesReadOutput
+        String filePath, ref MemoryArena arena, ref long totalBytesReadOutput
     ){
         bool success = Read(filePath.Pointer, filePath.Count, arena.StartPtr, arena.Capacity, ref totalBytesReadOutput);
         return success;
     }
 
     public static bool Read(
-        string filePath, ref Memory.Arena arena, ref long totalBytesReadOutput
+        string filePath, ref MemoryArena arena, ref long totalBytesReadOutput
     ){fixed(char* pFilePath = filePath){
 
         bool success = Read(pFilePath, filePath.Length, arena.StartPtr, arena.Capacity, ref totalBytesReadOutput);

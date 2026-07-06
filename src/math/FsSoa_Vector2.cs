@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace Howl.Math;
 
@@ -38,7 +39,7 @@ public struct FsSoa_Vector2{
 
     public bool IsIntialised;
 
-    public static void Initialise(ref FsSoa_Vector2 soa, ref Memory.Arena arena, int entryStride, int maxEntries)
+    public static void Initialise(ref FsSoa_Vector2 soa, ref MemoryArena arena, int entryStride, int maxEntries)
     {
         Debug.Assert(soa.IsIntialised==false, "Already Initialised.");
         soa.IsIntialised = true;

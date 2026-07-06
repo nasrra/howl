@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace Howl.Math;
 
@@ -13,7 +14,7 @@ public struct Soa_Transform
 
     public bool IsInitialised;
 
-    public static bool Initialise(ref Soa_Transform soa, ref Memory.Arena arena, int length)
+    public static bool Initialise(ref Soa_Transform soa, ref MemoryArena arena, int length)
     {
         if (soa.IsInitialised)
         {

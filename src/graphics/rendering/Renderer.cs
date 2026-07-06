@@ -1,6 +1,7 @@
 using Howl.Text;
 using N_Howl.N_Graphics;
 using N_Howl.N_Math;
+using N_Howl.N_Memory;
 using N_Howl.N_Windowing;
 using WebGPU = N_Howl.N_Rendering.N_WebGpu;
 
@@ -17,7 +18,7 @@ static Renderer(){
 }
 
 public static void Init(
-    ref Howl.Memory.Arena arena, RendererCtxInitInfo initInfo
+    ref MemoryArena arena, RendererCtxInitInfo initInfo
 ){
     // crash.
     Howl.Debug.Assert(GlobalState.IsInitialised==false, "Attempted to initialise an already initialised renderer.");

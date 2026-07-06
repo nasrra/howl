@@ -3,6 +3,7 @@ using Howl;
 using N_Howl.N_Collections;
 using N_Howl.N_Input;
 using N_Howl.N_Math;
+using N_Howl.N_Memory;
 using N_Howl.N_Windowing;
 
 namespace N_Howl.N_CameraSystem;
@@ -14,7 +15,7 @@ public static class GlobalState{
 }
 
 public static void Init(
-    ref Memory.Arena arena, int cameraCount
+    ref MemoryArena arena, int cameraCount
 ){
     GlobalState.IsIntialised = true;
     Collections.Init(ref GlobalState.Cameras, ref arena, cameraCount);

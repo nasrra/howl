@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using N_Howl.N_Collections;
 using N_Howl.N_Ecs;
+using N_Howl.N_Memory;
 
 namespace Howl.Text;
 
@@ -24,7 +25,7 @@ public unsafe struct String
         }
     }
 
-    public static bool Initialise(ref String str, ref Memory.Arena arena, int length)
+    public static bool Initialise(ref String str, ref MemoryArena arena, int length)
     {
         if (str.IsInitialised)
         {
@@ -32,7 +33,7 @@ public unsafe struct String
             return false;
         }
         str.Length = length;
-        str.Pointer = Memory.PushArrayRaw<char>(ref arena, length);
+        str.Pointer = Memory.PushArray<char>(ref arena, length);
         str.IsInitialised = true;
         return true;
     }
@@ -410,7 +411,7 @@ public unsafe struct String
         public bool IsInitialised;
         String FallbackString;
 
-        public static bool Initialise(ref Allocator allocator, ref Memory.Arena arena, string fallbackString, int maxStringLength)
+        public static bool Initialise(ref Allocator allocator, ref MemoryArena arena, string fallbackString, int maxStringLength)
         {
             if (allocator.IsInitialised)
             {
@@ -425,7 +426,7 @@ public unsafe struct String
             return true;
         }
 
-        public static bool InitialiseSubAllocator(ref Allocator allocator, ref Memory.Arena arena, int subAllocatorStringLength, int subAllocatorMaxStrings)
+        public static bool InitialiseSubAllocator(ref Allocator allocator, ref MemoryArena arena, int subAllocatorStringLength, int subAllocatorMaxStrings)
         {
             if (allocator.SubAllocators[subAllocatorStringLength].IsInitialised)
             {
@@ -486,11 +487,11 @@ public unsafe struct String
         public struct SubAllocator
         {
             public GenIdAllocator GenIdAllocator;
-            public Memory.Arena CharArena;
+            public MemoryArena CharArena;
             public ComponentArray<String> Strings;
             public bool IsInitialised;
 
-            public static bool Initialise(ref SubAllocator allocator, ref Memory.Arena arena, int stringLength, int maxStrings)
+            public static bool Initialise(ref SubAllocator allocator, ref MemoryArena arena, int stringLength, int maxStrings)
             {
                 if (allocator.IsInitialised)
                 {
@@ -499,7 +500,7 @@ public unsafe struct String
 
                 // acquire space for necessary chars.
                 nuint requiredCharSpaceInBytes = (nuint)(maxStrings * stringLength * sizeof(char));
-                Memory.Arena.Initialise(ref allocator.CharArena, ref arena, requiredCharSpaceInBytes);  
+                Memory.Init(ref allocator.CharArena, ref arena, requiredCharSpaceInBytes);  
 
                 // initialise string and gen ids.                
                 GenIdAllocator.Initialise(ref allocator.GenIdAllocator, ref arena, maxStrings);
@@ -536,7 +537,7 @@ public unsafe struct String
             /// </remarks>
             public static ref String GetString(ref SubAllocator allocator, GenId genId, out bool success)
             {
-                if(GenIdAllocator.IsValidId(allocator.GenIdAllocator, genId))
+                if(GenIdAllocator.IsInvalidId(allocator.GenIdAllocator, genId))
                 {
                     success = false;
                     return ref allocator.Strings.Sparse[0]; // explicitly get the nil.

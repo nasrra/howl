@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using N_Howl.N_Collections;
 using System.Numerics;
+using N_Howl.N_Memory;
 
 namespace Howl.Math.Shapes;
 
@@ -38,7 +39,7 @@ public struct Soa_Aabb
 
     public bool IsIntialised;
 
-    public static bool Initialise(ref Soa_Aabb soa, ref Memory.Arena arena, int length)
+    public static bool Initialise(ref Soa_Aabb soa, ref MemoryArena arena, int length)
     {
         if (soa.IsIntialised)
         {

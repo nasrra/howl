@@ -5,8 +5,8 @@ using N_Howl.N_Ecs;
 using N_Howl.N_Math;
 using N_Howl.N_Rendering;
 using N_Howl.N_Graphics;
-using Memory = Howl.Memory;
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace N_Howl.N_Physics;
 
@@ -343,7 +343,7 @@ public static class Physics{
         public int Length;
         public bool IsIntialised;
 
-        public static bool Initialise(ref Soa_Material soa, ref Memory.Arena arena, int length)
+        public static bool Initialise(ref Soa_Material soa, ref MemoryArena arena, int length)
         {
             if (soa.IsIntialised)
             {
@@ -873,7 +873,7 @@ public static class Physics{
         public bool IsInitialised;
 
 
-        public static bool Initialise(ref State state, ref Memory.Arena arena, int maxEntities, int verticesPerShape)
+        public static bool Initialise(ref State state, ref MemoryArena arena, int maxEntities, int verticesPerShape)
         {
             if (state.IsInitialised)
             {
@@ -968,7 +968,7 @@ public static class Physics{
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool SetActive(ref State state, GenId entityId, bool isActive)
     {
-        if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+        if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
         {
             Howl.Debug.Assert(false, "Attempted to set an invalid body active.");
             return false;
@@ -997,7 +997,7 @@ public static class Physics{
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool IsActive(ref State state, GenId entityId){
-        if (GenIdAllocator.IsValidId(state.GenIdAllocator, entityId)){
+        if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId)){
             return false;
         }
         return IsActiveUnsafe(ref state, entityId);
@@ -1024,7 +1024,7 @@ public static class Physics{
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool SetLocalTransform(ref State state, GenId genId, Transform2D transform)
     {
-        if(GenIdAllocator.IsValidId(state.GenIdAllocator, genId))
+        if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, genId))
         {
             Howl.Debug.Assert(false, "Attempted to set the local Transform2D of an invalid gen id");
             return false;
@@ -1072,7 +1072,7 @@ public static class Physics{
 
     public static Vector2 GetLinearVelocity(ref State state, GenId entityId)
     {
-        if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+        if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
         {
             Howl.Debug.Assert(false, "Attempted to get the linear velocity of an invalid body.");
             return default;
@@ -2623,7 +2623,7 @@ public static class Physics{
 
         public static bool Deallocate(ref State state, GenId genId)
         {
-            if (GenIdAllocator.IsValidId(state.GenIdAllocator, genId)){
+            if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, genId)){
                 return false;
             }
             
@@ -2715,7 +2715,7 @@ public static class Physics{
 
         public static bool ImpulseForce(ref State state, Vector2 force, GenId entityId)
         {
-            if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+            if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
             {
                 Howl.Debug.Assert(false, "invalid gen id");
                 return false;
@@ -3181,7 +3181,7 @@ public static class Physics{
         /// <returns>true, if the physics body has collided with another; otherwise false.</returns>
         public static bool HasCollisions(ref State state, GenId physicsBodyId)
         {
-            if (GenIdAllocator.IsValidId(state.GenIdAllocator, physicsBodyId))
+            if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, physicsBodyId))
             {
                 Howl.Debug.Assert(false, "inavalid gen id.");
                 return false;
@@ -3200,7 +3200,7 @@ public static class Physics{
         /// <param name="physicsBodyId">the id of the physics body to execute callbacks for.</param>
         public static unsafe void ExecuteCollisionCallbacks<T>(ref T callbackPacket, Collisions.Callbacks<T> callbacks, State state, GenId physicsBodyId) where T : unmanaged
         {        
-            if (GenIdAllocator.IsValidId(state.GenIdAllocator, physicsBodyId))
+            if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, physicsBodyId))
             {
                 return;
             }
@@ -3284,7 +3284,7 @@ public static class Physics{
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static ref float GetStaticFriction(ref State state, GenId entityId, ref bool isValidOutput)
             {
-                if (GenIdAllocator.IsValidId(state.GenIdAllocator, entityId)){
+                if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId)){
                     Howl.Debug.Assert(false, "invalid gen id.");
                     isValidOutput = false;
                     
@@ -3330,7 +3330,7 @@ public static class Physics{
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static ref float GetKineticFriction(ref State state, GenId entityId, ref bool isValidOutput)
             {
-                if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+                if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
                 {
                     Howl.Debug.Assert(false, "invalid gen id.");
                     isValidOutput = false;
@@ -3374,7 +3374,7 @@ public static class Physics{
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static ref float GetDensity(ref State state, GenId entityId, ref bool isValidOutput)
             {
-                if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+                if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
                 {
                     Howl.Debug.Assert(false, "invalid gen id.");
 
@@ -3417,7 +3417,7 @@ public static class Physics{
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static ref float GetRestitution(ref State state, GenId entityId, ref bool isValidOutput)
             {
-                if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+                if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
                 {                    
                     Howl.Debug.Assert(false, "invalid gen id.");
                     isValidOutput = false;
@@ -3461,7 +3461,7 @@ public static class Physics{
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static bool SetRotationalResponse(ref State state, GenId entityId, bool enabled)
             {
-                if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+                if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
                 {
                     Howl.Debug.Assert(false, "invalid gen id.");
                     return false;
@@ -3492,7 +3492,7 @@ public static class Physics{
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static bool UsesRotationalResponse(ref State state, GenId entityId)
             {
-                if (GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+                if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
                 {
                     Howl.Debug.Assert(false, "invalid gen id");
                     return false;
@@ -3522,7 +3522,7 @@ public static class Physics{
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static bool SetRigidBody(ref State state, GenId entityId, bool enabled)
             {
-                if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+                if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
                 {
                     Howl.Debug.Assert(false, "invalid gen id");
                     return false;
@@ -3552,7 +3552,7 @@ public static class Physics{
             [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
             public static bool IsRigidBody(ref State state, GenId entityId)
             {
-                if(GenIdAllocator.IsValidId(state.GenIdAllocator, entityId))
+                if(GenIdAllocator.IsInvalidId(state.GenIdAllocator, entityId))
                 {
                     Howl.Debug.Assert(false, "invalid gen id");
                     return false;
@@ -3719,7 +3719,7 @@ public static class Physics{
                         return false;
                     } 
                     
-                    if (GenIdAllocator.IsValidId(state.GenIdAllocator, bodyId))
+                    if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, bodyId))
                     {
                         Howl.Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return false;
@@ -3761,7 +3761,7 @@ public static class Physics{
                         return false;
                     }
 
-                    if (GenIdAllocator.IsValidId(state.GenIdAllocator, bodyId))
+                    if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, bodyId))
                     {
                         Howl.Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return false;
@@ -3863,7 +3863,7 @@ public static class Physics{
 
                     PolygonRectangle polyRect = N_Howl.N_Math.Math.CreatePolygonRectangle(shape);
 
-                    if (GenIdAllocator.IsValidId(state.GenIdAllocator, bodyId))
+                    if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, bodyId))
                     {
                         Howl.Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return false;
@@ -3910,7 +3910,7 @@ public static class Physics{
 
                     PolygonRectangle polyRect = N_Howl.N_Math.Math.CreatePolygonRectangle(shape);
                     
-                    if (GenIdAllocator.IsValidId(state.GenIdAllocator, bodyId))
+                    if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, bodyId))
                     {
                         Howl.Debug.LogError("cannot allocate collision shape into a stale body", stackDepth: 2);
                         return false;
@@ -4000,7 +4000,7 @@ public static class Physics{
 
         public static bool Deallocate(ref State state, GenId genId, bool recalculateBodyCenterOfMass)
         {
-            if (GenIdAllocator.IsValidId(state.GenIdAllocator, genId))
+            if (GenIdAllocator.IsInvalidId(state.GenIdAllocator, genId))
             {
                 Howl.Debug.Assert(false, "invalid gen id");
                 return false;
@@ -4542,7 +4542,7 @@ public static class Physics{
 
         public static class Callbacks
         {
-            public static bool Initialise<T>(ref Callbacks<T> callbacks, ref Memory.Arena arena, int maxPhysicsEntities, int maxCallbacks)
+            public static bool Initialise<T>(ref Callbacks<T> callbacks, ref MemoryArena arena, int maxPhysicsEntities, int maxCallbacks)
             {
 
                 if (callbacks.IsInitialised)
@@ -4741,7 +4741,7 @@ public static class Physics{
 
             public bool IsInitialised;
 
-            public static bool Initialise(ref Manifold manifold, ref Memory.Arena arena, int totalColliders)
+            public static bool Initialise(ref Manifold manifold, ref MemoryArena arena, int totalColliders)
             {
                 if (manifold.IsInitialised)
                 {

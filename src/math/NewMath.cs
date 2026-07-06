@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using N_Howl.N_Math;
 using Howl;
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace N_Howl.N_Math; 
 public unsafe static class Math{
@@ -717,7 +718,7 @@ public static void TransformVector(
     div: FsSoa_Vector2
 ##########################################################################################################################################**/
 
-public static void Init(ref FsSoa_Vector2 soa, ref Memory.Arena arena, int entryStride, int maxEntries)
+public static void Init(ref FsSoa_Vector2 soa, ref MemoryArena arena, int entryStride, int maxEntries)
 {
     Debug.Assert(soa.IsIntialised==false, "Already Initialised.");
     soa.IsIntialised = true;
@@ -781,7 +782,7 @@ public static void ClearAppendCounts(ref FsSoa_Vector2 soa)
     div: Soa_Vector2
 ##########################################################################################################################################**/
 
-public static bool Init(ref Soa_Vector2 soa, ref Memory.Arena arena, int length)
+public static bool Init(ref Soa_Vector2 soa, ref MemoryArena arena, int length)
 {
     if (soa.IsIntialised)
     {
@@ -827,7 +828,7 @@ public static void ResetCount(ref Soa_Vector2 soa)
     div: Soa_Transform2D
 ##########################################################################################################################################**/
 
-public static bool Init(ref Soa_Transform2D soa, ref Memory.Arena arena, int length)
+public static bool Init(ref Soa_Transform2D soa, ref MemoryArena arena, int length)
 {
     if (soa.IsInitialised)
     {
@@ -1048,7 +1049,7 @@ public static Transform TransformRelative(
 ##########################################################################################################################################**/
 
 public static bool Init(
-    ref Soa_Aabb soa, ref Memory.Arena arena, int length
+    ref Soa_Aabb soa, ref MemoryArena arena, int length
 )
 {
     if (soa.IsIntialised)

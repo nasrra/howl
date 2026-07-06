@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Howl;
 using N_Howl.N_Math;
+using N_Howl.N_Memory;
 
 namespace N_Howl.N_Collections;
 public unsafe static class Collections{
@@ -34,7 +35,7 @@ fixed(T* ptr = span){
 }}
 
 public static bool Init<T>(
-    ref Array<T> array, ref Memory.Arena arena, int length
+    ref Array<T> array, ref MemoryArena arena, int length
 ) where T : unmanaged{
 
     if (array.IsInitialised){
@@ -42,7 +43,7 @@ public static bool Init<T>(
         return false;
     }
     array.IsInitialised = true;
-    T* ptr = Memory.PushArrayRaw<T>(ref arena, length);
+    T* ptr = Memory.PushArray<T>(ref arena, length);
     array.IsInitialised = true;
     array.Pointer = ptr;
     array.Length = length;
@@ -107,7 +108,7 @@ public static bool Init<T>(
 }
 
 public static bool Init<T>(
-    ref SwapBackArray<T> array, ref Memory.Arena arena, int length
+    ref SwapBackArray<T> array, ref MemoryArena arena, int length
 ) where T : unmanaged{
     
     if (array.IsInitialised){
@@ -115,7 +116,7 @@ public static bool Init<T>(
         return false;
     }
     array.IsInitialised = true;
-    T* ptr = Memory.PushArrayRaw<T>(ref arena, length);
+    T* ptr = Memory.PushArray<T>(ref arena, length);
     array.IsInitialised = true;
     array.Pointer = ptr;
     array.Length = length;
@@ -222,7 +223,7 @@ public static bool Init<T>(
 }
 
 public static bool Init<T>(
-    ref StackArray<T> array, ref Memory.Arena arena, int length
+    ref StackArray<T> array, ref MemoryArena arena, int length
 ) where T : unmanaged{
     
     if (array.IsInitialised){
@@ -230,7 +231,7 @@ public static bool Init<T>(
         return false;
     }
     array.IsInitialised = true;
-    T* ptr = Memory.PushArrayRaw<T>(ref arena, length);
+    T* ptr = Memory.PushArray<T>(ref arena, length);
     array.IsInitialised = true;
     array.Pointer = ptr;
     array.Length = length;
@@ -293,7 +294,7 @@ public static ref T Peek<T>(
 ##########################################################################################################################################**/
 
 public static bool Init<T>(
-    ref ComponentArray<T> array, ref Memory.Arena arena, int length
+    ref ComponentArray<T> array, ref MemoryArena arena, int length
 ) where T : unmanaged{
 
     if (array.IsInitialised){
@@ -507,7 +508,7 @@ public static bool Init<T>(
 }
 
 public static bool Init<T>(
-    ref Buffer<T> buffer, ref Memory.Arena arena, int length
+    ref Buffer<T> buffer, ref MemoryArena arena, int length
 ) where T : unmanaged{
     
     if (buffer.IsInitialised){
@@ -515,7 +516,7 @@ public static bool Init<T>(
         return false;
     }
     buffer.IsInitialised = true;
-    T* ptr = Memory.PushArrayRaw<T>(ref arena, length);
+    T* ptr = Memory.PushArray<T>(ref arena, length);
     buffer.IsInitialised = true;
     buffer.Pointer = ptr;
     buffer.Length = length;
@@ -708,7 +709,7 @@ public static bool UnOrderedInsert<T>(
 ##########################################################################################################################################**/
 
 public static bool Init<T>(
-    ref CategorisedOverlapArray<T> array, ref Memory.Arena arena, int categoryCount, int maxEntries
+    ref CategorisedOverlapArray<T> array, ref MemoryArena arena, int categoryCount, int maxEntries
 ) where T : unmanaged{
 
     if (array.IsInitialised){
@@ -965,7 +966,7 @@ public static bool RemoveAt<T>(
 ##########################################################################################################################################**/
 
 public static bool Init<T>(
-    ref FixedStrideSwapbackArray<T> array, ref Memory.Arena arena, int entryElementCount, int entryAmount 
+    ref FixedStrideSwapbackArray<T> array, ref MemoryArena arena, int entryElementCount, int entryAmount 
 ) where T : unmanaged{
 
     if(array.IsInitialised){
@@ -1025,7 +1026,7 @@ public static int GetFixedStrideArrayAppendIndex(
 ##########################################################################################################################################**/
 
 public static bool Init<T>(
-    ref RunLengthBuffer<T> array, ref Memory.Arena arena, int length
+    ref RunLengthBuffer<T> array, ref MemoryArena arena, int length
 )where T : unmanaged{
 
     if(array.IsInitialised){

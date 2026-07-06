@@ -1,5 +1,6 @@
 
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace Howl.Algorithms.Sorting;
 
@@ -30,7 +31,7 @@ public struct RadixSortBuffer
 
     public bool IsInitialised;
 
-    public static bool Initialise(ref RadixSortBuffer buffer, ref Memory.Arena arena, int length)
+    public static bool Init(ref RadixSortBuffer buffer, ref MemoryArena arena, int length)
     {
         if (buffer.IsInitialised)
         {

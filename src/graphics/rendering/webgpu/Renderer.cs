@@ -7,6 +7,7 @@ using N_Howl.N_Collections;
 using N_Howl.N_Font;
 using N_Howl.N_Graphics;
 using N_Howl.N_Math;
+using N_Howl.N_Memory;
 using N_Howl.N_Windowing;
 using Silk.NET.Core.Native;
 using Debug = Howl.Debug;
@@ -86,7 +87,7 @@ static Renderer(){
 }
 
 public static void InitRenderer(
-    ref RendererCtx ctx, ref Memory.Arena arena, RendererCtxInitInfo info, 
+    ref RendererCtx ctx, ref MemoryArena arena, RendererCtxInitInfo info, 
     WindowManagerInfo windowInfo, uint windowWidth, uint windowHeight
 ){
     // validation steps.
@@ -106,7 +107,7 @@ public static void InitRenderer(
     if(ctx.Instance == null){
         Debug.Panic("Failed to create web gpu instance.");
     }
-    Memory.Arena.Initialise(ref ctx.TransientArena, ref arena, info.TransientArenaSizeInBytes);
+    Memory.Init(ref ctx.TransientArena, ref arena, info.TransientArenaSizeInBytes);
     // order matters here, requesting adapters depends upon the window surface.
     WGpu.InstanceEnumerateAdapterOptions options = default;
     RequestAdapters(ref ctx, ref arena, &options);
@@ -382,7 +383,7 @@ public static void FreeAllResources(
 }
 
 public static void RequestAdapters(
-    ref RendererCtx ctx, ref Memory.Arena arena, WGpu.InstanceEnumerateAdapterOptions* options
+    ref RendererCtx ctx, ref MemoryArena arena, WGpu.InstanceEnumerateAdapterOptions* options
 ){
     Debug.Assert(ctx.Adapters.IsInitialised==false, "Cannot retrieve wep gpu adapters as the renderer context has already done so.");    
     
@@ -451,7 +452,7 @@ public static void RequestAdapters(
 }
 
 public static void RequestDevices(
-    ref RendererCtx ctx, ref Memory.Arena arena
+    ref RendererCtx ctx, ref MemoryArena arena
 ){
     // validation layers.
     Debug.Assert(ctx.Adapters.IsInitialised, 
@@ -1301,9 +1302,9 @@ public static WebGPU.ShaderModule* CreateShaderModule(
 }
 
 public static WebGPU.ShaderModule* LoadShaderModule(
-    ref RendererCtx ctx, String filePath, ref Memory.Arena arena
+    ref RendererCtx ctx, String filePath, ref MemoryArena arena
 ){
-    Memory.Arena.ClearZeroed(ref arena);
+    Memory.ClearZeroed(ref arena);
     long totalBytesRead = 0;
     Howl.IO.File.Read(filePath, ref arena, ref totalBytesRead);
     WebGPU.ShaderModuleDescriptor desc = default;
@@ -1663,7 +1664,7 @@ public static void InitDepthTexture(
 }
 
 public static void InitVirtualTextureManager(
-    ref VirtualTextureManager manager, Device device, ref Memory.Arena arena, Array<ImageTexturesInitInfo> imageInfos, 
+    ref VirtualTextureManager manager, Device device, ref MemoryArena arena, Array<ImageTexturesInitInfo> imageInfos, 
     FontTexturesInitInfo fontInfo, int maxVirtualTextures, int filePathLength
 ){
     // validation steps.
@@ -1744,7 +1745,7 @@ public static void InitVirtualTextureManager(
 ///     Creates a texture array inside a virtual texture array manager to map physical textures to virtual textures when loaded.
 /// </summary>
 public static void InitTextureArray(
-    ref TextureArray array, Device device, ref Memory.Arena arena, WebGPU.TextureFormat format, uint width, uint height, uint layerCount
+    ref TextureArray array, Device device, ref MemoryArena arena, WebGPU.TextureFormat format, uint width, uint height, uint layerCount
 ){
 
     // validation steps.
@@ -1974,7 +1975,7 @@ public static bool LoadFontTexture(
 
 [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 public static bool LoadFontTexture(
-    ref VirtualTextureManager manager, ref Memory.Arena transient,  Device device, int virtualTextureIndex, uint glyphHeightInPixels
+    ref VirtualTextureManager manager, ref MemoryArena transient,  Device device, int virtualTextureIndex, uint glyphHeightInPixels
 ){
     
     /**========================================
@@ -2004,7 +2005,7 @@ public static bool LoadFontTexture(
     Array<byte> textureData = default;
     ref TextureArray fontTextureArray = ref manager.TextureArrays[VirtualTextureManager.FontTextureArrayIndex];
 #pragma warning disable
-    Memory.Arena.ClearZeroed(ref transient);
+    Memory.ClearZeroed(ref transient);
     uint textureWidth = fontTextureArray.Extents.Width;
     uint textureHeight = fontTextureArray.Extents.Height;
     Collections.Init(ref textureData, ref transient, (int)textureWidth * (int)textureHeight); 
@@ -2116,7 +2117,7 @@ public static void InitSampler(
 ##########################################################################################################################################**/
 
 public static void InitSpriteManager(
-    ref SpriteManager manager, Device device, ref Memory.Arena arena, Array<SpriteLayerCreateInfo> layerInfos
+    ref SpriteManager manager, Device device, ref MemoryArena arena, Array<SpriteLayerCreateInfo> layerInfos
 ){
     
     // validation step.

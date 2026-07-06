@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using N_Howl.N_Collections;
+using N_Howl.N_Memory;
 
 namespace Howl.Math;
 
@@ -20,7 +21,7 @@ public struct Soa_Vector2
 
     public bool IsIntialised; 
 
-    public static bool Initialise(ref Soa_Vector2 soa, ref Memory.Arena arena, int length)
+    public static bool Initialise(ref Soa_Vector2 soa, ref MemoryArena arena, int length)
     {
         if (soa.IsIntialised)
         {
