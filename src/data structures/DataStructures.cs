@@ -5,9 +5,10 @@ using N_Howl.N_Graphics;
 using N_Howl.N_Math;
 using N_Howl.N_Collections;
 using N_Howl.N_Memory;
+using System.Runtime.InteropServices;
 
 namespace N_Howl.N_DataStructures;
-public static class DataStructures{
+public unsafe static class DataStructures{
 
 /**##########################################################################################################################################
     div: CategorisedLeafOverlaps.
@@ -1271,16 +1272,117 @@ public static bool IntrusiveListRemoveNode(
         }
     }
 
-
     // deallocate from siblings.
-    ref IntrusiveListNode nextSibling = ref nodes[node.NextSibling];
-    nextSibling.PreviousSibling = node.PreviousSibling;
+    if(node.NextSibling > 0 && node.PreviousSibling > 0){
 
-    ref IntrusiveListNode previousSibling = ref nodes[node.PreviousSibling];
-    previousSibling.NextSibling = node.NextSibling;
+        ref IntrusiveListNode nextSibling = ref nodes[node.NextSibling];
+        nextSibling.PreviousSibling = node.PreviousSibling;
+
+        ref IntrusiveListNode previousSibling = ref nodes[node.PreviousSibling];
+        previousSibling.NextSibling = node.NextSibling;
+    }
 
     End:
-    node.InTree = false;
+    NativeMemory.Clear(Unsafe.AsPointer(ref node), (nuint)sizeof(IntrusiveListNode)); 
+    return true;
+}
+
+/// <returns>
+///     true, if successfully removed from the tree; otherwise false if already removed.
+/// </returns>
+public static bool IntrusiveListRemoveNodeAndChildren(
+    ref IntrusiveList list, int nodeIndex
+){
+    // node cannot be the Nil.
+    if(nodeIndex == 0){
+        System.Diagnostics.Debug.Assert(false, "{nodeIndex} cannot be the Nil element.");
+        return false;
+    }
+
+    ref Array<IntrusiveListNode> nodes = ref list.Nodes;
+    ref Buffer<int> roots = ref list.RootIndices;
+    ref IntrusiveListNode node = ref nodes[nodeIndex];
+
+    if (node.InTree == false)
+    {
+        return false;
+    }
+    
+    int parentIndex = node.Parent;
+    int firstChildIndex = node.FirstChild;
+
+    // deallocate all children.
+    if(node.FirstChild!=0){
+        ref IntrusiveListNode child = ref nodes[node.FirstChild];
+
+        UpdateNodeRecursive(nodes, nodeIndex, node.FirstChild, node.FirstChild);
+
+        void UpdateNodeRecursive(
+            Array<IntrusiveListNode> nodes, int parentIndex, int nodeIndex, int parentFirstChildIndex
+        ){
+
+            ref IntrusiveListNode node = ref nodes[nodeIndex];
+            int firstChildIndex = node.FirstChild;
+            int nextIndex = node.NextSibling;
+            NativeMemory.Clear(Unsafe.AsPointer(ref node), (nuint)sizeof(IntrusiveListNode)); 
+            
+            if(firstChildIndex != 0)
+            {
+                UpdateNodeRecursive(nodes, nodeIndex, firstChildIndex, firstChildIndex);
+            }
+            if(nextIndex == parentFirstChildIndex)
+            {
+                return;
+            }
+            else
+            {
+                UpdateNodeRecursive(nodes, parentIndex, nextIndex, parentFirstChildIndex);
+            }
+        }
+    }
+
+    // deallocate from parent.
+    if(parentIndex != 0)
+    {
+        ref IntrusiveListNode parent = ref nodes[parentIndex];        
+        if(parent.FirstChild == nodeIndex){
+            parent.FirstChild = 0;
+        }
+    }
+    else{
+        switch(list.PreserveRootOrder){
+            case true:
+                // move all root node dense indices backward; reflecting the ordered removal.
+                for(int i = node.RootDenseIndex+1; i < roots.Count; i++){
+                    ref IntrusiveListNode nextRoot = ref nodes[roots[i]];
+                    nextRoot.RootDenseIndex--;
+                }
+                // remove the root index.
+                Collections.OrderedRemoveAt(ref roots, node.RootDenseIndex);
+            break;
+            case false:
+                // remove the node from the roots array.
+                // performing the dense index swap as well.
+                ref IntrusiveListNode lastRoot = ref nodes[roots[roots.Count-1]];
+                lastRoot.RootDenseIndex = node.RootDenseIndex;
+                Collections.UnOrderedRemoveAt(ref roots, node.RootDenseIndex);
+                node.RootDenseIndex = 0;
+            break;
+        }
+    }
+
+    // deallocate from siblings.
+    if(node.NextSibling > 0 && node.PreviousSibling > 0){
+
+        ref IntrusiveListNode nextSibling = ref nodes[node.NextSibling];
+        nextSibling.PreviousSibling = node.PreviousSibling;
+
+        ref IntrusiveListNode previousSibling = ref nodes[node.PreviousSibling];
+        previousSibling.NextSibling = node.NextSibling;
+    }
+
+    // deallocate
+    NativeMemory.Clear(Unsafe.AsPointer(ref node), (nuint)sizeof(IntrusiveListNode)); 
     return true;
 }
 
