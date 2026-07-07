@@ -191,6 +191,14 @@ public struct Vector2{
     public static readonly Vector2 Left     = new(){X = -1};
     public static readonly Vector2 Right    = new(){X = 1};
 
+    public static Vector2 operator-(
+        Vector2 v
+    ){
+        v.X *= -1;
+        v.Y *= -1f;
+        return v;
+    }
+
     public static Vector2 operator+ (
         Vector2 lhs, Vector2 rhs
     ){

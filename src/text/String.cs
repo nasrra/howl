@@ -43,26 +43,37 @@ public unsafe struct String
     ///    <para>This function is intended for a howl string to point to a const System.String.</para>
     ///    <para>If not, ensure that the lifetime of the System.String isnt completed before this.</para>
     /// </remarks>
-    public static bool Initialise(ref String destination, string source)
-    {
-        if (destination.IsInitialised)
-        {
+    public static bool Initialise(
+        ref String dst, string src
+    ){
+    fixed(char* ptr = src){ // <-- this has to be fixed otherwise C# might decide to move the string lol HHAHAHHA :))))) 
+        if (dst.IsInitialised){
             Debug.Panic("Already Initialised");
             return false;
         }
 
-        int length = source.Length;
-        destination.Length = length;
-        destination.Count = length;
+        Initialise(ref dst, ptr, src.Length, src.Length);
+        return true;
+    }}
 
-        fixed (char* p = source)
-        {
-            destination.Pointer = p;
+    /// <remarks>
+    ///    <para>Remarks:</para>
+    ///    <para>This function is intended for a howl string to point to a const System.String.</para>
+    ///    <para>If not, ensure that the lifetime of the System.String isnt completed before this.</para>
+    /// </remarks>
+    public static bool Initialise(
+        ref String dst, string src, int length
+    ){
+    fixed(char* ptr = src){ // <-- this has to be fixed otherwise C# might decide to move the string lol HHAHAHHA :))))) 
+
+        if (dst.IsInitialised){
+            Debug.Panic("Already Initialised");
+            return false;
         }
 
-        destination.IsInitialised = true;
+        Initialise(ref dst, ptr ,N_Howl.N_Math.Math.Clamp(src.Length, src.Length, length), length);
         return true;
-    }
+    }}
 
     public static bool Initialise(ref String destination, char* ptr, int count, int length)
     {

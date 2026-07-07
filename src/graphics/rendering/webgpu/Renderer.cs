@@ -2237,6 +2237,18 @@ public static SpriteId AllocSpriteChain(
     int previousIndex = 0;
     int firstIndex = 0;
     ref StackArray<int> freeIndices = ref manager.SpriteLayers[layer].FreeSpritesIndices;
+
+    // loop back in on itself it the chain sprite is at length 1.
+    if(chainLength == 1){
+        first = AllocSprite(ref manager, layer, ref isValidOutput);
+        firstIndex = GenId.GetIndex(first.GenId);
+        ref ChainSprite chainSprite = ref manager.ChainSprites[firstIndex];        
+        chainSprite.NextSprite = firstIndex;
+        chainSprite.IsInitialised = true;
+        chainSprite.IsFirst = true;
+        goto End;
+    }
+
     for(int i = 0; i < chainLength; i++){
         SpriteId spriteId = AllocSprite(ref manager, layer, ref isValidOutput);
         int index = GenId.GetIndex(spriteId.GenId);
@@ -2266,6 +2278,8 @@ public static SpriteId AllocSpriteChain(
         chainSprite.IsInitialised = true;
         previousIndex = index;
     }
+
+    End:
     return first;
 }
 
