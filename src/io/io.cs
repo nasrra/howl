@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Howl.Text;
+using N_Howl.N_Text;
 using N_Howl.N_Collections;
 
 namespace N_Howl.N_IO;
@@ -16,13 +16,13 @@ public unsafe static class IO{
     public static Image LoadImage(string filePath, ref bool isValidOutput){
     fixed(char* pStr = filePath){
         byte* utf8Path = stackalloc byte [filePath.Length];
-        String.GetBytesUTF8(pStr, filePath.Length, utf8Path);
+        Text.GetBytesUTF8(pStr, filePath.Length, utf8Path);
         return LoadImage(utf8Path, ref isValidOutput);
     }}
 
     public static Image LoadImage(String str, ref bool isValidOutput){
         byte* utf8Path = stackalloc byte[str.Count+1];
-        int written = String.GetBytesUTF8(str.Pointer, str.Count, utf8Path);
+        int written = Text.GetBytesUTF8(str.Pointer, str.Count, utf8Path);
         // add null terminator.
         utf8Path[written] = (byte)'\0';
         return LoadImage(utf8Path, ref isValidOutput);   

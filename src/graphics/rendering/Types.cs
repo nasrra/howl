@@ -1,8 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
-using Howl.Text;
+using N_Howl.N_Text;
 using N_Howl.N_Collections;
 using N_Howl.N_Math;
-using WebGPU = N_Howl.N_Rendering.N_WebGpu;
 
 namespace N_Howl.N_Rendering;
 

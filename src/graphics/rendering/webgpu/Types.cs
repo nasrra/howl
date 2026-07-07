@@ -3,11 +3,11 @@ using WebGPU = Silk.NET.WebGPU;
 using SDL = Silk.NET.SDL;
 using Howl;
 using N_Howl.N_Math;
-using Howl.Text;
 using N_Howl.N_Font;
 using N_Howl.N_Graphics;
 using N_Howl.N_Collections;
 using N_Howl.N_Memory;
+using N_Howl.N_Text;
 
 namespace N_Howl.N_Rendering.N_WebGpu;
 

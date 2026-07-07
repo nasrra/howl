@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Howl.Text;
+using N_Howl.N_Text;
 using N_Howl.N_Collections;
 
 namespace Howl.Unix;
@@ -148,9 +148,9 @@ public unsafe static class File
     public static bool Exists(String filePath)
     {        
         // allocate file path on the stack (+1 for the required null terminator).
-        int byteCount = String.GetByteCountUTF8(filePath);
+        int byteCount = Text.GetByteCountUTF8(filePath);
         byte* utf8Path = stackalloc byte[byteCount + 1];
-        String.GetBytesUTF8(filePath, utf8Path);        
+        Text.GetBytesUTF8(filePath, utf8Path);        
         // CRUCIAL: set the null terminator.
         utf8Path[byteCount] = 0;
 
@@ -169,10 +169,10 @@ public unsafe static class File
     )
     {
         // allocate file path on the stack (+1 for the required null terminator).
-        int byteCount = String.GetByteCountUTF8(pFilePath, filePathLength);
+        int byteCount = Text.GetByteCountUTF8(pFilePath, filePathLength);
         // Crucial: +1 for the null terminator; C# zeroes stack allocs so the final byte will always be zero ('\0')
         byte* utf8Path = stackalloc byte[byteCount + 1];
-        String.GetBytesUTF8(pFilePath, filePathLength, utf8Path);        
+        Text.GetBytesUTF8(pFilePath, filePathLength, utf8Path);        
         
         return Read(utf8Path, destination, destinationLength, openFlags, ref totalBytesReadOutput);
     }
@@ -227,10 +227,10 @@ public unsafe static class File
     public static bool Write(char* pFilePath, int filePathLength, byte* source, long sourceLength, OpenFlags openFlags)
     {
         // allocate file path on the stack (+1 for the required null terminator).
-        int byteCount = String.GetByteCountUTF8(pFilePath, filePathLength);
+        int byteCount = Text.GetByteCountUTF8(pFilePath, filePathLength);
         // Crucial: +1 for the null terminator; C# zeroes stack allocs so the final byte will always be zero ('\0')
         byte* utf8Path = stackalloc byte[byteCount + 1];
-        String.GetBytesUTF8(pFilePath, filePathLength, utf8Path);        
+        Text.GetBytesUTF8(pFilePath, filePathLength, utf8Path);        
         
         return Write(utf8Path, source, sourceLength, openFlags);
     }

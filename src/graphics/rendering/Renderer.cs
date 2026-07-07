@@ -1,4 +1,4 @@
-using Howl.Text;
+using N_Howl.N_Text;
 using N_Howl.N_Graphics;
 using N_Howl.N_Math;
 using N_Howl.N_Memory;

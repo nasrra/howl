@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Howl.Text;
 
 namespace Howl.Math;
 

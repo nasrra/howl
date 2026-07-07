@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Howl;
-using Howl.Text;
+using N_Howl.N_Text;
 using N_Howl.N_Collections;
 using N_Howl.N_Font;
 using N_Howl.N_Graphics;
@@ -1689,7 +1689,7 @@ public static void InitVirtualTextureManager(
         device, WebGPU.BufferUsage.CopySrc | WebGPU.BufferUsage.MapWrite, WebGPU.BufferUsage.CopyDst | WebGPU.BufferUsage.Uniform, (uint)maxVirtualTextures
     );
     for(int i = 0; i < maxVirtualTextures; i++){
-        String.Initialise(ref manager.HostVirtualTextures[i].FilePath, ref arena, filePathLength);
+        Text.Init(ref manager.HostVirtualTextures[i].FilePath, ref arena, filePathLength);
     }
 
     // initialise font virtual textures.
@@ -1854,8 +1854,8 @@ public static bool SetVirtualTextureFilePath(
         Debug.Assert(false, $"Cannot set file path for virtual texture '{virtualTextureId}' as it has already been set.");
         return false;
     }
-    String.Clear(ref dst);
-    String.Append(ref dst, filePath);
+    Text.Clear(ref dst);
+    Text.Push(ref dst, filePath);
     return true;
 }
 
@@ -1896,7 +1896,7 @@ public static bool LoadImageTexture(
     String filePath = manager.HostVirtualTextures[virtualTextureIndex].FilePath;
     N_IO.Image image = N_IO.IO.LoadImage(filePath, ref isValid);
     if(isValid != true){
-        Debug.Panic($"Failed to read image file: '{String.ToSystemString(filePath)}'");
+        Debug.Panic($"Failed to read image file: '{Text.ToSystemString(filePath)}'");
         return false;
     }
     
@@ -1913,7 +1913,7 @@ public static bool LoadImageTexture(
     }
     if(textureArrayBinding == -1){
         Debug.Panic(
-            $"Failed to load image texture; resolution [width = '{width}', height = '{height}'] has not been registered. file path: '{String.ToSystemString(filePath)}'"
+            $"Failed to load image texture; resolution [width = '{width}', height = '{height}'] has not been registered. file path: '{Text.ToSystemString(filePath)}'"
         );
         N_IO.IO.FreeImage(ref image);
         return false;

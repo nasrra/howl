@@ -1,5 +1,5 @@
 using Howl;
-using Howl.Text;
+using N_Howl.N_Text;
 using N_Howl.N_Collections;
 using N_Howl.N_Math;
 using N_Howl.N_Memory;
@@ -17,8 +17,8 @@ public static bool LoadFont(
     uint fontHeightInPixels
 ){
     Buffer<byte> utf8Path = default;
-    Collections.Init(ref utf8Path, stackalloc byte[String.GetByteCountUTF8(filePath)]);
-    String.GetBytesUTF8(filePath, ref utf8Path);
+    Collections.Init(ref utf8Path, stackalloc byte[Text.GetByteCountUTF8(filePath)]);
+    Text.GetBytesUTF8(filePath, ref utf8Path);
 
     nint retrievedFontHeightInPixels = 0;
     bool success = FreeType.LoadFont(

@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Howl.Text;
+using N_Howl.N_Text;
 
 namespace N_Howl.N_Memory;
 public unsafe static class Memory{

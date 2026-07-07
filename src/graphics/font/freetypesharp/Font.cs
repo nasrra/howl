@@ -1,13 +1,11 @@
 using FreeTypeSharp;
 using N_Howl.N_Math;
-using Howl.Text;
 
 using static FreeTypeSharp.FT;
 using static FreeTypeSharp.FT_LOAD;
 using static FreeTypeSharp.FT_Render_Mode_;
 using N_Howl.N_Collections;
 using Howl;
-using System.Runtime.CompilerServices;
 
 namespace N_Howl.N_Font.N_FreeTypeSharp;
 public unsafe static class Font{

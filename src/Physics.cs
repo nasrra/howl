@@ -1,9 +1,7 @@
 using System.Runtime.CompilerServices;
-using Howl.Text;
 using N_Howl.N_DataStructures;
 using N_Howl.N_Ecs;
 using N_Howl.N_Math;
-using N_Howl.N_Rendering;
 using N_Howl.N_Graphics;
 using N_Howl.N_Collections;
 using N_Howl.N_Memory;

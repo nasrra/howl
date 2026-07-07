@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Howl.Text;
+using N_Howl.N_Text;
 using N_Howl.N_Collections;
 using N_Howl.N_Memory;
 
@@ -33,7 +33,7 @@ public unsafe static class File
     public static bool Exists(string filePath)
     {
         String str = default;
-        String.Initialise(ref str, filePath);
+        Text.Init(ref str, filePath);
         return Exists(str);
     }
 

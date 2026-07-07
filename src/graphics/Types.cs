@@ -1,6 +1,3 @@
-using Howl.Text;
-using N_Howl.N_Math;
-using N_Howl.N_Rendering;
 
 namespace N_Howl.N_Graphics;
 
