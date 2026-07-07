@@ -180,6 +180,7 @@ public static void Update(
                 case SDL.Scancode.ScancodeRctrl: Input.SetKeyDown(Key.RightControl, true); break;
                 case SDL.Scancode.ScancodeRshift: Input.SetKeyDown(Key.RightShift, true); break;
                 case SDL.Scancode.ScancodeRalt: Input.SetKeyDown(Key.RightAlt, true); break;
+                case SDL.Scancode.ScancodeReturn: Input.SetKeyDown(Key.Enter, true); break;
             }
         }
 
@@ -267,6 +268,7 @@ public static void Update(
                 case SDL.Scancode.ScancodeRctrl: Input.SetKeyDown(Key.RightControl, false); break;
                 case SDL.Scancode.ScancodeRshift: Input.SetKeyDown(Key.RightShift, false); break;
                 case SDL.Scancode.ScancodeRalt: Input.SetKeyDown(Key.RightAlt, false); break;
+                case SDL.Scancode.ScancodeReturn: Input.SetKeyDown(Key.Enter, false); break;
             }
         }
         if (e.Type == (uint)SDL.EventType.Mousebuttondown) {

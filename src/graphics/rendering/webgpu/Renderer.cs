@@ -2325,7 +2325,7 @@ public static void DeallocSpriteUnsafe(
     ref SpriteManager manager, int spriteIndex, int spriteLayer
 ){
     manager.HostSprites[spriteIndex] = default;
-    manager.DeviceSprites[spriteIndex].State = SpriteState.Deallocated;
+    manager.DeviceSprites[spriteIndex].State = default;
     Collections.Push(ref manager.SpriteLayers[spriteLayer].FreeSpritesIndices, spriteIndex);
 }
 
@@ -2644,7 +2644,7 @@ public static SpriteType GetSpriteType(
 ##########################################################################################################################################**/
 
 /**##########################################################################################################################################
-    div start: SpriteString.
+    div start: Sprite String.
 ##########################################################################################################################################**/
 
 public static bool InitSpriteString(
@@ -3021,8 +3021,7 @@ public static void SetSpriteChainActiveUnsafe(
     int index = firstIndex;
     while(true){
         ref HostSprite host = ref manager.HostSprites[index];
-        ref DeviceSprite device = ref manager.DeviceSprites[index];
-        device.State = isActive? SpriteState.Active : SpriteState.Inactive;
+        SetSpriteActiveUnsafe(ref manager, index, isActive);
         // next loop iteration preperation.
         index = host.NextInChain;
         if(index==firstIndex){
@@ -3067,8 +3066,7 @@ public static void SetSpriteChainMaterialUnsafe(
     int index = firstIndex;
     while(true){
         ref HostSprite host = ref manager.HostSprites[index];
-        ref DeviceSprite device = ref manager.DeviceSprites[index];
-        device.MaterialIndex = materialIndex;
+        SetSpriteMaterialUnsafe(ref manager, index, materialIndex);
         // next loop iteration preperation.
         index = host.NextInChain;
         if(index==firstIndex){
@@ -3085,8 +3083,53 @@ public static void SetSpriteChainVirtualTextureUnsafe(
     int index = firstIndex;
     while(true){
         ref HostSprite host = ref manager.HostSprites[index];
-        ref DeviceSprite device = ref manager.DeviceSprites[index];
-        device.VirtualTextureIndex = virtualTextureIndex;
+        SetSpriteVirtualTextureUnsafe(ref manager, index, virtualTextureIndex);
+        // next loop iteration preperation.
+        index = host.NextInChain;
+        if(index==firstIndex){
+            break;
+        }
+    }
+}
+
+public static bool SetSpriteChainColour(
+    ref RendererCtx ctx, SpriteId spriteId, Colour colour
+){
+    return SetSpriteChainColour(ref ctx.SpriteManager, spriteId, colour);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool SetSpriteChainColour(
+    ref SpriteManager manager, SpriteId spriteId, Colour colour
+){
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation
+        AssertInitialisedSpriteManager(manager);
+        if(manager.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+        ref DeviceSprite device = ref manager.DeviceSprites[firstIndex];
+        if(!IsChainSprite(ref manager.HostSprites[firstIndex])){
+            Debug.Assert(false, $"Attempted {nameof(SetSpriteChainMaterial)} with a non-sprite-chain.");
+            return false;
+        }
+    }
+
+    SetSpriteChainColourUnsafe(ref manager, firstIndex, colour);
+    return true;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void SetSpriteChainColourUnsafe(
+    ref SpriteManager manager, int spriteIndex, Colour colour 
+){
+    int firstIndex = spriteIndex;
+    int index = firstIndex;
+    while(true){
+        ref HostSprite host = ref manager.HostSprites[index];
+        SetSpriteColourUnsafe(ref manager, index, colour);
         // next loop iteration preperation.
         index = host.NextInChain;
         if(index==firstIndex){

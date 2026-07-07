@@ -97,16 +97,16 @@ public unsafe struct String
     *******************/
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool Append(ref String destination, char source)
+    public static bool Append(ref String dst, char src)
     {
-        int newCount = destination.Count + 1;
-        if(newCount > destination.Length)
+        int newCount = dst.Count + 1;
+        if(newCount > dst.Length)
         {
-            System.Diagnostics.Debug.Assert(false, $"String length '{destination.Length}' exceeded, cannot append '{source}' to string '{new System.Span<char>(destination.Pointer, destination.Count)}'");
+            Debug.LogWarning($"string length exceeded; cannot push char '{src}' to string '{ToSystemString(dst)}'");
             return false;
         }
-        destination.Pointer[destination.Count] = source;
-        destination.Count = newCount;
+        dst.Pointer[dst.Count] = src;
+        dst.Count = newCount;
         return true;
     }
 
@@ -254,6 +254,17 @@ public unsafe struct String
         System.Span<char> dest = GetInvalidChars(destination);
         source.TryFormat(dest, out int written, format);        
         destination.Count+=written;                
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void Pop(
+        ref String dst
+    ){
+        dst.Count--;
+        if(dst.Count < 0){
+            Debug.LogWarning($"attempted to {nameof(Pop)}() a zero count String '{(nuint)dst.Pointer}'.");
+        }
+        dst.Count = N_Howl.N_Math.Math.Clamp(dst.Count, 0, dst.Length);
     }
 
     /******************

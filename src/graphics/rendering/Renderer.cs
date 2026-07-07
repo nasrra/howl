@@ -218,6 +218,12 @@ public static bool DeallocSpriteChain(
     return WebGPU.Renderer.DeallocSpriteChain(ref GlobalState.WebGpuCtx, spriteId);
 }
 
+public static bool SetSpriteChainColour(
+    SpriteId spriteId, Colour colour
+){
+    return WebGPU.Renderer.SetSpriteChainColour(ref GlobalState.WebGpuCtx, spriteId, colour);
+}
+
 /**##########################################################################################################################################
     div end: Sprite Chain. 
 ##########################################################################################################################################**/
