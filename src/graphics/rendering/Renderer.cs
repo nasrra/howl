@@ -71,7 +71,7 @@ public static void SetVirtualTextureFilePath(
 }
 
 /**##########################################################################################################################################
-    div: Buffers.
+    div start: Buffers.
 ##########################################################################################################################################**/
 
 public static void WriteToUserUniformBuffer(
@@ -85,6 +85,10 @@ public static void WriteToUserStorageBuffer(
 ){
     WebGPU.Renderer.WriteToUserStorageBuffer(ref GlobalState.WebGpuCtx, uboData, sizeOfBufferInBytes);
 }
+
+/**##########################################################################################################################################
+    div end: Buffers. 
+##########################################################################################################################################**/
 
 /**##########################################################################################################################################
     div start: Sprites.
@@ -110,30 +114,6 @@ public static bool InitSprite(
         ref GlobalState.WebGpuCtx, spriteId, transform, colour, region, 
         colourState, virtualTextureIndex, materialIndex, isActive
     );
-}
-
-public static SpriteId AllocSpriteChain(
-    int chainLength, int layer, ref bool isValidOutput
-){
-    return WebGPU.Renderer.AllocSpriteChain(ref GlobalState.WebGpuCtx, chainLength, layer, ref isValidOutput);
-}
-
-public static bool DeallocSpriteChain(
-    SpriteId spriteId
-){
-    return WebGPU.Renderer.DeallocSpriteChain(ref GlobalState.WebGpuCtx, spriteId);
-}
-
-public static bool InitSpriteString(
-    SpriteId spriteId, String text, Transform transform, int virtualTextureId, int materialId, bool isActive
-){
-    return WebGPU.Renderer.InitSpriteString(ref GlobalState.WebGpuCtx, spriteId, text, transform, virtualTextureId, materialId, isActive);
-}
-
-public static SpriteId AllocateOneFrameSprite(
-    int layer, ref bool isValidOutput
-){
-    return WebGPU.Renderer.AllocOneFrameSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
 }
 
 public static bool SetSpriteTransform(
@@ -166,12 +146,6 @@ public static bool SetSpriteColour(
     return WebGPU.Renderer.SetSpriteColour(ref GlobalState.WebGpuCtx, spriteId, colour);
 }
 
-public static bool SetSpriteStringTransform(
-    SpriteId spriteId, Transform transform
-){
-    return WebGPU.Renderer.SetSpriteStringTransform(ref GlobalState.WebGpuCtx, spriteId, transform);
-}
-
 public static SpriteType GetSpriteType(
     SpriteId spriteId, ref bool isValidOutput 
 ){
@@ -186,6 +160,66 @@ public static bool SetSpriteActive(
 
 /**##########################################################################################################################################
     div end: Sprites. 
+##########################################################################################################################################**/
+
+/**##########################################################################################################################################
+    div start: One Frame Sprites. 
+##########################################################################################################################################**/
+
+public static SpriteId AllocateOneFrameSprite(
+    int layer, ref bool isValidOutput
+){
+    return WebGPU.Renderer.AllocOneFrameSprite(ref GlobalState.WebGpuCtx, layer, ref isValidOutput);
+}
+
+/**##########################################################################################################################################
+    div end: One Frame Sprites. 
+##########################################################################################################################################**/
+
+/**##########################################################################################################################################
+    div start: Sprite String. 
+##########################################################################################################################################**/
+
+public static bool InitSpriteString(
+    SpriteId spriteId, String text, Transform transform, int virtualTextureId, int materialId, bool isActive
+){
+    return WebGPU.Renderer.InitSpriteString(ref GlobalState.WebGpuCtx, spriteId, text, transform, virtualTextureId, materialId, isActive);
+}
+
+public static bool SetSpriteStringTransform(
+    SpriteId spriteId, Transform transform
+){
+    return WebGPU.Renderer.SetSpriteStringTransform(ref GlobalState.WebGpuCtx, spriteId, transform);
+}
+
+public static bool SetSpriteStringText(
+    SpriteId spriteId, String text
+){
+    return WebGPU.Renderer.SetSpriteStringText(ref GlobalState.WebGpuCtx, spriteId, text);
+}
+
+/**##########################################################################################################################################
+    div end: Sprite String. 
+##########################################################################################################################################**/
+
+/**##########################################################################################################################################
+    div start: Sprite Chain. 
+##########################################################################################################################################**/
+
+public static SpriteId AllocSpriteChain(
+    int chainLength, int layer, ref bool isValidOutput
+){
+    return WebGPU.Renderer.AllocSpriteChain(ref GlobalState.WebGpuCtx, chainLength, layer, ref isValidOutput);
+}
+
+public static bool DeallocSpriteChain(
+    SpriteId spriteId
+){
+    return WebGPU.Renderer.DeallocSpriteChain(ref GlobalState.WebGpuCtx, spriteId);
+}
+
+/**##########################################################################################################################################
+    div end: Sprite Chain. 
 ##########################################################################################################################################**/
 
 /**##########################################################################################################################################

@@ -310,6 +310,48 @@ public struct VirtualTextureManager{
     div end: Virtual Textures. 
 ##########################################################################################################################################**/
 
+/**##########################################################################################################################################
+    div start: Sprite. 
+##########################################################################################################################################**/
+
+public struct SpriteManager{
+    /// <remarks>
+    ///    <para><b>Remarks:</b></para>
+    ///     <list type = "bullet">
+    ///         <item>Contains a <c>Nil</c> element.</item>    
+    ///         <item>Elements vertically align with <c>HostSprites</c> and <c>SpriteGenerations</c>.</item>    
+    ///     </list>
+    /// </remarks>
+    public Array<DeviceSprite> DeviceSprites;
+    /// <remarks>
+    ///    <para><b>Remarks:</b></para>
+    ///     <list type = "bullet">
+    ///         <item>Contains a <c>Nil</c> element.</item>    
+    ///         <item>Elements vertically align with <c>DeviceSprites</c> and <c>SpriteGenerations</c>.</item>    
+    ///     </list>
+    /// </remarks>
+    public Array<HostSprite> HostSprites;
+    /// <remarks>
+    ///    <para><b>Remarks:</b></para>
+    ///     <list type = "bullet">
+    ///         <item>Contains a <c>Nil</c> element.</item>    
+    ///         <item>Elements vertically align with <c>HostSprites</c> and <c>DeviceSprites</c>.</item>    
+    ///     </list>
+    /// </remarks>
+    public Array<int> SpriteGenerations;
+    /// <summary>
+    ///     The indices of sprites in the <c>Sprites</c> array that are active for a single frame then deallocated one completed.
+    /// </summary>
+    public StackArray<SpriteId> OneFrameSpritesIndices;
+    /// <summary>
+    ///     A scratch buffer for all the sorted sprites.
+    /// </summary>
+    public Array<DeviceSprite> SortedSprites;
+    public Array<SpriteLayer> SpriteLayers;
+    public Buffer SpriteBuffer;
+    public bool IsInitialised;
+}
+
 /**
     WGSL requires that the total size of a struct must be a multiple of its largest member's alignment
 
@@ -317,7 +359,7 @@ public struct VirtualTextureManager{
     https://www.w3.org/TR/WGSL/#alignment-and-size
 **/
 [StructLayout(LayoutKind.Sequential, Size = 128)]
-public unsafe struct Sprite : System.IComparable<Sprite>{
+public unsafe struct DeviceSprite : System.IComparable<DeviceSprite>{
     /// <summary>
     ///     The maximum amount of sprites a shader can store.
     /// </summary>
@@ -339,7 +381,7 @@ public unsafe struct Sprite : System.IComparable<Sprite>{
     public int Layer;
 
     public int CompareTo(
-        Sprite other
+        DeviceSprite other
     ){
         /**
             Sorts sprites in descending order by their Z translation value. Note that this is specically so that transparent objects 
@@ -351,58 +393,23 @@ public unsafe struct Sprite : System.IComparable<Sprite>{
     }
 }
 
+public unsafe struct HostSprite{
+    /// <summary>
+    ///     The positional offset to place this of this glyph within the text/sentence.
+    /// </summary>
+    public Vector2 GlyphOffset;
+    /// <summary>
+    ///     The size - in pixels - of the glyph rectangle on the texture.
+    /// </summary>
+    public Vector2 GlyphQuadSize;
+    public int NextInChain;
+    public bool IsFirstInChain;
+}
+
 public enum SpriteState : int{
     Deallocated = 0,
     Inactive = 1,
     Active = 2
-}
-
-public struct SpriteManager{
-    /// <remarks>
-    ///    <para><b>Remarks:</b></para>
-    ///     <list type = "bullet">
-    ///         <item>Contains a <c>Nil</c> element.</item>    
-    ///         <item>Elements vertically align with <c>GlyphSprites</c>, <c>ChainSprites</c> and <c>SpriteGenerations</c>.</item>    
-    ///     </list>
-    /// </remarks>
-    public Array<Sprite> Sprites;
-    /// <remarks>
-    ///    <para><b>Remarks:</b></para>
-    ///     <list type = "bullet">
-    ///         <item>Contains a <c>Nil</c> element.</item>    
-    ///         <item>Elements vertically align with <c>Sprites</c>, <c>ChainSprites</c> and <c>GlyphSprites</c>.</item>    
-    ///     </list>
-    /// </remarks>
-    public Array<int> SpriteGenerations;
-    /// <remarks>
-    ///    <para><b>Remarks:</b></para>
-    ///     <list type = "bullet">
-    ///         <item>Contains a <c>Nil</c> element.</item>
-    ///         <item>Elements are associated as a circular linked list.</item>
-    ///         <item>Elements vertically align with <c>Sprites</c>, <c>GlyphSprites</c> and <c>SpriteGenerations</c>.</item>    
-    ///     </list>
-    /// </remarks>
-    public Array<ChainSprite> ChainSprites;
-    /// <remarks>
-    ///    <para><b>Remarks:</b></para>
-    ///     <list type = "bullet">
-    ///         <item>Contains a <c>Nil</c> element.</item>
-    ///         <item>Elements are associated as a circular linked list.</item>
-    ///         <item>Elements vertically align with <c>Sprites</c>, <c>ChainSprites</c> and <c>SpriteGenerations</c>.</item>    
-    ///     </list>
-    /// </remarks>
-    public Array<GlyphSprite> GlyphSprites;
-    /// <summary>
-    ///     The indices of sprites in the <c>Sprites</c> array that are active for a single frame then deallocated one completed.
-    /// </summary>
-    public StackArray<SpriteId> OneFrameSpritesIndices;
-    /// <summary>
-    ///     A scratch buffer for all the sorted sprites.
-    /// </summary>
-    public Array<Sprite> SortedSprites;
-    public Array<SpriteLayer> SpriteLayers;
-    public Buffer SpriteBuffer;
-    public bool IsInitialised;
 }
 
 public struct SpriteLayer{
@@ -410,29 +417,9 @@ public struct SpriteLayer{
     public StackArray<int> FreeSpritesIndices;
 }
 
-public struct ChainSprite{
-    /// <summary>
-    ///     The index of the next glyph sprite associated with this one.
-    /// </summary>
-    public int NextSprite;
-    /// <summary>
-    ///     Whether or not this is the first sprite in the sprite chain.
-    /// </summary>
-    public bool IsFirst;
-    public bool IsInitialised;
-}
-
-public struct GlyphSprite{
-    /// <summary>
-    ///     The positional offset to place this of this glyph within the text/sentence.
-    /// </summary>
-    public Vector2 Offset;
-    /// <summary>
-    ///     The size - in pixels - of the glyph rectangle on the texture.
-    /// </summary>
-    public Vector2 Size;
-    public bool IsInitialised;
-}
+/**##########################################################################################################################################
+    div end: Sprites;
+##########################################################################################################################################**/
 
 public unsafe struct WindowSurface{
     public WebGPU.Surface* Surface;

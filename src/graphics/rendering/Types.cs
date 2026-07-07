@@ -101,6 +101,6 @@ public enum ColourState : int{
 }
 
 public enum SpriteType : byte{
-    Image,
-    Glyph
+    Solo,
+    Chain
 }

@@ -122,7 +122,7 @@ public static void InitRenderer(
     );
     InitSpriteManager(ref ctx.SpriteManager, device, ref arena, info.SpriteLayerCreateInfos);
     InitVertexBuffer(ref ctx);
-    InitIndexBuffer(ref ctx, ctx.SpriteManager.Sprites.Length);
+    InitIndexBuffer(ref ctx, ctx.SpriteManager.DeviceSprites.Length);
     InitUserUniformBuffer(ref ctx, info.MaxUserUniformBufferSizeInBytes);
     InitUserStorageBuffer(ref ctx, info.MaxUserStorageBufferSizeInBytes);
     LinkToWindow(ref ctx, windowInfo, windowWidth, windowHeight);
@@ -165,9 +165,9 @@ public static void DrawRenderer(
         but that depends entirely upon how many sprites the game is actually going to have.
     **/
     // prepare for sorting.
-    System.Span<Sprite> span = new(ctx.SpriteManager.SortedSprites.Pointer, ctx.SpriteManager.SortedSprites.Length);
+    System.Span<DeviceSprite> span = new(ctx.SpriteManager.SortedSprites.Pointer, ctx.SpriteManager.SortedSprites.Length);
     Collections.ClearZeroed(ctx.SpriteManager.SortedSprites);
-    Memory.Copy<Sprite>((byte*)ctx.SpriteManager.Sprites.Pointer, (byte*)ctx.SpriteManager.SortedSprites.Pointer, ctx.SpriteManager.Sprites.Length);
+    Memory.Copy<DeviceSprite>((byte*)ctx.SpriteManager.DeviceSprites.Pointer, (byte*)ctx.SpriteManager.SortedSprites.Pointer, ctx.SpriteManager.DeviceSprites.Length);
     /**
         sort sprites by their z position within their local layer groups.
 
@@ -188,7 +188,7 @@ public static void DrawRenderer(
     for(int i = 0; i < ctx.SpriteManager.SpriteLayers.Length; i++){
         ref SpriteLayer layer = ref ctx.SpriteManager.SpriteLayers[i];
         void* ptr = ctx.SpriteManager.SortedSprites.Pointer + ptrOffset;
-        System.Span<Sprite> spriteSpan = new(ptr, layer.MaxSprites);
+        System.Span<DeviceSprite> spriteSpan = new(ptr, layer.MaxSprites);
         System.MemoryExtensions.Sort(spriteSpan);
         // note; add just the stride as C# automatically incrrements by sizeof(T) for typed pointers (Sprite*).
         ptrOffset += layer.MaxSprites;
@@ -256,7 +256,7 @@ public static void DrawRenderer(
         WebGPUApi.RenderPassEncoderSetBindGroup(renderPass, 1, ctx.GraphicsPipeline.BindGroup1, 0, null);
         WebGPUApi.RenderPassEncoderSetBindGroup(renderPass, 2, ctx.GraphicsPipeline.BindGroup2, 0, null);
         WebGPUApi.RenderPassEncoderDrawIndexed(
-            renderPass, indexCount: 6, instanceCount: (uint)ctx.SpriteManager.Sprites.Length, firstIndex: 0, baseVertex: 0, firstInstance: 0
+            renderPass, indexCount: 6, instanceCount: (uint)ctx.SpriteManager.DeviceSprites.Length, firstIndex: 0, baseVertex: 0, firstInstance: 0
         );
         WebGPUApi.RenderPassEncoderEnd(renderPass);
         WebGPUApi.RenderPassEncoderRelease(renderPass);
@@ -1066,7 +1066,7 @@ fixed(byte* fragShaderEntryPoint = FragShaderEntryPoint){
                 spriteSSBOEntry.Binding = (uint)ShaderBinding.SpritesStorage;
                 spriteSSBOEntry.Buffer = ctx.SpriteManager.SpriteBuffer.Device;
                 spriteSSBOEntry.Offset = 0;
-                spriteSSBOEntry.Size = (uint)(sizeof(Sprite) * ctx.SpriteManager.Sprites.Length);
+                spriteSSBOEntry.Size = (uint)(sizeof(DeviceSprite) * ctx.SpriteManager.DeviceSprites.Length);
 
                 // create the bind group.
                 WebGPU.BindGroupDescriptor bindGroup0Desc = default;
@@ -2113,7 +2113,7 @@ public static void InitSampler(
 }
 
 /**##########################################################################################################################################
-    div start: SPRITES
+    div start: Sprite Manager.
 ##########################################################################################################################################**/
 
 public static void InitSpriteManager(
@@ -2134,22 +2134,21 @@ public static void InitSpriteManager(
     }
 
     // this should be an immediate crash.
-    Debug.Assert(maxSprites<=Sprite.MaxAmount, $"Web GPU sprite manager cannot be initialised with more than '{Sprite.MaxAmount}'; user requested '{maxSprites}'.");
+    Debug.Assert(maxSprites<=DeviceSprite.MaxAmount, $"Web GPU sprite manager cannot be initialised with more than '{DeviceSprite.MaxAmount}'; user requested '{maxSprites}'.");
     // this should pass.
     Debug.Assert(maxSprites>=2, "Web GPU sprite manager must be initialised with two or more sprites.");
-    maxSprites = Math.Clamp(maxSprites, 2, Sprite.MaxAmount);
+    maxSprites = Math.Clamp(maxSprites, 2, DeviceSprite.MaxAmount);
 
-    manager.SpriteBuffer = CreateBuffer<Sprite>(
+    manager.SpriteBuffer = CreateBuffer<DeviceSprite>(
         device, WebGPU.BufferUsage.CopySrc | WebGPU.BufferUsage.MapWrite, 
         WebGPU.BufferUsage.CopyDst | WebGPU.BufferUsage.Storage, (uint)maxSprites
     );
-    Collections.Init(ref manager.Sprites, ref arena, maxSprites);
+    Collections.Init(ref manager.DeviceSprites, ref arena, maxSprites);
+    Collections.Init(ref manager.HostSprites, ref arena, maxSprites);
     Collections.Init(ref manager.SpriteGenerations, ref arena, maxSprites);
-    Collections.Init(ref manager.ChainSprites, ref arena, maxSprites);
     Collections.Init(ref manager.SortedSprites, ref arena, maxSprites);
     Collections.Init(ref manager.SpriteLayers, ref arena, layerInfos.Length);
     Collections.Init(ref manager.OneFrameSpritesIndices, ref arena, maxSprites);
-    Collections.Init(ref manager.GlyphSprites, ref arena, maxSprites);
     // exclude the Nil sprite.
     int freeIndex = 1;
     for(int i = 0; i < manager.SpriteLayers.Length; i++){
@@ -2176,6 +2175,44 @@ public static void InitSpriteManager(
     manager.IsInitialised = true;
 }
 
+public static void FreeSpriteManagerResources(
+    ref SpriteManager manager
+){
+    FreeBufferResources(ref manager.SpriteBuffer);
+}
+
+/**##########################################################################################################################################
+    div end: Sprite Manager. 
+##########################################################################################################################################**/
+
+/**##########################################################################################################################################
+    div start: One Frame Sprite. 
+##########################################################################################################################################**/
+
+public static SpriteId AllocOneFrameSprite(
+    ref RendererCtx ctx, int layer, ref bool isValidOutput
+){
+    return AllocOneFrameSprite(ref ctx.SpriteManager, layer, ref isValidOutput);
+}
+
+public static SpriteId AllocOneFrameSprite(
+    ref SpriteManager manager, int layer, ref bool isValidOutput
+){
+    SpriteId spriteId = AllocSprite(ref manager, layer, ref isValidOutput);
+    if(isValidOutput){
+        Collections.Push(ref manager.OneFrameSpritesIndices, spriteId);
+    } 
+    return spriteId;
+}
+
+/**##########################################################################################################################################
+    div end: One Frame Sprite. 
+##########################################################################################################################################**/
+
+/**##########################################################################################################################################
+    div start: Sprites. 
+##########################################################################################################################################**/
+
 public static SpriteId AllocSprite(
     ref RendererCtx ctx, int layer, ref bool isValidOutput
 ){
@@ -2200,87 +2237,12 @@ public static SpriteId AllocSprite(
     }
 
     int spriteIndex = Collections.Pop(ref freeIndices);
-    ref Sprite sprite = ref manager.Sprites[spriteIndex]; 
+    ref DeviceSprite sprite = ref manager.DeviceSprites[spriteIndex]; 
     sprite.State = SpriteState.Inactive;
     sprite.Layer = layer;
     isValidOutput = true;
     // identity matrix.
     return new(){GenId = new(spriteIndex, manager.SpriteGenerations[spriteIndex]), Layer = layer};
-}
-
-public static SpriteId AllocOneFrameSprite(
-    ref RendererCtx ctx, int layer, ref bool isValidOutput
-){
-    return AllocOneFrameSprite(ref ctx.SpriteManager, layer, ref isValidOutput);
-}
-
-public static SpriteId AllocOneFrameSprite(
-    ref SpriteManager manager, int layer, ref bool isValidOutput
-){
-    SpriteId spriteId = AllocSprite(ref manager, layer, ref isValidOutput);
-    if(isValidOutput){
-        Collections.Push(ref manager.OneFrameSpritesIndices, spriteId);
-    } 
-    return spriteId;
-}
-
-public static SpriteId AllocSpriteChain(
-    ref RendererCtx ctx, int chainLength, int layer, ref bool isValidOutput
-){
-    return AllocSpriteChain(ref ctx.SpriteManager, chainLength, layer, ref isValidOutput);
-}
-
-public static SpriteId AllocSpriteChain(
-    ref SpriteManager manager, int chainLength, int layer, ref bool isValidOutput
-){
-    SpriteId first = default;
-    int previousIndex = 0;
-    int firstIndex = 0;
-    ref StackArray<int> freeIndices = ref manager.SpriteLayers[layer].FreeSpritesIndices;
-
-    // loop back in on itself it the chain sprite is at length 1.
-    if(chainLength == 1){
-        first = AllocSprite(ref manager, layer, ref isValidOutput);
-        firstIndex = GenId.GetIndex(first.GenId);
-        ref ChainSprite chainSprite = ref manager.ChainSprites[firstIndex];        
-        chainSprite.NextSprite = firstIndex;
-        chainSprite.IsInitialised = true;
-        chainSprite.IsFirst = true;
-        goto End;
-    }
-
-    for(int i = 0; i < chainLength; i++){
-        SpriteId spriteId = AllocSprite(ref manager, layer, ref isValidOutput);
-        int index = GenId.GetIndex(spriteId.GenId);
-        ref ChainSprite previousSprite = ref manager.ChainSprites[previousIndex];
-        ref ChainSprite chainSprite = ref manager.ChainSprites[index];
-        if(i==0){
-            first = spriteId;
-            firstIndex = index;
-            chainSprite.IsFirst = true;
-        }
-        else if(i==chainLength-1){
-            // maintain the circular linked list.
-            previousSprite.NextSprite = firstIndex;
-            chainSprite.IsFirst = false;
-        }
-        else{
-            // maintain the circular linked list.
-            previousSprite.NextSprite = index;
-            chainSprite.IsFirst = false;
-        }
-        if(isValidOutput == false){
-            Debug.Assert(false, $"Insufficient free sprites on sprite layer '{layer}' to accomodate a the full sprite chain of length '{chainLength}'."); 
-            // maintain the circular linked list even on a fail case.
-            previousSprite.NextSprite = firstIndex;
-            return first;
-        }
-        chainSprite.IsInitialised = true;
-        previousIndex = index;
-    }
-
-    End:
-    return first;
 }
 
 public static bool InitSprite(
@@ -2345,7 +2307,7 @@ public static bool DeallocSprite(
         Debug.Panic("Web GPU attempted to deallocate a sprite with a stale index.");
         return false;
     }
-    ref Sprite sprite = ref manager.Sprites[index];
+    ref DeviceSprite sprite = ref manager.DeviceSprites[index];
     if(sprite.State == SpriteState.Deallocated){
         Debug.Panic("Web GPU attempted to deallocate a sprite that has already been deallocated.");
         return false;
@@ -2362,7 +2324,8 @@ public static bool DeallocSprite(
 public static void DeallocSpriteUnsafe(
     ref SpriteManager manager, int spriteIndex, int spriteLayer
 ){
-    manager.Sprites[spriteIndex].State = SpriteState.Deallocated;
+    manager.HostSprites[spriteIndex] = default;
+    manager.DeviceSprites[spriteIndex].State = SpriteState.Deallocated;
     Collections.Push(ref manager.SpriteLayers[spriteLayer].FreeSpritesIndices, spriteIndex);
 }
 
@@ -2407,7 +2370,7 @@ public static void SetSpriteActiveUnsafe(
 public static void SetSpriteActiveUnsafe(
     ref SpriteManager manager, int spriteIndex, bool isActive
 ){
-    manager.Sprites[spriteIndex].State = isActive? SpriteState.Active : SpriteState.Inactive;
+    manager.DeviceSprites[spriteIndex].State = isActive? SpriteState.Active : SpriteState.Inactive;
 }
 
 public static bool SetSpriteRegion(
@@ -2446,7 +2409,7 @@ public static void SetSpriteRegionUnsafe(
 public static void SetSpriteRegionUnsafe(
     ref SpriteManager manager, int spriteIndex, Region region
 ){
-    manager.Sprites[spriteIndex].Region = region;
+    manager.DeviceSprites[spriteIndex].Region = region;
 }
 
 public static bool SetSpriteTransform(
@@ -2482,7 +2445,7 @@ public static void SetSpriteTransformUnsafe(
 public static void SetSpriteTransformUnsafe(
     ref SpriteManager manager, int spriteIndex, Transform transform
 ){
-    manager.Sprites[spriteIndex].Transform = Math.CreateMatrix(transform);
+    manager.DeviceSprites[spriteIndex].Transform = Math.CreateMatrix(transform);
 }
 
 public static bool SetSpriteMaterial(
@@ -2524,7 +2487,7 @@ public static void SetSpriteMaterialUnsafe(
 public static void SetSpriteMaterialUnsafe(
     ref SpriteManager manager, int spriteIndex, int materialIndex
 ){
-    manager.Sprites[spriteIndex].MaterialIndex = materialIndex;
+    manager.DeviceSprites[spriteIndex].MaterialIndex = materialIndex;
 }
 
 public static bool SetSpriteVirtualTexture(
@@ -2562,7 +2525,7 @@ public static void SetSpriteVirtualTextureUnsafe(
 public static void SetSpriteVirtualTextureUnsafe(
     ref SpriteManager manager, int spriteIndex, int virtualTextureIndex
 ){
-    manager.Sprites[spriteIndex].VirtualTextureIndex = virtualTextureIndex;
+    manager.DeviceSprites[spriteIndex].VirtualTextureIndex = virtualTextureIndex;
 }
 
 public static bool SetSpriteColour(
@@ -2610,7 +2573,7 @@ public static void SetSpriteColourUnsafe(
 public static void SetSpriteColourUnsafe(
     ref SpriteManager manager, int spriteIndex, Colour colour
 ){
-    manager.Sprites[spriteIndex].Colour = colour;
+    manager.DeviceSprites[spriteIndex].Colour = colour;
 }
 
 public static bool SetSpriteColourState(
@@ -2647,8 +2610,42 @@ public static void SetSpriteColourStateUnsafe(
 public static void SetSpriteColourStateUnsafe(
     ref SpriteManager manager, int spriteIndex, ColourState colourState
 ){
-    manager.Sprites[spriteIndex].ColourState = (int)colourState;
+    manager.DeviceSprites[spriteIndex].ColourState = (int)colourState;
 }
+
+public static SpriteType GetSpriteType(
+    ref RendererCtx ctx, SpriteId spriteId, ref bool isValidOutput
+){
+    return GetSpriteType(ref ctx.SpriteManager, spriteId, ref isValidOutput);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static SpriteType GetSpriteType(
+    ref SpriteManager manager, SpriteId spriteId, ref bool isValidOutput
+){
+    int index = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation
+        AssertInitialisedSpriteManager(manager);
+        if(manager.SpriteGenerations[index] != generation){
+            isValidOutput = false;
+            return default;
+        }
+    }
+
+    if(IsChainSprite(ref manager.HostSprites[index])) 
+    return SpriteType.Chain;
+    return SpriteType.Solo;
+}
+
+/**##########################################################################################################################################
+    div end: Sprites
+##########################################################################################################################################**/
+
+/**##########################################################################################################################################
+    div start: SpriteString.
+##########################################################################################################################################**/
 
 public static bool InitSpriteString(
     ref RendererCtx ctx, SpriteId spriteId, String text, Transform transform, int virtualTextureIndex, int materialIndex, bool isActive
@@ -2671,7 +2668,7 @@ public static bool InitSpriteString(
         if(sprites.SpriteGenerations[firstIndex] != generation){
             return false;
         }
-        if(!sprites.ChainSprites[firstIndex].IsInitialised){
+        if(!IsChainSprite(ref sprites.HostSprites[firstIndex])){
             Debug.Assert(false, $"Attempted {nameof(InitSpriteString)} with a non-sprite-chain.");
             return false;
         }
@@ -2681,23 +2678,153 @@ public static bool InitSpriteString(
         }
     }
 
-    int index = firstIndex;
-    Vector2 advance = default;
-    ref FontData fontData = ref textures.HostVirtualTextures[virtualTextureIndex].FontData;
-    Vector2I maxGlyphSize = new(){X = (int)fontData.MaxGlyphHeightInPixels, Y = (int)fontData.MaxGlyphHeightInPixels};
-    for(int i = 0; i < text.Count; i++){    
+    /**
+        Order Matters Here:
+            virtual texture -> text -> transform.
+    **/
+    SetSpriteChainVirtualTextureUnsafe(ref sprites, firstIndex, virtualTextureIndex);
+    SetSpriteStringTextUnsafe(ref sprites, ref textures, firstIndex, text);
+    SetSpriteStringTransformUnsafe(ref sprites, firstIndex, transform);
+    SetSpriteChainActiveUnsafe(ref sprites, firstIndex, isActive);
+    SetSpriteChainMaterialUnsafe(ref sprites, firstIndex, materialIndex);
+    return true;
+}
 
-        char c = text[i];
-        if(c=='\n'){
-            advance.X = 0;
-            advance.Y -= fontData.MaxGlyphHeightInPixels;
-            continue;
+public static bool SetSpriteStringTransform(
+    ref RendererCtx ctx,  SpriteId spriteId, Transform transform
+){
+    return SetSpriteStringTransform(ref ctx.SpriteManager, spriteId, transform);
+}
+
+public static bool SetSpriteStringTransform(
+    ref SpriteManager manager,  SpriteId spriteId, Transform transform
+){
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    ref HostSprite sprite = ref manager.HostSprites[firstIndex];
+    { // validation
+        AssertInitialisedSpriteManager(manager);
+        if(manager.SpriteGenerations[firstIndex] != generation){
+            return false;
         }
+        if(!IsFirstInChain(ref sprite)){
+            Debug.Assert(false, $"Attempted {nameof(SetSpriteStringTransform)} with a sprite that isnt the root of a chain sprite.");
+            return false;
+        }
+    }
+
+    SetSpriteStringTransformUnsafe(ref manager, firstIndex, transform);
+    return true;
+}
+
+public static void SetSpriteStringTransformUnsafe(
+    ref SpriteManager manager, int spriteIndex, Transform transform
+){
+    int firstIndex = spriteIndex;
+    int index = firstIndex;
+    while(true){
+
+        ref HostSprite sprite = ref manager.HostSprites[index];
+        Transform glyphTransform = default;
+        // Apply the base transform's scale to the glyph's dimensions
+        glyphTransform.Scale = transform.Scale * new Vector3(){X = sprite.GlyphQuadSize.X, Y = sprite.GlyphQuadSize.Y, Z = 1.0f};
+
+        // Position needs to inherit the base transform's position plus our offset scaled by the base scale
+        glyphTransform.Position = transform.Position + (sprite.GlyphOffset * transform.Scale);
+        
+        SetSpriteTransformUnsafe(ref manager, index, glyphTransform);
+
+        // next loop iteration preperation.
+        index = sprite.NextInChain;
+        if(index==firstIndex){
+            break;
+        }
+    }
+}
+
+public static bool SetSpriteStringVirtualTexture(
+    ref SpriteManager sprites, ref VirtualTextureManager textures, SpriteId spriteId, int virtualTextureIndex
+){
+
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+    ref HostVirtualTexture vT = ref textures.HostVirtualTextures[virtualTextureIndex];
+
+    { // validation
+        AssertInitialisedSpriteManager(sprites);
+        if(sprites.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+        if(!IsChainSprite(ref sprites.HostSprites[firstIndex])){
+            Debug.Assert(false, $"Attempted {nameof(InitSpriteString)} with a non-sprite-chain.");
+            return false;
+        }
+        if(vT.TextureType != VirtualTextureType.Font){
+            Debug.Assert(false, $"Attempted {nameof(InitSpriteString)} with a non font-texture '{virtualTextureIndex}'");
+            return false;
+        }
+    }
+
+    SetSpriteChainVirtualTextureUnsafe(ref sprites, firstIndex, virtualTextureIndex);
+    return true;
+}
+
+public static bool SetSpriteStringText(
+    ref RendererCtx ctx, SpriteId spriteId, String text
+){
+    return SetSpriteStringText(ref ctx.SpriteManager, ref ctx.VirtualTextureManager, spriteId, text);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool SetSpriteStringText(
+    ref SpriteManager sprites, ref VirtualTextureManager textures, SpriteId spriteId, String text
+){
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation
+        AssertInitialisedSpriteManager(sprites);
+        if(sprites.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+        if(!IsChainSprite(ref sprites.HostSprites[firstIndex])){
+            Debug.Assert(false, $"Attempted {nameof(InitSpriteString)} with a non-sprite-chain.");
+            return false;
+        }
+    }
+
+    SetSpriteStringTextUnsafe(ref sprites, ref textures, firstIndex, text);
+
+    return true;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void SetSpriteStringTextUnsafe(
+    ref SpriteManager sprites, ref VirtualTextureManager textures, int spriteIndex, String text
+){
+    int firstIndex = spriteIndex;
+    int index = firstIndex;
+    int charIndex = 0;
+    Vector2 advance = default;
+    while(true){
+        ref DeviceSprite device = ref sprites.DeviceSprites[index];
+        ref HostSprite host = ref sprites.HostSprites[index];
+        ref FontData fontData = ref textures.HostVirtualTextures[device.VirtualTextureIndex].FontData;
+        Vector2I maxGlyphSize = new(){X = (int)fontData.MaxGlyphHeightInPixels, Y = (int)fontData.MaxGlyphHeightInPixels};
+
+        if(charIndex >= text.Count){
+            host.GlyphOffset = default;
+            host.GlyphQuadSize = default;
+            goto End;
+        }
+
+        char c = text[charIndex];
         int glyphDataIndex = (int)c - (int)fontData.BaseGlyphIndex + 1;
         ref Glyph glyphData = ref fontData.Glyphs[glyphDataIndex];
         
         // pixel coords.
-        SetSpriteVirtualTextureUnsafe(ref sprites, index, virtualTextureIndex);
+        SetSpriteVirtualTextureUnsafe(ref sprites, index, device.VirtualTextureIndex);
         SetSpriteRegionUnsafe(
             ref sprites, index, 
             new(){
@@ -2725,115 +2852,95 @@ public static bool InitSpriteString(
         float localLeft = advance.X + glyphData.Offset.X;
         float localTop  = advance.Y + glyphData.Offset.Y; 
 
-        ref GlyphSprite glyphSprite = ref sprites.GlyphSprites[index];
 
         // Since sprites have an origin at their center:
         // X moves right (+), but Y must move DOWN (-) to reach the center from the top edge.
-        glyphSprite.Offset = new(){
+        host.GlyphOffset = new(){
             X = localLeft + (glyphData.Size.X * 0.5f),
             Y = localTop  - (glyphData.Size.Y * 0.5f), 
         };
-        glyphSprite.Size.X = glyphData.Size.X;
-        glyphSprite.Size.Y = glyphData.Size.Y;
-        glyphSprite.IsInitialised = true;
+        host.GlyphQuadSize.X = glyphData.Size.X;
+        host.GlyphQuadSize.Y = glyphData.Size.Y;
 
         // Advance the cursor for the next character, scaled by your base transform scale
         // advance += glyphData.Advance * new Vector2(){X = transform.Scale.X * (1f/transform.Scale.X), Y = transform.Scale.Y* (1f/transform.Scale.Y)};
         advance += glyphData.Advance;
-
-        // other.
-        SetSpriteActiveUnsafe(ref sprites, index, isActive);
-        SetSpriteMaterialUnsafe(ref sprites, index, materialIndex);
-
-        // next loop iteration preperation.
-        ref ChainSprite chainSprite = ref sprites.ChainSprites[index];
-        index = chainSprite.NextSprite;
-        if(index==firstIndex){
-            // Debug.Assert(false, $"Sprite String '{firstIndex}' is too small to fully contain string: '{String.ToSystemString(text)}'");
-            break;
-        }
-    }
-
-    SetSpriteStringTransform(ref sprites, spriteId, transform);
-    return true;
-}
-
-public static bool SetSpriteStringTransform(
-    ref RendererCtx ctx,  SpriteId spriteId, Transform transform
-){
-    return SetSpriteStringTransform(ref ctx.SpriteManager, spriteId, transform);
-}
-
-public static bool SetSpriteStringTransform(
-    ref SpriteManager manager,  SpriteId spriteId, Transform transform
-){
-    int firstIndex = GenId.GetIndex(spriteId.GenId);
-    int generation = GenId.GetGeneration(spriteId.GenId);
-
-    { // validation
-        AssertInitialisedSpriteManager(manager);
-        if(manager.SpriteGenerations[firstIndex] != generation){
-            return false;
-        }
-        if(!manager.ChainSprites[firstIndex].IsInitialised){
-            Debug.Assert(false, $"Attempted {nameof(SetSpriteStringTransform)} with a non chain sprite.");
-            return false;
-        }
-    }
-
-    int index = firstIndex;
-    while(true){
-
-        ref GlyphSprite glyphSprite = ref manager.GlyphSprites[index];
-
-        Transform glyphTransform = default;
-        // Apply the base transform's scale to the glyph's dimensions
-        glyphTransform.Scale = transform.Scale * new Vector3(){X = glyphSprite.Size.X, Y = glyphSprite.Size.Y, Z = 1.0f};
-
-        Vector2 offset = manager.GlyphSprites[index].Offset;
-
-        // Position needs to inherit the base transform's position plus our offset scaled by the base scale
-        glyphTransform.Position = transform.Position + (offset * transform.Scale);
+        charIndex++;
         
-        SetSpriteTransformUnsafe(ref manager, index, glyphTransform);
-
-        // next loop iteration preperation.
-        ref ChainSprite chainSprite = ref manager.ChainSprites[index];
-        index = chainSprite.NextSprite;
-        if(index==firstIndex){
-            return true;
+        End:
+        {
+            index = host.NextInChain;
+            if(index==firstIndex){
+                // Debug.Assert(false, $"Sprite String '{firstIndex}' is too small to fully contain string: '{String.ToSystemString(text)}'");
+                break;
+            }
         }
     }
 }
 
-public static SpriteType GetSpriteType(
-    ref RendererCtx ctx, SpriteId spriteId, ref bool isValidOutput
+/**##########################################################################################################################################
+    div end: Sprite String.
+##########################################################################################################################################**/
+
+/**##########################################################################################################################################
+    div start: Sprite Chain.
+##########################################################################################################################################**/
+
+public static SpriteId AllocSpriteChain(
+    ref RendererCtx ctx, int chainLength, int layer, ref bool isValidOutput
 ){
-    return GetSpriteType(ref ctx.SpriteManager, spriteId, ref isValidOutput);
+    return AllocSpriteChain(ref ctx.SpriteManager, chainLength, layer, ref isValidOutput);
 }
 
-[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-public static SpriteType GetSpriteType(
-    ref SpriteManager manager, SpriteId spriteId, ref bool isValidOutput
+public static SpriteId AllocSpriteChain(
+    ref SpriteManager manager, int chainLength, int layer, ref bool isValidOutput
 ){
-    int index = GenId.GetIndex(spriteId.GenId);
-    int generation = GenId.GetGeneration(spriteId.GenId);
+    SpriteId first = default;
+    int previousIndex = 0;
+    int firstIndex = 0;
+    ref StackArray<int> freeIndices = ref manager.SpriteLayers[layer].FreeSpritesIndices;
 
-    { // validation
-        AssertInitialisedSpriteManager(manager);
-        if(manager.SpriteGenerations[index] != generation){
-            isValidOutput = false;
-            return default;
+    // loop back in on itself it the chain sprite is at length 1.
+    if(chainLength == 1){
+        first = AllocSprite(ref manager, layer, ref isValidOutput);
+        firstIndex = GenId.GetIndex(first.GenId);
+        ref HostSprite hostSprite = ref manager.HostSprites[firstIndex];        
+        hostSprite.NextInChain = firstIndex;
+        hostSprite.IsFirstInChain = true;
+        goto End;
+    }
+
+    for(int i = 0; i < chainLength; i++){
+        SpriteId spriteId = AllocSprite(ref manager, layer, ref isValidOutput);
+        int index = GenId.GetIndex(spriteId.GenId);
+        ref HostSprite previousSprite = ref manager.HostSprites[previousIndex];
+        ref HostSprite chainSprite = ref manager.HostSprites[index];
+        if(i==0){
+            first = spriteId;
+            firstIndex = index;
+            chainSprite.IsFirstInChain = true;
         }
+        else if(i==chainLength-1){
+            // maintain the circular linked list.
+            previousSprite.NextInChain = firstIndex;
+            chainSprite.IsFirstInChain = false;
+        }
+        else{
+            // maintain the circular linked list.
+            previousSprite.NextInChain = index;
+            chainSprite.IsFirstInChain = false;
+        }
+        if(isValidOutput == false){
+            Debug.Assert(false, $"Insufficient free sprites on sprite layer '{layer}' to accomodate a the full sprite chain of length '{chainLength}'."); 
+            // maintain the circular linked list even on a fail case.
+            previousSprite.NextInChain = firstIndex;
+            return first;
+        }
+        previousIndex = index;
     }
 
-    if(manager.GlyphSprites[index].IsInitialised){
-        return SpriteType.Glyph;
-    }
-    else{
-        return SpriteType.Image;
-    }
-
+    End:
+    return first;
 }
 
 public static bool DeallocSpriteChain(
@@ -2856,27 +2963,155 @@ public static bool DeallocSpriteChain(
 
     int firstIndex = GenId.GetIndex(spriteId.GenId);
     int gen = GenId.GetIndex(spriteId.GenId);
-    ref ChainSprite chainSprite = ref manager.ChainSprites[firstIndex];
-    if(chainSprite.IsInitialised != true){
+    ref HostSprite sprite = ref manager.HostSprites[firstIndex];
+    if(!IsChainSprite(ref sprite)){
         Debug.Assert(false, $"Attempted {nameof(DeallocSpriteChain)} with a non-sprite-chain.");
         return false;
     }
 
     int index = firstIndex;
     while(true){
-        chainSprite = ref manager.ChainSprites[index];
-        chainSprite.IsInitialised = false;
+        sprite = ref manager.HostSprites[index];
+        int nextIndex = sprite.NextInChain;
         DeallocSpriteUnsafe(ref manager, index, spriteId.Layer);
-        index = chainSprite.NextSprite;
+        index = nextIndex;
         if(index == firstIndex){
             return true;
         }
     }
 }
 
+public static bool SetSpriteChainActive(
+    ref RendererCtx ctx, SpriteId spriteId, bool isActive
+){
+    return SetSpriteChainActive(ref ctx.SpriteManager, spriteId, isActive);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool SetSpriteChainActive(
+    ref SpriteManager manager, SpriteId spriteId, bool isActive
+){
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation
+        AssertInitialisedSpriteManager(manager);
+        if(manager.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+        ref DeviceSprite device = ref manager.DeviceSprites[firstIndex];
+        if(manager.DeviceSprites[firstIndex].State == SpriteState.Deallocated){
+            Debug.Assert(false, $"Attempted to set deallocated sprite '{firstIndex}' to active '{isActive}'");
+            return false;
+        }
+        if(!IsChainSprite(ref manager.HostSprites[firstIndex])){
+            Debug.Assert(false, $"Attempted {nameof(SetSpriteChainActive)} with a non-sprite-chain.");
+            return false;
+        }
+    }
+    SetSpriteChainActiveUnsafe(ref manager, firstIndex, isActive);
+    return true;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void SetSpriteChainActiveUnsafe(
+    ref SpriteManager manager, int spriteIndex, bool isActive
+){
+    int firstIndex = spriteIndex;
+    int index = firstIndex;
+    while(true){
+        ref HostSprite host = ref manager.HostSprites[index];
+        ref DeviceSprite device = ref manager.DeviceSprites[index];
+        device.State = isActive? SpriteState.Active : SpriteState.Inactive;
+        // next loop iteration preperation.
+        index = host.NextInChain;
+        if(index==firstIndex){
+            break;
+        }
+    }
+}
+
+public static bool SetSpriteChainMaterial(
+    ref RendererCtx ctx, SpriteId spriteId, int materialIndex
+){
+    return SetSpriteChainMaterial(ref ctx.SpriteManager, spriteId, materialIndex);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool SetSpriteChainMaterial(
+    ref SpriteManager manager, SpriteId spriteId, int materialIndex
+){
+    int firstIndex = GenId.GetIndex(spriteId.GenId);
+    int generation = GenId.GetGeneration(spriteId.GenId);
+
+    { // validation
+        AssertInitialisedSpriteManager(manager);
+        if(manager.SpriteGenerations[firstIndex] != generation){
+            return false;
+        }
+        ref DeviceSprite device = ref manager.DeviceSprites[firstIndex];
+        if(!IsChainSprite(ref manager.HostSprites[firstIndex])){
+            Debug.Assert(false, $"Attempted {nameof(SetSpriteChainMaterial)} with a non-sprite-chain.");
+            return false;
+        }
+    }
+    SetSpriteChainMaterialUnsafe(ref manager, firstIndex, materialIndex);
+    return true;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void SetSpriteChainMaterialUnsafe(
+    ref SpriteManager manager, int spriteIndex, int materialIndex
+){
+    int firstIndex = spriteIndex;
+    int index = firstIndex;
+    while(true){
+        ref HostSprite host = ref manager.HostSprites[index];
+        ref DeviceSprite device = ref manager.DeviceSprites[index];
+        device.MaterialIndex = materialIndex;
+        // next loop iteration preperation.
+        index = host.NextInChain;
+        if(index==firstIndex){
+            break;
+        }
+    }
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static void SetSpriteChainVirtualTextureUnsafe(
+    ref SpriteManager manager, int spriteIndex, int virtualTextureIndex
+){
+    int firstIndex = spriteIndex;
+    int index = firstIndex;
+    while(true){
+        ref HostSprite host = ref manager.HostSprites[index];
+        ref DeviceSprite device = ref manager.DeviceSprites[index];
+        device.VirtualTextureIndex = virtualTextureIndex;
+        // next loop iteration preperation.
+        index = host.NextInChain;
+        if(index==firstIndex){
+            break;
+        }
+    }
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static bool IsChainSprite(
+    ref HostSprite sprite
+){
+    return sprite.NextInChain > 0;
+}
+
+public static bool IsFirstInChain(
+    ref HostSprite sprite
+){
+    return IsChainSprite(ref sprite) && sprite.IsFirstInChain;
+}
+
 /**##########################################################################################################################################
-    div end: Sprites
+    div end: Sprite Chain. 
 ##########################################################################################################################################**/
+
 /**##########################################################################################################################################
     div: RESOURCE HANDLING
 ##########################################################################################################################################**/
@@ -2892,12 +3127,6 @@ public static void FreeAdapterResources(
     ref Adapter adapter
 ){
     WebGPUApi.AdapterRelease(adapter.Pointer);
-}
-
-public static void FreeSpriteManagerResources(
-    ref SpriteManager manager
-){
-    FreeBufferResources(ref manager.SpriteBuffer);
 }
 
 public static void FreeVirtualTextureManagerResources(
