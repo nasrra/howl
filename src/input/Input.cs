@@ -92,34 +92,30 @@ public static void Update(
 ){
     // update key states
     for(int i = 0; i < (int)Key.Length; i++){
-        ref InputState keyState = ref GlobalState.PreviousKeyStates[i];
+        InputState lastState = GlobalState.KeyStates[i];        
+        ref InputState nextButtonState = ref GlobalState.PreviousKeyStates[i];
+        
         if(GlobalState.KeyDown[i] == true){
-            switch(keyState){
-                case InputState.JustPressed:
-                    keyState = InputState.Pressed;
-                    break;
-                case InputState.JustReleased:
-                    keyState = InputState.JustPressed;
-                    break;
+            switch(lastState){
                 case InputState.Released:
-                    keyState = InputState.JustPressed;
+                case InputState.JustReleased:
+                    nextButtonState = InputState.JustPressed;
                     break;
-                default: 
+                case InputState.JustPressed:
+                case InputState.Pressed:
+                    nextButtonState = InputState.Pressed;
                     break;
             }
         }
         else{
-            switch(keyState){
-                case InputState.JustReleased:
-                    keyState = InputState.Released;
-                    break;
-                case InputState.JustPressed:
-                    keyState = InputState.JustReleased;
-                    break;
+            switch(lastState){
                 case InputState.Pressed:
-                    keyState = InputState.JustReleased;
+                case InputState.JustPressed:
+                    nextButtonState = InputState.JustReleased;
                     break;
-                default: 
+                case InputState.JustReleased:
+                case InputState.Released:
+                    nextButtonState = InputState.Released;
                     break;
             }
         }
@@ -127,34 +123,30 @@ public static void Update(
 
     // update mouse button states.
     for(int i = 0; i < (int)MouseButton.Length; i++){
-        ref InputState buttonState = ref GlobalState.PreviousMouseButtonStates[i];
+        InputState lastState = GlobalState.MouseButtonStates[i];        
+        ref InputState nextButtonState = ref GlobalState.PreviousMouseButtonStates[i];
+        
         if(GlobalState.MouseButtonDown[i] == true){
-            switch(buttonState){
-                case InputState.JustPressed:
-                    buttonState = InputState.Pressed;
-                    break;
-                case InputState.JustReleased:
-                    buttonState = InputState.JustPressed;
-                    break;
+            switch(lastState){
                 case InputState.Released:
-                    buttonState = InputState.JustPressed;
+                case InputState.JustReleased:
+                    nextButtonState = InputState.JustPressed;
                     break;
-                default: 
+                case InputState.JustPressed:
+                case InputState.Pressed:
+                    nextButtonState = InputState.Pressed;
                     break;
             }
         }
         else{
-            switch(buttonState){
-                case InputState.JustReleased:
-                    buttonState = InputState.Released;
-                    break;
-                case InputState.JustPressed:
-                    buttonState = InputState.JustReleased;
-                    break;
+            switch(lastState){
                 case InputState.Pressed:
-                    buttonState = InputState.JustReleased;
+                case InputState.JustPressed:
+                    nextButtonState = InputState.JustReleased;
                     break;
-                default: 
+                case InputState.JustReleased:
+                case InputState.Released:
+                    nextButtonState = InputState.Released;
                     break;
             }
         }
